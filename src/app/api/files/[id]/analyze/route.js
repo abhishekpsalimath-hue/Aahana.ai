@@ -7,7 +7,7 @@ export const runtime = "nodejs";
 export const maxDuration = 30;
 
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
-const MAX_EXTRACTED_CHARACTERS = 30000;
+const MAX_EXTRACTED_CHARACTERS = 6500;
 const TEXT_TYPES = new Set(["text/plain", "text/markdown", "text/csv"]);
 
 export async function POST(_request, { params }) {
