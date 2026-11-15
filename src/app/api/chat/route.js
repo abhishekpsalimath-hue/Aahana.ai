@@ -26,7 +26,9 @@ export async function POST(request) {
     return NextResponse.json({ error: "Aahana AI is not enabled yet." }, { status: 503 });
   }
 
-  const oidcToken = process.env.VERCEL_OIDC_TOKEN;
+  // Vercel provides the OIDC token on the incoming request at runtime.
+  // Keep the environment variable as a fallback for compatible local setups.
+  const oidcToken = request.headers.get("x-vercel-oidc-token") || process.env.VERCEL_OIDC_TOKEN;
   const model = process.env.AAHANA_MODEL;
   if (!oidcToken || !model) {
     console.error("Aahana AI configuration missing:", { oidcTokenPresent: Boolean(oidcToken), modelPresent: Boolean(model) });
