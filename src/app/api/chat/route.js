@@ -7,9 +7,9 @@ export const maxDuration = 60;
 const MAX_PROMPT_LENGTH = 8000;
 const DAILY_LIMIT = 10;
 
-function gatewayError(status) {
-  if (status === 401) return "AI service authentication is not ready. Please try again later.";
-  if (status === 402 || status === 403) return "AI service billing verification or credits are required before Aahana can respond.";
+function gatewayError(status, provider) {
+  if (status === 401) return provider === "groq" ? "Aahana free AI provider key is invalid. Please check the server configuration." : "AI service authentication is not ready. Please try again later.";
+  if (status === 402 || status === 403) return provider === "groq" ? "Aahana free AI provider rejected this request. Please check the provider account and model access." : "AI service billing verification or credits are required before Aahana can respond.";
   if (status === 429) return "The AI service is busy. Please wait a moment and try again.";
   return "Aahana could not reach the AI service. Please try again.";
 }
@@ -26,15 +26,19 @@ export async function POST(request) {
     return NextResponse.json({ error: "Aahana AI is not enabled yet." }, { status: 503 });
   }
 
-  // Vercel provides the OIDC token on the incoming request at runtime.
-  // Keep the environment variable as a fallback for compatible local setups.
-  const oidcToken = request.headers.get("x-vercel-oidc-token") || process.env.VERCEL_OIDC_TOKEN;
-  const model = process.env.AAHANA_MODEL;
-  if (!oidcToken || !model) {
-    console.error("Aahana AI configuration missing:", { oidcTokenPresent: Boolean(oidcToken), modelPresent: Boolean(model) });
+  // Basic mode uses Groq's no-card Free tier only. Never fall back to paid Vercel AI Gateway.
+  const provider = (process.env.AAHANA_AI_PROVIDER || "groq").toLowerCase();
+  const isGroq = provider === "groq";
+  const providerKey = isGroq
+    ? process.env.GROQ_API_KEY
+    : (request.headers.get("x-vercel-oidc-token") || process.env.VERCEL_OIDC_TOKEN);
+  const model = process.env.AAHANA_MODEL || (isGroq ? "openai/gpt-oss-120b" : "");
+  if (!providerKey || !model) {
+    const code = !providerKey ? (isGroq ? "MISSING_GROQ_API_KEY" : "MISSING_GATEWAY_AUTH") : "MISSING_MODEL";
+    console.error("Aahana AI configuration missing:", { provider, keyPresent: Boolean(providerKey), modelPresent: Boolean(model) });
     return NextResponse.json({
-      error: !oidcToken ? "Aahana's Vercel AI Gateway authentication token is missing." : "Aahana's AI model is not configured.",
-      code: !oidcToken ? "MISSING_GATEWAY_AUTH" : "MISSING_MODEL",
+      error: !providerKey ? "Aahana free AI provider key is not connected yet." : "Aahana Vercel AI Gateway authentication token is missing.",
+      code,
     }, { status: 503 });
   }
 
@@ -159,16 +163,17 @@ export async function POST(request) {
 
   let upstream;
   try {
-    upstream = await fetch("https://ai-gateway.vercel.sh/v1/chat/completions", {
+    const endpoint = isGroq ? "https://api.groq.com/openai/v1/chat/completions" : "https://ai-gateway.vercel.sh/v1/chat/completions";
+    upstream = await fetch(endpoint, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${oidcToken}`,
+        Authorization: `Bearer ${providerKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
         model,
         stream: true,
-        max_tokens: 1200,
+        ...(isGroq ? { max_completion_tokens: 1200 } : { max_tokens: 1200 }),
         messages: [
           { role: "system", content: systemPrompt },
           ...context,
@@ -197,7 +202,7 @@ export async function POST(request) {
       : upstream.status === 429 ? "GATEWAY_RATE_LIMITED"
       : "GATEWAY_UPSTREAM_ERROR";
     return NextResponse.json({
-      error: gatewayError(upstream.status),
+      error: gatewayError(upstream.status, provider),
       code,
       gatewayStatus: upstream.status,
       requestId: gatewayRequestId,
