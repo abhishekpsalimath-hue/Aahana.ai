@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 
 const modes = [
   { id: "solve", label: "Solve", hint: "Work through a problem" },
@@ -52,7 +53,7 @@ export default function Home() {
       <section className="main-panel">
         <header className="topbar">
           <div className="breadcrumb">Workspace <span>/</span> Assistant</div>
-          <div className="top-actions"><span className="status-dot" /> Preview workspace</div>
+          <div className="top-actions"><Link className="login-link" href="/login">Sign in</Link></div>
         </header>
 
         <div className="welcome">
