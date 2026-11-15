@@ -420,9 +420,10 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
           <form className="composer" onSubmit={submitPrompt}>
             <label className="sr-only" htmlFor="prompt">What would you like to work on?</label>
             <textarea id="prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); } }}
               placeholder={aiEnabled ? "What would you like to work on today?" : "Aahana is preparing its AI connection…"} rows={3} disabled={busy || !aiEnabled} />
             <div className="composer-footer">
-              <span className="composer-mode">{modes.find((item) => item.id === mode)?.hint}</span>
+              <span className="composer-mode">{modes.find((item) => item.id === mode)?.hint} · Enter to send · Shift + Enter for a new line</span>
               <button className="send" type="submit" disabled={!prompt.trim() || busy || !aiEnabled} aria-label="Submit prompt">{busy ? "…" : "↑"}</button>
             </div>
           </form>
