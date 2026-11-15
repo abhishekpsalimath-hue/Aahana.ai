@@ -231,7 +231,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
           <span aria-hidden="true">＋</span> New conversation
         </button>
         <div className="side-label">WORKSPACE</div>
-        <div className="side-item active">✳ <span>Assistant</span></div>
+        <button className={selectedProjectId ? "side-item assistant-nav" : "side-item active assistant-nav"} type="button" onClick={() => selectProject(null)}>✳ <span>Assistant</span></button>
         <button className={historyOpen ? "side-item active history-toggle" : "side-item muted history-toggle"} type="button" onClick={toggleHistory}>◷ <span>History</span></button>
         {historyOpen && (
           <div className="history-list">
