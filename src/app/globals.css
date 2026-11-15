@@ -74,3 +74,13 @@ h1 em{font-style:normal;color:var(--lilac)}
 .account-copy small { display: block; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sign-out { margin-left: auto; border: 1px solid rgba(255,255,255,.12); border-radius: 9px; background: transparent; color: #c9c2d8; padding: 8px 10px; font: inherit; font-size: 12px; cursor: pointer; }
 .sign-out:hover { border-color: rgba(190,165,255,.55); color: #fff; }
+
+
+.conversation { display: flex; flex-direction: column; gap: 16px; margin: 24px 0; }
+.chat-message { max-width: 92%; border: 1px solid var(--line); border-radius: 14px; padding: 15px 17px; background: #111117; }
+.user-message { align-self: flex-end; background: #1b1723; border-color: #40344f; }
+.assistant-message { align-self: flex-start; }
+.message-role { color: var(--lilac); font-size: 9px; font-weight: 700; letter-spacing: 1.5px; margin-bottom: 8px; }
+.chat-message p { margin: 0; color: #e7e2ee; font-size: 13px; line-height: 1.75; white-space: pre-wrap; overflow-wrap: anywhere; }
+.error-notice { color: #ffb8c0; border: 1px solid #633b48; background: #25141a; border-radius: 9px; padding: 11px 13px; margin: 12px 0 24px; }
+.composer textarea:disabled { opacity: .65; cursor: wait; }
