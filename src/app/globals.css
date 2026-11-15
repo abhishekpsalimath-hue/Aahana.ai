@@ -185,3 +185,10 @@ h1 em{font-style:normal;color:var(--lilac)}
 
 .message-actions{display:flex;align-items:center;gap:6px}
 @media print{.sidebar,.topbar,.composer,.footer,.mode-row,.message-actions{display:none!important}}
+
+.image-attach-row{display:flex;align-items:center;gap:10px;margin:0 0 8px}
+.image-attach{position:relative;display:inline-flex;align-items:center;border:1px solid #494056;border-radius:8px;background:#17141f;color:#d6c5ff;padding:7px 10px;font-size:11px;cursor:pointer}
+.image-attach input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.image-attach:focus-within{outline:2px solid #9c80d4;outline-offset:2px}
+.image-attach-name{color:#aaa1b8;font-size:10px;overflow-wrap:anywhere}
+.image-attach-name button{margin-left:6px;border:0;background:transparent;color:#d6c5ff;font-size:10px;cursor:pointer}
