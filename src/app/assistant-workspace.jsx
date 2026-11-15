@@ -345,7 +345,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
 
       if (!response.ok) {
         const result = await response.json().catch(() => ({}));
-        if (response.status === 503) {
+        if (response.status >= 500) {
           const calculation = evaluateArithmetic(text);
           if (calculation !== null) {
             setMessages((current) => current.map((item, index) =>
