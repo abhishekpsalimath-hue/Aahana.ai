@@ -125,6 +125,7 @@ export async function POST(request) {
     .limit(20);
 
   if (historyError || !history?.length) {
+    await supabase.rpc("release_my_ai_request");
     return NextResponse.json({ error: "Could not load conversation context." }, { status: 500 });
   }
 
@@ -156,10 +157,13 @@ export async function POST(request) {
       signal: AbortSignal.timeout(45000),
     });
   } catch {
+    await supabase.rpc("release_my_ai_request");
     return NextResponse.json({ error: "Aahana could not connect to the AI service. Please try again." }, { status: 502 });
   }
 
   if (!upstream.ok || !upstream.body) {
+    await supabase.rpc("release_my_ai_request");
+    console.error("Aahana AI Gateway rejected request:", upstream.status);
     return NextResponse.json({ error: gatewayError(upstream.status) }, { status: upstream.status === 429 ? 429 : 502 });
   }
 
