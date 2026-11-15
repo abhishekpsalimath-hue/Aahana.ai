@@ -183,7 +183,7 @@ export async function POST(request) {
     await supabase.rpc("release_my_ai_request");
     const gatewayRequestId = upstream.headers.get("x-request-id") || upstream.headers.get("x-vercel-id") || null;
     const responseText = await upstream.text().catch(() => "");
-    const safeDetail = responseText.replace(/[\\r\\n\\t]+/g, " ").slice(0, 500);
+    const safeDetail = responseText.replace(/[\r\n\t]+/g, " ").slice(0, 500);
     console.error("Aahana AI Gateway rejected request:", {
       status: upstream.status,
       requestId: gatewayRequestId,
