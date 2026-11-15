@@ -345,6 +345,18 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
 
       if (!response.ok) {
         const result = await response.json().catch(() => ({}));
+        if (response.status === 503) {
+          const calculation = evaluateArithmetic(text);
+          if (calculation !== null) {
+            setMessages((current) => current.map((item, index) =>
+              index === current.length - 1
+                ? { ...item, content: calculation }
+                : item
+            ));
+            setError("Answered with the offline calculator because the AI connection is temporarily unavailable.");
+            return;
+          }
+        }
         throw new Error(result.error || "Aahana couldn't process that request.");
       }
 
