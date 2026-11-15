@@ -238,3 +238,21 @@ button:focus-visible,a:focus-visible{outline-color:#c4a7ff}
 .thinking-indicator small{font-size:11px;color:#a99abf}
 @keyframes thinking-pulse{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-4px);opacity:1}}
 @media(prefers-reduced-motion:reduce){.thinking-indicator>span{animation:none!important;opacity:1}}
+
+
+/* Aahana signature send control — no generic button label */
+.send.send-orb{width:48px;min-width:48px;height:48px;padding:0;gap:0;border:1px solid #d9c4ff99;border-radius:16px;background:radial-gradient(circle at 34% 24%,#f4eaff 0%,#d8c1ff 18%,#b28bec 55%,#7955b5 100%);color:#21162f;box-shadow:0 0 0 1px #b997f522,0 5px 22px #a77be855,inset 0 1px 2px #fff;overflow:hidden}
+.send.send-orb::before{display:none}
+.send-orb-halo{position:absolute;inset:5px;border:1px solid #fff9;border-radius:12px;transform:rotate(0deg);transition:transform .45s ease,border-radius .45s ease}
+.send-orb-core{position:relative;z-index:1;display:grid;place-items:center;width:29px;height:29px;border-radius:10px;background:linear-gradient(145deg,#f5edff,#c9a9ff);box-shadow:0 2px 9px #51347766;font-size:21px;line-height:1;font-weight:700;transition:transform .3s cubic-bezier(.2,.8,.2,1),border-radius .3s ease}
+.send.send-orb:hover:not(:disabled){transform:translateY(-2px) scale(1.04);box-shadow:0 0 0 4px #c6a8ff18,0 9px 30px #a77be877,inset 0 1px 2px #fff}
+.send.send-orb:hover:not(:disabled) .send-orb-halo{transform:rotate(45deg);border-radius:50%}
+.send.send-orb:hover:not(:disabled) .send-orb-core{transform:translate(2px,-2px) rotate(8deg);border-radius:50%}
+.send.send-orb:active:not(:disabled){transform:scale(.94)}
+.send.send-orb:disabled{opacity:.42}
+.send-orb-thinking{display:flex;align-items:center;gap:3px;position:relative;z-index:1}
+.send-orb-thinking i{width:4px;height:4px;border-radius:50%;background:#35244d;animation:send-orb-pulse .9s ease-in-out infinite}
+.send-orb-thinking i:nth-child(2){animation-delay:.15s}.send-orb-thinking i:nth-child(3){animation-delay:.3s}
+@keyframes send-orb-pulse{0%,100%{transform:translateY(0);opacity:.45}50%{transform:translateY(-4px);opacity:1}}
+@media(max-width:760px){.send.send-orb{width:46px;min-width:46px;height:46px}}
+@media(prefers-reduced-motion:reduce){.send-orb-halo,.send-orb-core,.send-orb-thinking i{transition:none!important;animation:none!important}}
