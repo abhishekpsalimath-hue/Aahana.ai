@@ -68,3 +68,9 @@ h1 em{font-style:normal;color:var(--lilac)}
 .auth-switch button{border:0;background:none;color:#cfbaff;font-weight:600;padding:0 0 0 4px}
 .auth-legal{font-size:10px;color:#777183;text-align:center;line-height:1.6;margin:25px 0 0}
 @media(max-width:480px){.auth-card{padding:25px 21px}.auth-brand{margin-bottom:38px}}
+
+
+.account-copy { min-width: 0; }
+.account-copy small { display: block; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sign-out { margin-left: auto; border: 1px solid rgba(255,255,255,.12); border-radius: 9px; background: transparent; color: #c9c2d8; padding: 8px 10px; font: inherit; font-size: 12px; cursor: pointer; }
+.sign-out:hover { border-color: rgba(190,165,255,.55); color: #fff; }
