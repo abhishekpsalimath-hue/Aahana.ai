@@ -95,3 +95,12 @@ h1 em{font-style:normal;color:var(--lilac)}
 .history-empty{padding:9px 10px;color:#827b8e;font-size:10px;line-height:1.5}
 .history-error{color:#ffb8c0}
 @media(max-width:760px){.history-list{display:none}}
+
+
+.mobile-history-toggle{display:none;border:1px solid #40364f;border-radius:8px;background:#17141f;color:#dfd2ff;padding:7px 10px;font-size:11px}
+.mobile-history-panel{display:none}
+@media(max-width:760px){
+  .mobile-history-toggle{display:inline-flex}
+  .mobile-history-panel{display:flex;flex-direction:column;gap:4px;padding:8px 18px 12px;border-bottom:1px solid var(--line);background:#0c0c11}
+  .mobile-history-panel .history-entry{padding:10px 12px}
+}
