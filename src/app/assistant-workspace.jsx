@@ -356,7 +356,8 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                 ? { ...item, content: calculation }
                 : item
             ));
-            setError("Answered with the offline calculator because the AI connection is temporarily unavailable.");
+            const diagnostic = result.code ? ` [${result.code}${result.gatewayStatus ? ` / HTTP ${result.gatewayStatus}` : ""}]` : "";
+            setError(`Offline calculator used. ${result.error || "The live AI service is unavailable."}${diagnostic}`);
             return;
           }
         }
