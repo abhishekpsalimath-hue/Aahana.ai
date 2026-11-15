@@ -147,12 +147,26 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     setFileBusy(true);
     setFilesError("");
     try {
-      const form = new FormData();
-      form.append("file", file);
-      if (selectedProjectId) form.append("projectId", selectedProjectId);
-      const response = await fetch("/api/files", { method: "POST", body: form });
+      const allowed = ["application/pdf", "text/plain", "text/markdown", "text/csv", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "image/png", "image/jpeg", "image/webp"];
+      if (!allowed.includes(file.type)) throw new Error("This file type is not supported.");
+      if (file.size < 1 || file.size > 10 * 1024 * 1024) throw new Error("Files must be between 1 byte and 10 MB.");
+      const supabase = createClient();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) throw new Error("Please sign in again.");
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-100) || "upload";
+      const folder = selectedProjectId || "personal";
+      const objectPath = `${user.id}/${folder}/${crypto.randomUUID()}-${safeName}`;
+      const { error: storageError } = await supabase.storage.from("aahana-private").upload(objectPath, file, { contentType: file.type, upsert: false });
+      if (storageError) throw new Error("Upload failed. Please try again.");
+      const response = await fetch("/api/files", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ objectPath, originalFilename: file.name, mimeType: file.type, sizeBytes: file.size, projectId: selectedProjectId }),
+      });
       const result = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(result.error || "Upload failed.");
+      if (!response.ok) {
+        await supabase.storage.from("aahana-private").remove([objectPath]);
+        throw new Error(result.error || "Could not save file details.");
+      }
       setFiles((items) => [result.file, ...items]);
     } catch (err) {
       setFilesError(err.message || "Upload failed.");
