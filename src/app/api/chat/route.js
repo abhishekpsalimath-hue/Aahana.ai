@@ -42,9 +42,22 @@ export async function POST(request) {
   const prompt = typeof body?.message === "string" ? body.message.trim() : "";
   const mode = ["solve", "create", "write", "build", "improve"].includes(body?.mode) ? body.mode : "solve";
   const requestedConversationId = typeof body?.conversationId === "string" ? body.conversationId : null;
+  const requestedProjectId = typeof body?.projectId === "string" ? body.projectId : null;
 
   if (!prompt || prompt.length > MAX_PROMPT_LENGTH) {
     return NextResponse.json({ error: `Your message must be between 1 and ${MAX_PROMPT_LENGTH} characters.` }, { status: 400 });
+  }
+
+  let projectId = requestedProjectId;
+  if (projectId) {
+    const { data: ownedProject, error: projectError } = await supabase
+      .from("projects")
+      .select("id")
+      .eq("id", projectId)
+      .eq("user_id", user.id)
+      .neq("status", "archived")
+      .maybeSingle();
+    if (projectError || !ownedProject) return NextResponse.json({ error: "Project not found." }, { status: 404 });
   }
 
   let conversationId = requestedConversationId;
@@ -53,18 +66,21 @@ export async function POST(request) {
   if (conversationId) {
     const { data: existing, error } = await supabase
       .from("conversations")
-      .select("id")
+      .select("id, project_id")
       .eq("id", conversationId)
       .eq("user_id", user.id)
       .maybeSingle();
     if (error || !existing) {
       return NextResponse.json({ error: "Conversation not found." }, { status: 404 });
     }
-    await supabase.from("conversations").update({ mode, updated_at: new Date().toISOString() }).eq("id", conversationId);
+    const updates = { mode, updated_at: new Date().toISOString() };
+    if (projectId) updates.project_id = projectId;
+    else projectId = existing.project_id || null;
+    await supabase.from("conversations").update(updates).eq("id", conversationId).eq("user_id", user.id);
   } else {
     const { data: created, error } = await supabase
       .from("conversations")
-      .insert({ user_id: user.id, mode, title: prompt.slice(0, 72) || "New conversation" })
+      .insert({ user_id: user.id, mode, project_id: projectId, title: prompt.slice(0, 72) || "New conversation" })
       .select("id")
       .single();
     if (error || !created) {
