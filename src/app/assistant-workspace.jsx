@@ -22,8 +22,8 @@ const starters = [
 function isImageGenerationRequest(value) {
   const text = String(value || "").trim();
   if (!text) return false;
-  return /\\b(?:generate|create|draw|paint|illustrate|render|make)\\b[\\s\\S]{0,100}\\b(?:image|picture|illustration|artwork|portrait|wallpaper)\\b/i.test(text)
-    || /\\b(?:image|picture|illustration|artwork|portrait|wallpaper)\\b[\\s\\S]{0,60}\\b(?:of|showing|depicting)\\b/i.test(text) && /\\b(?:please|can you|could you|i want|make|create|generate|draw)\\b/i.test(text);
+  return /\b(?:generate|create|draw|paint|illustrate|render|make)\b[\s\S]{0,100}\b(?:image|picture|illustration|artwork|portrait|wallpaper)\b/i.test(text)
+    || /\b(?:image|picture|illustration|artwork|portrait|wallpaper)\b[\s\S]{0,60}\b(?:of|showing|depicting)\b/i.test(text) && /\b(?:please|can you|could you|i want|make|create|generate|draw)\b/i.test(text);
 }
 
 function evaluateArithmetic(input) {
