@@ -374,7 +374,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       });
       if (!imageDataUrl) { setBusy(false); return; }
     }
-    const userMessage = { role: "user", content: imageFile ? `${text || "Please identify this image."}\\n[Image attached: ${imageFile.name}]` : text };
+    const userMessage = { role: "user", content: imageFile ? `${text || "Please identify this image."}\n[Image attached: ${imageFile.name}]` : text };
     const assistantMessage = { role: "assistant", content: "" };
     setImageFile(null);
     setMessages((current) => [...current, userMessage, assistantMessage]);
