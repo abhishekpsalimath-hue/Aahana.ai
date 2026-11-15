@@ -19,6 +19,13 @@ const starters = [
   "Help me design an app or website",
 ];
 
+function isImageGenerationRequest(value) {
+  const text = String(value || "").trim();
+  if (!text) return false;
+  return /\\b(?:generate|create|draw|paint|illustrate|render|make)\\b[\\s\\S]{0,100}\\b(?:image|picture|illustration|artwork|portrait|wallpaper)\\b/i.test(text)
+    || /\\b(?:image|picture|illustration|artwork|portrait|wallpaper)\\b[\\s\\S]{0,60}\\b(?:of|showing|depicting)\\b/i.test(text) && /\\b(?:please|can you|could you|i want|make|create|generate|draw)\\b/i.test(text);
+}
+
 function evaluateArithmetic(input) {
   const normalized = input
     .trim()
@@ -402,6 +409,41 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         { role: "user", content: text },
         { role: "assistant", content: calculation },
       ]);
+      return;
+    }
+
+    if (isImageGenerationRequest(text)) {
+      setPrompt("");
+      setError("");
+      setGeneratedImage(null);
+      setImageGenerating(true);
+      setMessages((current) => [...current,
+        { role: "user", content: text },
+        { role: "assistant", content: "Creating your image…" },
+      ]);
+      try {
+        const response = await fetch("/api/images/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt: text }),
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.error || "Could not generate the image.");
+        if (typeof result.imageDataUrl !== "string" || !result.imageDataUrl.startsWith("data:image/jpeg;base64,")) {
+          throw new Error("The image provider returned an invalid image.");
+        }
+        setGeneratedImage({ dataUrl: result.imageDataUrl, prompt: text });
+        setMessages((current) => current.map((item, index) =>
+          index === current.length - 1 ? { ...item, content: "Your image is ready. You can view it below and download it." } : item
+        ));
+      } catch (err) {
+        setMessages((current) => current.map((item, index) =>
+          index === current.length - 1 ? { ...item, content: "I couldn't generate that image." } : item
+        ));
+        setError(err.message || "Image generation failed.");
+      } finally {
+        setImageGenerating(false);
+      }
       return;
     }
 
