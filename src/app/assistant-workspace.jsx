@@ -32,6 +32,15 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState("");
+  const [projects, setProjects] = useState([]);
+  const [projectsOpen, setProjectsOpen] = useState(false);
+  const [projectsLoading, setProjectsLoading] = useState(false);
+  const [projectsError, setProjectsError] = useState("");
+  const [showProjectForm, setShowProjectForm] = useState(false);
+  const [projectName, setProjectName] = useState("");
+  const [projectDescription, setProjectDescription] = useState("");
+  const [selectedProjectId, setSelectedProjectId] = useState(null);
+  const [projectBusy, setProjectBusy] = useState(false);
 
   async function signOut() {
     const supabase = createClient();
@@ -56,7 +65,8 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     setHistoryLoading(true);
     setHistoryError("");
     try {
-      const response = await fetch("/api/conversations");
+      const historyUrl = selectedProjectId ? `/api/conversations?projectId=${encodeURIComponent(selectedProjectId)}` : "/api/conversations";
+      const response = await fetch(historyUrl);
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || "Could not load history.");
       setHistory(result.conversations || []);
@@ -75,6 +85,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || "Could not open conversation.");
       setConversationId(result.conversation.id);
+      setSelectedProjectId(result.conversation.project_id || null);
       setMode(result.conversation.mode || "solve");
       setMessages((result.messages || []).map(({ role, content }) => ({ role, content })));
       setPrompt("");
@@ -84,6 +95,72 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     } catch (err) {
       setHistoryError(err.message || "Could not open conversation.");
     }
+  }
+
+  async function toggleProjects() {
+    const nextOpen = !projectsOpen;
+    setProjectsOpen(nextOpen);
+    if (!nextOpen || projects.length) return;
+    setProjectsLoading(true);
+    setProjectsError("");
+    try {
+      const response = await fetch("/api/projects");
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Could not load projects.");
+      setProjects(result.projects || []);
+    } catch (err) {
+      setProjectsError(err.message || "Could not load projects.");
+    } finally {
+      setProjectsLoading(false);
+    }
+  }
+
+  async function createProject(event) {
+    event.preventDefault();
+    if (!projectName.trim() || projectBusy) return;
+    setProjectBusy(true);
+    setProjectsError("");
+    try {
+      const response = await fetch("/api/projects", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: projectName.trim(), description: projectDescription.trim(), project_type: "other" }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Could not create project.");
+      setProjects((items) => [result.project, ...items]);
+      setSelectedProjectId(result.project.id);
+      setProjectName("");
+      setProjectDescription("");
+      setShowProjectForm(false);
+      setMessages([]);
+      setConversationId(null);
+      setHistory([]);
+      setHistoryOpen(false);
+    } catch (err) {
+      setProjectsError(err.message || "Could not create project.");
+    } finally {
+      setProjectBusy(false);
+    }
+  }
+
+  function selectProject(id) {
+    setSelectedProjectId(id);
+    setConversationId(null);
+    setMessages([]);
+    setPrompt("");
+    setHistory([]);
+    setHistoryOpen(false);
+    setError("");
+    setUsage(null);
+  }
+
+  async function archiveProject(id) {
+    const response = await fetch(`/api/projects/${encodeURIComponent(id)}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "archived" }) });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) { setProjectsError(result.error || "Could not archive project."); return; }
+    setProjects((items) => items.filter((item) => item.id !== id));
+    if (selectedProjectId === id) selectProject(null);
   }
 
   async function submitPrompt(event) {
@@ -102,7 +179,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text, mode, conversationId }),
+        body: JSON.stringify({ message: text, mode, conversationId, projectId: selectedProjectId }),
       });
 
       if (!response.ok) {
@@ -168,7 +245,31 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
             ))}
           </div>
         )}
-        <div className="side-item muted">▧ <span>Projects</span></div>
+        <button className={projectsOpen ? "side-item active project-toggle" : "side-item muted project-toggle"} type="button" onClick={toggleProjects}>▧ <span>Projects</span></button>
+        {projectsOpen && (
+          <div className="project-list">
+            {projectsLoading && <div className="history-empty">Loading projects…</div>}
+            {projectsError && <div className="history-empty history-error">{projectsError}</div>}
+            {!projectsLoading && !projectsError && projects.length === 0 && <div className="history-empty">No projects yet.</div>}
+            {projects.map((project) => (
+              <div className="project-row" key={project.id}>
+                <button className={selectedProjectId === project.id ? "project-entry selected" : "project-entry"} type="button" onClick={() => selectProject(project.id)}>
+                  <span>{project.name}</span><small>{project.status}</small>
+                </button>
+                <button className="project-archive" type="button" aria-label={`Archive ${project.name}`} onClick={() => archiveProject(project.id)}>×</button>
+              </div>
+            ))}
+            {showProjectForm ? (
+              <form className="project-create-form" onSubmit={createProject}>
+                <input value={projectName} onChange={(event) => setProjectName(event.target.value)} maxLength={80} placeholder="Project name" aria-label="Project name" required />
+                <textarea value={projectDescription} onChange={(event) => setProjectDescription(event.target.value)} maxLength={500} placeholder="Short description (optional)" aria-label="Project description" rows={2} />
+                <div><button type="button" onClick={() => setShowProjectForm(false)}>Cancel</button><button type="submit" disabled={!projectName.trim() || projectBusy}>{projectBusy ? "Saving…" : "Create"}</button></div>
+              </form>
+            ) : (
+              <button className="project-add" type="button" onClick={() => setShowProjectForm(true)}>＋ New project</button>
+            )}
+          </div>
+        )}
         <div className="sidebar-bottom">
           <div className="avatar">A</div>
           <div className="account-copy"><strong>Your workspace</strong><small>{userEmail || "Personal"}</small></div>
@@ -178,9 +279,18 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
 
       <section className="main-panel">
         <header className="topbar">
-          <div className="breadcrumb">Workspace <span>/</span> Assistant</div>
-          <div className="top-actions"><button className="mobile-history-toggle" type="button" onClick={toggleHistory}>History</button><span>Private workspace</span></div>
+          <div className="breadcrumb">Workspace <span>/</span> {selectedProjectId ? (projects.find((item) => item.id === selectedProjectId)?.name || "Project") : "Assistant"}</div>
+          <div className="top-actions"><button className="mobile-history-toggle" type="button" onClick={toggleProjects}>Projects</button><button className="mobile-history-toggle" type="button" onClick={toggleHistory}>History</button><span>Private workspace</span></div>
         </header>
+        {projectsOpen && (
+          <div className="mobile-project-panel">
+            {projectsLoading && <div className="history-empty">Loading projects…</div>}
+            {projectsError && <div className="history-empty history-error">{projectsError}</div>}
+            {projects.map((project) => <button className="project-entry" type="button" key={project.id} onClick={() => selectProject(project.id)}>{project.name}</button>)}
+            <button className="project-add" type="button" onClick={() => setShowProjectForm((value) => !value)}>＋ New project</button>
+            {showProjectForm && <form className="project-create-form" onSubmit={createProject}><input value={projectName} onChange={(event) => setProjectName(event.target.value)} maxLength={80} placeholder="Project name" aria-label="Project name" required /><button type="submit" disabled={!projectName.trim() || projectBusy}>{projectBusy ? "Saving…" : "Create project"}</button></form>}
+          </div>
+        )}
         {historyOpen && (
           <div className="mobile-history-panel">
             {historyLoading && <div className="history-empty">Loading conversations…</div>}
