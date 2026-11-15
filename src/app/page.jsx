@@ -6,5 +6,5 @@ export default async function Home() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
-  return <AssistantWorkspace userEmail={user.email ?? ""} />;
+  return <AssistantWorkspace userEmail={user.email ?? ""} aiEnabled={process.env.AAHANA_AI_ENABLED === "true"} />;
 }
