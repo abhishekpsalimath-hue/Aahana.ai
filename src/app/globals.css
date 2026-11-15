@@ -256,3 +256,19 @@ button:focus-visible,a:focus-visible{outline-color:#c4a7ff}
 @keyframes send-orb-pulse{0%,100%{transform:translateY(0);opacity:.45}50%{transform:translateY(-4px);opacity:1}}
 @media(max-width:760px){.send.send-orb{width:46px;min-width:46px;height:46px}}
 @media(prefers-reduced-motion:reduce){.send-orb-halo,.send-orb-core,.send-orb-thinking i{transition:none!important;animation:none!important}}
+
+
+/* Rocket launch: the message takes off, then returns to its launch pad */
+.send.send-orb .send-rocket{position:relative;z-index:2;width:27px;height:27px;overflow:visible;transform:translate(0,0) rotate(0deg) scale(1);opacity:1;transition:transform .52s cubic-bezier(.18,.78,.25,1),opacity .3s ease;filter:drop-shadow(0 2px 3px #51347755)}
+.send-rocket .rocket-body{fill:#fff9ff;stroke:#5d4382;stroke-width:1.1;stroke-linejoin:round}
+.send-rocket .rocket-window{fill:#9169c7;stroke:#fff;stroke-width:1}
+.send-rocket .rocket-fin{fill:#b58bed;stroke:#5d4382;stroke-width:1;stroke-linejoin:round}
+.send-rocket .rocket-flame{fill:#ffcf91;stroke:#e88d75;stroke-width:1;stroke-linecap:round;stroke-linejoin:round;transform-origin:12px 23px;animation:rocket-flame-flicker .22s ease-in-out infinite alternate}
+.send.send-orb.is-thinking .send-rocket{transform:translate(38px,-42px) rotate(48deg) scale(.62);opacity:0;transition-duration:.58s}
+.send.send-orb.is-thinking .send-orb-thinking{opacity:1}
+.send.send-orb .send-orb-thinking{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:3px;z-index:1;opacity:0;transition:opacity .18s ease}
+.send.send-orb .send-orb-thinking i{width:4px;height:4px;border-radius:50%;background:#35244d;animation:send-orb-pulse .9s ease-in-out infinite}
+.send.send-orb .send-orb-thinking i:nth-child(2){animation-delay:.15s}
+.send.send-orb .send-orb-thinking i:nth-child(3){animation-delay:.3s}
+@keyframes rocket-flame-flicker{from{transform:scale(.78) rotate(-8deg);opacity:.75}to{transform:scale(1.18) rotate(8deg);opacity:1}}
+@media(prefers-reduced-motion:reduce){.send.send-orb .send-rocket,.send.send-orb .send-orb-thinking{transition:none!important}.send-rocket .rocket-flame{animation:none!important}.send.send-orb.is-thinking .send-rocket{transform:none;opacity:1}}
