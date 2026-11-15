@@ -19,7 +19,7 @@ const starters = [
   "Help me design an app or website",
 ];
 
-export default function Home({ userEmail = "" }) {
+export default function Home({ userEmail = "", aiEnabled = false }) {
   const router = useRouter();
   const [mode, setMode] = useState("solve");
   const [prompt, setPrompt] = useState("");
@@ -47,7 +47,7 @@ export default function Home({ userEmail = "" }) {
   async function submitPrompt(event) {
     event.preventDefault();
     const text = prompt.trim();
-    if (!text || busy) return;
+    if (!text || busy || !aiEnabled) return;
 
     setPrompt("");
     setError("");
@@ -128,8 +128,10 @@ export default function Home({ userEmail = "" }) {
 
         <div className="welcome">
           <div className="eyebrow"><span /> YOUR THINKING SPACE</div>
-          <h1>Good ideas start<br /><em>somewhere.</em></h1>
-          <p>Bring a question, a challenge, or an idea.<br className="desktop-break" /> We’ll shape the next step together.</p>
+          {!messages.length && <>
+            <h1>Good ideas start<br /><em>somewhere.</em></h1>
+            <p>Bring a question, a challenge, or an idea.<br className="desktop-break" /> We’ll shape the next step together.</p>
+          </>}
 
           <div className="mode-row" role="tablist" aria-label="Choose a mode">
             {modes.map((item) => (
@@ -155,17 +157,17 @@ export default function Home({ userEmail = "" }) {
           <form className="composer" onSubmit={submitPrompt}>
             <label className="sr-only" htmlFor="prompt">What would you like to work on?</label>
             <textarea id="prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)}
-              placeholder="What would you like to work on today?" rows={3} disabled={busy} />
+              placeholder={aiEnabled ? "What would you like to work on today?" : "Aahana is preparing its AI connection…"} rows={3} disabled={busy || !aiEnabled} />
             <div className="composer-footer">
               <span className="composer-mode">{modes.find((item) => item.id === mode)?.hint}</span>
-              <button className="send" type="submit" disabled={!prompt.trim() || busy} aria-label="Submit prompt">{busy ? "…" : "↑"}</button>
+              <button className="send" type="submit" disabled={!prompt.trim() || busy || !aiEnabled} aria-label="Submit prompt">{busy ? "…" : "↑"}</button>
             </div>
           </form>
           {error && <div className="notice error-notice" role="alert">{error}</div>}
           {usage && <div className="notice">Today: {usage.used} of {usage.limit} AI requests used.</div>}
           {!messages.length && (
             <>
-              <div className="notice">Your workspace is ready. Send a prompt to begin.</div>
+              <div className="notice">{aiEnabled ? "Your workspace is ready. Send a prompt to begin." : "Your workspace is ready. AI activation is pending billing and connection checks. Prompts are not sent yet."}</div>
               <div className="starter-grid">
                 {starters.map((item, index) => (
                   <button className="starter" type="button" key={item} onClick={() => setPrompt(item)}>
