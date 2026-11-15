@@ -176,12 +176,18 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   }
 
   async function openFile(id) {
+    const fileTab = window.open("about:blank", "_blank");
+    if (!fileTab) {
+      setFilesError("Allow pop-ups to open files in a new tab.");
+      return;
+    }
     try {
       const response = await fetch(`/api/files/${encodeURIComponent(id)}`);
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || "Could not open file.");
-      window.open(result.url, "_blank", "noopener,noreferrer");
+      fileTab.location.href = result.url;
     } catch (err) {
+      fileTab.close();
       setFilesError(err.message || "Could not open file.");
     }
   }
