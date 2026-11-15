@@ -192,7 +192,7 @@ export async function POST(request) {
       body: JSON.stringify({
         model: image && isGroq ? (process.env.AAHANA_VISION_MODEL || "qwen/qwen3.8-27b") : model,
         stream: true,
-        ...(isGroq ? { max_completion_tokens: 1200 } : { max_tokens: 1200 }),
+        ...(isGroq ? { max_completion_tokens: 4096 } : { max_tokens: 4096 }),
         messages: [
           { role: "system", content: systemPrompt },
           ...context,
