@@ -28,6 +28,10 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [usage, setUsage] = useState(null);
+  const [history, setHistory] = useState([]);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState("");
 
   async function signOut() {
     const supabase = createClient();
@@ -42,6 +46,44 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     setConversationId(null);
     setError("");
     setUsage(null);
+    setMode("solve");
+  }
+
+  async function toggleHistory() {
+    const nextOpen = !historyOpen;
+    setHistoryOpen(nextOpen);
+    if (!nextOpen || history.length) return;
+    setHistoryLoading(true);
+    setHistoryError("");
+    try {
+      const response = await fetch("/api/conversations");
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Could not load history.");
+      setHistory(result.conversations || []);
+    } catch (err) {
+      setHistoryError(err.message || "Could not load history.");
+    } finally {
+      setHistoryLoading(false);
+    }
+  }
+
+  async function openConversation(id) {
+    if (busy) return;
+    setHistoryError("");
+    try {
+      const response = await fetch(`/api/conversations/${encodeURIComponent(id)}`);
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Could not open conversation.");
+      setConversationId(result.conversation.id);
+      setMode(result.conversation.mode || "solve");
+      setMessages((result.messages || []).map(({ role, content }) => ({ role, content })));
+      setPrompt("");
+      setError("");
+      setUsage(null);
+      setHistoryOpen(false);
+    } catch (err) {
+      setHistoryError(err.message || "Could not open conversation.");
+    }
   }
 
   async function submitPrompt(event) {
@@ -91,6 +133,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       setMessages((current) => current.map((item, index) =>
         index === current.length - 1 ? { ...item, content: answer || "I couldn't generate a response. Please try again." } : item
       ));
+      setHistory([]);
     } catch (err) {
       setMessages((current) => current.filter((item, index) => !(index === current.length - 1 && item.role === "assistant" && !item.content)));
       setError(err.message || "Something went wrong. Please try again.");
@@ -111,7 +154,20 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         </button>
         <div className="side-label">WORKSPACE</div>
         <div className="side-item active">✳ <span>Assistant</span></div>
-        <div className="side-item muted">◷ <span>History</span></div>
+        <button className={historyOpen ? "side-item active history-toggle" : "side-item muted history-toggle"} type="button" onClick={toggleHistory}>◷ <span>History</span></button>
+        {historyOpen && (
+          <div className="history-list">
+            {historyLoading && <div className="history-empty">Loading conversations…</div>}
+            {historyError && <div className="history-empty history-error">{historyError}</div>}
+            {!historyLoading && !historyError && history.length === 0 && <div className="history-empty">No saved conversations yet.</div>}
+            {history.map((item) => (
+              <button className={conversationId === item.id ? "history-entry selected" : "history-entry"} type="button" key={item.id} onClick={() => openConversation(item.id)}>
+                <span>{item.title || "New conversation"}</span>
+                <small>{item.mode}</small>
+              </button>
+            ))}
+          </div>
+        )}
         <div className="side-item muted">▧ <span>Projects</span></div>
         <div className="sidebar-bottom">
           <div className="avatar">A</div>
