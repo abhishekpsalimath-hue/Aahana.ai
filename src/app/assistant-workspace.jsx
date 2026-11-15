@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 
 const modes = [
   { id: "solve", label: "Solve", hint: "Work through a problem" },
@@ -17,9 +19,17 @@ const starters = [
   "Help me design an app or website",
 ];
 
-export default function Home() {
+export default function Home({ userEmail = "" }) {
+  const router = useRouter();
   const [mode, setMode] = useState("solve");
   const [prompt, setPrompt] = useState("");
+
+  async function signOut() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.replace("/login");
+    router.refresh();
+  }
 
   function submitPrompt(event) {
     event.preventDefault();
@@ -45,7 +55,8 @@ export default function Home() {
         <div className="side-item muted">▧ <span>Projects</span></div>
         <div className="sidebar-bottom">
           <div className="avatar">A</div>
-          <div><strong>Your workspace</strong><small>Personal</small></div>
+          <div className="account-copy"><strong>Your workspace</strong><small>{userEmail || "Personal"}</small></div>
+          <button className="sign-out" type="button" onClick={signOut}>Sign out</button>
         </div>
       </aside>
 
