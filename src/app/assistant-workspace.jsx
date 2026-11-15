@@ -20,7 +20,12 @@ const starters = [
 ];
 
 function evaluateArithmetic(input) {
-  const compact = input.replace(/\s+/g, "");
+  const normalized = input
+    .trim()
+    .replace(/^(?:what\s+is|calculate|compute|solve|how\s+much\s+is)\s+/i, "")
+    .replace(/[?=]+\s*$/, "")
+    .trim();
+  const compact = normalized.replace(/\s+/g, "");
   if (!compact || !/[+*/%()-]/.test(compact) || !/^[0-9.+*/%()\-]+$/.test(compact)) return null;
   const tokens = compact.match(/(?:\d+(?:\.\d*)?|\.\d+)|[()+*/%-]/g) || [];
   if (tokens.join("") !== compact) return null;
