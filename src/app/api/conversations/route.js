@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
-export async function GET() {
+export async function GET(request) {
   const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
 
@@ -9,13 +9,15 @@ export async function GET() {
     return NextResponse.json({ error: "Please sign in." }, { status: 401 });
   }
 
-  const { data, error } = await supabase
+  const { searchParams } = new URL(request.url);
+  const projectId = searchParams.get("projectId");
+  let query = supabase
     .from("conversations")
-    .select("id, title, mode, created_at, updated_at")
+    .select("id, title, mode, project_id, created_at, updated_at")
     .eq("user_id", user.id)
-    .eq("is_archived", false)
-    .order("updated_at", { ascending: false })
-    .limit(50);
+    .eq("is_archived", false);
+  if (projectId) query = query.eq("project_id", projectId);
+  const { data, error } = await query.order("updated_at", { ascending: false }).limit(50);
 
   if (error) {
     console.error("Aahana history load failed:", error.message);
