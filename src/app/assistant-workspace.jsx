@@ -86,6 +86,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       if (!response.ok) throw new Error(result.error || "Could not open conversation.");
       setConversationId(result.conversation.id);
       setSelectedProjectId(result.conversation.project_id || null);
+      setHistory([]);
       setMode(result.conversation.mode || "solve");
       setMessages((result.messages || []).map(({ role, content }) => ({ role, content })));
       setPrompt("");
