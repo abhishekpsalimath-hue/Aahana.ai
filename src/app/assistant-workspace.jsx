@@ -709,7 +709,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                       </div>
                     )}
                   </div>
-                  <p>{item.content || (busy ? "Thinking…" : "")}</p>
+                  {item.content ? <p>{item.content}</p> : busy && item.role === "assistant" ? <div className="thinking-indicator" role="status" aria-label="Aahana is thinking"><span /><span /><span /><small>Aahana is thinking</small></div> : null}
                 </article>
               ))}
             </div>
