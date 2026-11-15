@@ -570,7 +570,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                 <span title={file.original_filename}>{file.original_filename}</span>
                 <small>{file.mime_type}</small>
                 <div className="file-actions">
-                  {(["application/pdf", "text/plain", "text/markdown", "text/csv", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"].includes(file.mime_type)) ? (
+                  {(["application/pdf", "text/plain", "text/markdown", "text/csv", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"].includes(file.mime_type)) ? (
                     <button type="button" onClick={() => analyzeFile(file.id)} disabled={Boolean(analyzingFileId) || busy}>
                       {analyzingFileId === file.id ? "Reading…" : "Analyse"}
                     </button>
