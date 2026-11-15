@@ -19,6 +19,56 @@ const starters = [
   "Help me design an app or website",
 ];
 
+function evaluateArithmetic(input) {
+  const compact = input.replace(/\\s+/g, "");
+  if (!compact || !/[+*/%()-]/.test(compact) || !/^[0-9.+*/%()\\-]+$/.test(compact)) return null;
+  const tokens = compact.match(/(?:\\d+(?:\\.\\d*)?|\\.\\d+)|[()+*/%-]/g) || [];
+  if (tokens.join("") !== compact) return null;
+  let index = 0;
+  function primary() {
+    const token = tokens[index++];
+    if (token === "(") {
+      const value = expression();
+      if (tokens[index++] !== ")") throw new Error("Invalid expression");
+      return value;
+    }
+    const value = Number(token);
+    if (!token || !Number.isFinite(value)) throw new Error("Invalid number");
+    return value;
+  }
+  function unary() {
+    if (tokens[index] === "+") { index++; return unary(); }
+    if (tokens[index] === "-") { index++; return -unary(); }
+    return primary();
+  }
+  function term() {
+    let value = unary();
+    while (["*", "/", "%"].includes(tokens[index])) {
+      const operator = tokens[index++];
+      const next = unary();
+      if ((operator === "/" || operator === "%") && next === 0) throw new Error("Division by zero");
+      value = operator === "*" ? value * next : operator === "/" ? value / next : value % next;
+    }
+    return value;
+  }
+  function expression() {
+    let value = term();
+    while (tokens[index] === "+" || tokens[index] === "-") {
+      const operator = tokens[index++];
+      const next = term();
+      value = operator === "+" ? value + next : value - next;
+    }
+    return value;
+  }
+  try {
+    const result = expression();
+    if (index !== tokens.length || !Number.isFinite(result)) return null;
+    return Number.isInteger(result) ? String(result) : String(Number(result.toPrecision(12)));
+  } catch {
+    return null;
+  }
+}
+
 export default function Home({ userEmail = "", aiEnabled = false }) {
   const router = useRouter();
   const [mode, setMode] = useState("solve");
@@ -250,7 +300,22 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   async function submitPrompt(event) {
     event.preventDefault();
     const text = prompt.trim();
-    if (!text || busy || !aiEnabled) return;
+    if (!text || busy) return;
+
+    if (!aiEnabled) {
+      const calculation = evaluateArithmetic(text);
+      if (calculation === null) {
+        setError("The AI connection is not active yet. Basic arithmetic works offline; full AI answers are pending activation.");
+        return;
+      }
+      setPrompt("");
+      setError("");
+      setMessages((current) => [...current,
+        { role: "user", content: text },
+        { role: "assistant", content: calculation },
+      ]);
+      return;
+    }
 
     setPrompt("");
     setError("");
@@ -421,10 +486,10 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
             <label className="sr-only" htmlFor="prompt">What would you like to work on?</label>
             <textarea id="prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); } }}
-              placeholder={aiEnabled ? "What would you like to work on today?" : "Aahana is preparing its AI connection…"} rows={3} disabled={busy} />
+              placeholder={aiEnabled ? "What would you like to work on today?" : "Try a calculation, e.g. 2 + 2 (offline)"} rows={3} disabled={busy} />
             <div className="composer-footer">
               <span className="composer-mode">{modes.find((item) => item.id === mode)?.hint} · Enter to send · Shift + Enter for a new line</span>
-              <button className="send" type="submit" disabled={!prompt.trim() || busy || !aiEnabled} aria-label="Submit prompt">{busy ? "…" : "↑"}</button>
+              <button className="send" type="submit" disabled={!prompt.trim() || busy || (!aiEnabled && evaluateArithmetic(prompt.trim()) === null)} aria-label="Submit prompt">{busy ? "…" : "↑"}</button>
             </div>
           </form>
           {error && <div className="notice error-notice" role="alert">{error}</div>}
