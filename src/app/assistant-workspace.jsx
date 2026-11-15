@@ -117,6 +117,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   }
 
   function newConversation() {
+    if (busy) return;
     setPrompt("");
     setMessages([]);
     setConversationId(null);
@@ -263,7 +264,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
 
   async function createProject(event) {
     event.preventDefault();
-    if (!projectName.trim() || projectBusy) return;
+    if (busy || !projectName.trim() || projectBusy) return;
     setProjectBusy(true);
     setProjectsError("");
     try {
@@ -291,6 +292,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   }
 
   function selectProject(id) {
+    if (busy) return;
     setSelectedProjectId(id);
     setConversationId(null);
     setMessages([]);
@@ -302,6 +304,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   }
 
   async function archiveProject(id) {
+    if (busy) return;
     const response = await fetch(`/api/projects/${encodeURIComponent(id)}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "archived" }) });
     const result = await response.json().catch(() => ({}));
     if (!response.ok) { setProjectsError(result.error || "Could not archive project."); return; }
