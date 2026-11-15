@@ -121,13 +121,27 @@ export async function POST(request) {
     .select("role, content")
     .eq("conversation_id", conversationId)
     .eq("user_id", user.id)
-    .order("created_at", { ascending: true })
+    .order("created_at", { ascending: false })
     .limit(20);
 
   if (historyError || !history?.length) {
     await supabase.rpc("release_my_ai_request");
     return NextResponse.json({ error: "Could not load conversation context." }, { status: 500 });
   }
+
+  // Keep the most recent context, not the first 20 messages in a long conversation.
+  // Bound prompt size so older conversations cannot create unexpectedly large AI costs.
+  const context = [];
+  let contextCharacters = 0;
+  for (const item of history) {
+    if (contextCharacters >= 24000) break;
+    const content = String(item.content || "").slice(-Math.max(0, 24000 - contextCharacters));
+    if (content) {
+      context.push({ role: item.role, content });
+      contextCharacters += content.length;
+    }
+  }
+  context.reverse();
 
   const systemPrompt = [
     "You are Aahana, a thoughtful, capable general-purpose AI assistant.",
@@ -151,7 +165,7 @@ export async function POST(request) {
         max_tokens: 1200,
         messages: [
           { role: "system", content: systemPrompt },
-          ...history.map((item) => ({ role: item.role, content: item.content })),
+          ...context,
         ],
       }),
       signal: AbortSignal.timeout(45000),
