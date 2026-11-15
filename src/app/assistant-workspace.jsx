@@ -128,7 +128,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   }
 
   function newConversation() {
-    if (busy) return;
+    if (busy || imageGenerating) return;
     setPrompt("");
     setMessages([]);
     setConversationId(null);
@@ -347,7 +347,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   }
 
   function selectProject(id) {
-    if (busy) return;
+    if (busy || imageGenerating) return;
     setSelectedProjectId(id);
     setConversationId(null);
     setMessages([]);
@@ -395,7 +395,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   async function submitPrompt(event) {
     event.preventDefault();
     const text = prompt.trim();
-    if ((!text && !imageFile) || busy) return;
+    if ((!text && !imageFile) || busy || imageGenerating) return;
 
     if (isImageGenerationRequest(text)) {
       setPrompt("");
@@ -722,7 +722,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
               placeholder={aiEnabled ? "What would you like to work on today?" : "Try a calculation, e.g. 2 + 2 (offline)"} rows={3} disabled={busy} />
             <div className="composer-footer">
               <span className="composer-mode">{modes.find((item) => item.id === mode)?.hint} · Enter to send · Shift + Enter for a new line</span>
-              <button className="send" type="submit" disabled={(!prompt.trim() && !imageFile) || busy || (!aiEnabled && !imageFile && !isImageGenerationRequest(prompt.trim()) && evaluateArithmetic(prompt.trim()) === null)} aria-label="Submit prompt">{busy ? "…" : "↑"}</button>
+              <button className="send" type="submit" disabled={(!prompt.trim() && !imageFile) || busy || imageGenerating || (!aiEnabled && !imageFile && !isImageGenerationRequest(prompt.trim()) && evaluateArithmetic(prompt.trim()) === null)} aria-label="Submit prompt">{busy ? "…" : "↑"}</button>
             </div>
           </form>
           {error && <div className="notice error-notice" role="alert">{error}</div>}
