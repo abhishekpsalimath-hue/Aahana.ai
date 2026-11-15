@@ -16,26 +16,35 @@ export default function LoginPage() {
 
   async function submit(event) {
     event.preventDefault();
+    if (busy) return;
     setBusy(true);
     setMessage("");
-    const supabase = createClient();
-    const result = mode === "signin"
-      ? await supabase.auth.signInWithPassword({ email: email.trim(), password })
-      : await supabase.auth.signUp({
-          email: email.trim(),
-          password,
-          options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
-        });
+    try {
+      const supabase = createClient();
+      const result = mode === "signin"
+        ? await supabase.auth.signInWithPassword({ email: email.trim(), password })
+        : await supabase.auth.signUp({
+            email: email.trim(),
+            password,
+            options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+          });
 
-    if (result.error) {
-      setMessage(result.error.message);
-    } else if (mode === "signup" && !result.data.session) {
-      setMessage("Account request received. Check your email to confirm your account. If email delivery is delayed, wait before retrying.");
-    } else {
-      router.replace("/");
-      router.refresh();
+      if (result.error) {
+        const detail = result.error.message || "Please try again.";
+        setMessage(mode === "signup"
+          ? `We couldn't complete signup: ${detail}. If you see an email delivery error, wait before retrying.`
+          : detail);
+      } else if (mode === "signup" && !result.data.session) {
+        setMessage("Signup request accepted. Check your inbox and spam folder for the confirmation email. If it doesn't arrive, don't repeatedly submit; email delivery needs attention.");
+      } else {
+        router.replace("/");
+        router.refresh();
+      }
+    } catch (error) {
+      setMessage(error?.message || "Connection problem. Please check your internet and try again.");
+    } finally {
+      setBusy(false);
     }
-    setBusy(false);
   }
 
   return (
