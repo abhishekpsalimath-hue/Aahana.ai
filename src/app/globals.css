@@ -50,3 +50,21 @@ h1 em{font-style:normal;color:var(--lilac)}
 .footer span:first-child{letter-spacing:2px;color:#8c829e}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 @media(max-width:760px){.shell{grid-template-columns:1fr}.sidebar{position:relative;height:auto;border-right:0;border-bottom:1px solid var(--line);padding:15px 18px;flex-direction:row;align-items:center;justify-content:space-between}.new-chat{margin:0;padding:9px 11px;font-size:11px}.side-label,.side-item,.sidebar-bottom{display:none}.topbar{height:56px;padding:0 20px}.welcome{margin:62px auto 45px;width:calc(100% - 36px)}h1{letter-spacing:-2.5px}.starter-grid{grid-template-columns:1fr}.footer{padding:15px 20px}.desktop-break{display:none}}
+
+.auth-shell{min-height:100vh;display:grid;place-items:center;padding:28px;background:radial-gradient(ellipse at 50% 12%,#211a30 0%,#0b0a10 48%,#09090d 100%)}
+.auth-card{width:min(100%,430px);border:1px solid #30283b;background:#111017;border-radius:20px;padding:34px;box-shadow:0 28px 90px #0008}
+.auth-brand{margin-bottom:48px;padding:0}
+.auth-card h1{font-size:38px;letter-spacing:-1.8px;margin:20px 0 8px}
+.auth-copy{color:#a9a2b4;font-size:13px;line-height:1.7;margin:0 0 28px}
+.auth-form{display:flex;flex-direction:column;gap:10px}
+.auth-form label{font-size:12px;color:#c7bfd3;margin-top:7px}
+.auth-form input{width:100%;height:46px;border:1px solid #373140;border-radius:9px;background:#0b0a10;color:#f3f0f8;padding:0 13px;outline:none;font-size:13px}
+.auth-form input:focus{border-color:#9c80d4}
+.auth-form input::placeholder{color:#6f6879}
+.auth-submit{height:46px;border:0;border-radius:9px;background:#c4a7ff;color:#191321;font-weight:700;margin-top:12px}
+.auth-submit:disabled{opacity:.55;cursor:wait}
+.auth-message{font-size:12px;line-height:1.6;color:#d6c3ff;background:#211b2d;border:1px solid #45365b;border-radius:8px;padding:11px;margin:4px 0}
+.auth-switch{font-size:12px;text-align:center;color:#a7a0b0;margin:22px 0}
+.auth-switch button{border:0;background:none;color:#cfbaff;font-weight:600;padding:0 0 0 4px}
+.auth-legal{font-size:10px;color:#777183;text-align:center;line-height:1.6;margin:25px 0 0}
+@media(max-width:480px){.auth-card{padding:25px 21px}.auth-brand{margin-bottom:38px}}
