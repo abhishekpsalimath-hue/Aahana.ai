@@ -397,21 +397,6 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     const text = prompt.trim();
     if ((!text && !imageFile) || busy) return;
 
-    if (!aiEnabled) {
-      const calculation = evaluateArithmetic(text);
-      if (calculation === null) {
-        setError("The AI connection is not active yet. Basic arithmetic works offline; full AI answers are pending activation.");
-        return;
-      }
-      setPrompt("");
-      setError("");
-      setMessages((current) => [...current,
-        { role: "user", content: text },
-        { role: "assistant", content: calculation },
-      ]);
-      return;
-    }
-
     if (isImageGenerationRequest(text)) {
       setPrompt("");
       setError("");
@@ -444,6 +429,21 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       } finally {
         setImageGenerating(false);
       }
+      return;
+    }
+
+    if (!aiEnabled) {
+      const calculation = evaluateArithmetic(text);
+      if (calculation === null) {
+        setError("The AI connection is not active yet. Basic arithmetic works offline; full AI answers are pending activation.");
+        return;
+      }
+      setPrompt("");
+      setError("");
+      setMessages((current) => [...current,
+        { role: "user", content: text },
+        { role: "assistant", content: calculation },
+      ]);
       return;
     }
 
@@ -722,7 +722,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
               placeholder={aiEnabled ? "What would you like to work on today?" : "Try a calculation, e.g. 2 + 2 (offline)"} rows={3} disabled={busy} />
             <div className="composer-footer">
               <span className="composer-mode">{modes.find((item) => item.id === mode)?.hint} · Enter to send · Shift + Enter for a new line</span>
-              <button className="send" type="submit" disabled={(!prompt.trim() && !imageFile) || busy || (!aiEnabled && !imageFile && evaluateArithmetic(prompt.trim()) === null)} aria-label="Submit prompt">{busy ? "…" : "↑"}</button>
+              <button className="send" type="submit" disabled={(!prompt.trim() && !imageFile) || busy || (!aiEnabled && !imageFile && !isImageGenerationRequest(prompt.trim()) && evaluateArithmetic(prompt.trim()) === null)} aria-label="Submit prompt">{busy ? "…" : "↑"}</button>
             </div>
           </form>
           {error && <div className="notice error-notice" role="alert">{error}</div>}
