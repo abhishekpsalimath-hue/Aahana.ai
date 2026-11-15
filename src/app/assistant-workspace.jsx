@@ -22,8 +22,14 @@ const starters = [
 function evaluateArithmetic(input) {
   const normalized = input
     .trim()
+    .toLowerCase()
     .replace(/^(?:what\s+is|calculate|compute|solve|how\s+much\s+is)\s+/i, "")
     .replace(/[?=]+\s*$/, "")
+    .replace(/multiplied\s+by|times|×/g, "*")
+    .replace(/divided\s+by|÷/g, "/")
+    .replace(/\bplus\b/g, "+")
+    .replace(/\bminus\b/g, "-")
+    .replace(/\bmodulo\b|\bmod\b/g, "%")
     .trim();
   const compact = normalized.replace(/\s+/g, "");
   if (!compact || !/[+*/%()-]/.test(compact) || !/^[0-9.+*/%()\-]+$/.test(compact)) return null;
