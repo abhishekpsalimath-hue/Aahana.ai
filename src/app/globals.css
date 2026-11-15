@@ -143,3 +143,37 @@ h1 em{font-style:normal;color:var(--lilac)}
 .file-row>button:first-child span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .file-row small{flex-shrink:0;color:#81798e;font-size:9px}
 @media(max-width:760px){.files-panel{width:calc(100% - 36px);margin:10px auto 0}.files-heading{gap:10px}}
+
+
+/* Input usability fixes */
+.composer textarea {
+  caret-color: var(--lilac);
+  cursor: text;
+  user-select: text;
+  -webkit-user-select: text;
+}
+.composer textarea:focus { outline: none; }
+.composer textarea:disabled { cursor: wait; }
+.password-field { position: relative; width: 100%; }
+.password-field input { padding-right: 76px; }
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 9px;
+  transform: translateY(-50%);
+  border: 1px solid #494056;
+  border-radius: 7px;
+  background: #191521;
+  color: #d6c5ff;
+  padding: 6px 9px;
+  font: inherit;
+  font-size: 11px;
+  line-height: 1.2;
+}
+.password-toggle:hover,
+.password-toggle:focus-visible {
+  border-color: #9c80d4;
+  color: #fff;
+  outline: 2px solid #9c80d455;
+  outline-offset: 2px;
+}
