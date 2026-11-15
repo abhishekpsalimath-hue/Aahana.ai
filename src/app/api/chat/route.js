@@ -52,7 +52,7 @@ export async function POST(request) {
   const prompt = typeof body?.message === "string" ? body.message.trim() : "";
   const image = body?.image && typeof body.image === "object" ? body.image : null;
   const imageDataUrl = typeof image?.dataUrl === "string" ? image.dataUrl : "";
-  const imageMatch = imageDataUrl.match(/^data:(image\\/(?:png|jpeg|webp));base64,([A-Za-z0-9+/=]+)$/);
+  const imageMatch = imageDataUrl.match(/^data:(image\/(?:png|jpeg|webp));base64,([A-Za-z0-9+/=]+)$/);
   if (image && (!imageMatch || imageDataUrl.length > 2_850_000)) {
     return NextResponse.json({ error: "Please attach one PNG, JPEG or WebP image under 2 MB." }, { status: 400 });
   }
@@ -110,7 +110,7 @@ export async function POST(request) {
     user_id: user.id,
     conversation_id: conversationId,
     role: "user",
-    content: image ? `${prompt}\\n[Image attached: ${imageMatch[1]}]` : prompt,
+    content: image ? `${prompt}\n[Image attached: ${imageMatch[1]}]` : prompt,
   }).select("id").single();
 
   if (messageError || !savedUserMessage) {
