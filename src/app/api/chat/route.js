@@ -134,7 +134,7 @@ export async function POST(request) {
 
   const { data: history, error: historyError } = await supabase
     .from("messages")
-    .select("role, content")
+    .select("id, role, content")
     .eq("conversation_id", conversationId)
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
@@ -153,7 +153,7 @@ export async function POST(request) {
     if (contextCharacters >= 24000) break;
     const content = String(item.content || "").slice(-Math.max(0, 24000 - contextCharacters));
     if (content) {
-      const isCurrentImageMessage = Boolean(image && item.role === "user" && content.includes("[Image attached:"));
+      const isCurrentImageMessage = Boolean(image && item.id === savedUserMessage.id);
       context.push({
         role: item.role,
         content: isCurrentImageMessage
