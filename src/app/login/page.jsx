@@ -7,14 +7,11 @@ import { createClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [mode, setMode] = useState("signin");
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState(
-    searchParams.get("error") ? "Your sign-in link could not be verified. Please try again." : ""
-  );
+  const [message, setMessage] = useState("");
 
   async function submit(event) {
     event.preventDefault();
