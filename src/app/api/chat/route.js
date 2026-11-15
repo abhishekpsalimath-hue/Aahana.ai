@@ -29,7 +29,11 @@ export async function POST(request) {
   const oidcToken = process.env.VERCEL_OIDC_TOKEN;
   const model = process.env.AAHANA_MODEL;
   if (!oidcToken || !model) {
-    return NextResponse.json({ error: "Aahana's AI connection is not configured yet." }, { status: 503 });
+    console.error("Aahana AI configuration missing:", { oidcTokenPresent: Boolean(oidcToken), modelPresent: Boolean(model) });
+    return NextResponse.json({
+      error: !oidcToken ? "Aahana's Vercel AI Gateway authentication token is missing." : "Aahana's AI model is not configured.",
+      code: !oidcToken ? "MISSING_GATEWAY_AUTH" : "MISSING_MODEL",
+    }, { status: 503 });
   }
 
   let body;
@@ -177,8 +181,25 @@ export async function POST(request) {
 
   if (!upstream.ok || !upstream.body) {
     await supabase.rpc("release_my_ai_request");
-    console.error("Aahana AI Gateway rejected request:", upstream.status);
-    return NextResponse.json({ error: gatewayError(upstream.status) }, { status: upstream.status === 429 ? 429 : 502 });
+    const gatewayRequestId = upstream.headers.get("x-request-id") || upstream.headers.get("x-vercel-id") || null;
+    const responseText = await upstream.text().catch(() => "");
+    const safeDetail = responseText.replace(/[\\r\\n\\t]+/g, " ").slice(0, 500);
+    console.error("Aahana AI Gateway rejected request:", {
+      status: upstream.status,
+      requestId: gatewayRequestId,
+      detail: safeDetail,
+    });
+    const code = upstream.status === 401 ? "GATEWAY_UNAUTHORIZED"
+      : upstream.status === 402 ? "GATEWAY_PAYMENT_REQUIRED"
+      : upstream.status === 403 ? "GATEWAY_FORBIDDEN"
+      : upstream.status === 429 ? "GATEWAY_RATE_LIMITED"
+      : "GATEWAY_UPSTREAM_ERROR";
+    return NextResponse.json({
+      error: gatewayError(upstream.status),
+      code,
+      gatewayStatus: upstream.status,
+      requestId: gatewayRequestId,
+    }, { status: upstream.status === 429 ? 429 : 502 });
   }
 
   const encoder = new TextEncoder();
