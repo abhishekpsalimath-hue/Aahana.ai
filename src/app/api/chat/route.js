@@ -74,14 +74,14 @@ export async function POST(request) {
     createdConversation = true;
   }
 
-  const { error: messageError } = await supabase.from("messages").insert({
+  const { data: savedUserMessage, error: messageError } = await supabase.from("messages").insert({
     user_id: user.id,
     conversation_id: conversationId,
     role: "user",
     content: prompt,
-  });
+  }).select("id").single();
 
-  if (messageError) {
+  if (messageError || !savedUserMessage) {
     if (createdConversation) await supabase.from("conversations").delete().eq("id", conversationId);
     return NextResponse.json({ error: "Could not save your message." }, { status: 500 });
   }
@@ -90,7 +90,7 @@ export async function POST(request) {
   const quotaRow = Array.isArray(quota) ? quota[0] : quota;
 
   if (quotaError || !quotaRow?.allowed) {
-    await supabase.from("messages").delete().eq("conversation_id", conversationId).eq("role", "user").eq("content", prompt).order?.("created_at");
+    await supabase.from("messages").delete().eq("id", savedUserMessage.id).eq("user_id", user.id);
     if (createdConversation) await supabase.from("conversations").delete().eq("id", conversationId);
     const used = quotaRow?.requests_used ?? DAILY_LIMIT;
     return NextResponse.json({
