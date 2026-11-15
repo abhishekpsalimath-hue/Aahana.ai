@@ -84,6 +84,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const router = useRouter();
   const [mode, setMode] = useState("solve");
   const [prompt, setPrompt] = useState("");
+  const [imageFile, setImageFile] = useState(null);
   const [messages, setMessages] = useState([]);
   const [copiedMessage, setCopiedMessage] = useState(null);
   const [conversationId, setConversationId] = useState(null);
@@ -340,7 +341,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   async function submitPrompt(event) {
     event.preventDefault();
     const text = prompt.trim();
-    if (!text || busy) return;
+    if ((!text && !imageFile) || busy) return;
 
     if (!aiEnabled) {
       const calculation = evaluateArithmetic(text);
@@ -360,15 +361,29 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     setPrompt("");
     setError("");
     setBusy(true);
-    const userMessage = { role: "user", content: text };
+    let imageDataUrl = null;
+    if (imageFile) {
+      imageDataUrl = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ""));
+        reader.onerror = () => reject(new Error("Could not read the selected image."));
+        reader.readAsDataURL(imageFile);
+      }).catch((err) => {
+        setError(err.message || "Could not read the selected image.");
+        return null;
+      });
+      if (!imageDataUrl) { setBusy(false); return; }
+    }
+    const userMessage = { role: "user", content: imageFile ? `${text || "Please identify this image."}\\n[Image attached: ${imageFile.name}]` : text };
     const assistantMessage = { role: "assistant", content: "" };
+    setImageFile(null);
     setMessages((current) => [...current, userMessage, assistantMessage]);
 
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text, mode, conversationId, projectId: selectedProjectId }),
+        body: JSON.stringify({ message: text || "Please identify and describe this image in detail.", image: imageDataUrl ? { dataUrl: imageDataUrl } : null, mode, conversationId, projectId: selectedProjectId }),
       });
 
       if (!response.ok) {
@@ -558,13 +573,30 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
           )}
 
           <form className="composer" onSubmit={submitPrompt}>
+            <label className="sr-only" htmlFor="image-upload">Attach an image for Aahana to identify or analyse</label>
+            <div className="image-attach-row">
+              <label className="image-attach">
+                + Add image
+                <input id="image-upload" type="file" accept="image/png,image/jpeg,image/webp" disabled={busy}
+                  onChange={(event) => {
+                    const file = event.target.files?.[0] || null;
+                    event.target.value = "";
+                    if (!file) return;
+                    if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) { setError("Choose a PNG, JPEG or WebP image."); return; }
+                    if (file.size > 2 * 1024 * 1024) { setError("Images must be 2 MB or smaller."); return; }
+                    setError("");
+                    setImageFile(file);
+                  }} />
+              </label>
+              {imageFile && <span className="image-attach-name">{imageFile.name} <button type="button" onClick={() => setImageFile(null)}>Remove</button></span>}
+            </div>
             <label className="sr-only" htmlFor="prompt">What would you like to work on?</label>
             <textarea id="prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); } }}
               placeholder={aiEnabled ? "What would you like to work on today?" : "Try a calculation, e.g. 2 + 2 (offline)"} rows={3} disabled={busy} />
             <div className="composer-footer">
               <span className="composer-mode">{modes.find((item) => item.id === mode)?.hint} · Enter to send · Shift + Enter for a new line</span>
-              <button className="send" type="submit" disabled={!prompt.trim() || busy || (!aiEnabled && evaluateArithmetic(prompt.trim()) === null)} aria-label="Submit prompt">{busy ? "…" : "↑"}</button>
+              <button className="send" type="submit" disabled={(!prompt.trim() && !imageFile) || busy || (!aiEnabled && !imageFile && evaluateArithmetic(prompt.trim()) === null)} aria-label="Submit prompt">{busy ? "…" : "↑"}</button>
             </div>
           </form>
           {error && <div className="notice error-notice" role="alert">{error}</div>}
