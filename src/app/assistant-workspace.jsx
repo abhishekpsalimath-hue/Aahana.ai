@@ -22,8 +22,27 @@ const starters = [
 function isImageGenerationRequest(value) {
   const text = String(value || "").trim();
   if (!text) return false;
-  return /\b(?:generate|create|draw|paint|illustrate|render|make)\b[\s\S]{0,100}\b(?:image|picture|illustration|artwork|portrait|wallpaper)\b/i.test(text)
-    || /\b(?:image|picture|illustration|artwork|portrait|wallpaper)\b[\s\S]{0,60}\b(?:of|showing|depicting)\b/i.test(text) && /\b(?:please|can you|could you|i want|make|create|generate|draw)\b/i.test(text);
+
+  // Explicit image-generation requests should always use the image API,
+  // even when the user names the subject rather than saying "image".
+  if (/\\b(?:generate|create|draw|paint|illustrate|render|make)\\b[\\s\\S]{0,140}\\b(?:image|picture|illustration|artwork|portrait|wallpaper|logo|poster|cover|banner|icon|thumbnail|scene|landscape|cityscape|character|diagram)\\b/i.test(text)) return true;
+  if (/\\b(?:show me|visuali[sz]e|turn this into|text[- ]to[- ]image)\\b/i.test(text) && /\\b(?:image|picture|art|illustration|render|visual)\\b/i.test(text)) return true;
+  if (/\\b(?:please|can you|could you|i want|i need)\\b[\\s\\S]{0,100}\\b(?:generate|create|draw|paint|illustrate|render|make)\\b/i.test(text) && /\\b(?:image|picture|art|visual|logo|poster|wallpaper)\\b/i.test(text)) return true;
+
+  // Users often paste a finished image prompt without an instruction.
+  // Require multiple image-prompt markers plus a visual subject to avoid
+  // routing ordinary descriptive or educational messages to image generation.
+  const visualMarkers = [
+    /\\bphotorealistic|ultra[- ]realistic\\b/i,
+    /\\b(?:cinematic|wide[- ]shot|close[- ]up|wide[- ]angle)\\b/i,
+    /\\b(?:volumetric lighting|depth of field|anamorphic|ray tracing)\\b/i,
+    /\\b(?:8k|4k|high[- ]detail|ultra[- ]detailed)\\b/i,
+    /\\b(?:negative prompt|aspect ratio|text[- ]to[- ]image)\\b/i,
+    /\\b(?:bioluminescent|neon lighting|dramatic lighting|realistic reflections)\\b/i,
+  ];
+  const markerCount = visualMarkers.filter((pattern) => pattern.test(text)).length;
+  const hasVisualSubject = /\\b(?:city|metropolis|landscape|ocean|underwater|space station|planet|portrait|character|architecture|skyscraper|forest|mountain|vehicle|spaceship|animal|interior|exterior|scene)\\b/i.test(text);
+  return text.length >= 100 && markerCount >= 2 && hasVisualSubject;
 }
 
 function evaluateArithmetic(input) {
