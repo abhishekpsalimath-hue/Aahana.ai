@@ -182,3 +182,6 @@ h1 em{font-style:normal;color:var(--lilac)}
 .message-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .copy-message{border:1px solid #383141;border-radius:6px;background:transparent;color:#a79bb9;padding:4px 8px;font-size:10px;cursor:pointer}
 .copy-message:hover{border-color:#79649b;color:#e8dcff}
+
+.message-actions{display:flex;align-items:center;gap:6px}
+@media print{.sidebar,.topbar,.composer,.footer,.mode-row,.message-actions{display:none!important}}
