@@ -50,6 +50,12 @@ export async function POST(request) {
   }
 
   const prompt = typeof body?.message === "string" ? body.message.trim() : "";
+  const image = body?.image && typeof body.image === "object" ? body.image : null;
+  const imageDataUrl = typeof image?.dataUrl === "string" ? image.dataUrl : "";
+  const imageMatch = imageDataUrl.match(/^data:(image\\/(?:png|jpeg|webp));base64,([A-Za-z0-9+/=]+)$/);
+  if (image && (!imageMatch || imageDataUrl.length > 2_850_000)) {
+    return NextResponse.json({ error: "Please attach one PNG, JPEG or WebP image under 2 MB." }, { status: 400 });
+  }
   const mode = ["solve", "create", "write", "build", "improve"].includes(body?.mode) ? body.mode : "solve";
   const requestedConversationId = typeof body?.conversationId === "string" ? body.conversationId : null;
   const requestedProjectId = typeof body?.projectId === "string" ? body.projectId : null;
@@ -104,7 +110,7 @@ export async function POST(request) {
     user_id: user.id,
     conversation_id: conversationId,
     role: "user",
-    content: prompt,
+    content: image ? `${prompt}\\n[Image attached: ${imageMatch[1]}]` : prompt,
   }).select("id").single();
 
   if (messageError || !savedUserMessage) {
@@ -147,7 +153,13 @@ export async function POST(request) {
     if (contextCharacters >= 24000) break;
     const content = String(item.content || "").slice(-Math.max(0, 24000 - contextCharacters));
     if (content) {
-      context.push({ role: item.role, content });
+      const isCurrentImageMessage = Boolean(image && item.role === "user" && content.includes("[Image attached:"));
+      context.push({
+        role: item.role,
+        content: isCurrentImageMessage
+          ? [{ type: "text", text: prompt }, { type: "image_url", image_url: { url: imageDataUrl } }]
+          : content,
+      });
       contextCharacters += content.length;
     }
   }
@@ -178,7 +190,7 @@ export async function POST(request) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model,
+        model: image && isGroq ? (process.env.AAHANA_VISION_MODEL || "qwen/qwen3.8-27b") : model,
         stream: true,
         ...(isGroq ? { max_completion_tokens: 1200 } : { max_tokens: 1200 }),
         messages: [
