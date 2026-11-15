@@ -12,7 +12,7 @@ export async function GET(_request, { params }) {
   const { id } = await params;
   const { data: conversation, error: conversationError } = await supabase
     .from("conversations")
-    .select("id, title, mode, created_at, updated_at")
+    .select("id, title, mode, project_id, created_at, updated_at")
     .eq("id", id)
     .eq("user_id", user.id)
     .eq("is_archived", false)
