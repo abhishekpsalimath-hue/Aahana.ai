@@ -179,8 +179,20 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       <section className="main-panel">
         <header className="topbar">
           <div className="breadcrumb">Workspace <span>/</span> Assistant</div>
-          <div className="top-actions">Private workspace</div>
+          <div className="top-actions"><button className="mobile-history-toggle" type="button" onClick={toggleHistory}>History</button><span>Private workspace</span></div>
         </header>
+        {historyOpen && (
+          <div className="mobile-history-panel">
+            {historyLoading && <div className="history-empty">Loading conversations…</div>}
+            {historyError && <div className="history-empty history-error">{historyError}</div>}
+            {!historyLoading && !historyError && history.length === 0 && <div className="history-empty">No saved conversations yet.</div>}
+            {history.map((item) => (
+              <button className="history-entry" type="button" key={item.id} onClick={() => openConversation(item.id)}>
+                <span>{item.title || "New conversation"}</span><small>{item.mode}</small>
+              </button>
+            ))}
+          </div>
+        )}
 
         <div className="welcome">
           <div className="eyebrow"><span /> YOUR THINKING SPACE</div>
