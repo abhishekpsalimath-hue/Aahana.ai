@@ -54,7 +54,8 @@ export async function POST(request) {
   if (parts.length !== 3 || !parts[2] || parts[1] !== (projectId || "personal")) return NextResponse.json({ error: "Invalid storage path." }, { status: 400 });
   const { data: objects, error: listError } = await supabase.storage.from(BUCKET)
     .list(`${parts[0]}/${parts[1]}`, { search: parts[2], limit: 10 });
-  const storedObject = objects?.find((item) => item.name === parts[2]);\n  if (listError || !storedObject || Number(storedObject.metadata?.size) !== sizeBytes || storedObject.metadata?.mimetype !== mimeType) {
+  const storedObject = objects?.find((item) => item.name === parts[2]);
+  if (listError || !storedObject || Number(storedObject.metadata?.size) !== sizeBytes || storedObject.metadata?.mimetype !== mimeType) {
     return NextResponse.json({ error: "Uploaded file could not be verified." }, { status: 400 });
   }
 
