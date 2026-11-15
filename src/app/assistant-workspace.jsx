@@ -312,6 +312,31 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     if (selectedProjectId === id) selectProject(null);
   }
 
+  function printAnswerAsPdf(answer) {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) {
+      setError("Allow pop-ups to create a PDF. Then choose Save as PDF in the print dialog.");
+      return;
+    }
+    const escaped = String(answer || "").replace(/[&<>"]/g, (character) => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;",
+    })[character]);
+    printWindow.document.open();
+    printWindow.document.write(`<!doctype html>
+      <html><head><meta charset="utf-8"><title>Aahana document</title>
+      <style>
+        body{font-family:Arial,sans-serif;color:#171717;max-width:800px;margin:40px auto;padding:0 28px;line-height:1.65}
+        h1{font-size:20px;margin-bottom:24px}pre{font:14px/1.7 Arial,sans-serif;white-space:pre-wrap;overflow-wrap:anywhere}
+        .footer{margin-top:36px;padding-top:12px;border-top:1px solid #ddd;color:#666;font-size:10px}
+        @page{size:A4;margin:18mm}
+        @media print{body{margin:0;max-width:none;padding:0}}
+      </style></head><body><h1>Aahana</h1><pre>${escaped}</pre>
+      <div class="footer">Prepared with Aahana AI</div>
+      <script>window.onload=()=>{window.focus();window.print();};</script>
+      </body></html>`);
+    printWindow.document.close();
+  }
+
   async function submitPrompt(event) {
     event.preventDefault();
     const text = prompt.trim();
@@ -513,14 +538,17 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                   <div className="message-heading">
                     <div className="message-role">{item.role === "user" ? "YOU" : "AAHANA"}</div>
                     {item.role === "assistant" && item.content && (
-                      <button className="copy-message" type="button" onClick={async () => {
-                        try {
-                          await navigator.clipboard.writeText(item.content);
-                          setCopiedMessage(index);
-                        } catch {
-                          setError("Could not copy this response. Please select the text and copy it manually.");
-                        }
-                      }} aria-label="Copy Aahana response">{copiedMessage === index ? "Copied" : "Copy"}</button>
+                      <div className="message-actions">
+                        <button className="copy-message" type="button" onClick={() => printAnswerAsPdf(item.content)} aria-label="Print or save Aahana response as PDF">Save PDF</button>
+                        <button className="copy-message" type="button" onClick={async () => {
+                          try {
+                            await navigator.clipboard.writeText(item.content);
+                            setCopiedMessage(index);
+                          } catch {
+                            setError("Could not copy this response. Please select the text and copy it manually.");
+                          }
+                        }} aria-label="Copy Aahana response">{copiedMessage === index ? "Copied" : "Copy"}</button>
+                      </div>
                     )}
                   </div>
                   <p>{item.content || (busy ? "Thinking…" : "")}</p>
