@@ -555,9 +555,8 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   return (
     <main className="shell">
       <aside className="sidebar">
-        <a className="brand" href="/" aria-label="Aahana home">
-          <span className="brand-mark">a</span>
-          <span> aahana</span>
+        <a className="brand" href="/" aria-label="Aahana AI home">
+          <span className="brand-word">Aahana</span><span className="brand-ai">AI</span>
         </a>
         <button className="new-chat" type="button" onClick={newConversation}>
           <span aria-hidden="true">＋</span> New conversation
@@ -667,6 +666,13 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         )}
 
         <div className="welcome">
+          <div className="welcome-signal" aria-hidden="true">
+            <span className="signal-orbit signal-orbit-one" />
+            <span className="signal-orbit signal-orbit-two" />
+            <span className="signal-core" />
+            <span className="signal-spark signal-spark-one" />
+            <span className="signal-spark signal-spark-two" />
+          </div>
           <div className="eyebrow"><span /> YOUR THINKING SPACE</div>
           {!messages.length && <>
             <h1>Good ideas start<br /><em>somewhere.</em></h1>
@@ -688,7 +694,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
               {messages.map((item, index) => (
                 <article className={item.role === "user" ? "chat-message user-message" : "chat-message assistant-message"} key={index}>
                   <div className="message-heading">
-                    <div className="message-role">{item.role === "user" ? "YOU" : "AAHANA"}</div>
+                    <div className="message-role">{item.role === "user" ? "YOU" : "Aahana"}</div>
                     {item.role === "assistant" && item.content && (
                       <div className="message-actions">
                         <button className="copy-message" type="button" onClick={() => printAnswerAsPdf(item.content)} aria-label="Print or save Aahana response as PDF">Save PDF</button>
@@ -746,7 +752,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
               placeholder={aiEnabled ? "What would you like to work on today?" : "Try a calculation, e.g. 2 + 2 (offline)"} rows={3} disabled={busy} />
             <div className="composer-footer">
               <span className="composer-mode">{modes.find((item) => item.id === mode)?.hint} · Enter to send · Shift + Enter for a new line</span>
-              <button className="send" type="submit" disabled={(!prompt.trim() && !imageFile) || busy || imageGenerating || (!aiEnabled && !imageFile && !isImageGenerationRequest(prompt.trim()) && evaluateArithmetic(prompt.trim()) === null)} aria-label="Submit prompt">{busy ? "…" : "↑"}</button>
+              <button className="send" type="submit" disabled={(!prompt.trim() && !imageFile) || busy || imageGenerating || (!aiEnabled && !imageFile && !isImageGenerationRequest(prompt.trim()) && evaluateArithmetic(prompt.trim()) === null)} aria-label="Ask Aahana">{busy ? <span className="send-working">Thinking</span> : <><span className="send-label">Ask Aahana</span><span className="send-arrow" aria-hidden="true">↗</span></>}</button>
             </div>
           </form>
           {error && <div className="notice error-notice" role="alert">{error}</div>}
@@ -766,7 +772,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
             </>
           )}
         </div>
-        <footer className="footer"><span>AAHANA</span><span>Thoughtfully made for what’s next.</span></footer>
+        <footer className="footer"><span>Aahana</span><span>Thoughtfully made for what’s next.</span></footer>
       </section>
     </main>
   );
