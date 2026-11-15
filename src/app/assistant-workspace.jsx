@@ -110,6 +110,8 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [fileBusy, setFileBusy] = useState(false);
   const [filesError, setFilesError] = useState("");
   const [analyzingFileId, setAnalyzingFileId] = useState(null);
+  const [imageGenerating, setImageGenerating] = useState(false);
+  const [generatedImage, setGeneratedImage] = useState(null);
 
   async function signOut() {
     const supabase = createClient();
@@ -273,6 +275,31 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       setFilesError(err.message || "Document analysis failed.");
     } finally {
       setAnalyzingFileId(null);
+    }
+  }
+
+  async function generateImage() {
+    const imagePrompt = prompt.trim();
+    if (!imagePrompt || imageGenerating || busy || imageFile) return;
+    setImageGenerating(true);
+    setError("");
+    setGeneratedImage(null);
+    try {
+      const response = await fetch("/api/images/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: imagePrompt }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Could not generate the image.");
+      if (typeof result.imageDataUrl !== "string" || !result.imageDataUrl.startsWith("data:image/jpeg;base64,")) {
+        throw new Error("The image provider returned an invalid image.");
+      }
+      setGeneratedImage({ dataUrl: result.imageDataUrl, prompt: imagePrompt });
+    } catch (err) {
+      setError(err.message || "Image generation failed.");
+    } finally {
+      setImageGenerating(false);
     }
   }
 
@@ -618,6 +645,15 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
 
           <form className="composer" onSubmit={submitPrompt}>
             <label className="sr-only" htmlFor="image-upload">Attach an image for Aahana to identify or analyse</label>
+            {generatedImage && (
+              <div className="generated-image-preview">
+                <img src={generatedImage.dataUrl} alt={generatedImage.prompt} style={{ display: "block", width: "100%", maxWidth: "640px", borderRadius: "14px" }} />
+                <div className="message-actions">
+                  <a className="copy-message" href={generatedImage.dataUrl} download="aahana-generated-image.jpg">Download image</a>
+                  <button className="copy-message" type="button" onClick={() => setGeneratedImage(null)}>Remove</button>
+                </div>
+              </div>
+            )}
             <div className="image-attach-row">
               <label className="image-attach">
                 + Add image
@@ -633,6 +669,10 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                   }} />
               </label>
               {imageFile && <span className="image-attach-name">{imageFile.name} <button type="button" onClick={() => setImageFile(null)}>Remove</button></span>}
+              <button className="copy-message" type="button" onClick={generateImage}
+                disabled={!prompt.trim() || imageGenerating || busy || Boolean(imageFile)}>
+                {imageGenerating ? "Creating image…" : "Generate image"}
+              </button>
             </div>
             <label className="sr-only" htmlFor="prompt">What would you like to work on?</label>
             <textarea id="prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)}
