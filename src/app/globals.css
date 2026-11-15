@@ -228,3 +228,13 @@ h1 em{font-style:normal;color:var(--lilac)}
 button:focus-visible,a:focus-visible{outline-color:#c4a7ff}
 @media(max-width:760px){.welcome-signal{width:70px;height:70px;margin-bottom:18px}.send{min-width:112px;height:40px;gap:9px;padding:0 11px 0 13px}}
 @media(prefers-reduced-motion:reduce){.signal-core,.signal-orbit-one,.signal-orbit-two,.signal-spark-one,.signal-spark-two{animation:none!important}.send,.send::before,.send-arrow{transition:none!important}}
+
+
+/* Live response activity */
+.thinking-indicator{display:flex;align-items:center;gap:6px;min-height:24px;color:#bca8e8;font-size:11px;letter-spacing:.15px}
+.thinking-indicator>span{width:5px;height:5px;border-radius:50%;background:#c4a7ff;box-shadow:0 0 9px #c4a7ff88;animation:thinking-pulse 1.15s ease-in-out infinite}
+.thinking-indicator>span:nth-child(2){animation-delay:.16s}
+.thinking-indicator>span:nth-child(3){animation-delay:.32s;margin-right:5px}
+.thinking-indicator small{font-size:11px;color:#a99abf}
+@keyframes thinking-pulse{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-4px);opacity:1}}
+@media(prefers-reduced-motion:reduce){.thinking-indicator>span{animation:none!important;opacity:1}}
