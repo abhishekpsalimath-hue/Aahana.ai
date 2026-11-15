@@ -85,6 +85,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [mode, setMode] = useState("solve");
   const [prompt, setPrompt] = useState("");
   const [messages, setMessages] = useState([]);
+  const [copiedMessage, setCopiedMessage] = useState(null);
   const [conversationId, setConversationId] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -372,7 +373,14 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       ));
       setHistory([]);
     } catch (err) {
-      setMessages((current) => current.filter((item, index) => !(index === current.length - 1 && item.role === "assistant" && !item.content)));
+      setMessages((current) => {
+        const last = current[current.length - 1];
+        if (last?.role !== "assistant") return current;
+        if (!last.content) return current.slice(0, -1);
+        return current.map((item, index) => index === current.length - 1
+          ? { ...item, content: item.content + "\n\n[Response interrupted. You can retry your request.]" }
+          : item);
+      });
       setError(err.message || "Something went wrong. Please try again.");
     } finally {
       setBusy(false);
@@ -486,7 +494,19 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
             <div className="conversation" aria-live="polite">
               {messages.map((item, index) => (
                 <article className={item.role === "user" ? "chat-message user-message" : "chat-message assistant-message"} key={index}>
-                  <div className="message-role">{item.role === "user" ? "YOU" : "AAHANA"}</div>
+                  <div className="message-heading">
+                    <div className="message-role">{item.role === "user" ? "YOU" : "AAHANA"}</div>
+                    {item.role === "assistant" && item.content && (
+                      <button className="copy-message" type="button" onClick={async () => {
+                        try {
+                          await navigator.clipboard.writeText(item.content);
+                          setCopiedMessage(index);
+                        } catch {
+                          setError("Could not copy this response. Please select the text and copy it manually.");
+                        }
+                      }} aria-label="Copy Aahana response">{copiedMessage === index ? "Copied" : "Copy"}</button>
+                    )}
+                  </div>
                   <p>{item.content || (busy ? "Thinking…" : "")}</p>
                 </article>
               ))}
