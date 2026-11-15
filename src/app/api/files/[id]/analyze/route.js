@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import pdfParse from "pdf-parse";
 import mammoth from "mammoth";
+import ExcelJS from "exceljs";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -9,6 +10,7 @@ export const maxDuration = 30;
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
 const MAX_EXTRACTED_CHARACTERS = 6500;
 const TEXT_TYPES = new Set(["text/plain", "text/markdown", "text/csv"]);
+const XLSX_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
 export async function POST(_request, { params }) {
   const { id } = await params;
@@ -26,9 +28,10 @@ export async function POST(_request, { params }) {
 
   const supported = TEXT_TYPES.has(file.mime_type) ||
     file.mime_type === "application/pdf" ||
-    file.mime_type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+    file.mime_type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+    file.mime_type === XLSX_TYPE;
   if (!supported) {
-    return NextResponse.json({ error: "Analysis currently supports PDF, DOCX, TXT, Markdown and CSV files. Images and spreadsheets can still be stored, but their document analysis is not enabled yet." }, { status: 415 });
+    return NextResponse.json({ error: "Analysis currently supports PDF, DOCX, XLSX, TXT, Markdown and CSV files. Image analysis for stored files is not enabled yet." }, { status: 415 });
   }
 
   const { data: blob, error: downloadError } = await supabase.storage.from(file.bucket_id).download(file.object_path);
@@ -47,6 +50,30 @@ export async function POST(_request, { params }) {
     } else if (file.mime_type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
       const parsed = await mammoth.extractRawText({ buffer });
       extracted = parsed.value || "";
+    } else if (file.mime_type === XLSX_TYPE) {
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(buffer);
+      const sections = [];
+      const sheets = workbook.worksheets.slice(0, 8);
+      for (const sheet of sheets) {
+        sections.push(`SHEET: ${sheet.name}`);
+        const rowLimit = Math.min(sheet.rowCount || 0, 200);
+        const columnLimit = Math.min(sheet.columnCount || 0, 30);
+        for (let rowNumber = 1; rowNumber <= rowLimit; rowNumber++) {
+          const row = sheet.getRow(rowNumber);
+          const values = [];
+          for (let columnNumber = 1; columnNumber <= columnLimit; columnNumber++) {
+            const cell = row.getCell(columnNumber);
+            const value = cell.text || (cell.value == null ? "" : String(cell.value));
+            values.push(value.replace(/[\\t\\r\\n]+/g, " ").trim());
+          }
+          if (values.some(Boolean)) sections.push(values.join(" | "));
+          if (sections.join("\\n").length > MAX_EXTRACTED_CHARACTERS * 2) break;
+        }
+        if (sections.join("\\n").length > MAX_EXTRACTED_CHARACTERS * 2) break;
+      }
+      if (workbook.worksheets.length > 8) sections.push("[Only the first 8 worksheets were included.]");
+      extracted = sections.join("\\n");
     } else {
       extracted = buffer.toString("utf8");
     }
