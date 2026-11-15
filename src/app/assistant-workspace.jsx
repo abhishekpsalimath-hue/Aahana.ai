@@ -570,9 +570,13 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                 <span title={file.original_filename}>{file.original_filename}</span>
                 <small>{file.mime_type}</small>
                 <div className="file-actions">
-                  <button type="button" onClick={() => analyzeFile(file.id)} disabled={Boolean(analyzingFileId) || busy}>
-                    {analyzingFileId === file.id ? "Reading…" : "Analyse"}
-                  </button>
+                  {(["application/pdf", "text/plain", "text/markdown", "text/csv", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"].includes(file.mime_type)) ? (
+                    <button type="button" onClick={() => analyzeFile(file.id)} disabled={Boolean(analyzingFileId) || busy}>
+                      {analyzingFileId === file.id ? "Reading…" : "Analyse"}
+                    </button>
+                  ) : (
+                    <span className="file-analysis-unavailable" title="Analysis for this file type is not available yet">Analysis unavailable</span>
+                  )}
                   <button type="button" onClick={() => openFile(file.id)}>Open</button>
                   <button type="button" onClick={() => deleteFile(file.id)}>Delete</button>
                 </div>
