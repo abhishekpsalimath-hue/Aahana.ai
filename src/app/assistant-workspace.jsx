@@ -752,7 +752,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
               placeholder={aiEnabled ? "What would you like to work on today?" : "Try a calculation, e.g. 2 + 2 (offline)"} rows={3} disabled={busy} />
             <div className="composer-footer">
               <span className="composer-mode">{modes.find((item) => item.id === mode)?.hint} · Enter to send · Shift + Enter for a new line</span>
-              <button className="send" type="submit" disabled={(!prompt.trim() && !imageFile) || busy || imageGenerating || (!aiEnabled && !imageFile && !isImageGenerationRequest(prompt.trim()) && evaluateArithmetic(prompt.trim()) === null)} aria-label="Ask Aahana">{busy ? <span className="send-working">Thinking</span> : <><span className="send-label">Ask Aahana</span><span className="send-arrow" aria-hidden="true">↗</span></>}</button>
+              <button className={`send send-orb${busy ? " is-thinking" : ""}`} type="submit" disabled={(!prompt.trim() && !imageFile) || busy || imageGenerating || (!aiEnabled && !imageFile && !isImageGenerationRequest(prompt.trim()) && evaluateArithmetic(prompt.trim()) === null)} aria-label={busy ? "Aahana is thinking" : "Send message"} title={busy ? "Aahana is thinking" : "Send message"}>{busy ? <span className="send-orb-thinking" aria-hidden="true"><i /><i /><i /></span> : <><span className="send-orb-halo" aria-hidden="true" /><span className="send-orb-core" aria-hidden="true">↗</span></>}</button>
             </div>
           </form>
           {error && <div className="notice error-notice" role="alert">{error}</div>}
