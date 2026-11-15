@@ -41,6 +41,11 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [projectDescription, setProjectDescription] = useState("");
   const [selectedProjectId, setSelectedProjectId] = useState(null);
   const [projectBusy, setProjectBusy] = useState(false);
+  const [filesOpen, setFilesOpen] = useState(false);
+  const [files, setFiles] = useState([]);
+  const [filesLoading, setFilesLoading] = useState(false);
+  const [fileBusy, setFileBusy] = useState(false);
+  const [filesError, setFilesError] = useState("");
 
   async function signOut() {
     const supabase = createClient();
@@ -114,6 +119,64 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     } finally {
       setProjectsLoading(false);
     }
+  }
+
+  async function toggleFiles() {
+    const nextOpen = !filesOpen;
+    setFilesOpen(nextOpen);
+    if (!nextOpen) return;
+    setFilesLoading(true);
+    setFilesError("");
+    try {
+      const query = selectedProjectId ? `?projectId=${encodeURIComponent(selectedProjectId)}` : "";
+      const response = await fetch(`/api/files${query}`);
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Could not load files.");
+      setFiles(result.files || []);
+    } catch (err) {
+      setFilesError(err.message || "Could not load files.");
+    } finally {
+      setFilesLoading(false);
+    }
+  }
+
+  async function uploadFile(event) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file || fileBusy) return;
+    setFileBusy(true);
+    setFilesError("");
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      if (selectedProjectId) form.append("projectId", selectedProjectId);
+      const response = await fetch("/api/files", { method: "POST", body: form });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Upload failed.");
+      setFiles((items) => [result.file, ...items]);
+    } catch (err) {
+      setFilesError(err.message || "Upload failed.");
+    } finally {
+      setFileBusy(false);
+    }
+  }
+
+  async function openFile(id) {
+    try {
+      const response = await fetch(`/api/files/${encodeURIComponent(id)}`);
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Could not open file.");
+      window.open(result.url, "_blank", "noopener,noreferrer");
+    } catch (err) {
+      setFilesError(err.message || "Could not open file.");
+    }
+  }
+
+  async function deleteFile(id) {
+    const response = await fetch(`/api/files/${encodeURIComponent(id)}`, { method: "DELETE" });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) { setFilesError(result.error || "Could not delete file."); return; }
+    setFiles((items) => items.filter((item) => item.id !== id));
   }
 
   async function createProject(event) {
@@ -247,6 +310,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
           </div>
         )}
         <button className={projectsOpen ? "side-item active project-toggle" : "side-item muted project-toggle"} type="button" onClick={toggleProjects}>▧ <span>Projects</span></button>
+        <button className={filesOpen ? "side-item active project-toggle" : "side-item muted project-toggle"} type="button" onClick={toggleFiles}>⌁ <span>Files</span></button>
         {projectsOpen && (
           <div className="project-list">
             {projectsLoading && <div className="history-empty">Loading projects…</div>}
