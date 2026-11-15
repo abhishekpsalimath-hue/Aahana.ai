@@ -109,6 +109,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [filesLoading, setFilesLoading] = useState(false);
   const [fileBusy, setFileBusy] = useState(false);
   const [filesError, setFilesError] = useState("");
+  const [analyzingFileId, setAnalyzingFileId] = useState(null);
 
   async function signOut() {
     const supabase = createClient();
@@ -253,6 +254,25 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     } catch (err) {
       fileTab.close();
       setFilesError(err.message || "Could not open file.");
+    }
+  }
+
+  async function analyzeFile(id) {
+    if (analyzingFileId || busy) return;
+    setAnalyzingFileId(id);
+    setFilesError("");
+    try {
+      const response = await fetch(`/api/files/${encodeURIComponent(id)}/analyze`, { method: "POST" });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Could not read this document.");
+      const instruction = `Please analyse the following uploaded document: ${result.filename}. Summarise its main points, explain important details, identify key facts and any action items, and answer in a clear structure. If the extracted text is incomplete, say so.\n\nDOCUMENT TEXT:\n`;
+      setMode("solve");
+      setPrompt(instruction + result.text);
+      setFilesError(result.truncated ? "Text extracted. The document is long, so only its first section is included. Send the prepared prompt to analyse it." : "Text extracted. Send the prepared prompt to analyse this document.");
+    } catch (err) {
+      setFilesError(err.message || "Document analysis failed.");
+    } finally {
+      setAnalyzingFileId(null);
     }
   }
 
@@ -471,6 +491,30 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         )}
         <button className={projectsOpen ? "side-item active project-toggle" : "side-item muted project-toggle"} type="button" onClick={toggleProjects}>▧ <span>Projects</span></button>
         <button className={filesOpen ? "side-item active project-toggle" : "side-item muted project-toggle"} type="button" onClick={toggleFiles}>⌁ <span>Files</span></button>
+        {filesOpen && (
+          <div className="history-list">
+            {filesLoading && <div className="history-empty">Loading files…</div>}
+            {filesError && <div className="history-empty history-error">{filesError}</div>}
+            {!filesLoading && files.length === 0 && <div className="history-empty">No uploaded files in this workspace yet.</div>}
+            {files.map((file) => (
+              <div className="history-entry" key={file.id}>
+                <span title={file.original_filename}>{file.original_filename}</span>
+                <small>{file.mime_type}</small>
+                <div className="file-actions">
+                  <button type="button" onClick={() => analyzeFile(file.id)} disabled={Boolean(analyzingFileId) || busy}>
+                    {analyzingFileId === file.id ? "Reading…" : "Analyse"}
+                  </button>
+                  <button type="button" onClick={() => openFile(file.id)}>Open</button>
+                  <button type="button" onClick={() => deleteFile(file.id)}>Delete</button>
+                </div>
+              </div>
+            ))}
+            <label className="project-add">
+              {fileBusy ? "Uploading…" : "＋ Upload file"}
+              <input type="file" hidden disabled={fileBusy} onChange={uploadFile} accept=".pdf,.txt,.md,.csv,.docx,.xlsx,.png,.jpg,.jpeg,.webp" />
+            </label>
+          </div>
+        )}
         {projectsOpen && (
           <div className="project-list">
             {projectsLoading && <div className="history-empty">Loading projects…</div>}
