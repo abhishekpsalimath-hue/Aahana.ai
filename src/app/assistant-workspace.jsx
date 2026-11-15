@@ -20,9 +20,9 @@ const starters = [
 ];
 
 function evaluateArithmetic(input) {
-  const compact = input.replace(/\\s+/g, "");
-  if (!compact || !/[+*/%()-]/.test(compact) || !/^[0-9.+*/%()\\-]+$/.test(compact)) return null;
-  const tokens = compact.match(/(?:\\d+(?:\\.\\d*)?|\\.\\d+)|[()+*/%-]/g) || [];
+  const compact = input.replace(/\s+/g, "");
+  if (!compact || !/[+*/%()-]/.test(compact) || !/^[0-9.+*/%()\-]+$/.test(compact)) return null;
+  const tokens = compact.match(/(?:\d+(?:\.\d*)?|\.\d+)|[()+*/%-]/g) || [];
   if (tokens.join("") !== compact) return null;
   let index = 0;
   function primary() {
