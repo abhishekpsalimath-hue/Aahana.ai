@@ -129,3 +129,6 @@ h1 em{font-style:normal;color:var(--lilac)}
   .mobile-project-panel form{display:flex;gap:7px}
   .mobile-project-panel form input{min-width:0;flex:1;border:1px solid #373140;border-radius:7px;background:#0b0a10;color:#f3f0f8;padding:8px;font-size:11px}
 }
+
+
+.assistant-nav{width:100%;border:0;background:transparent;text-align:left;font:inherit;cursor:pointer}
