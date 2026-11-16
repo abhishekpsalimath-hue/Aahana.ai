@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getServiceClient } from "@/lib/operations/server";
 import { buildExecutiveSystemPrompt } from "@/lib/executives/roles.mjs";
+import { isClaimedTaskValidForInternalAnalysis } from "@/lib/operations/execution-policy.mjs";
 
 export const runtime = "nodejs";
 export const maxDuration = 45;
@@ -83,6 +84,13 @@ export async function POST(request) {
   });
   if (claimError || !task) {
     return NextResponse.json({ error: "This task is not approved, is already running, or has reached its run limit." }, { status: 409 });
+  }
+
+  if (!isClaimedTaskValidForInternalAnalysis(task)) {
+    await service.rpc("aahana_block_failed_task", {
+      p_task_id: task.id, p_user_id: user.id, p_error: "The claimed task failed internal execution policy validation.",
+    });
+    return NextResponse.json({ error: "The task did not pass execution safety checks." }, { status: 409 });
   }
 
   try {
