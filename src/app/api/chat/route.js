@@ -15,7 +15,7 @@ function gatewayError(status, provider) {
 
 function shouldSearchWeb(prompt, image) {
   if (image) return false;
-  return /\\b(?:latest|currently|current|today|tonight|yesterday|this week|this month|recent|breaking|news|as of 20\\d{2}|right now|live update|search the web|web search|research|find sources|with sources|cite sources|citations|latest price|current price|new rules|recent studies|new research)\\b/i.test(prompt);
+  return /\b(?:latest|currently|current|today|tonight|yesterday|this week|this month|recent|breaking|news|as of 20\d{2}|right now|live update|search the web|web search|research|find sources|with sources|cite sources|citations|latest price|current price|new rules|recent studies|new research)\b/i.test(prompt);
 }
 
 export async function POST(request) {
@@ -241,7 +241,7 @@ export async function POST(request) {
             max_results: 5,
             include_answer: false,
             include_raw_content: false,
-            topic: /\\b(?:news|breaking|today|yesterday|this week)\\b/i.test(prompt) ? "news" : "general",
+            topic: /\b(?:news|breaking|today|yesterday|this week)\b/i.test(prompt) ? "news" : "general",
             country: "india",
           }),
           signal: AbortSignal.timeout(10000),
