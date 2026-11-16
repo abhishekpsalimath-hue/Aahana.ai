@@ -899,6 +899,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         )}
 
         <div className="welcome">
+          {!messages.length && <div className="cosmic-field" aria-hidden="true"><span className="cosmic-nebula" /><span className="cosmic-stars cosmic-stars-far" /><span className="cosmic-stars cosmic-stars-mid" /><span className="cosmic-stars cosmic-stars-near" /><span className="cosmic-core" /></div>}
           <div className="welcome-signal" aria-hidden="true">
             <span className="signal-orbit signal-orbit-one" />
             <span className="signal-orbit signal-orbit-two" />
