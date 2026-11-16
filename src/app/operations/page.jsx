@@ -17,6 +17,7 @@ export default function OperationsPage() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [runningTaskId, setRunningTaskId] = useState("");
   const [error, setError] = useState("");
   const [tasks, setTasks] = useState([]);
   const [events, setEvents] = useState([]);
@@ -160,6 +161,22 @@ export default function OperationsPage() {
     setBusy(false);
   }
 
+  async function runApprovedTask(id) {
+    setRunningTaskId(id); setError("");
+    try {
+      const response = await fetch("/api/operations/execute", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ taskId: id }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) setError(payload.error || "The task engine could not complete this task.");
+      else setTasks((current) => current.map((task) => task.id === id ? payload.task : task));
+    } catch {
+      setError("Could not connect to the task engine. Refresh the queue before retrying.");
+    } finally { setRunningTaskId(""); }
+  }
+
   async function taskAction(id, action) {
     setBusy(true); setError("");
     const response = await fetch("/api/operations", {
@@ -185,7 +202,7 @@ export default function OperationsPage() {
       <div className="ops-container">
         <section className="ops-hero">
           <div><div className="ops-eyebrow">SELF-OPERATIONS / V1</div><h1>Command Centre</h1><p>A private control room for reliability, executive tasks and decisions. Nothing executes without your approval.</p></div>
-          <div className="ops-live"><i /> Approval-gated mode</div>
+          <div className="ops-live"><i /> Approval-gated internal engine</div>
         </section>
 
         <section className="ops-metrics">
@@ -200,7 +217,7 @@ export default function OperationsPage() {
         <section className="ops-grid">
           <div className="ops-panel">
             <div className="ops-eyebrow">TASK INTAKE</div><h2>Create an executive task</h2>
-            <p className="ops-muted">Tasks start as proposals. Approval records your decision; it does not run an external action.</p>
+            <p className="ops-muted">Tasks start as proposals. Approval unlocks internal AI analysis only. External actions remain disabled.</p>
             <form onSubmit={createTask} className="ops-form">
               <label>Task title<input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={180} placeholder="e.g. Review research answer quality" required /></label>
               <label>Context<textarea value={description} onChange={(e) => setDescription(e.target.value)} maxLength={8000} rows={4} placeholder="What should be investigated or improved?" /></label>
@@ -266,7 +283,7 @@ export default function OperationsPage() {
         <section className="ops-section">
           <div className="ops-section-heading"><div><div className="ops-eyebrow">WORK QUEUE</div><h2>Executive tasks</h2></div><button className="ops-quiet" onClick={load}>Refresh</button></div>
           {error && <div className="ops-error" role="alert">{error}</div>}
-          {tasks.length === 0 ? <div className="ops-empty">No tasks yet. Add the first item for the executive team.</div> : <div className="ops-task-list">{tasks.map((task) => <article className="ops-task" key={task.id}><div className="ops-task-main"><div className="ops-task-top"><span className={"ops-status status-" + task.status}>{label(task.status)}</span><span className="ops-muted">{label(task.priority)} priority · {label(task.assigned_role)} AI</span></div><h3>{task.title}</h3>{task.description && <p>{task.description}</p>}<small>{new Date(task.created_at).toLocaleString()}</small></div><div className="ops-task-actions">{task.status === "proposed" && <button disabled={busy} onClick={() => taskAction(task.id, "approve")}>Approve</button>}{["proposed","approved","blocked"].includes(task.status) && <button className="ops-danger" disabled={busy} onClick={() => taskAction(task.id, "cancel")}>Cancel</button>}{["cancelled","blocked"].includes(task.status) && <button disabled={busy} onClick={() => taskAction(task.id, "reopen")}>Reopen</button>}</div></article>)}</div>}
+          {tasks.length === 0 ? <div className="ops-empty">No tasks yet. Add the first item for the executive team.</div> : <div className="ops-task-list">{tasks.map((task) => <article className="ops-task" key={task.id}><div className="ops-task-main"><div className="ops-task-top"><span className={"ops-status status-" + task.status}>{label(task.status)}</span><span className="ops-muted">{label(task.priority)} priority · {label(task.assigned_role)} AI</span></div><h3>{task.title}</h3>{task.description && <p>{task.description}</p>}<small>{new Date(task.created_at).toLocaleString()}</small></div><div className="ops-task-actions">{task.status === "proposed" && <button disabled={busy || !!runningTaskId} onClick={() => taskAction(task.id, "approve")}>Approve</button>}{task.status === "approved" && <button className="ops-primary" disabled={busy || !!runningTaskId} onClick={() => runApprovedTask(task.id)}>{runningTaskId === task.id ? "Running…" : "Run internal analysis"}</button>}{["proposed","approved","blocked"].includes(task.status) && <button className="ops-danger" disabled={busy || !!runningTaskId} onClick={() => taskAction(task.id, "cancel")}>Cancel</button>}{["cancelled","blocked"].includes(task.status) && <button disabled={busy || !!runningTaskId} onClick={() => taskAction(task.id, "reopen")}>Reopen</button>}</div>{task.execution_error && <div className="ops-execution-error">{task.execution_error}</div>}{task.execution_result?.output && <details className="ops-execution-result" open><summary>Internal deliverable · {label(task.execution_result.role)} AI</summary><pre>{task.execution_result.output}</pre><small>Generated {task.execution_result.generated_at ? new Date(task.execution_result.generated_at).toLocaleString() : "recently"} · No external actions performed</small></details>}</article>)}</div>}
         </section>
 
         <section className="ops-section">
