@@ -314,3 +314,7 @@ button:focus-visible,a:focus-visible{outline-color:#c4a7ff}
 @keyframes ambient-drift{from{background-position:0 0}to{background-position:190px 190px}}
 @media(max-width:760px){.main-panel::before{left:0;top:0;opacity:.08}}
 @media(prefers-reduced-motion:reduce){.main-panel::before{animation:none}}
+
+
+.ops-form .ops-context-consent{display:flex;align-items:center;gap:10px;padding:11px 12px;border:1px solid #343140;border-radius:9px;background:#111018;line-height:1.45}
+.ops-form .ops-context-consent input{width:16px;height:16px;flex:none;accent-color:#c4a7ff;margin:0}
