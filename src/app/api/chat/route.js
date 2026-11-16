@@ -369,7 +369,7 @@ export async function POST(request) {
     if (typeof researchReply !== "string" || !researchReply.trim()) {
       return NextResponse.json({ error: "Aahana could not generate a source-backed research answer. Please retry.", code: "RESEARCH_ANSWER_EMPTY" }, { status: 502 });
     }
-    const citationMatches = [...researchReply.matchAll(/\\[(\\d+)\\]\\((https:\\/\\/[^\\s)]+)\\)/g)];
+    const citationMatches = [...researchReply.matchAll(/\[(\d+)\]\((https:\/\/[^\s)]+)\)/g)];
     const citedUrls = citationMatches.map((match) => match[2]);
     const hasVerifiedCitation = citedUrls.some((url) => allowedResearchUrls.includes(url));
     if (!hasVerifiedCitation) {
