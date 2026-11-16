@@ -108,3 +108,4 @@ create index if not exists aahana_system_events_type_created_idx
 
 alter table public.aahana_system_events enable row level security;
 revoke all on public.aahana_system_events from anon, authenticated;
+grant select, insert on public.aahana_system_events to service_role;
