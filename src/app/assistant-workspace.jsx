@@ -21,7 +21,7 @@ const starters = [
 
 function renderAssistantContent(content) {
   const nodes = [];
-  const citationLink = /\\[([^\\]]+)\\]\\((https:\\/\\/[^\\s)]+)\\)/g;
+  const citationLink = /\[([^\]]+)\]\((https:\/\/[^\s)]+)\)/g;
   let lastIndex = 0;
   let match;
   let key = 0;
