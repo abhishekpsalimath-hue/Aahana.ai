@@ -15,7 +15,7 @@ function gatewayError(status, provider) {
 
 function shouldSearchWeb(prompt, image) {
   if (image) return false;
-  return /\b(?:latest|currently|current|today|tonight|yesterday|this week|this month|recent|breaking|news|as of 20\d{2}|right now|live update|search the web|web search|research|find sources|with sources|cite sources|citations|latest price|current price|new rules|recent studies|new research)\b/i.test(prompt);
+  return /\b(?:latest|currently|current|today|tonight|yesterday|this week|this month|recent|breaking|news|as of 20\d{2}|right now|live update|search the web|web search|research|find sources|with sources|cite sources|citations|latest price|current price|new rules|recent studies|new research)\b|ಇತ್ತೀಚಿನ|ಇಂದು|ಪ್ರಸ್ತುತ|ಸುದ್ದಿ|ಸಂಶೋಧನೆ|ಮೂಲಗಳೊಂದಿಗೆ|ವೆಬ್ ಹುಡುಕು|ताज़ा|आज|वर्तमान|समाचार|शोध|स्रोतों के साथ|वेब पर खोज|சமீபத்திய|இன்று|தற்போதைய|செய்தி|ஆராய்ச்சி|తాజా|నేడు|ప్రస్తుత|వార్తలు|పరిశోధన|ഏറ്റവും പുതിയ|ഇന്ന്|നിലവിലെ|വാർത്ത|ഗവേഷണം/i.test(prompt);
 }
 
 export async function POST(request) {
