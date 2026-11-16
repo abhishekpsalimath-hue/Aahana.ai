@@ -223,7 +223,7 @@ export default function OperationsPage() {
           <div className="ops-grid">
             <div className="ops-panel">
               <h2>What should the team analyse?</h2>
-              <p className="ops-muted">Three specialist reports are generated in parallel. The CEO reconciles them into one decision brief. Only the information you enter here is shared with the roles.</p>
+              <p className="ops-muted">Three specialist reports are generated in parallel. The CEO reconciles them into one decision brief. Only the objective and context you enter, plus any project records, documents or research you explicitly enable, are shared with the roles.</p>
               <form className="ops-form" onSubmit={runExecutiveBrief}>
                 <label>Objective<textarea rows={3} maxLength={4000} value={briefObjective} onChange={(e) => setBriefObjective(e.target.value)} placeholder="Example: Prepare a go-to-market strategy for Aahana's first 100 beta users." required /></label>
                 <label>Project label (optional)<input maxLength={120} value={briefProject} onChange={(e) => setBriefProject(e.target.value)} placeholder="Aahana AI" /></label>
