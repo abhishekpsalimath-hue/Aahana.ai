@@ -266,7 +266,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   }
 
   async function clearAllMemories() {
-    if (!memories.length || memoryBusy) return;
+    if (!memories.length || memoryBusy || !window.confirm("Delete every saved memory? This cannot be undone.")) return;
     setMemoryBusy(true);
     setMemoryError("");
     try {
