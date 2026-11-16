@@ -75,8 +75,9 @@ export async function DELETE(request) {
 
   const id = new URL(request.url).searchParams.get("id");
   if (!id) return NextResponse.json({ error: "A memory ID is required." }, { status: 400 });
-  const { error, count } = await supabase.from("user_memories").delete({ count: "exact" })
-    .eq("id", id).eq("user_id", user.id);
+  let deletion = supabase.from("user_memories").delete({ count: "exact" }).eq("user_id", user.id);
+  if (id !== "all") deletion = deletion.eq("id", id);
+  const { error, count } = await deletion;
   if (error) {
     console.error("Aahana memory delete failed:", error.message);
     return NextResponse.json({ error: "Could not delete this memory." }, { status: 500 });
