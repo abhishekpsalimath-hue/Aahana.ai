@@ -19,6 +19,36 @@ const starters = [
   "Help me design an app or website",
 ];
 
+function renderAssistantContent(content) {
+  const nodes = [];
+  const citationLink = /\[([^\]]+)\]\((https:\/\/[^\s)]+)\)/g;
+  let lastIndex = 0;
+  let match;
+  let key = 0;
+
+  while ((match = citationLink.exec(String(content || ""))) !== null) {
+    if (match.index > lastIndex) nodes.push(String(content).slice(lastIndex, match.index));
+    try {
+      const url = new URL(match[2]);
+      if (url.protocol === "https:") {
+        nodes.push(
+          <a key={key++} href={url.toString()} target="_blank" rel="noopener noreferrer">
+            {match[1]}
+          </a>
+        );
+      } else {
+        nodes.push(match[0]);
+      }
+    } catch {
+      nodes.push(match[0]);
+    }
+    lastIndex = citationLink.lastIndex;
+  }
+
+  if (lastIndex < String(content || "").length) nodes.push(String(content).slice(lastIndex));
+  return nodes;
+}
+
 function isImageGenerationRequest(value) {
   const text = String(value || "").trim();
   if (!text) return false;
@@ -114,7 +144,6 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [conversationId, setConversationId] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [usage, setUsage] = useState(null);
   const [history, setHistory] = useState([]);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -136,6 +165,151 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [analyzingFileId, setAnalyzingFileId] = useState(null);
   const [imageGenerating, setImageGenerating] = useState(false);
   const [generatedImage, setGeneratedImage] = useState(null);
+  const [memoryOpen, setMemoryOpen] = useState(false);
+  const [memoryEnabled, setMemoryEnabled] = useState(false);
+  const [memories, setMemories] = useState([]);
+  const [memoryDraft, setMemoryDraft] = useState("");
+  const [memoryCategory, setMemoryCategory] = useState("personal");
+  const [memoryLoading, setMemoryLoading] = useState(false);
+  const [memoryBusy, setMemoryBusy] = useState(false);
+  const [memoryError, setMemoryError] = useState("");
+  const [voiceLanguage, setVoiceLanguage] = useState("en-IN");
+  const [listening, setListening] = useState(false);
+  const [speakingMessage, setSpeakingMessage] = useState(null);
+  const voiceLanguages = [
+    ["en-IN","English (India)"],["kn-IN","Kannada"],["hi-IN","Hindi"],["ta-IN","Tamil"],["te-IN","Telugu"],["ml-IN","Malayalam"],["mr-IN","Marathi"],["bn-IN","Bengali"],["gu-IN","Gujarati"],["pa-IN","Punjabi"],["ur-IN","Urdu"],["or-IN","Odia"],["as-IN","Assamese"],["en-US","English (US)"],["en-GB","English (UK)"],["es-ES","Spanish"],["fr-FR","French"],["de-DE","German"],["pt-BR","Portuguese"],["ar-SA","Arabic"],["zh-CN","Chinese"],["ja-JP","Japanese"],["ko-KR","Korean"],["ru-RU","Russian"],["it-IT","Italian"]
+  ];
+
+  function startVoiceInput() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      setError("Voice input is not supported in this browser. Try a recent version of Chrome.");
+      return;
+    }
+    const recognition = new SpeechRecognition();
+    recognition.lang = voiceLanguage;
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognition.onstart = () => { setListening(true); setError(""); };
+    recognition.onresult = (event) => {
+      const transcript = event.results?.[0]?.[0]?.transcript || "";
+      if (transcript) setPrompt((current) => current ? current + " " + transcript : transcript);
+    };
+    recognition.onerror = () => setError("Voice recognition could not complete. Check microphone permission and try again.");
+    recognition.onend = () => setListening(false);
+    try { recognition.start(); } catch { setListening(false); setError("Voice input is already active. Please try again."); }
+  }
+
+  function speakResponse(text, index) {
+    if (!("speechSynthesis" in window)) {
+      setError("Spoken responses are not supported in this browser.");
+      return;
+    }
+    window.speechSynthesis.cancel();
+    if (speakingMessage === index) { setSpeakingMessage(null); return; }
+    const utterance = new SpeechSynthesisUtterance(String(text || ""));
+    utterance.lang = voiceLanguage;
+    const voices = window.speechSynthesis.getVoices();
+    const languagePrefix = voiceLanguage.split("-")[0].toLowerCase();
+    const matchingVoice = voices.find((voice) => voice.lang.toLowerCase() === voiceLanguage.toLowerCase())
+      || voices.find((voice) => voice.lang.toLowerCase().startsWith(languagePrefix));
+    if (matchingVoice) utterance.voice = matchingVoice;
+    utterance.onend = () => setSpeakingMessage(null);
+    utterance.onerror = () => setSpeakingMessage(null);
+    setSpeakingMessage(index);
+    window.speechSynthesis.speak(utterance);
+  }
+
+  async function toggleMemoryPanel() {
+    const opening = !memoryOpen;
+    setMemoryOpen(opening);
+    if (!opening) return;
+    setMemoryLoading(true);
+    setMemoryError("");
+    try {
+      const response = await fetch("/api/memories");
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Could not load private memory.");
+      setMemoryEnabled(result.enabled === true);
+      setMemories(result.memories || []);
+    } catch (err) {
+      setMemoryError(err.message || "Could not load private memory.");
+    } finally {
+      setMemoryLoading(false);
+    }
+  }
+
+  async function changeMemoryConsent(enabled) {
+    setMemoryBusy(true);
+    setMemoryError("");
+    try {
+      const response = await fetch("/api/memories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: enabled ? "enable" : "disable" }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Could not update memory settings.");
+      setMemoryEnabled(result.enabled === true);
+    } catch (err) {
+      setMemoryError(err.message || "Could not update memory settings.");
+    } finally {
+      setMemoryBusy(false);
+    }
+  }
+
+  async function saveMemory(event) {
+    event.preventDefault();
+    if (!memoryDraft.trim() || memoryBusy) return;
+    setMemoryBusy(true);
+    setMemoryError("");
+    try {
+      const response = await fetch("/api/memories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: memoryDraft.trim(), category: memoryCategory }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Could not save memory.");
+      setMemories((current) => [result.memory, ...current]);
+      setMemoryDraft("");
+    } catch (err) {
+      setMemoryError(err.message || "Could not save memory.");
+    } finally {
+      setMemoryBusy(false);
+    }
+  }
+
+  async function deleteMemory(id) {
+    setMemoryBusy(true);
+    setMemoryError("");
+    try {
+      const response = await fetch(`/api/memories?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Could not delete memory.");
+      setMemories((current) => current.filter((item) => item.id !== id));
+    } catch (err) {
+      setMemoryError(err.message || "Could not delete memory.");
+    } finally {
+      setMemoryBusy(false);
+    }
+  }
+
+  async function clearAllMemories() {
+    if (!memories.length || memoryBusy || !window.confirm("Delete every saved memory? This cannot be undone.")) return;
+    setMemoryBusy(true);
+    setMemoryError("");
+    try {
+      const response = await fetch("/api/memories?id=all", { method: "DELETE" });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Could not clear memories.");
+      setMemories([]);
+    } catch (err) {
+      setMemoryError(err.message || "Could not clear memories.");
+    } finally {
+      setMemoryBusy(false);
+    }
+  }
 
   async function signOut() {
     const supabase = createClient();
@@ -150,7 +324,6 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     setMessages([]);
     setConversationId(null);
     setError("");
-    setUsage(null);
     setMode("solve");
   }
 
@@ -187,7 +360,6 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       setMessages((result.messages || []).map(({ role, content }) => ({ role, content })));
       setPrompt("");
       setError("");
-      setUsage(null);
       setHistoryOpen(false);
     } catch (err) {
       setHistoryError(err.message || "Could not open conversation.");
@@ -375,7 +547,6 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     setHistory([]);
     setHistoryOpen(false);
     setError("");
-    setUsage(null);
   }
 
   async function archiveProject(id) {
@@ -515,9 +686,6 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
 
       const nextConversationId = response.headers.get("X-Conversation-Id");
       if (nextConversationId) setConversationId(nextConversationId);
-      const used = response.headers.get("X-Requests-Used");
-      const limit = response.headers.get("X-Requests-Limit");
-      if (used && limit) setUsage({ used: Number(used), limit: Number(limit) });
 
       if (!response.body) throw new Error("The response stream was unavailable.");
       const reader = response.body.getReader();
@@ -579,6 +747,39 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         )}
         <button className={projectsOpen ? "side-item active project-toggle" : "side-item muted project-toggle"} type="button" onClick={toggleProjects}>▧ <span>Projects</span></button>
         <button className={filesOpen ? "side-item active project-toggle" : "side-item muted project-toggle"} type="button" onClick={toggleFiles}>⌁ <span>Files</span></button>
+        <button className={memoryOpen ? "side-item active project-toggle" : "side-item muted project-toggle"} type="button" onClick={toggleMemoryPanel}>◉ <span>Private memory</span></button>
+        {memoryOpen && (
+          <div className="history-list memory-panel">
+            <div className="history-empty"><strong>Private memory</strong><br />Only used in your signed-in account. Off by default.</div>
+            {memoryLoading && <div className="history-empty">Loading memory…</div>}
+            <label className="history-entry memory-consent">
+              <input type="checkbox" checked={memoryEnabled} disabled={memoryBusy || memoryLoading}
+                onChange={(event) => changeMemoryConsent(event.target.checked)} />
+              <span>Allow Aahana to use saved memories in my chats</span>
+            </label>
+            {memoryEnabled && (
+              <form className="project-create-form" onSubmit={saveMemory}>
+                <textarea value={memoryDraft} onChange={(event) => setMemoryDraft(event.target.value)}
+                  maxLength={1200} rows={3} placeholder="Add a detail you want Aahana to remember…" aria-label="New private memory" />
+                <select value={memoryCategory} onChange={(event) => setMemoryCategory(event.target.value)} aria-label="Memory category">
+                  <option value="personal">Personal</option><option value="preference">Preference</option>
+                  <option value="project">Project</option><option value="goal">Goal</option><option value="other">Other</option>
+                </select>
+                <button type="submit" disabled={!memoryDraft.trim() || memoryBusy}>{memoryBusy ? "Saving…" : "Save memory"}</button>
+              </form>
+            )}
+            {memoryError && <div className="history-empty history-error">{memoryError}</div>}
+            {memoryEnabled && memories.length > 0 && <button className="project-add" type="button" disabled={memoryBusy} onClick={clearAllMemories}>Clear all saved memories</button>}
+            {memoryEnabled && memories.map((item) => (
+              <div className="history-entry" key={item.id}>
+                <span>{item.content}</span><small>{item.category}</small>
+                <div className="file-actions"><button type="button" disabled={memoryBusy} onClick={() => deleteMemory(item.id)}>Delete</button></div>
+              </div>
+            ))}
+            {memoryEnabled && !memoryLoading && memories.length === 0 && <div className="history-empty">No saved memories yet.</div>}
+            {!memoryEnabled && <div className="history-empty">Memory is off. Aahana will not retrieve saved memories.</div>}
+          </div>
+        )}
         {filesOpen && (
           <div className="history-list">
             {filesLoading && <div className="history-empty">Loading files…</div>}
@@ -641,7 +842,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       <section className="main-panel">
         <header className="topbar">
           <div className="breadcrumb">Workspace <span>/</span> {selectedProjectId ? (projects.find((item) => item.id === selectedProjectId)?.name || "Project") : "Assistant"}</div>
-          <div className="top-actions"><button className="mobile-history-toggle" type="button" onClick={toggleProjects}>Projects</button><button className="mobile-history-toggle" type="button" onClick={toggleHistory}>History</button><button className="mobile-history-toggle" type="button" onClick={toggleFiles}>Files</button><span>Private workspace</span></div>
+          <div className="top-actions"><button className="mobile-history-toggle" type="button" onClick={toggleProjects}>Projects</button><button className="mobile-history-toggle" type="button" onClick={toggleHistory}>History</button><button className="mobile-history-toggle" type="button" onClick={toggleFiles}>Files</button><button className="mobile-history-toggle" type="button" onClick={toggleMemoryPanel}>Memory</button><span>Private workspace</span></div>
         </header>
         {projectsOpen && (
           <div className="mobile-project-panel">
@@ -662,6 +863,38 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                 <span>{item.title || "New conversation"}</span><small>{item.mode}</small>
               </button>
             ))}
+          </div>
+        )}
+
+        {memoryOpen && (
+          <div className="mobile-history-panel memory-panel">
+            <div className="history-empty"><strong>Private memory</strong><br />Off by default. Only used in your signed-in account.</div>
+            {memoryLoading && <div className="history-empty">Loading memory…</div>}
+            <label className="history-entry memory-consent">
+              <input type="checkbox" checked={memoryEnabled} disabled={memoryBusy || memoryLoading}
+                onChange={(event) => changeMemoryConsent(event.target.checked)} />
+              <span>Allow Aahana to use saved memories in my chats</span>
+            </label>
+            {memoryEnabled && (
+              <form className="project-create-form" onSubmit={saveMemory}>
+                <textarea value={memoryDraft} onChange={(event) => setMemoryDraft(event.target.value)}
+                  maxLength={1200} rows={3} placeholder="Add a detail you want Aahana to remember…" aria-label="New private memory" />
+                <select value={memoryCategory} onChange={(event) => setMemoryCategory(event.target.value)} aria-label="Memory category">
+                  <option value="personal">Personal</option><option value="preference">Preference</option>
+                  <option value="project">Project</option><option value="goal">Goal</option><option value="other">Other</option>
+                </select>
+                <button type="submit" disabled={!memoryDraft.trim() || memoryBusy}>{memoryBusy ? "Saving…" : "Save memory"}</button>
+              </form>
+            )}
+            {memoryError && <div className="history-empty history-error">{memoryError}</div>}
+            {memoryEnabled && memories.length > 0 && <button className="project-add" type="button" disabled={memoryBusy} onClick={clearAllMemories}>Clear all saved memories</button>}
+            {memoryEnabled && memories.map((item) => (
+              <div className="history-entry" key={item.id}>
+                <span>{item.content}</span><small>{item.category}</small>
+                <div className="file-actions"><button type="button" disabled={memoryBusy} onClick={() => deleteMemory(item.id)}>Delete</button></div>
+              </div>
+            ))}
+            {!memoryEnabled && <div className="history-empty">Memory is off. Aahana will not retrieve saved memories.</div>}
           </div>
         )}
 
@@ -698,6 +931,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                     {item.role === "assistant" && item.content && (
                       <div className="message-actions">
                         <button className="copy-message" type="button" onClick={() => printAnswerAsPdf(item.content)} aria-label="Print or save Aahana response as PDF">Save PDF</button>
+                        <button className="copy-message" type="button" onClick={() => speakResponse(item.content, index)}>{speakingMessage === index ? "Stop voice" : "Listen"}</button>
                         <button className="copy-message" type="button" onClick={async () => {
                           try {
                             await navigator.clipboard.writeText(item.content);
@@ -709,7 +943,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                       </div>
                     )}
                   </div>
-                  {item.content ? <p>{item.content}</p> : busy && item.role === "assistant" ? <div className="thinking-indicator" role="status" aria-label="Aahana is thinking"><span /><span /><span /><small>Aahana is thinking</small></div> : null}
+                  {item.content ? <p>{renderAssistantContent(item.content)}</p> : busy && item.role === "assistant" ? <div className="thinking-indicator" role="status" aria-label="Aahana is thinking"><span /><span /><span /><small>Aahana is thinking</small></div> : null}
                 </article>
               ))}
             </div>
@@ -727,6 +961,8 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
               </div>
             )}
             <div className="image-attach-row">
+              <select aria-label="Voice language" value={voiceLanguage} onChange={(event) => setVoiceLanguage(event.target.value)} className="copy-message">{voiceLanguages.map(([code, label]) => <option key={code} value={code}>{label}</option>)}</select>
+              <button className="copy-message" type="button" onClick={startVoiceInput} disabled={listening || busy}>{listening ? "Listening…" : "Speak"}</button>
               <label className="image-attach">
                 + Add image
                 <input id="image-upload" type="file" accept="image/png,image/jpeg,image/webp" disabled={busy}
@@ -756,7 +992,6 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
             </div>
           </form>
           {error && <div className="notice error-notice" role="alert">{error}</div>}
-          {usage && <div className="notice">Today: {usage.used} of {usage.limit} AI requests used.</div>}
           {!messages.length && (
             <>
               <div className="notice">{aiEnabled ? "Your workspace is ready. Send a prompt to begin." : "Your workspace is ready. AI activation is pending billing and connection checks. Prompts are not sent yet."}</div>
