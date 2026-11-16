@@ -82,6 +82,7 @@ h1 em{font-style:normal;color:var(--lilac)}
 .assistant-message { align-self: flex-start; }
 .message-role { color: var(--lilac); font-size: 9px; font-weight: 700; letter-spacing: 1.5px; margin-bottom: 8px; }
 .chat-message p { margin: 0; color: #e7e2ee; font-size: 13px; line-height: 1.75; white-space: pre-wrap; overflow-wrap: anywhere; }
+.chat-message p a { color: #c8b4ff; text-decoration: underline; text-underline-offset: 3px; overflow-wrap: anywhere; }
 .error-notice { color: #ffb8c0; border: 1px solid #633b48; background: #25141a; border-radius: 9px; padding: 11px 13px; margin: 12px 0 24px; }
 .composer textarea:disabled { opacity: .65; cursor: wait; }
 
