@@ -73,6 +73,29 @@ function isImageGenerationRequest(value) {
   return text.length >= 100 && markerCount >= 2 && hasVisualSubject;
 }
 
+function inferSpeechLocale(text, preferredLocale = "en-IN") {
+  const value = String(text || "");
+  const has = (pattern) => pattern.test(value);
+  if (has(/\p{Script=Kannada}/u)) return "kn-IN";
+  if (has(/\p{Script=Tamil}/u)) return "ta-IN";
+  if (has(/\p{Script=Telugu}/u)) return "te-IN";
+  if (has(/\p{Script=Malayalam}/u)) return "ml-IN";
+  if (has(/\p{Script=Bengali}/u)) return "bn-IN";
+  if (has(/\p{Script=Gujarati}/u)) return "gu-IN";
+  if (has(/\p{Script=Gurmukhi}/u)) return "pa-IN";
+  if (has(/\p{Script=Oriya}/u)) return "or-IN";
+  if (has(/\p{Script=Devanagari}/u)) return /^(mr|ne|sa|kok)-/i.test(preferredLocale) ? preferredLocale : "hi-IN";
+  if (has(/[ぁ-ゟ゠-ヿ]/u)) return "ja-JP";
+  if (has(/\p{Script=Hangul}/u)) return "ko-KR";
+  if (has(/\p{Script=Han}/u)) return /^zh/i.test(preferredLocale) ? preferredLocale : "zh-CN";
+  if (has(/\p{Script=Cyrillic}/u)) return /^(uk|ru|bg|sr)-/i.test(preferredLocale) ? preferredLocale : "ru-RU";
+  if (has(/\p{Script=Arabic}/u)) return /^(ur|fa|ar)-/i.test(preferredLocale) ? preferredLocale : "ar-SA";
+  if (has(/\p{Script=Hebrew}/u)) return "he-IL";
+  if (has(/\p{Script=Thai}/u)) return "th-TH";
+  if (has(/\p{Script=Greek}/u)) return "el-GR";
+  return preferredLocale;
+}
+
 function evaluateArithmetic(input) {
   const normalized = input
     .trim()
@@ -174,10 +197,14 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [memoryBusy, setMemoryBusy] = useState(false);
   const [memoryError, setMemoryError] = useState("");
   const [voiceLanguage, setVoiceLanguage] = useState("en-IN");
+  const [autoSpeak, setAutoSpeak] = useState(true);
   const [listening, setListening] = useState(false);
   const [speakingMessage, setSpeakingMessage] = useState(null);
+  // Recognition and speech use the browser/device language packs. This list covers
+  // major Indian regional languages and widely used international locales.
   const voiceLanguages = [
-    ["en-IN","English (India)"],["kn-IN","Kannada"],["hi-IN","Hindi"],["ta-IN","Tamil"],["te-IN","Telugu"],["ml-IN","Malayalam"],["mr-IN","Marathi"],["bn-IN","Bengali"],["gu-IN","Gujarati"],["pa-IN","Punjabi"],["ur-IN","Urdu"],["or-IN","Odia"],["as-IN","Assamese"],["en-US","English (US)"],["en-GB","English (UK)"],["es-ES","Spanish"],["fr-FR","French"],["de-DE","German"],["pt-BR","Portuguese"],["ar-SA","Arabic"],["zh-CN","Chinese"],["ja-JP","Japanese"],["ko-KR","Korean"],["ru-RU","Russian"],["it-IT","Italian"]
+    ["kn-IN","ಕನ್ನಡ (Kannada)"],["hi-IN","हिन्दी (Hindi)"],["ta-IN","தமிழ் (Tamil)"],["te-IN","తెలుగు (Telugu)"],["ml-IN","മലയാളം (Malayalam)"],["mr-IN","मराठी (Marathi)"],["bn-IN","বাংলা (Bengali)"],["gu-IN","ગુજરાતી (Gujarati)"],["pa-IN","ਪੰਜਾਬੀ (Punjabi)"],["ur-IN","اردو (Urdu)"],["or-IN","ଓଡ଼ିଆ (Odia)"],["as-IN","অসমীয়া (Assamese)"],["ne-NP","नेपाली (Nepali)"],["sa-IN","संस्कृत (Sanskrit)"],["ks-IN","Kashmiri"],["sd-IN","Sindhi"],["kok-IN","Konkani"],["doi-IN","Dogri"],["mni-IN","Manipuri"],["brx-IN","Bodo"],
+    ["en-IN","English (India)"],["en-US","English (US)"],["en-GB","English (UK)"],["en-AU","English (Australia)"],["en-CA","English (Canada)"],["es-ES","Español (Spanish)"],["es-MX","Spanish (Mexico)"],["fr-FR","Français (French)"],["fr-CA","French (Canada)"],["de-DE","Deutsch (German)"],["pt-BR","Português (Brazil)"],["pt-PT","Portuguese (Portugal)"],["ar-SA","العربية (Arabic)"],["ar-EG","Arabic (Egypt)"],["zh-CN","中文 (Mandarin)"],["zh-TW","Chinese (Traditional)"],["yue-HK","Cantonese"],["ja-JP","日本語 (Japanese)"],["ko-KR","한국어 (Korean)"],["ru-RU","Русский (Russian)"],["it-IT","Italiano (Italian)"],["nl-NL","Nederlands (Dutch)"],["sv-SE","Swedish"],["no-NO","Norwegian"],["da-DK","Danish"],["fi-FI","Finnish"],["is-IS","Icelandic"],["pl-PL","Polish"],["cs-CZ","Czech"],["sk-SK","Slovak"],["hu-HU","Hungarian"],["ro-RO","Romanian"],["bg-BG","Bulgarian"],["el-GR","Greek"],["tr-TR","Türkçe (Turkish)"],["he-IL","עברית (Hebrew)"],["th-TH","ไทย (Thai)"],["vi-VN","Tiếng Việt (Vietnamese)"],["id-ID","Bahasa Indonesia"],["ms-MY","Bahasa Melayu"],["fil-PH","Filipino"],["sw-KE","Swahili"],["af-ZA","Afrikaans"],["uk-UA","Ukrainian"],["hr-HR","Croatian"],["sr-RS","Serbian"],["sl-SI","Slovenian"],["lt-LT","Lithuanian"],["lv-LV","Latvian"],["et-EE","Estonian"],["fa-IR","Persian"],["am-ET","Amharic"]
   ];
 
   function startVoiceInput() {
@@ -208,12 +235,17 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     window.speechSynthesis.cancel();
     if (speakingMessage === index) { setSpeakingMessage(null); return; }
     const utterance = new SpeechSynthesisUtterance(String(text || ""));
-    utterance.lang = voiceLanguage;
+    const speechLanguage = inferSpeechLocale(text, voiceLanguage);
+    utterance.lang = speechLanguage;
     const voices = window.speechSynthesis.getVoices();
-    const languagePrefix = voiceLanguage.split("-")[0].toLowerCase();
-    const matchingVoice = voices.find((voice) => voice.lang.toLowerCase() === voiceLanguage.toLowerCase())
+    const languagePrefix = speechLanguage.split("-")[0].toLowerCase();
+    const matchingVoice = voices.find((voice) => voice.lang.toLowerCase() === speechLanguage.toLowerCase())
       || voices.find((voice) => voice.lang.toLowerCase().startsWith(languagePrefix));
-    if (matchingVoice) utterance.voice = matchingVoice;
+    if (matchingVoice) {
+      utterance.voice = matchingVoice;
+    } else {
+      setError(`Your device has no installed speech voice for ${speechLanguage}. Text replies will still work; install that language's speech pack in device settings to hear it.`);
+    }
     utterance.onend = () => setSpeakingMessage(null);
     utterance.onerror = () => setSpeakingMessage(null);
     setSpeakingMessage(index);
@@ -704,6 +736,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       setMessages((current) => current.map((item, index) =>
         index === current.length - 1 ? { ...item, content: answer || "I couldn't generate a response. Please try again." } : item
       ));
+      if (autoSpeak && answer.trim()) speakResponse(answer, messages.length + 1);
       setHistory([]);
     } catch (err) {
       setMessages((current) => {
@@ -963,8 +996,12 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
               </div>
             )}
             <div className="image-attach-row">
-              <select aria-label="Voice language" value={voiceLanguage} onChange={(event) => setVoiceLanguage(event.target.value)} className="copy-message">{voiceLanguages.map(([code, label]) => <option key={code} value={code}>{label}</option>)}</select>
+              <select aria-label="Voice input language" value={voiceLanguage} onChange={(event) => setVoiceLanguage(event.target.value)} className="copy-message">{voiceLanguages.map(([code, label]) => <option key={code} value={code}>{label}</option>)}</select>
               <button className="copy-message" type="button" onClick={startVoiceInput} disabled={listening || busy}>{listening ? "Listening…" : "Speak"}</button>
+              <label className="copy-message" style={{display:"inline-flex",alignItems:"center",gap:6}}>
+                <input type="checkbox" checked={autoSpeak} onChange={(event) => setAutoSpeak(event.target.checked)} />
+                Auto-read replies (text stays visible)
+              </label>
               <label className="image-attach">
                 + Add image
                 <input id="image-upload" type="file" accept="image/png,image/jpeg,image/webp" disabled={busy}

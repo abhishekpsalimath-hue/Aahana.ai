@@ -352,3 +352,89 @@ button:focus-visible,a:focus-visible{outline-color:#c4a7ff}
 .ops-execution-error{grid-column:1/-1;margin-top:10px;padding:10px 12px;border:1px solid #70434b;border-radius:8px;color:#f2b6bd;background:#24171b;font-size:12px}
 .ops-task-actions .ops-primary{background:#d8c9ff;color:#211a2e;border:1px solid #d8c9ff}
 .ops-task-actions .ops-primary:disabled{opacity:.55;cursor:wait}
+
+
+/* Aahana cosmic arrival: visible, full-screen starfield on the empty welcome state. */
+.welcome{isolation:isolate;position:relative}
+.welcome .cosmic-field{
+  position:fixed;z-index:0;inset:72px 0 0 248px;overflow:hidden;pointer-events:none;
+  opacity:1;mask-image:radial-gradient(ellipse at 50% 48%,#000 0%,#000 58%,transparent 100%);
+  background:
+    radial-gradient(ellipse at 50% 48%,#a47be52b 0%,#57417e1b 24%,transparent 62%),
+    radial-gradient(ellipse at 22% 30%,#6c80bb16 0%,transparent 34%),
+    radial-gradient(ellipse at 78% 66%,#b68be51a 0%,transparent 38%);
+}
+.welcome .cosmic-field::before,
+.welcome .cosmic-field::after{
+  content:"";position:absolute;inset:-70%;border-radius:50%;
+  background-image:
+    radial-gradient(2px 2px at 8% 16%,#fff 98%,transparent),
+    radial-gradient(1px 1px at 18% 64%,#e8ddff 98%,transparent),
+    radial-gradient(1.5px 1.5px at 28% 35%,#fff 98%,transparent),
+    radial-gradient(1px 1px at 38% 82%,#cdb8ff 98%,transparent),
+    radial-gradient(2px 2px at 49% 23%,#fff 98%,transparent),
+    radial-gradient(1px 1px at 61% 71%,#fff 98%,transparent),
+    radial-gradient(1.5px 1.5px at 73% 42%,#e4d7ff 98%,transparent),
+    radial-gradient(1px 1px at 86% 17%,#fff 98%,transparent),
+    radial-gradient(1px 1px at 92% 79%,#d9c8ff 98%,transparent);
+  background-size:230px 230px,270px 270px,310px 310px,350px 350px,390px 390px,250px 250px,330px 330px,290px 290px,370px 370px;
+  background-position:center;background-repeat:repeat;will-change:transform,opacity;
+}
+.welcome .cosmic-field::before{animation:cosmic-warp 9s linear infinite;opacity:.72}
+.welcome .cosmic-field::after{animation:cosmic-warp 14s linear infinite reverse;opacity:.42;filter:blur(.25px)}
+.welcome .cosmic-field>span{position:absolute;display:block;pointer-events:none}
+.welcome .cosmic-nebula{
+  inset:8% 8%;filter:blur(32px);
+  background:
+    radial-gradient(ellipse at 50% 50%,#b99aff35 0%,#8666c51b 23%,transparent 62%),
+    radial-gradient(ellipse at 34% 42%,#6d83bd22 0%,transparent 42%),
+    radial-gradient(ellipse at 70% 58%,#c49be522 0%,transparent 45%);
+  animation:cosmic-nebula-bloom 10s ease-in-out infinite alternate;
+}
+.welcome .cosmic-stars{
+  inset:-45%;opacity:.65;will-change:transform,opacity;
+  background-image:
+    radial-gradient(2px 2px at 12% 18%,#fff 98%,transparent),
+    radial-gradient(1px 1px at 34% 62%,#e8ddff 98%,transparent),
+    radial-gradient(1.5px 1.5px at 57% 31%,#fff 98%,transparent),
+    radial-gradient(1px 1px at 78% 76%,#d9c8ff 98%,transparent),
+    radial-gradient(1px 1px at 91% 42%,#fff 98%,transparent);
+  background-size:220px 220px,270px 270px,310px 310px,350px 350px,390px 390px;
+  background-repeat:repeat;background-position:center;
+}
+.welcome .cosmic-stars-far{animation:cosmic-depth-far 16s linear infinite}
+.welcome .cosmic-stars-mid{animation:cosmic-depth-mid 9s linear infinite}
+.welcome .cosmic-stars-near{animation:cosmic-depth-near 5.5s linear infinite}
+.welcome .cosmic-core{top:48%;left:50%;width:min(66vw,700px);height:min(66vw,700px);transform:translate(-50%,-50%);background:radial-gradient(circle,#d1b9ff20 0%,#9b79df12 28%,transparent 68%);filter:blur(22px)}
+.welcome > :not(.cosmic-field){position:relative;z-index:1}
+@keyframes cosmic-warp{
+  0%{transform:translate3d(0,0,0) scale(.42) rotate(0deg);opacity:.08}
+  35%{opacity:.55}
+  100%{transform:translate3d(0,0,0) scale(2.25) rotate(18deg);opacity:0}
+}
+@keyframes cosmic-depth-far{
+  0%{transform:perspective(700px) rotateX(58deg) translate3d(0,-12%,0) scale(.42);opacity:.12}
+  100%{transform:perspective(700px) rotateX(58deg) translate3d(0,22%,0) scale(1.9);opacity:.72}
+}
+@keyframes cosmic-depth-mid{
+  0%{transform:perspective(600px) rotateX(58deg) translate3d(0,-15%,0) scale(.3);opacity:.08}
+  100%{transform:perspective(600px) rotateX(58deg) translate3d(0,28%,0) scale(2.2);opacity:.8}
+}
+@keyframes cosmic-depth-near{
+  0%{transform:perspective(500px) rotateX(58deg) translate3d(0,-18%,0) scale(.22);opacity:.05}
+  100%{transform:perspective(500px) rotateX(58deg) translate3d(0,34%,0) scale(2.8);opacity:.9}
+}
+@keyframes cosmic-nebula-bloom{
+  from{transform:scale(.82) rotate(-5deg);opacity:.55}
+  to{transform:scale(1.16) rotate(5deg);opacity:1}
+}
+@media(max-width:760px){
+  .welcome .cosmic-field{inset:56px 0 0 0;mask-image:radial-gradient(ellipse at 50% 42%,#000 0%,#000 54%,transparent 100%)}
+  .welcome .cosmic-nebula{inset:12% -18%}
+  .welcome .cosmic-stars{inset:-35%}
+}
+@media(prefers-reduced-motion:reduce){
+  .welcome .cosmic-field::before,.welcome .cosmic-field::after,
+  .welcome .cosmic-nebula,.welcome .cosmic-stars,.welcome .cosmic-core{animation:none!important}
+  .welcome .cosmic-stars{opacity:.38;transform:none}
+}
