@@ -135,6 +135,52 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [analyzingFileId, setAnalyzingFileId] = useState(null);
   const [imageGenerating, setImageGenerating] = useState(false);
   const [generatedImage, setGeneratedImage] = useState(null);
+  const [voiceLanguage, setVoiceLanguage] = useState("en-IN");
+  const [listening, setListening] = useState(false);
+  const [speakingMessage, setSpeakingMessage] = useState(null);
+  const voiceLanguages = [
+    ["en-IN","English (India)"],["kn-IN","Kannada"],["hi-IN","Hindi"],["ta-IN","Tamil"],["te-IN","Telugu"],["ml-IN","Malayalam"],["mr-IN","Marathi"],["bn-IN","Bengali"],["gu-IN","Gujarati"],["pa-IN","Punjabi"],["ur-IN","Urdu"],["or-IN","Odia"],["as-IN","Assamese"],["en-US","English (US)"],["en-GB","English (UK)"],["es-ES","Spanish"],["fr-FR","French"],["de-DE","German"],["pt-BR","Portuguese"],["ar-SA","Arabic"],["zh-CN","Chinese"],["ja-JP","Japanese"],["ko-KR","Korean"],["ru-RU","Russian"],["it-IT","Italian"]
+  ];
+
+  function startVoiceInput() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      setError("Voice input is not supported in this browser. Try a recent version of Chrome.");
+      return;
+    }
+    const recognition = new SpeechRecognition();
+    recognition.lang = voiceLanguage;
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognition.onstart = () => { setListening(true); setError(""); };
+    recognition.onresult = (event) => {
+      const transcript = event.results?.[0]?.[0]?.transcript || "";
+      if (transcript) setPrompt((current) => current ? current + " " + transcript : transcript);
+    };
+    recognition.onerror = () => setError("Voice recognition could not complete. Check microphone permission and try again.");
+    recognition.onend = () => setListening(false);
+    try { recognition.start(); } catch { setListening(false); setError("Voice input is already active. Please try again."); }
+  }
+
+  function speakResponse(text, index) {
+    if (!("speechSynthesis" in window)) {
+      setError("Spoken responses are not supported in this browser.");
+      return;
+    }
+    window.speechSynthesis.cancel();
+    if (speakingMessage === index) { setSpeakingMessage(null); return; }
+    const utterance = new SpeechSynthesisUtterance(String(text || ""));
+    utterance.lang = voiceLanguage;
+    const voices = window.speechSynthesis.getVoices();
+    const languagePrefix = voiceLanguage.split("-")[0].toLowerCase();
+    const matchingVoice = voices.find((voice) => voice.lang.toLowerCase() === voiceLanguage.toLowerCase())
+      || voices.find((voice) => voice.lang.toLowerCase().startsWith(languagePrefix));
+    if (matchingVoice) utterance.voice = matchingVoice;
+    utterance.onend = () => setSpeakingMessage(null);
+    utterance.onerror = () => setSpeakingMessage(null);
+    setSpeakingMessage(index);
+    window.speechSynthesis.speak(utterance);
+  }
 
   async function signOut() {
     const supabase = createClient();
@@ -691,6 +737,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                     {item.role === "assistant" && item.content && (
                       <div className="message-actions">
                         <button className="copy-message" type="button" onClick={() => printAnswerAsPdf(item.content)} aria-label="Print or save Aahana response as PDF">Save PDF</button>
+                        <button className="copy-message" type="button" onClick={() => speakResponse(item.content, index)}>{speakingMessage === index ? "Stop voice" : "Listen"}</button>
                         <button className="copy-message" type="button" onClick={async () => {
                           try {
                             await navigator.clipboard.writeText(item.content);
@@ -720,6 +767,8 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
               </div>
             )}
             <div className="image-attach-row">
+              <select aria-label="Voice language" value={voiceLanguage} onChange={(event) => setVoiceLanguage(event.target.value)} className="copy-message">{voiceLanguages.map(([code, label]) => <option key={code} value={code}>{label}</option>)}</select>
+              <button className="copy-message" type="button" onClick={startVoiceInput} disabled={listening || busy}>{listening ? "Listening…" : "Speak"}</button>
               <label className="image-attach">
                 + Add image
                 <input id="image-upload" type="file" accept="image/png,image/jpeg,image/webp" disabled={busy}
