@@ -265,6 +265,22 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     }
   }
 
+  async function clearAllMemories() {
+    if (!memories.length || memoryBusy) return;
+    setMemoryBusy(true);
+    setMemoryError("");
+    try {
+      const response = await fetch("/api/memories?id=all", { method: "DELETE" });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Could not clear memories.");
+      setMemories([]);
+    } catch (err) {
+      setMemoryError(err.message || "Could not clear memories.");
+    } finally {
+      setMemoryBusy(false);
+    }
+  }
+
   async function signOut() {
     const supabase = createClient();
     await supabase.auth.signOut();
@@ -723,6 +739,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
               </form>
             )}
             {memoryError && <div className="history-empty history-error">{memoryError}</div>}
+            {memoryEnabled && memories.length > 0 && <button className="project-add" type="button" disabled={memoryBusy} onClick={clearAllMemories}>Clear all saved memories</button>}
             {memoryEnabled && memories.map((item) => (
               <div className="history-entry" key={item.id}>
                 <span>{item.content}</span><small>{item.category}</small>
