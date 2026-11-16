@@ -192,12 +192,10 @@ export async function POST(request) {
       signal: AbortSignal.timeout(45000),
     });
   } catch {
-    await supabase.rpc("release_my_ai_request");
     return NextResponse.json({ error: "Aahana could not connect to the AI service. Please try again." }, { status: 502 });
   }
 
   if (!upstream.ok || !upstream.body) {
-    await supabase.rpc("release_my_ai_request");
     const gatewayRequestId = upstream.headers.get("x-request-id") || upstream.headers.get("x-vercel-id") || null;
     const responseText = await upstream.text().catch(() => "");
     const safeDetail = responseText.replace(/[\r\n\t]+/g, " ").slice(0, 500);
