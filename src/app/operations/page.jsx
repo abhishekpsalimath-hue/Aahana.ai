@@ -29,6 +29,10 @@ export default function OperationsPage() {
   const [projects, setProjects] = useState([]);
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [includeProjectContext, setIncludeProjectContext] = useState(false);
+  const [projectFiles, setProjectFiles] = useState([]);
+  const [selectedFileIds, setSelectedFileIds] = useState([]);
+  const [filesLoading, setFilesLoading] = useState(false);
+  const [includeLiveResearch, setIncludeLiveResearch] = useState(false);
   const [briefContext, setBriefContext] = useState("");
   const [briefLoading, setBriefLoading] = useState(false);
   const [briefError, setBriefError] = useState("");
@@ -69,6 +73,24 @@ export default function OperationsPage() {
 
   useEffect(() => { load(); }, [load]);
 
+  useEffect(() => {
+    let active = true;
+    setProjectFiles([]);
+    setSelectedFileIds([]);
+    if (!selectedProjectId) return () => { active = false; };
+    setFilesLoading(true);
+    fetch("/api/files?projectId=" + encodeURIComponent(selectedProjectId), { cache: "no-store" })
+      .then(async (response) => ({ response, payload: await response.json().catch(() => ({})) }))
+      .then(({ response, payload }) => {
+        if (!active) return;
+        if (response.ok) setProjectFiles(payload.files || []);
+        else setBriefError(payload.error || "Could not load project files.");
+      })
+      .catch(() => { if (active) setBriefError("Could not load project files."); })
+      .finally(() => { if (active) setFilesLoading(false); });
+    return () => { active = false; };
+  }, [selectedProjectId]);
+
   const selectedBrief = useMemo(() => briefHistory.find((item) => item.id === selectedBriefId) || briefHistory[0] || null, [briefHistory, selectedBriefId]);
 
   async function runExecutiveBrief(event) {
@@ -79,14 +101,14 @@ export default function OperationsPage() {
       const response = await fetch("/api/executives/brief", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ objective: briefObjective.trim(), projectLabel: briefProject.trim(), context: briefContext.trim(), includeProjectContext, projectId: includeProjectContext ? selectedProjectId : "" }),
+        body: JSON.stringify({ objective: briefObjective.trim(), projectLabel: briefProject.trim(), context: briefContext.trim(), includeProjectContext, projectId: includeProjectContext ? selectedProjectId : "", fileIds: includeProjectContext ? selectedFileIds : [], includeLiveResearch }),
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) setBriefError(payload.error || "The executive team could not complete this brief.");
       else {
         setBriefHistory((current) => [payload.brief, ...current.filter((item) => item.id !== payload.brief.id)].slice(0, 10));
         setSelectedBriefId(payload.brief.id);
-        setBriefObjective(""); setBriefContext("");
+        setBriefObjective(""); setBriefContext(""); setSelectedFileIds([]);
       }
     } catch {
       setBriefError("Could not connect to the executive workspace. Please retry.");
@@ -209,6 +231,20 @@ export default function OperationsPage() {
                 <label>Saved project (optional)<select value={selectedProjectId} onChange={(e) => setSelectedProjectId(e.target.value)}><option value="">Choose a project</option>{projects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}</select></label>
                 <label className="ops-context-consent"><input type="checkbox" checked={includeProjectContext} onChange={(e) => setIncludeProjectContext(e.target.checked)} disabled={!selectedProjectId} /> Include this selected project overview, recent conversations and file index.</label>
                 <small className="ops-muted">Only the selected project is read after you enable this. The briefing receives its project details, up to five recent project conversations and file metadata—not document contents or other projects.</small>
+                {includeProjectContext && selectedProjectId && <div className="ops-file-picker">
+                  <strong>Select documents to analyse (optional)</strong>
+                  <small className="ops-muted">Choose up to three PDF, DOCX, XLSX, TXT, Markdown or CSV files. Each must be 10 MB or smaller.</small>
+                  {filesLoading ? <small className="ops-muted">Loading project files…</small> : projectFiles.length ? projectFiles.map((file) => {
+                    const supported = ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "text/plain", "text/markdown", "text/csv"].includes(file.mime_type);
+                    const checked = selectedFileIds.includes(file.id);
+                    return <label className="ops-file-choice" key={file.id}>
+                      <input type="checkbox" checked={checked} disabled={!supported || (!checked && selectedFileIds.length >= 3)} onChange={(e) => setSelectedFileIds((current) => e.target.checked ? [...current, file.id].slice(0, 3) : current.filter((id) => id !== file.id))} />
+                      <span>{file.original_filename}<small>{file.mime_type} · {Math.ceil((file.size_bytes || 0) / 1024)} KB</small></span>
+                    </label>;
+                  }) : <small className="ops-muted">No files are attached to this project yet.</small>}
+                </div>}
+                <label className="ops-context-consent"><input type="checkbox" checked={includeLiveResearch} onChange={(e) => setIncludeLiveResearch(e.target.checked)} /> Include live web research and source citations for this objective.</label>
+                <small className="ops-muted">Live research uses Aahana's configured search provider. If no verifiable sources are returned, the briefing will not be created.</small>
                 {briefError && <div className="ops-error" role="alert">{briefError}</div>}
                 <button className="ops-primary" disabled={briefLoading || !briefObjective.trim()}>{briefLoading ? "Executive team is analysing…" : "Run executive briefing"}</button>
                 <small className="ops-muted">Four AI calls per briefing. Results are saved privately to your account. No external action is executed.</small>
