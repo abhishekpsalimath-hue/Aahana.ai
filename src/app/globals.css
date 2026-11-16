@@ -327,3 +327,11 @@ button:focus-visible,a:focus-visible{outline-color:#c4a7ff}
 .ops-file-choice span{display:grid;gap:3px;min-width:0;overflow-wrap:anywhere;font-size:13px}
 .ops-file-choice small{font-size:11px;color:#a7a2b4}
 .ops-file-choice input:disabled{opacity:.35}
+
+
+.ops-research-sources{margin-top:14px}
+.ops-research-sources h3{font-size:16px;margin:8px 0 12px}
+.ops-source{display:flex;align-items:baseline;gap:9px;padding:8px 0;border-top:1px solid #292633;font-size:13px}
+.ops-source>span{color:#c4a7ff;flex:none;font-variant-numeric:tabular-nums}
+.ops-source>a{color:#e8e4f0;text-decoration:underline;text-decoration-color:#706a80;text-underline-offset:3px;overflow-wrap:anywhere}
+.ops-source small{color:#a7a2b4;margin-left:auto;flex:none}
