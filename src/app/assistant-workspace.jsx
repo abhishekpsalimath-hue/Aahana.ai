@@ -85,7 +85,7 @@ function inferSpeechLocale(text, preferredLocale = "en-IN") {
   if (has(/\\p{Script=Gurmukhi}/u)) return "pa-IN";
   if (has(/\\p{Script=Oriya}/u)) return "or-IN";
   if (has(/\\p{Script=Devanagari}/u)) return /^(mr|ne|sa|kok)-/i.test(preferredLocale) ? preferredLocale : "hi-IN";
-  if (has(/\\p{Script=Japanese}/u) || has(/[ぁ-ゟ゠-ヿ]/u)) return "ja-JP";
+  if (has(/[ぁ-ゟ゠-ヿ]/u)) return "ja-JP";
   if (has(/\\p{Script=Hangul}/u)) return "ko-KR";
   if (has(/\\p{Script=Han}/u)) return /^zh/i.test(preferredLocale) ? preferredLocale : "zh-CN";
   if (has(/\\p{Script=Cyrillic}/u)) return /^(uk|ru|bg|sr)-/i.test(preferredLocale) ? preferredLocale : "ru-RU";
