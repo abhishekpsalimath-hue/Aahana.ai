@@ -77,7 +77,7 @@ export default function OperationsPage() {
     let active = true;
     setProjectFiles([]);
     setSelectedFileIds([]);
-    if (!selectedProjectId) return () => { active = false; };
+    if (!selectedProjectId || !includeProjectContext) return () => { active = false; };
     setFilesLoading(true);
     fetch("/api/files?projectId=" + encodeURIComponent(selectedProjectId), { cache: "no-store" })
       .then(async (response) => ({ response, payload: await response.json().catch(() => ({})) }))
@@ -89,7 +89,7 @@ export default function OperationsPage() {
       .catch(() => { if (active) setBriefError("Could not load project files."); })
       .finally(() => { if (active) setFilesLoading(false); });
     return () => { active = false; };
-  }, [selectedProjectId]);
+  }, [selectedProjectId, includeProjectContext]);
 
   const selectedBrief = useMemo(() => briefHistory.find((item) => item.id === selectedBriefId) || briefHistory[0] || null, [briefHistory, selectedBriefId]);
 
@@ -230,7 +230,7 @@ export default function OperationsPage() {
                 <label>Context to share (optional)<textarea rows={4} maxLength={8000} value={briefContext} onChange={(e) => setBriefContext(e.target.value)} placeholder="Add facts, constraints, target dates or decisions already made." /></label>
                 <label>Saved project (optional)<select value={selectedProjectId} onChange={(e) => setSelectedProjectId(e.target.value)}><option value="">Choose a project</option>{projects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}</select></label>
                 <label className="ops-context-consent"><input type="checkbox" checked={includeProjectContext} onChange={(e) => setIncludeProjectContext(e.target.checked)} disabled={!selectedProjectId} /> Include this selected project overview, recent conversations and file index.</label>
-                <small className="ops-muted">Only the selected project is read after you enable this. The briefing receives its project details, up to five recent project conversations and file metadata—not document contents or other projects.</small>
+                <small className="ops-muted">Only the selected project is read after you enable this. The briefing receives project details and up to five recent project conversations. Only documents you separately select are opened; other projects and unrelated conversations stay excluded.</small>
                 {includeProjectContext && selectedProjectId && <div className="ops-file-picker">
                   <strong>Select documents to analyse (optional)</strong>
                   <small className="ops-muted">Choose up to three PDF, DOCX, XLSX, TXT, Markdown or CSV files. Each must be 10 MB or smaller.</small>
