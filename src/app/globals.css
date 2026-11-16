@@ -318,3 +318,12 @@ button:focus-visible,a:focus-visible{outline-color:#c4a7ff}
 
 .ops-form .ops-context-consent{display:flex;align-items:center;gap:10px;padding:11px 12px;border:1px solid #343140;border-radius:9px;background:#111018;line-height:1.45}
 .ops-form .ops-context-consent input{width:16px;height:16px;flex:none;accent-color:#c4a7ff;margin:0}
+
+
+.ops-file-picker{display:grid;gap:9px;padding:12px;border:1px solid #343140;border-radius:10px;background:#111018}
+.ops-file-picker>strong{font-size:13px;font-weight:600}
+.ops-file-choice{display:flex;align-items:flex-start;gap:10px;padding:8px 4px;border-top:1px solid #292633}
+.ops-file-choice input{width:16px;height:16px;flex:none;accent-color:#c4a7ff;margin:2px 0 0}
+.ops-file-choice span{display:grid;gap:3px;min-width:0;overflow-wrap:anywhere;font-size:13px}
+.ops-file-choice small{font-size:11px;color:#a7a2b4}
+.ops-file-choice input:disabled{opacity:.35}
