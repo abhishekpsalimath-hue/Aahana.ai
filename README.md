@@ -31,7 +31,8 @@ Aahana is a standalone general-purpose AI assistant product. It is separate from
 - Multilingual voice input/output where supported by the user's browser and installed speech services
 - Broad reasoning and uncertainty guidance
 - Opt-in private user memory with account-scoped retrieval, manual save/delete, and RLS ownership policies
-- Live web research and automatic memory extraction are not yet implemented
+- Intent-triggered live web research through Tavily when `TAVILY_API_KEY` is configured; citations are linked in answers and search failure is handled honestly
+- Automatic memory extraction is not yet implemented
 - Basic chat is not subject to a product-level daily question quota; provider capacity, rate limits and abuse safeguards still apply
 - Offline arithmetic fallback for supported expressions when AI service calls fail
 
