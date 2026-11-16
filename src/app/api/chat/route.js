@@ -126,7 +126,6 @@ export async function POST(request) {
     .limit(20);
 
   if (historyError || !history?.length) {
-    await supabase.rpc("release_my_ai_request");
     return NextResponse.json({ error: "Could not load conversation context." }, { status: 500 });
   }
 
