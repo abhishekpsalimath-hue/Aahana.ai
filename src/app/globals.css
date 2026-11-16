@@ -292,6 +292,14 @@ button:focus-visible,a:focus-visible{outline-color:#c4a7ff}
 
 
 /* Aahana cosmic approach — lightweight CSS-only welcome animation */
+/* Keep the star approach clearly visible on desktop and mobile. */
+.cosmic-field{opacity:.96}
+.cosmic-stars-far{opacity:.78}
+.cosmic-stars-mid{opacity:.82}
+.cosmic-stars-near{opacity:.72}
+.operations-nav{text-decoration:none}
+.operations-nav:hover{background:#211b2d;color:#e4d6ff}
+@media(max-width:760px){.operations-nav{display:flex;align-items:center;justify-content:center;flex:0 0 auto;width:38px;height:36px;padding:0;border:1px solid #40364f;border-radius:9px;color:#d8c8ff;font-size:17px}.operations-nav span{display:none}}
 .welcome{position:relative;isolation:isolate}
 .cosmic-field{position:absolute;z-index:-1;pointer-events:none;inset:-150px -18vw -90px;overflow:hidden;opacity:.72;mask-image:radial-gradient(ellipse at 50% 45%,#000 0%,#000 38%,transparent 78%)}
 .cosmic-nebula{position:absolute;inset:8% 12%;background:radial-gradient(ellipse at 50% 48%,#8e68d42b 0%,#51408020 22%,transparent 62%),radial-gradient(ellipse at 28% 34%,#9a75d51a 0%,transparent 42%),radial-gradient(ellipse at 72% 58%,#4c79a31a 0%,transparent 40%);filter:blur(24px);animation:nebula-breathe 12s ease-in-out infinite alternate}
