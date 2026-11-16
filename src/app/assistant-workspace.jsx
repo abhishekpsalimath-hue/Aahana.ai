@@ -73,6 +73,29 @@ function isImageGenerationRequest(value) {
   return text.length >= 100 && markerCount >= 2 && hasVisualSubject;
 }
 
+function inferSpeechLocale(text, preferredLocale = "en-IN") {
+  const value = String(text || "");
+  const has = (pattern) => pattern.test(value);
+  if (has(/\\p{Script=Kannada}/u)) return "kn-IN";
+  if (has(/\\p{Script=Tamil}/u)) return "ta-IN";
+  if (has(/\\p{Script=Telugu}/u)) return "te-IN";
+  if (has(/\\p{Script=Malayalam}/u)) return "ml-IN";
+  if (has(/\\p{Script=Bengali}/u)) return "bn-IN";
+  if (has(/\\p{Script=Gujarati}/u)) return "gu-IN";
+  if (has(/\\p{Script=Gurmukhi}/u)) return "pa-IN";
+  if (has(/\\p{Script=Oriya}/u)) return "or-IN";
+  if (has(/\\p{Script=Devanagari}/u)) return /^(mr|ne|sa|kok)-/i.test(preferredLocale) ? preferredLocale : "hi-IN";
+  if (has(/\\p{Script=Japanese}/u) || has(/[ぁ-ゟ゠-ヿ]/u)) return "ja-JP";
+  if (has(/\\p{Script=Hangul}/u)) return "ko-KR";
+  if (has(/\\p{Script=Han}/u)) return /^zh/i.test(preferredLocale) ? preferredLocale : "zh-CN";
+  if (has(/\\p{Script=Cyrillic}/u)) return /^(uk|ru|bg|sr)-/i.test(preferredLocale) ? preferredLocale : "ru-RU";
+  if (has(/\\p{Script=Arabic}/u)) return /^(ur|fa|ar)-/i.test(preferredLocale) ? preferredLocale : "ar-SA";
+  if (has(/\\p{Script=Hebrew}/u)) return "he-IL";
+  if (has(/\\p{Script=Thai}/u)) return "th-TH";
+  if (has(/\\p{Script=Greek}/u)) return "el-GR";
+  return preferredLocale;
+}
+
 function evaluateArithmetic(input) {
   const normalized = input
     .trim()
@@ -212,15 +235,16 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     window.speechSynthesis.cancel();
     if (speakingMessage === index) { setSpeakingMessage(null); return; }
     const utterance = new SpeechSynthesisUtterance(String(text || ""));
-    utterance.lang = voiceLanguage;
+    const speechLanguage = inferSpeechLocale(text, voiceLanguage);
+    utterance.lang = speechLanguage;
     const voices = window.speechSynthesis.getVoices();
-    const languagePrefix = voiceLanguage.split("-")[0].toLowerCase();
-    const matchingVoice = voices.find((voice) => voice.lang.toLowerCase() === voiceLanguage.toLowerCase())
+    const languagePrefix = speechLanguage.split("-")[0].toLowerCase();
+    const matchingVoice = voices.find((voice) => voice.lang.toLowerCase() === speechLanguage.toLowerCase())
       || voices.find((voice) => voice.lang.toLowerCase().startsWith(languagePrefix));
     if (matchingVoice) {
       utterance.voice = matchingVoice;
     } else {
-      setError(`Your device has no installed speech voice for ${voiceLanguage}. Text replies will still work; install that language's speech pack in device settings to hear it.`);
+      setError(`Your device has no installed speech voice for ${speechLanguage}. Text replies will still work; install that language's speech pack in device settings to hear it.`);
     }
     utterance.onend = () => setSpeakingMessage(null);
     utterance.onerror = () => setSpeakingMessage(null);
@@ -972,11 +996,11 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
               </div>
             )}
             <div className="image-attach-row">
-              <select aria-label="Voice input and spoken reply language" value={voiceLanguage} onChange={(event) => setVoiceLanguage(event.target.value)} className="copy-message">{voiceLanguages.map(([code, label]) => <option key={code} value={code}>{label}</option>)}</select>
+              <select aria-label="Voice input language" value={voiceLanguage} onChange={(event) => setVoiceLanguage(event.target.value)} className="copy-message">{voiceLanguages.map(([code, label]) => <option key={code} value={code}>{label}</option>)}</select>
               <button className="copy-message" type="button" onClick={startVoiceInput} disabled={listening || busy}>{listening ? "Listening…" : "Speak"}</button>
               <label className="copy-message" style={{display:"inline-flex",alignItems:"center",gap:6}}>
                 <input type="checkbox" checked={autoSpeak} onChange={(event) => setAutoSpeak(event.target.checked)} />
-                Auto-read replies
+                Auto-read replies (text stays visible)
               </label>
               <label className="image-attach">
                 + Add image
