@@ -226,6 +226,7 @@ export async function POST(request) {
   // Search results are treated as untrusted evidence, never as instructions.
   let researchMessage = null;
   let researchSourcesAttached = false;
+  let allowedResearchUrls = [];
   const requiresLiveResearch = shouldSearchWeb(prompt, image);
   if (requiresLiveResearch) {
     const researchKey = process.env.TAVILY_API_KEY;
@@ -271,6 +272,7 @@ export async function POST(request) {
           }));
           if (sources.length) {
             researchSourcesAttached = true;
+            allowedResearchUrls = sources.map((source) => source.url);
             researchMessage = {
               role: "system",
               content: [
@@ -317,7 +319,7 @@ export async function POST(request) {
       },
       body: JSON.stringify({
         model: image && isGroq ? (process.env.AAHANA_VISION_MODEL || "qwen/qwen3.8-27b") : model,
-        stream: true,
+        stream: !requiresLiveResearch,
         ...(isGroq ? { max_completion_tokens: 4096 } : { max_tokens: 4096 }),
         messages: [
           { role: "system", content: systemPrompt },
@@ -352,6 +354,42 @@ export async function POST(request) {
       gatewayStatus: upstream.status,
       requestId: gatewayRequestId,
     }, { status: upstream.status === 429 ? 429 : 502 });
+  }
+
+  // Research answers are buffered so citations can be validated against the exact URLs
+  // retrieved for this request before any answer is shown to the user.
+  if (requiresLiveResearch) {
+    let researchPayload;
+    try {
+      researchPayload = await upstream.json();
+    } catch {
+      return NextResponse.json({ error: "The research provider returned an unreadable response.", code: "RESEARCH_RESPONSE_INVALID" }, { status: 502 });
+    }
+    const researchReply = researchPayload?.choices?.[0]?.message?.content;
+    if (typeof researchReply !== "string" || !researchReply.trim()) {
+      return NextResponse.json({ error: "Aahana could not generate a source-backed research answer. Please retry.", code: "RESEARCH_ANSWER_EMPTY" }, { status: 502 });
+    }
+    const citationMatches = [...researchReply.matchAll(/\\[(\\d+)\\]\\((https:\\/\\/[^\\s)]+)\\)/g)];
+    const citedUrls = citationMatches.map((match) => match[2]);
+    const hasVerifiedCitation = citedUrls.some((url) => allowedResearchUrls.includes(url));
+    if (!hasVerifiedCitation) {
+      console.error("Aahana rejected a research answer without a matching retrieved-source citation.");
+      return NextResponse.json({ error: "Aahana retrieved sources but could not produce a verifiable citation. Please retry your research question.", code: "RESEARCH_CITATION_VALIDATION_FAILED" }, { status: 502 });
+    }
+    const { error: saveError } = await supabase.rpc("save_ai_reply", {
+      p_conversation_id: conversationId,
+      p_content: researchReply.slice(0, 16000),
+    });
+    await supabase.from("conversations").update({ updated_at: new Date().toISOString() }).eq("id", conversationId);
+    if (saveError) console.error("Aahana research reply persistence failed:", saveError.message);
+    return new Response(researchReply, {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Cache-Control": "no-cache, no-transform",
+        "X-Conversation-Id": conversationId,
+        "X-Research-Citations-Verified": "true",
+      },
+    });
   }
 
   const encoder = new TextEncoder();
