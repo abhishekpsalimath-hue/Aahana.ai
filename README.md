@@ -28,7 +28,9 @@ Aahana is a standalone general-purpose AI assistant product. It is separate from
 - Conversation history and project workspaces
 - Private file upload and storage metadata
 - Five assistant modes: Solve, Create, Write, Build and Improve
-- Daily AI request quota enforcement
+- Multilingual voice input/output where supported by the user's browser and installed speech services
+- Broad reasoning and uncertainty guidance; live research and user-scoped long-term memory are not yet implemented
+- Basic chat is not subject to a product-level daily question quota; provider capacity, rate limits and abuse safeguards still apply
 - Offline arithmetic fallback for supported expressions when AI service calls fail
 
 ## Product modes
