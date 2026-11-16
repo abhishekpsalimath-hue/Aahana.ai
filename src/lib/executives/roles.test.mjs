@@ -13,13 +13,14 @@ test("only the four supported executive roles resolve", () => {
   assert.equal(getExecutiveRole(null), null);
 });
 
-test("every executive is draft-only until an approved execution layer exists", () => {
+test("executives remain non-executing; only the CEO can coordinate internal specialists", () => {
   for (const role of Object.values(EXECUTIVE_ROLES)) {
     assert.equal(role.permissions.read, true);
     assert.equal(role.permissions.draft, true);
     assert.equal(role.permissions.execute, false);
-    assert.equal(role.permissions.delegate, false);
   }
+  assert.equal(EXECUTIVE_ROLES.ceo.permissions.delegate, true);
+  for (const id of ["cto", "coo", "cmo"]) assert.equal(EXECUTIVE_ROLES[id].permissions.delegate, false);
 });
 
 test("role prompt includes role scope and common safety boundaries", () => {
