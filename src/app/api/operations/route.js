@@ -83,3 +83,55 @@ export async function POST(request) {
 
   return NextResponse.json({ task: data }, { status: 201 });
 }
+
+export async function PATCH(request) {
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) {
+    return NextResponse.json({ error: "Please sign in." }, { status: 401 });
+  }
+
+  let body;
+  try { body = await request.json(); } catch {
+    return NextResponse.json({ error: "Invalid request." }, { status: 400 });
+  }
+
+  const id = typeof body?.id === "string" ? body.id : "";
+  const action = body?.action;
+  if (!id || !["approve", "cancel", "reopen"].includes(action)) {
+    return NextResponse.json({ error: "Invalid task action." }, { status: 400 });
+  }
+
+  const { data: existing, error: readError } = await supabase
+    .from("aahana_ops_tasks")
+    .select("id,status")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (readError || !existing) {
+    return NextResponse.json({ error: "Task not found." }, { status: 404 });
+  }
+
+  let update;
+  if (action === "approve" && existing.status === "proposed") {
+    update = { status: "approved", approved_at: new Date().toISOString() };
+  } else if (action === "cancel" && ["proposed", "approved", "blocked"].includes(existing.status)) {
+    update = { status: "cancelled" };
+  } else if (action === "reopen" && ["cancelled", "blocked"].includes(existing.status)) {
+    update = { status: "proposed", approved_at: null, completed_at: null };
+  } else {
+    return NextResponse.json({ error: "This task cannot take that action from its current state." }, { status: 409 });
+  }
+
+  const { data, error } = await supabase.from("aahana_ops_tasks")
+    .update({ ...update, updated_at: new Date().toISOString() })
+    .eq("id", id).eq("user_id", user.id)
+    .select("id,title,description,assigned_role,priority,status,source,approval_required,approved_at,completed_at,created_at,updated_at")
+    .single();
+
+  if (error || !data) {
+    return NextResponse.json({ error: "Could not update the task." }, { status: 500 });
+  }
+  return NextResponse.json({ task: data });
+}
