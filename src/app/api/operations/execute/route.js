@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getServiceClient } from "@/lib/operations/server";
 import { buildExecutiveSystemPrompt } from "@/lib/executives/roles.mjs";
 import { isClaimedTaskValidForInternalAnalysis } from "@/lib/operations/execution-policy.mjs";
 
@@ -73,22 +72,19 @@ export async function POST(request) {
     return NextResponse.json({ error: "A valid task ID is required." }, { status: 400 });
   }
 
-  const service = getServiceClient();
-  if (!service) return NextResponse.json({ error: "The secure task engine is not configured." }, { status: 503 });
   const config = getProviderConfig(request);
   if (!config) return NextResponse.json({ error: "Aahana's configured AI provider is not ready." }, { status: 503 });
 
-  const { data: task, error: claimError } = await service.rpc("aahana_claim_approved_task", {
+  const { data: task, error: claimError } = await supabase.rpc("aahana_claim_approved_task", {
     p_task_id: taskId,
-    p_user_id: user.id,
-  });
+    });
   if (claimError || !task) {
     return NextResponse.json({ error: "This task is not approved, is already running, or has reached its run limit." }, { status: 409 });
   }
 
   if (!isClaimedTaskValidForInternalAnalysis(task)) {
-    await service.rpc("aahana_block_failed_task", {
-      p_task_id: task.id, p_user_id: user.id, p_error: "The claimed task failed internal execution policy validation.",
+    await supabase.rpc("aahana_block_failed_task", {
+      p_task_id: task.id, p_error: "The claimed task failed internal execution policy validation.",
     });
     return NextResponse.json({ error: "The task did not pass execution safety checks." }, { status: 409 });
   }
@@ -103,13 +99,12 @@ export async function POST(request) {
       generated_at: new Date().toISOString(),
       external_actions_performed: false,
     };
-    const { data: completed, error: completeError } = await service.rpc("aahana_complete_approved_task", {
+    const { data: completed, error: completeError } = await supabase.rpc("aahana_complete_approved_task", {
       p_task_id: task.id,
-      p_user_id: user.id,
       p_result: result,
     });
     if (completeError || !completed) throw new Error("The deliverable was generated but could not be safely saved.");
-    await service.from("aahana_ops_events").insert({
+    await supabase.from("aahana_ops_events").insert({
       user_id: user.id,
       event_type: "task_completed",
       severity: "info",
@@ -120,12 +115,11 @@ export async function POST(request) {
     return NextResponse.json({ task: completed });
   } catch (error) {
     const safeError = error instanceof Error ? error.message : "Internal task analysis failed.";
-    await service.rpc("aahana_block_failed_task", {
+    await supabase.rpc("aahana_block_failed_task", {
       p_task_id: task.id,
-      p_user_id: user.id,
       p_error: safeError.slice(0, 500),
     });
-    await service.from("aahana_ops_events").insert({
+    await supabase.from("aahana_ops_events").insert({
       user_id: user.id,
       event_type: "task_blocked",
       severity: "error",
