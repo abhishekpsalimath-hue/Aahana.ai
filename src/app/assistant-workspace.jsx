@@ -114,7 +114,6 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [conversationId, setConversationId] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [usage, setUsage] = useState(null);
   const [history, setHistory] = useState([]);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -150,7 +149,6 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     setMessages([]);
     setConversationId(null);
     setError("");
-    setUsage(null);
     setMode("solve");
   }
 
@@ -187,7 +185,6 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       setMessages((result.messages || []).map(({ role, content }) => ({ role, content })));
       setPrompt("");
       setError("");
-      setUsage(null);
       setHistoryOpen(false);
     } catch (err) {
       setHistoryError(err.message || "Could not open conversation.");
@@ -375,7 +372,6 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     setHistory([]);
     setHistoryOpen(false);
     setError("");
-    setUsage(null);
   }
 
   async function archiveProject(id) {
@@ -515,9 +511,6 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
 
       const nextConversationId = response.headers.get("X-Conversation-Id");
       if (nextConversationId) setConversationId(nextConversationId);
-      const used = response.headers.get("X-Requests-Used");
-      const limit = response.headers.get("X-Requests-Limit");
-      if (used && limit) setUsage({ used: Number(used), limit: Number(limit) });
 
       if (!response.body) throw new Error("The response stream was unavailable.");
       const reader = response.body.getReader();
@@ -756,7 +749,6 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
             </div>
           </form>
           {error && <div className="notice error-notice" role="alert">{error}</div>}
-          {usage && <div className="notice">Today: {usage.used} of {usage.limit} AI requests used.</div>}
           {!messages.length && (
             <>
               <div className="notice">{aiEnabled ? "Your workspace is ready. Send a prompt to begin." : "Your workspace is ready. AI activation is pending billing and connection checks. Prompts are not sent yet."}</div>
