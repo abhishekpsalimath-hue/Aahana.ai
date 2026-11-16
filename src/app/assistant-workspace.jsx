@@ -836,6 +836,38 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
           </div>
         )}
 
+        {memoryOpen && (
+          <div className="mobile-history-panel memory-panel">
+            <div className="history-empty"><strong>Private memory</strong><br />Off by default. Only used in your signed-in account.</div>
+            {memoryLoading && <div className="history-empty">Loading memory…</div>}
+            <label className="history-entry memory-consent">
+              <input type="checkbox" checked={memoryEnabled} disabled={memoryBusy || memoryLoading}
+                onChange={(event) => changeMemoryConsent(event.target.checked)} />
+              <span>Allow Aahana to use saved memories in my chats</span>
+            </label>
+            {memoryEnabled && (
+              <form className="project-create-form" onSubmit={saveMemory}>
+                <textarea value={memoryDraft} onChange={(event) => setMemoryDraft(event.target.value)}
+                  maxLength={1200} rows={3} placeholder="Add a detail you want Aahana to remember…" aria-label="New private memory" />
+                <select value={memoryCategory} onChange={(event) => setMemoryCategory(event.target.value)} aria-label="Memory category">
+                  <option value="personal">Personal</option><option value="preference">Preference</option>
+                  <option value="project">Project</option><option value="goal">Goal</option><option value="other">Other</option>
+                </select>
+                <button type="submit" disabled={!memoryDraft.trim() || memoryBusy}>{memoryBusy ? "Saving…" : "Save memory"}</button>
+              </form>
+            )}
+            {memoryError && <div className="history-empty history-error">{memoryError}</div>}
+            {memoryEnabled && memories.length > 0 && <button className="project-add" type="button" disabled={memoryBusy} onClick={clearAllMemories}>Clear all saved memories</button>}
+            {memoryEnabled && memories.map((item) => (
+              <div className="history-entry" key={item.id}>
+                <span>{item.content}</span><small>{item.category}</small>
+                <div className="file-actions"><button type="button" disabled={memoryBusy} onClick={() => deleteMemory(item.id)}>Delete</button></div>
+              </div>
+            ))}
+            {!memoryEnabled && <div className="history-empty">Memory is off. Aahana will not retrieve saved memories.</div>}
+          </div>
+        )}
+
         <div className="welcome">
           <div className="welcome-signal" aria-hidden="true">
             <span className="signal-orbit signal-orbit-one" />
