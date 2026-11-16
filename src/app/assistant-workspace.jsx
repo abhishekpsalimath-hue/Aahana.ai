@@ -135,6 +135,14 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [analyzingFileId, setAnalyzingFileId] = useState(null);
   const [imageGenerating, setImageGenerating] = useState(false);
   const [generatedImage, setGeneratedImage] = useState(null);
+  const [memoryOpen, setMemoryOpen] = useState(false);
+  const [memoryEnabled, setMemoryEnabled] = useState(false);
+  const [memories, setMemories] = useState([]);
+  const [memoryDraft, setMemoryDraft] = useState("");
+  const [memoryCategory, setMemoryCategory] = useState("personal");
+  const [memoryLoading, setMemoryLoading] = useState(false);
+  const [memoryBusy, setMemoryBusy] = useState(false);
+  const [memoryError, setMemoryError] = useState("");
   const [voiceLanguage, setVoiceLanguage] = useState("en-IN");
   const [listening, setListening] = useState(false);
   const [speakingMessage, setSpeakingMessage] = useState(null);
@@ -180,6 +188,81 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     utterance.onerror = () => setSpeakingMessage(null);
     setSpeakingMessage(index);
     window.speechSynthesis.speak(utterance);
+  }
+
+  async function toggleMemoryPanel() {
+    const opening = !memoryOpen;
+    setMemoryOpen(opening);
+    if (!opening) return;
+    setMemoryLoading(true);
+    setMemoryError("");
+    try {
+      const response = await fetch("/api/memories");
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Could not load private memory.");
+      setMemoryEnabled(result.enabled === true);
+      setMemories(result.memories || []);
+    } catch (err) {
+      setMemoryError(err.message || "Could not load private memory.");
+    } finally {
+      setMemoryLoading(false);
+    }
+  }
+
+  async function changeMemoryConsent(enabled) {
+    setMemoryBusy(true);
+    setMemoryError("");
+    try {
+      const response = await fetch("/api/memories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: enabled ? "enable" : "disable" }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Could not update memory settings.");
+      setMemoryEnabled(result.enabled === true);
+    } catch (err) {
+      setMemoryError(err.message || "Could not update memory settings.");
+    } finally {
+      setMemoryBusy(false);
+    }
+  }
+
+  async function saveMemory(event) {
+    event.preventDefault();
+    if (!memoryDraft.trim() || memoryBusy) return;
+    setMemoryBusy(true);
+    setMemoryError("");
+    try {
+      const response = await fetch("/api/memories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: memoryDraft.trim(), category: memoryCategory }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Could not save memory.");
+      setMemories((current) => [result.memory, ...current]);
+      setMemoryDraft("");
+    } catch (err) {
+      setMemoryError(err.message || "Could not save memory.");
+    } finally {
+      setMemoryBusy(false);
+    }
+  }
+
+  async function deleteMemory(id) {
+    setMemoryBusy(true);
+    setMemoryError("");
+    try {
+      const response = await fetch(`/api/memories?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Could not delete memory.");
+      setMemories((current) => current.filter((item) => item.id !== id));
+    } catch (err) {
+      setMemoryError(err.message || "Could not delete memory.");
+    } finally {
+      setMemoryBusy(false);
+    }
   }
 
   async function signOut() {
@@ -618,6 +701,38 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         )}
         <button className={projectsOpen ? "side-item active project-toggle" : "side-item muted project-toggle"} type="button" onClick={toggleProjects}>▧ <span>Projects</span></button>
         <button className={filesOpen ? "side-item active project-toggle" : "side-item muted project-toggle"} type="button" onClick={toggleFiles}>⌁ <span>Files</span></button>
+        <button className={memoryOpen ? "side-item active project-toggle" : "side-item muted project-toggle"} type="button" onClick={toggleMemoryPanel}>◉ <span>Private memory</span></button>
+        {memoryOpen && (
+          <div className="history-list memory-panel">
+            <div className="history-empty"><strong>Private memory</strong><br />Only used in your signed-in account. Off by default.</div>
+            {memoryLoading && <div className="history-empty">Loading memory…</div>}
+            <label className="history-entry memory-consent">
+              <input type="checkbox" checked={memoryEnabled} disabled={memoryBusy || memoryLoading}
+                onChange={(event) => changeMemoryConsent(event.target.checked)} />
+              <span>Allow Aahana to use saved memories in my chats</span>
+            </label>
+            {memoryEnabled && (
+              <form className="project-create-form" onSubmit={saveMemory}>
+                <textarea value={memoryDraft} onChange={(event) => setMemoryDraft(event.target.value)}
+                  maxLength={1200} rows={3} placeholder="Add a detail you want Aahana to remember…" aria-label="New private memory" />
+                <select value={memoryCategory} onChange={(event) => setMemoryCategory(event.target.value)} aria-label="Memory category">
+                  <option value="personal">Personal</option><option value="preference">Preference</option>
+                  <option value="project">Project</option><option value="goal">Goal</option><option value="other">Other</option>
+                </select>
+                <button type="submit" disabled={!memoryDraft.trim() || memoryBusy}>{memoryBusy ? "Saving…" : "Save memory"}</button>
+              </form>
+            )}
+            {memoryError && <div className="history-empty history-error">{memoryError}</div>}
+            {memoryEnabled && memories.map((item) => (
+              <div className="history-entry" key={item.id}>
+                <span>{item.content}</span><small>{item.category}</small>
+                <div className="file-actions"><button type="button" disabled={memoryBusy} onClick={() => deleteMemory(item.id)}>Delete</button></div>
+              </div>
+            ))}
+            {memoryEnabled && !memoryLoading && memories.length === 0 && <div className="history-empty">No saved memories yet.</div>}
+            {!memoryEnabled && <div className="history-empty">Memory is off. Aahana will not retrieve saved memories.</div>}
+          </div>
+        )}
         {filesOpen && (
           <div className="history-list">
             {filesLoading && <div className="history-empty">Loading files…</div>}
@@ -680,7 +795,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       <section className="main-panel">
         <header className="topbar">
           <div className="breadcrumb">Workspace <span>/</span> {selectedProjectId ? (projects.find((item) => item.id === selectedProjectId)?.name || "Project") : "Assistant"}</div>
-          <div className="top-actions"><button className="mobile-history-toggle" type="button" onClick={toggleProjects}>Projects</button><button className="mobile-history-toggle" type="button" onClick={toggleHistory}>History</button><button className="mobile-history-toggle" type="button" onClick={toggleFiles}>Files</button><span>Private workspace</span></div>
+          <div className="top-actions"><button className="mobile-history-toggle" type="button" onClick={toggleProjects}>Projects</button><button className="mobile-history-toggle" type="button" onClick={toggleHistory}>History</button><button className="mobile-history-toggle" type="button" onClick={toggleFiles}>Files</button><button className="mobile-history-toggle" type="button" onClick={toggleMemoryPanel}>Memory</button><span>Private workspace</span></div>
         </header>
         {projectsOpen && (
           <div className="mobile-project-panel">
