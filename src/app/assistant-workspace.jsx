@@ -748,6 +748,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         <button className={projectsOpen ? "side-item active project-toggle" : "side-item muted project-toggle"} type="button" onClick={toggleProjects}>▧ <span>Projects</span></button>
         <button className={filesOpen ? "side-item active project-toggle" : "side-item muted project-toggle"} type="button" onClick={toggleFiles}>⌁ <span>Files</span></button>
         <button className={memoryOpen ? "side-item active project-toggle" : "side-item muted project-toggle"} type="button" onClick={toggleMemoryPanel}>◉ <span>Private memory</span></button>
+        <a className="side-item muted operations-nav" href="/operations" aria-label="Automation and executive team" title="Automation and executive team">⚙ <span>Automation &amp; executives</span></a>
         {memoryOpen && (
           <div className="history-list memory-panel">
             <div className="history-empty"><strong>Private memory</strong><br />Only used in your signed-in account. Off by default.</div>
