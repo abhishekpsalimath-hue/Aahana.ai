@@ -230,7 +230,7 @@ export default function OperationsPage() {
           </div>
           <div className="ops-panel ops-safety">
             <div className="ops-eyebrow">SAFETY BOUNDARIES</div><h2>Human control stays on</h2>
-            <ul><li>Tasks are private to your signed-in account.</li><li>Executive roles cannot deploy code or change billing.</li><li>Approval records intent; no worker executes the task yet.</li><li>System telemetry is kept separate from personal workspace events.</li><li>Prompts, chat messages and credentials are not written to the event feed.</li></ul>
+            <ul><li>Tasks are private to your signed-in account.</li><li>Executive roles cannot deploy code or change billing.</li><li>Only approved tasks can run internal AI analysis; no external actions are enabled.</li><li>Each task has a three-attempt limit and an auditable result.</li><li>System telemetry is kept separate from personal workspace events.</li><li>Prompts, chat messages and credentials are not written to the event feed.</li></ul>
           </div>
         </section>
 
