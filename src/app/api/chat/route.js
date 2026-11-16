@@ -1,10 +1,24 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { logSystemEvent, recordUserOpsEvent } from "@/lib/operations/server";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
 const MAX_PROMPT_LENGTH = 8000;
+
+async function recordReliabilityEvent(supabase, userId, event) {
+  if (event.eventType !== "research_answer_validated") {
+    const details = event.metadata || {};
+    await recordUserOpsEvent(supabase, userId, {
+      severity: event.severity || "error",
+      source: "self_ops",
+      summary: event.summary,
+      details: { event_code: event.eventType, ...details },
+    }).catch(() => {});
+  }
+  await logSystemEvent(event).catch(() => {});
+}
 
 function gatewayError(status, provider) {
   if (status === 401) return provider === "groq" ? "Aahana free AI provider key is invalid. Please check the server configuration." : "AI service authentication is not ready. Please try again later.";
@@ -297,9 +311,11 @@ export async function POST(request) {
           }
         } else {
           console.error("Aahana live research provider returned:", searchResponse.status);
+          await recordReliabilityEvent(supabase, user.id, { eventType: "research_provider_error", severity: "error", source: "chat_research", summary: "Live research provider returned a non-success response.", metadata: { status: searchResponse.status } }).catch(() => {});
         }
       } catch (researchError) {
         console.error("Aahana live research failed:", researchError?.message || "unknown error");
+        await recordReliabilityEvent(supabase, user.id, { eventType: "research_transport_error", severity: "error", source: "chat_research", summary: "Live research request failed before usable sources were returned." }).catch(() => {});
       }
     }
     if (!researchMessage) {
@@ -341,6 +357,7 @@ export async function POST(request) {
       signal: AbortSignal.timeout(45000),
     });
   } catch {
+    await recordReliabilityEvent(supabase, user.id, { eventType: "ai_provider_connection_error", severity: "error", source: "chat_generation", summary: "Aahana could not connect to the configured AI provider." }).catch(() => {});
     return NextResponse.json({ error: "Aahana could not connect to the AI service. Please try again." }, { status: 502 });
   }
 
@@ -348,6 +365,7 @@ export async function POST(request) {
     const gatewayRequestId = upstream.headers.get("x-request-id") || upstream.headers.get("x-vercel-id") || null;
     const responseText = await upstream.text().catch(() => "");
     const safeDetail = responseText.replace(/[\r\n\t]+/g, " ").slice(0, 500);
+    await recordReliabilityEvent(supabase, user.id, { eventType: "ai_provider_rejected_request", severity: "error", source: "chat_generation", summary: "The configured AI provider rejected a generation request.", metadata: { status: upstream.status } }).catch(() => {});
     console.error("Aahana AI Gateway rejected request:", {
       status: upstream.status,
       requestId: gatewayRequestId,
@@ -403,12 +421,14 @@ export async function POST(request) {
     const citedUrls = citationMatches.map((match) => match[2]);
     const hasVerifiedCitation = citedUrls.some((url) => allowedResearchUrls.includes(url));
     if (!hasVerifiedCitation) {
+      await recordReliabilityEvent(supabase, user.id, { eventType: "research_citation_validation_failed", severity: "warning", source: "chat_research", summary: "Research answer did not contain a citation matching retrieved sources.", metadata: { retrieved_source_count: allowedResearchUrls.length, answer_length: researchReply.length } }).catch(() => {});
       console.error("Aahana rejected a research answer without a matching retrieved-source citation.", {
         answerLength: researchReply.length,
         retrievedSourceCount: allowedResearchUrls.length,
       });
       return NextResponse.json({ error: "Aahana retrieved sources but could not produce a verifiable citation. Please retry your research question.", code: "RESEARCH_CITATION_VALIDATION_FAILED" }, { status: 502 });
     }
+    await recordReliabilityEvent(supabase, user.id, { eventType: "research_answer_validated", severity: "info", source: "chat_research", summary: "A source-backed research answer passed citation validation.", metadata: { retrieved_source_count: allowedResearchUrls.length, citation_count: citationMatches.length, answer_length: verifiedResearchReply.length } }).catch(() => {});
     const { error: saveError } = await supabase.rpc("save_ai_reply", {
       p_conversation_id: conversationId,
       p_content: verifiedResearchReply.slice(0, 16000),
@@ -474,6 +494,7 @@ export async function POST(request) {
         }
         controller.close();
       } catch (error) {
+        await recordReliabilityEvent(supabase, user.id, { eventType: "chat_stream_error", severity: "error", source: "chat_generation", summary: "A streamed chat response failed before completion.", metadata: { partial_answer_length: fullReply.length } }).catch(() => {});
         console.error("Aahana stream failed:", error?.message || "unknown error");
         if (!finished) controller.error(error);
       } finally {

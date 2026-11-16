@@ -748,6 +748,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         <button className={projectsOpen ? "side-item active project-toggle" : "side-item muted project-toggle"} type="button" onClick={toggleProjects}>▧ <span>Projects</span></button>
         <button className={filesOpen ? "side-item active project-toggle" : "side-item muted project-toggle"} type="button" onClick={toggleFiles}>⌁ <span>Files</span></button>
         <button className={memoryOpen ? "side-item active project-toggle" : "side-item muted project-toggle"} type="button" onClick={toggleMemoryPanel}>◉ <span>Private memory</span></button>
+        <a className="side-item muted operations-nav" href="/operations" aria-label="Automation and executive team" title="Automation and executive team">⚙ <span>Automation &amp; executives</span></a>
         {memoryOpen && (
           <div className="history-list memory-panel">
             <div className="history-empty"><strong>Private memory</strong><br />Only used in your signed-in account. Off by default.</div>
@@ -899,6 +900,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         )}
 
         <div className="welcome">
+          {!messages.length && <div className="cosmic-field" aria-hidden="true"><span className="cosmic-nebula" /><span className="cosmic-stars cosmic-stars-far" /><span className="cosmic-stars cosmic-stars-mid" /><span className="cosmic-stars cosmic-stars-near" /><span className="cosmic-core" /></div>}
           <div className="welcome-signal" aria-hidden="true">
             <span className="signal-orbit signal-orbit-one" />
             <span className="signal-orbit signal-orbit-two" />
