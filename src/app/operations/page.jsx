@@ -96,7 +96,7 @@ export default function OperationsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: `Executive follow-up: ${selectedBrief.objective}`.slice(0, 180),
-          description: `CEO decision brief (draft; review before action):\\n\\n${selectedBrief.ceo_decision_brief}`.slice(0, 8000),
+          description: `CEO decision brief (draft; review before action):\n\n${selectedBrief.ceo_decision_brief}`.slice(0, 8000),
           assignedRole: "ceo", priority: "normal", source: "executive",
         }),
       });
