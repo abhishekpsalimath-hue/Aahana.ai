@@ -8,13 +8,15 @@ export const maxDuration = 60;
 const MAX_PROMPT_LENGTH = 8000;
 
 async function recordReliabilityEvent(supabase, userId, event) {
-  const details = event.metadata || {};
-  await recordUserOpsEvent(supabase, userId, {
-    severity: event.severity || "error",
-    source: "self_ops",
-    summary: event.summary,
-    details: { event_code: event.eventType, ...details },
-  }).catch(() => {});
+  if (event.eventType !== "research_answer_validated") {
+    const details = event.metadata || {};
+    await recordUserOpsEvent(supabase, userId, {
+      severity: event.severity || "error",
+      source: "self_ops",
+      summary: event.summary,
+      details: { event_code: event.eventType, ...details },
+    }).catch(() => {});
+  }
   await logSystemEvent(event).catch(() => {});
 }
 
