@@ -5,7 +5,6 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 const MAX_PROMPT_LENGTH = 8000;
-const DAILY_LIMIT = 10;
 
 function gatewayError(status, provider) {
   if (status === 401) return provider === "groq" ? "Aahana free AI provider key is invalid. Please check the server configuration." : "AI service authentication is not ready. Please try again later.";
@@ -118,20 +117,6 @@ export async function POST(request) {
     return NextResponse.json({ error: "Could not save your message." }, { status: 500 });
   }
 
-  const { data: quota, error: quotaError } = await supabase.rpc("reserve_my_ai_request", { p_daily_limit: DAILY_LIMIT });
-  const quotaRow = Array.isArray(quota) ? quota[0] : quota;
-
-  if (quotaError || !quotaRow?.allowed) {
-    await supabase.from("messages").delete().eq("id", savedUserMessage.id).eq("user_id", user.id);
-    if (createdConversation) await supabase.from("conversations").delete().eq("id", conversationId);
-    const used = quotaRow?.requests_used ?? DAILY_LIMIT;
-    return NextResponse.json({
-      error: quotaError ? "Usage limits could not be checked. Please try again." : `You've reached today's limit of ${DAILY_LIMIT} AI requests.`,
-      requestsUsed: used,
-      requestsLimit: DAILY_LIMIT,
-    }, { status: quotaError ? 503 : 429 });
-  }
-
   const { data: history, error: historyError } = await supabase
     .from("messages")
     .select("id, role, content")
@@ -176,6 +161,7 @@ export async function POST(request) {
     "Respect privacy: do not claim to know private information about people, infer sensitive personal traits, or expose personal data. Discuss public figures using reliable public information and distinguish public facts from speculation.",
     "Do not pretend to know the signed-in user personally unless verified profile or saved-memory context is explicitly supplied in this request. Do not invent or silently create memories.",
     "Be clear, practical, respectful, and direct. Do not claim to have taken actions or accessed systems unless tools actually did so.",
+    "Support multilingual conversations. Detect the language of the user message and reply naturally in that same language unless the user requests another language. Support Indian regional languages and international languages to the extent the selected model can reliably generate them. Preserve the user preferred script; do not transliterate unless asked. If a language or dialect is uncertain, say so briefly and ask which language they prefer. Users may switch languages at any point in a conversation.",
     `The selected mode is: ${mode}. Match your response to this mode: solve, create, write, build or improve.`,
     "Ask only for information essential to completing the task. Prefer useful, accurate answers over generic encouragement.",
   ].join(" ");
@@ -293,8 +279,6 @@ export async function POST(request) {
       "Content-Type": "text/plain; charset=utf-8",
       "Cache-Control": "no-cache, no-transform",
       "X-Conversation-Id": conversationId,
-      "X-Requests-Used": String(quotaRow.requests_used),
-      "X-Requests-Limit": String(quotaRow.requests_limit),
     },
   });
 }
