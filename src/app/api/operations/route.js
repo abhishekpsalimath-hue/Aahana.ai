@@ -15,7 +15,7 @@ export async function GET() {
 
   const [tasksResult, eventsResult] = await Promise.all([
     supabase.from("aahana_ops_tasks")
-      .select("id,title,description,assigned_role,priority,status,source,approval_required,approved_at,completed_at,created_at,updated_at")
+      .select("id,title,description,assigned_role,priority,status,source,approval_required,approved_at,completed_at,execution_attempts,execution_result,execution_started_at,execution_completed_at,execution_error,created_at,updated_at")
       .eq("user_id", user.id)
       .order("updated_at", { ascending: false })
       .limit(50),
