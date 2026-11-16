@@ -305,3 +305,12 @@ button:focus-visible,a:focus-visible{outline-color:#c4a7ff}
 @keyframes core-pulse{0%,100%{opacity:.45;transform:translate(-50%,-50%) scale(.92)}50%{opacity:.9;transform:translate(-50%,-50%) scale(1.08)}}
 .ops-brief-actions{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-top:18px}.ops-brief-actions .ops-muted{font-size:11px}
 @media(prefers-reduced-motion:reduce){.cosmic-nebula,.cosmic-stars,.cosmic-core{animation:none!important}.cosmic-stars{opacity:.18;transform:none}}
+
+
+/* Keep a quiet trace of the cosmos behind active conversations */
+.main-panel{position:relative;isolation:isolate}
+.main-panel::before{content:"";position:fixed;z-index:0;pointer-events:none;top:0;right:0;bottom:0;left:248px;opacity:.11;background-image:radial-gradient(1px 1px at 22px 34px,#fff 99%,transparent),radial-gradient(1px 1px at 112px 76px,#cbb8ff 99%,transparent),radial-gradient(1px 1px at 158px 142px,#fff 99%,transparent),radial-gradient(1px 1px at 68px 188px,#fff 99%,transparent);background-size:190px 190px;animation:ambient-drift 75s linear infinite}
+.main-panel>*{position:relative;z-index:1}
+@keyframes ambient-drift{from{background-position:0 0}to{background-position:190px 190px}}
+@media(max-width:760px){.main-panel::before{left:0;top:0;opacity:.08}}
+@media(prefers-reduced-motion:reduce){.main-panel::before{animation:none}}
