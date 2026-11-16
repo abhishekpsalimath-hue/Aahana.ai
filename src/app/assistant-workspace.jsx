@@ -19,6 +19,36 @@ const starters = [
   "Help me design an app or website",
 ];
 
+function renderAssistantContent(content) {
+  const nodes = [];
+  const citationLink = /\\[([^\\]]+)\\]\\((https:\\/\\/[^\\s)]+)\\)/g;
+  let lastIndex = 0;
+  let match;
+  let key = 0;
+
+  while ((match = citationLink.exec(String(content || ""))) !== null) {
+    if (match.index > lastIndex) nodes.push(String(content).slice(lastIndex, match.index));
+    try {
+      const url = new URL(match[2]);
+      if (url.protocol === "https:") {
+        nodes.push(
+          <a key={key++} href={url.toString()} target="_blank" rel="noopener noreferrer">
+            {match[1]}
+          </a>
+        );
+      } else {
+        nodes.push(match[0]);
+      }
+    } catch {
+      nodes.push(match[0]);
+    }
+    lastIndex = citationLink.lastIndex;
+  }
+
+  if (lastIndex < String(content || "").length) nodes.push(String(content).slice(lastIndex));
+  return nodes;
+}
+
 function isImageGenerationRequest(value) {
   const text = String(value || "").trim();
   if (!text) return false;
@@ -913,7 +943,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                       </div>
                     )}
                   </div>
-                  {item.content ? <p>{item.content}</p> : busy && item.role === "assistant" ? <div className="thinking-indicator" role="status" aria-label="Aahana is thinking"><span /><span /><span /><small>Aahana is thinking</small></div> : null}
+                  {item.content ? <p>{renderAssistantContent(item.content)}</p> : busy && item.role === "assistant" ? <div className="thinking-indicator" role="status" aria-label="Aahana is thinking"><span /><span /><span /><small>Aahana is thinking</small></div> : null}
                 </article>
               ))}
             </div>
