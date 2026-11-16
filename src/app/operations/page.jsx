@@ -31,6 +31,7 @@ export default function OperationsPage() {
   const [briefError, setBriefError] = useState("");
   const [briefHistory, setBriefHistory] = useState([]);
   const [selectedBriefId, setSelectedBriefId] = useState("");
+  const [briefTaskBusy, setBriefTaskBusy] = useState(false);
 
   const load = useCallback(async () => {
     setError("");
@@ -84,6 +85,26 @@ export default function OperationsPage() {
     } catch {
       setBriefError("Could not connect to the executive workspace. Please retry.");
     } finally { setBriefLoading(false); }
+  }
+
+  async function addBriefToQueue() {
+    if (!selectedBrief) return;
+    setBriefTaskBusy(true); setError("");
+    try {
+      const response = await fetch("/api/operations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: `Executive follow-up: ${selectedBrief.objective}`.slice(0, 180),
+          description: `CEO decision brief (draft; review before action):\\n\\n${selectedBrief.ceo_decision_brief}`.slice(0, 8000),
+          assignedRole: "ceo", priority: "normal", source: "executive",
+        }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) setError(payload.error || "Could not add the decision brief to the task queue.");
+      else setTasks((current) => [payload.task, ...current]);
+    } catch { setError("Could not connect to the task queue. Please retry."); }
+    finally { setBriefTaskBusy(false); }
   }
 
   const counts = useMemo(() => ({
@@ -191,7 +212,7 @@ export default function OperationsPage() {
           </div>
           {selectedBrief && <div className="ops-brief-result">
             <div className="ops-section-heading"><div><div className="ops-eyebrow">CEO DECISION BRIEF</div><h2>{selectedBrief.project_label || "Executive review"}</h2></div><span className="ops-muted">{new Date(selectedBrief.created_at).toLocaleString()}</span></div>
-            <article className="ops-panel ops-brief-ceo"><h3>CEO synthesis</h3><div className="ops-pre">{selectedBrief.ceo_decision_brief}</div></article>
+            <article className="ops-panel ops-brief-ceo"><h3>CEO synthesis</h3><div className="ops-pre">{selectedBrief.ceo_decision_brief}</div><div className="ops-brief-actions"><button className="ops-primary" type="button" onClick={addBriefToQueue} disabled={briefTaskBusy}>{briefTaskBusy ? "Adding to queue…" : "Add draft follow-up to task queue"}</button><span className="ops-muted">Creates a proposed task only. You must approve it separately.</span></div></article>
             <div className="ops-role-grid ops-report-grid">{ROLES.filter((item) => item.id !== "ceo").map((item) => <article className="ops-panel ops-report" key={item.id}><div className="ops-eyebrow">{item.name} REPORT</div><div className="ops-pre">{selectedBrief.specialist_reports?.[item.id] || "No report saved."}</div></article>)}</div>
           </div>}
         </section>
