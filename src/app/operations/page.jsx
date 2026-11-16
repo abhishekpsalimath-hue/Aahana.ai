@@ -26,6 +26,9 @@ export default function OperationsPage() {
   const [priority, setPriority] = useState("normal");
   const [briefObjective, setBriefObjective] = useState("");
   const [briefProject, setBriefProject] = useState("");
+  const [projects, setProjects] = useState([]);
+  const [selectedProjectId, setSelectedProjectId] = useState("");
+  const [includeProjectContext, setIncludeProjectContext] = useState(false);
   const [briefContext, setBriefContext] = useState("");
   const [briefLoading, setBriefLoading] = useState(false);
   const [briefError, setBriefError] = useState("");
@@ -43,12 +46,15 @@ export default function OperationsPage() {
       return;
     }
     setUser(currentUser);
-    const [response, briefResponse] = await Promise.all([
+    const [response, briefResponse, projectResponse] = await Promise.all([
       fetch("/api/operations", { cache: "no-store" }),
       fetch("/api/executives/brief", { cache: "no-store" }),
+      fetch("/api/projects", { cache: "no-store" }),
     ]);
     const payload = await response.json().catch(() => ({}));
     const briefPayload = await briefResponse.json().catch(() => ({}));
+    const projectPayload = await projectResponse.json().catch(() => ({}));
+    if (projectResponse.ok) setProjects(projectPayload.projects || []);
     if (briefResponse.ok) {
       setBriefHistory(briefPayload.briefs || []);
       setSelectedBriefId((current) => current || briefPayload.briefs?.[0]?.id || "");
@@ -73,7 +79,7 @@ export default function OperationsPage() {
       const response = await fetch("/api/executives/brief", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ objective: briefObjective.trim(), projectLabel: briefProject.trim(), context: briefContext.trim() }),
+        body: JSON.stringify({ objective: briefObjective.trim(), projectLabel: briefProject.trim(), context: briefContext.trim(), includeProjectContext, projectId: includeProjectContext ? selectedProjectId : "" }),
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) setBriefError(payload.error || "The executive team could not complete this brief.");
@@ -200,6 +206,9 @@ export default function OperationsPage() {
                 <label>Objective<textarea rows={3} maxLength={4000} value={briefObjective} onChange={(e) => setBriefObjective(e.target.value)} placeholder="Example: Prepare a go-to-market strategy for Aahana's first 100 beta users." required /></label>
                 <label>Project label (optional)<input maxLength={120} value={briefProject} onChange={(e) => setBriefProject(e.target.value)} placeholder="Aahana AI" /></label>
                 <label>Context to share (optional)<textarea rows={4} maxLength={8000} value={briefContext} onChange={(e) => setBriefContext(e.target.value)} placeholder="Add facts, constraints, target dates or decisions already made." /></label>
+                <label>Saved project (optional)<select value={selectedProjectId} onChange={(e) => setSelectedProjectId(e.target.value)}><option value="">Choose a project</option>{projects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}</select></label>
+                <label className="ops-context-consent"><input type="checkbox" checked={includeProjectContext} onChange={(e) => setIncludeProjectContext(e.target.checked)} disabled={!selectedProjectId} /> Include this selected project overview and file index.</label>
+                <small className="ops-muted">Only the selected project is read after you enable this. The briefing receives its name, description, status and file metadata—not document contents or other projects.</small>
                 {briefError && <div className="ops-error" role="alert">{briefError}</div>}
                 <button className="ops-primary" disabled={briefLoading || !briefObjective.trim()}>{briefLoading ? "Executive team is analysing…" : "Run executive briefing"}</button>
                 <small className="ops-muted">Four AI calls per briefing. Results are saved privately to your account. No external action is executed.</small>
