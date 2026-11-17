@@ -114,6 +114,44 @@ export default function LearningStudio({ userEmail = "" }) {
   const [memoryError, setMemoryError] = useState("");
   const [memoryNotice, setMemoryNotice] = useState("");
 
+  const learningRoadmap = learningMemory.journeys.reduce((roadmap, item) => {
+    const journey = item.journey;
+    const revisit = (journey.scenes || [])
+      .filter((scene) => scene.alternateExplanationUsed)
+      .map((scene) => ({
+        title: scene.caption,
+        subject: journey.subject,
+        gradeBand: journey.gradeBand,
+        curriculum: journey.curriculum,
+        language: journey.language,
+        lessonTitle: journey.title,
+      }));
+    return {
+      revisit: [...roadmap.revisit, ...revisit],
+      latest: roadmap.latest || {
+        title: journey.title,
+        subject: journey.subject,
+        gradeBand: journey.gradeBand,
+        curriculum: journey.curriculum,
+        language: journey.language,
+      },
+    };
+  }, { revisit: [], latest: null });
+  const uniqueRevisitTopics = learningRoadmap.revisit.filter((topic, index, all) =>
+    all.findIndex((item) => item.title.toLowerCase() === topic.title.toLowerCase() && item.subject === topic.subject) === index
+  ).slice(0, 4);
+
+  function exploreRoadmapTopic(topic, revisit = false) {
+    setSubject(topic.subject);
+    setGradeBand(topic.gradeBand);
+    setCurriculum(topic.curriculum);
+    setLanguage(topic.language);
+    setQuestion(revisit
+      ? `Let's explore "${topic.title}" again with a fresh animated explanation and a different example.`
+      : `Let's continue exploring "${topic.title}" and connect it to a new idea.`);
+    setLearningMode("story");
+  }
+
   const loadLearningHistory = useCallback(async () => {
     setHistoryLoading(true);
     setHistoryError("");
@@ -372,6 +410,24 @@ export default function LearningStudio({ userEmail = "" }) {
         </div>}
         {!memoryLoading && learningMemory.journeys.length === 0 && <p className="learning-history-empty">No saved journeys yet. Finish an animated lesson and choose “Save to my journey”.</p>}
       </section>
+      {learningMemory.enabled && learningMemory.journeys.length > 0 && <section className="learning-roadmap" aria-label="Your next learning steps">
+        <div className="learning-section-heading"><div><span>BUILT FROM YOUR SAVED JOURNEYS</span><h2>Your next discoveries</h2></div></div>
+        <p>These are gentle suggestions based only on lessons you chose to save. They are invitations—not grades or assumptions about what you know.</p>
+        {uniqueRevisitTopics.length > 0 && <div className="learning-roadmap-group">
+          <h3>Explore with a fresh explanation</h3>
+          {uniqueRevisitTopics.map((topic) => <article className="learning-roadmap-item" key={topic.subject + topic.title}>
+            <div><strong>{topic.title}</strong><small>{topic.subject} · from {topic.lessonTitle}</small></div>
+            <button type="button" onClick={() => exploreRoadmapTopic(topic, true)}>Explore again</button>
+          </article>)}
+        </div>}
+        {learningRoadmap.latest && <div className="learning-roadmap-group">
+          <h3>Continue your curiosity</h3>
+          <article className="learning-roadmap-item">
+            <div><strong>{learningRoadmap.latest.title}</strong><small>{learningRoadmap.latest.subject} · build a new connection</small></div>
+            <button type="button" onClick={() => exploreRoadmapTopic(learningRoadmap.latest)}>Continue</button>
+          </article>
+        </div>}
+      </section>}
       <section className="learning-modes">
         <div className="learning-section-heading"><div><span>CHOOSE YOUR JOURNEY</span><h2>How would you like to learn?</h2></div></div>
         <div className="learning-mode-grid">
