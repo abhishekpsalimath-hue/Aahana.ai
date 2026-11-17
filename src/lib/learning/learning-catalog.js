@@ -25,3 +25,46 @@ export const learningCategories = [
 ];
 
 export const allLearningSubjects = [...new Set(learningCategories.flatMap((category) => category.subjects))];
+
+
+/**
+ * Stable discovery records for the learning catalogue.
+ * These describe destinations, not a claim that every subject already has a
+ * fully authored lesson. Lesson availability is resolved by the learning flow.
+ */
+const normalizeLearningSearch = (value) => String(value || "")
+  .normalize("NFKD")
+  .replace(/[\\u0300-\\u036f]/g, "")
+  .toLowerCase()
+  .replace(/[^\\p{L}\\p{N}]+/gu, " ")
+  .trim();
+
+export const learningSubjectIndex = learningCategories.flatMap((category) =>
+  category.subjects.map((subject) => ({
+    id: normalizeLearningSearch(category.name + " " + subject).replace(/\\s+/g, "-"),
+    category: category.name,
+    subject,
+    searchText: normalizeLearningSearch(category.name + " " + subject),
+    status: "discoverable",
+  }))
+);
+
+export function findLearningSubjects(query, limit = 12) {
+  const normalized = normalizeLearningSearch(query);
+  if (normalized.length < 2) return [];
+  const safeLimit = Number.isFinite(limit) ? Math.max(1, Math.min(50, Math.floor(limit))) : 12;
+  return learningSubjectIndex
+    .map((item) => {
+      const subjectText = normalizeLearningSearch(item.subject);
+      const categoryText = normalizeLearningSearch(item.category);
+      const score = subjectText.startsWith(normalized) ? 3
+        : subjectText.includes(normalized) ? 2
+        : categoryText.includes(normalized) ? 1
+        : 0;
+      return { item, score };
+    })
+    .filter((entry) => entry.score > 0)
+    .sort((a, b) => b.score - a.score || a.item.subject.localeCompare(b.item.subject))
+    .slice(0, safeLimit)
+    .map(({ item }) => ({ id: item.id, category: item.category, subject: item.subject, status: item.status }));
+}
