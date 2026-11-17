@@ -1,4 +1,4 @@
-import { SpeechProviderError, normalizeLocale } from "../speech-runtime.mjs";
+import { SpeechProviderError, normalizeLocale } from "./speech-runtime.mjs";
 
 const MAX_AUDIO_BYTES = 15 * 1024 * 1024;
 
