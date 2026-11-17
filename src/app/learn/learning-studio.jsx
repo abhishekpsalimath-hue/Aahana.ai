@@ -306,6 +306,7 @@ function SolarSystemCurriculum({ onStartUnit }) {
 export default function LearningStudio({ userEmail = "" }) {
   const [selectedPlanet, setSelectedPlanet] = useState(null);
   const [gradeBand, setGradeBand] = useState("not-sure");
+  const [schoolGrade, setSchoolGrade] = useState("");
   const [subject, setSubject] = useState("Anything / explore");
   const [category, setCategory] = useState("Explore anything");
   const categorySubjects = learningCategories.find((item) => item.name === category)?.subjects || learningCategories[0].subjects;
@@ -473,18 +474,20 @@ export default function LearningStudio({ userEmail = "" }) {
       if (!response.ok) throw new Error(result.error || "Could not reopen this learning session.");
       if (result.conversation?.mode !== "learn") throw new Error("This conversation is not a Learning Studio session.");
       setConversationId(result.conversation.id);
-      let resumedProfile = { gradeBand, subject, curriculum, language, learningMode };
+      let resumedProfile = { gradeBand, schoolGrade, subject, curriculum, language, learningMode };
       try {
         const savedProfile = JSON.parse(window.localStorage.getItem("aahana:learning-profile:" + result.conversation.id) || "null");
         if (savedProfile && typeof savedProfile === "object") {
           resumedProfile = {
             gradeBand: gradeBands.some(([value]) => value === savedProfile.gradeBand) ? savedProfile.gradeBand : resumedProfile.gradeBand,
+            schoolGrade: ["1","2","3","4","5","6","7","8","9","10"].includes(String(savedProfile.schoolGrade)) ? String(savedProfile.schoolGrade) : resumedProfile.schoolGrade,
             subject: subjects.includes(savedProfile.subject) ? savedProfile.subject : resumedProfile.subject,
             curriculum: curricula.includes(savedProfile.curriculum) ? savedProfile.curriculum : resumedProfile.curriculum,
             language: typeof savedProfile.language === "string" && savedProfile.language.length <= 35 ? savedProfile.language : resumedProfile.language,
             learningMode: learningModes.some((item) => item.id === savedProfile.learningMode) ? savedProfile.learningMode : resumedProfile.learningMode,
           };
           setGradeBand(resumedProfile.gradeBand);
+          setSchoolGrade(resumedProfile.schoolGrade);
           if (subjects.includes(resumedProfile.subject)) {
             setSubject(resumedProfile.subject);
             setCategory(learningCategories.find((item) => item.subjects.includes(resumedProfile.subject))?.name || "Explore anything");
@@ -514,7 +517,7 @@ export default function LearningStudio({ userEmail = "" }) {
     event?.preventDefault();
     const requestText = (retryText || question).trim();
     if (!requestText || busy) return;
-    const profile = retryProfile || { gradeBand, subject, curriculum, language, learningMode };
+    const profile = retryProfile || { gradeBand, schoolGrade, subject, curriculum, language, learningMode };
     if (!retryText) setQuestion("");
     setError("");
     setBusy(true);
@@ -615,7 +618,7 @@ export default function LearningStudio({ userEmail = "" }) {
               {gradeBands.map(([value, label]) => <option value={value} key={value}>{label}</option>)}
             </select>
           </label>
-          <label>Learning category
+          <label>School grade (optional)\n            <select value={schoolGrade} onChange={(event) => setSchoolGrade(event.target.value)} disabled={busy}>\n              <option value="">Not specified</option>\n              {Array.from({ length: 10 }, (_, index) => String(index + 1)).map((value) => <option value={value} key={value}>Grade {value}</option>)}\n            </select>\n          </label>\n          <label>Learning category
             <select value={category} onChange={(event) => {
               const nextCategory = learningCategories.find((item) => item.name === event.target.value);
               setCategory(event.target.value);
