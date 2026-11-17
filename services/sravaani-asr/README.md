@@ -50,16 +50,18 @@ uvicorn app:app --host 127.0.0.1 --port 8010 --workers 1
 `GET /health` returns a minimal readiness state.
 
 This is an internal service contract authored for Aahana, not an upstream
-SraVaani endpoint. It is not yet connected to the Next.js application or the
-browser voice UI.
+SraVaani endpoint. The authenticated Next.js route is now present at `POST /api/voice/transcribe`.
+It remains disabled by default and requires the signed-in user to confirm
+per-request audio transfer consent. The browser voice UI does not yet call this
+route; no automatic audio upload is active.
 
 ## Unit tests
 
 Run the dependency-free request guard tests without loading the model or installing PyTorch:
 
-\`\`\`bash
+```bash
 python -m unittest -v test_request_validation.py
-\`\`\`
+```
 
 These tests cover immutable revision validation, service-token length, exact bearer authentication, content type, empty payloads, and the RIFF/WAVE container header. They do not test model inference, audio decoding, or the HTTP server.
 
@@ -71,8 +73,11 @@ These tests cover immutable revision validation, service-token length, exact bea
   accents, silence, malformed WAV, oversized audio, cancellation and
   concurrent requests using consented test recordings.
 - Measure WER, latency, peak RAM/VRAM and per-session cost on actual hardware.
-- Add an Aahana server-only provider adapter only after this endpoint is
-  deployed privately and the service contract is independently tested.
+- Deploy this service privately and configure the Next.js server variables
+  `AAHANA_SRAVAANI_ENABLED=true`, `SRAVAANI_ASR_URL`, `SRAVAANI_API_TOKEN`,
+  and a comma-separated `SRAVAANI_SUPPORTED_LOCALES` containing only verified
+  locales. Keep the service URL/token server-only. The Next.js route and adapter
+  have mock/contract coverage, not live model verification.
 
 Official model page: https://vaani.iisc.ac.in/models/sravaani
 Official model card: https://huggingface.co/ARTPARK-IISc/SraVaani-1.0
