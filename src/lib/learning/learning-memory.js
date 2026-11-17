@@ -15,14 +15,19 @@ export function validateLearningJourney(input) {
   const attempts = input.attempts;
   const adaptedScenes = input.adaptedScenes;
   const exploredScenes = input.exploredScenes;
+  const scenes = Array.isArray(input.scenes) ? input.scenes.map((scene) => ({
+    caption: typeof scene?.caption === "string" ? scene.caption.trim().slice(0, 120) : "",
+    alternateExplanationUsed: scene?.alternateExplanationUsed === true,
+  })) : [];
   if (!title || !subject || !gradeBand || !curriculum || !language) return null;
   if (!Number.isInteger(sceneCount) || sceneCount < 2 || sceneCount > 6) return null;
   if (!Number.isInteger(attempts) || attempts < sceneCount || attempts > 500) return null;
   if (!Number.isInteger(adaptedScenes) || adaptedScenes < 0 || adaptedScenes > sceneCount) return null;
   if (!Number.isInteger(exploredScenes) || exploredScenes !== sceneCount) return null;
+  if (scenes.length !== sceneCount || scenes.some((scene) => !scene.caption)) return null;
   return {
     title, subject, gradeBand, curriculum, language, sceneCount,
-    attempts, adaptedScenes, exploredScenes,
+    attempts, adaptedScenes, exploredScenes, scenes,
     completedAt: new Date().toISOString(),
   };
 }
@@ -34,7 +39,9 @@ export function parseLearningJourney(content) {
     if (!value || typeof value !== "object" || typeof value.title !== "string" ||
         typeof value.subject !== "string" || !Number.isInteger(value.sceneCount) ||
         !Number.isInteger(value.attempts) || !Number.isInteger(value.adaptedScenes) ||
-        !Number.isInteger(value.exploredScenes) || typeof value.completedAt !== "string") return null;
+        !Number.isInteger(value.exploredScenes) || !Array.isArray(value.scenes) || value.scenes.length !== value.sceneCount ||
+        value.scenes.some((scene) => typeof scene?.caption !== "string" || typeof scene?.alternateExplanationUsed !== "boolean") ||
+        typeof value.completedAt !== "string") return null;
     return value;
   } catch {
     return null;
