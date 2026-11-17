@@ -53,6 +53,16 @@ This is an internal service contract authored for Aahana, not an upstream
 SraVaani endpoint. It is not yet connected to the Next.js application or the
 browser voice UI.
 
+## Unit tests
+
+Run the dependency-free request guard tests without loading the model or installing PyTorch:
+
+\`\`\`bash
+python -m unittest -v test_request_validation.py
+\`\`\`
+
+These tests cover immutable revision validation, service-token length, exact bearer authentication, content type, empty payloads, and the RIFF/WAVE container header. They do not test model inference, audio decoding, or the HTTP server.
+
 ## Next verification gates
 
 - Audit the exact remote code at the pinned Hugging Face revision.
