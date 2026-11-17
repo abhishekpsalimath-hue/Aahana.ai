@@ -339,6 +339,11 @@ test("student mode includes an interactive 3D model lab rather than image-only l
   assert.match(world, /pollution/);
   assert.match(world, /Reset experiment/);
   assert.match(world, /qualitative teaching outcomes/);
+  assert.match(world, /EXPLORE THE FOUR-STROKE CYCLE/);
+  assert.match(world, /engineCycle/);
+  for (const stage of ["intake", "compression", "power", "exhaust"]) assert.ok(world.includes(stage), `Missing engine cycle stage: ${stage}`);
+  assert.match(world, /Restart cycle/);
+  assert.match(world, /conceptual teaching model, not a timed or mechanically accurate engine simulation/);
   const miniModel = world.slice(world.indexOf("export function Mini3DModel"), world.indexOf("export default function Interactive3DWorld"));
   const mainLab = world.slice(world.indexOf("export default function Interactive3DWorld"));
   assert.doesNotMatch(miniModel, /drawScene\(canvas, modelId, rotation\.yaw, rotation\.pitch, zoom, ecosystem\)/);
