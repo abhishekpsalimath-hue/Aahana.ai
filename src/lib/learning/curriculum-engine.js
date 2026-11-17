@@ -1,4 +1,4 @@
-import { learningSubjectIndex } from "./learning-catalog.js";
+import { learningSubjectIndex, learningCategories } from "./learning-catalog.js";
 
 /**
  * Authored curriculum metadata is separate from subject discovery.
