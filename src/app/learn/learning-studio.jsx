@@ -618,7 +618,13 @@ export default function LearningStudio({ userEmail = "" }) {
               {gradeBands.map(([value, label]) => <option value={value} key={value}>{label}</option>)}
             </select>
           </label>
-          <label>School grade (optional)\n            <select value={schoolGrade} onChange={(event) => setSchoolGrade(event.target.value)} disabled={busy}>\n              <option value="">Not specified</option>\n              {Array.from({ length: 10 }, (_, index) => String(index + 1)).map((value) => <option value={value} key={value}>Grade {value}</option>)}\n            </select>\n          </label>\n          <label>Learning category
+          <label>School grade (optional)
+            <select value={schoolGrade} onChange={(event) => setSchoolGrade(event.target.value)} disabled={busy}>
+              <option value="">Not specified</option>
+              {Array.from({ length: 10 }, (_, index) => String(index + 1)).map((value) => <option value={value} key={value}>Grade {value}</option>)}
+            </select>
+          </label>
+          <label>Learning category
             <select value={category} onChange={(event) => {
               const nextCategory = learningCategories.find((item) => item.name === event.target.value);
               setCategory(event.target.value);
