@@ -21,7 +21,6 @@ export async function GET() {
 
   try {
     const enabled = await memoryIsEnabled(supabase, user.id);
-    if (!enabled) return NextResponse.json({ enabled: false, journeys: [] });
     const { data, error } = await supabase.from("user_memories")
       .select("id, content, created_at")
       .eq("user_id", user.id)
