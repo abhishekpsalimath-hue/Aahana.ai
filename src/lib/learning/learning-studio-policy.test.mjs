@@ -209,7 +209,7 @@ test("animated lesson renderer validates scene data and provides subject-specifi
   assert.match(animated, /Explore again/);
   assert.match(animated, /Trying a new way is a powerful learning skill/);
   assert.match(animated, /motion-data-track/);
-  for (const visual of ["fraction", "orbit", "water-cycle", "plant-growth", "number-line", "molecule", "concept-map"]) {
+  for (const visual of ["fraction", "orbit", "water-cycle", "plant-growth", "number-line", "molecule", "concept-map", "timeline", "bar-chart", "anatomy", "circuit", "code-flow", "sound-wave", "map"]) {
     assert.ok(animated.includes(`"${visual}"`), `Missing visual renderer: ${visual}`);
   }
   assert.match(animated, /export function AnimatedVisual/);
