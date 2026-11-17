@@ -990,7 +990,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         </button>
         <div className="side-label">WORKSPACE</div>
         <button className={selectedProjectId ? "side-item assistant-nav" : "side-item active assistant-nav"} type="button" onClick={() => selectProject(null)}>✳ <span>Assistant</span></button>
-        <a className="side-item muted learning-nav" href="/learn">✧ <span>Learning Studio</span></a>
+        <a className="side-item muted learning-nav" href="/learn" aria-label="Open Student Mode">✧ <span>Student Mode</span></a>
         <button className={historyOpen ? "side-item active history-toggle" : "side-item muted history-toggle"} type="button" onClick={toggleHistory}>◷ <span>History</span></button>
         {historyOpen && (
           <div className="history-list">
@@ -1103,7 +1103,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       <section className="main-panel">
         <header className="topbar">
           <div className="breadcrumb">Workspace <span>/</span> {selectedProjectId ? (projects.find((item) => item.id === selectedProjectId)?.name || "Project") : "Assistant"}</div>
-          <div className="top-actions"><button className="mobile-history-toggle" type="button" onClick={toggleProjects}>Projects</button><button className="mobile-history-toggle" type="button" onClick={toggleHistory}>History</button><button className="mobile-history-toggle" type="button" onClick={toggleFiles}>Files</button><button className="mobile-history-toggle" type="button" onClick={toggleMemoryPanel}>Memory</button><span>Private workspace</span></div>
+          <div className="top-actions"><button className="mobile-history-toggle" type="button" onClick={toggleProjects}>Projects</button><button className="mobile-history-toggle" type="button" onClick={toggleHistory}>History</button><button className="mobile-history-toggle" type="button" onClick={toggleFiles}>Files</button><button className="mobile-history-toggle" type="button" onClick={toggleMemoryPanel}>Memory</button><a className="student-mode-shortcut" href="/learn">✧ Student Mode</a><span>Private workspace</span></div>
         </header>
         {projectsOpen && (
           <div className="mobile-project-panel">
