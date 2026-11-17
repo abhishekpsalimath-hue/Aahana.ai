@@ -48,3 +48,11 @@ test("learning sessions use the authenticated chat endpoint and persist under le
   assert.match(studio, /mode: "learn"/);
   assert.match(studio, /learningProfile: profile/);
 });
+
+test("learning studio lists only learn-mode sessions and resumes through the owner-scoped conversation API", () => {
+  assert.match(studio, /fetch\("\/api\/conversations"/);
+  assert.match(studio, /filter\(\(item\) => item\.mode === "learn"\)/);
+  assert.match(studio, /fetch\("\/api\/conversations\/" \+ encodeURIComponent\(id\)/);
+  assert.match(studio, /result\.conversation\?\.mode !== "learn"/);
+  assert.match(studio, /setMessages\(\(result\.messages \|\| \[\]\)\.map/);
+});
