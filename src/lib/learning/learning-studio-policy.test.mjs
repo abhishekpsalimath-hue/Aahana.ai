@@ -148,7 +148,7 @@ test("non-quiz learning modes request a validated structured animated lesson", (
   assert.match(studio, /topic=\{messages\.slice\(0, index\)\.reverse\(\)/);
   assert.match(animated, /Try the interactive lesson again/);
   assert.match(studio, /Building your interactive lesson/);
-  assert.match(studio, /startLearning\\(null, previousQuestion, false, item.profile/);
+  assert.ok(studio.includes("startLearning(null, previousQuestion, false, item.profile"));
   assert.match(route, /visual \(exactly one of fraction, orbit, water-cycle, plant-growth, number-line, molecule, concept-map, timeline, bar-chart, anatomy, circuit, code-flow, sound-wave, map, 3d-solar-system, 3d-planet, 3d-molecule, 3d-atom, 3d-dna, 3d-geometry, 3d-terrain, 3d-plant-cell, 3d-heart, 3d-pyramid, 3d-ecosystem, 3d-engine\)/);
   assert.match(route, /3 to 5 scenes/);
   assert.match(route, /Each challenge must contain question, exactly 3 unique options/);
@@ -157,7 +157,7 @@ test("non-quiz learning modes request a validated structured animated lesson", (
   assert.match(route, /support \(object with visual set to a different valid visual type/);
   assert.match(route, /hints array of exactly 2 progressively helpful hints/);
   assert.match(route, /fraction, orbit, water-cycle, plant-growth, number-line, molecule, concept-map/);
-  assert.match(studio, /item.role === "assistant" && messageMode !== "play/);
+  assert.ok(studio.includes('item.role === "assistant" && messageMode !== "play"'));
   assert.match(studio, /item.learningMode \|\| learningMode/);
   assert.match(studio, /item.profile\)/);
   assert.match(studio, /<AnimatedLesson/);
