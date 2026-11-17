@@ -495,3 +495,13 @@
 .solar-curriculum-start:hover{background:#d7c6fa}
 .solar-curriculum-readiness{margin:16px 2px 0;color:#8f879d;font-size:10px;line-height:1.6}
 @media(max-width:700px){.solar-curriculum{padding:20px 16px;margin:30px auto 40px}.solar-curriculum-layout{grid-template-columns:1fr;gap:12px}.solar-curriculum-unit{padding:13px 12px}.solar-curriculum-detail{padding:19px}}
+
+
+.solar-curriculum-progress{height:6px;margin:18px 0 14px;border-radius:99px;overflow:hidden;background:#302a3b}
+.solar-curriculum-progress span{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#8f78c6,#d1baff);transition:width .25s ease}
+.solar-curriculum-unit i{font-size:8px;letter-spacing:.7px;font-weight:800;white-space:nowrap}
+.solar-curriculum-actions{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin-top:22px}
+.solar-curriculum-start{margin-top:0}
+.solar-curriculum-complete{padding:11px 14px;border:1px solid #615276;border-radius:11px;background:transparent;color:#d9c8f6;font-size:11px;font-weight:700;cursor:pointer}
+.solar-curriculum-complete:hover{border-color:#c4aaf4;background:rgba(196,170,244,.08)}
+@media(max-width:460px){.solar-curriculum-actions{align-items:stretch;flex-direction:column}.solar-curriculum-actions button{justify-content:center}}
