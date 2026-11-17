@@ -149,3 +149,20 @@ recognition in the product.
 
 Official benchmark and access notes:
 https://vaani.iisc.ac.in/models/sravaani
+
+
+### SraVaani server-side recognition adapter
+
+`sravaani-asr-provider.server.mjs` implements the recognition provider contract
+for Aahana's private wrapper at `POST /v1/audio/transcriptions`. It sends WAV
+bytes as multipart form data with a bearer token, enforces HTTPS (or loopback
+HTTP), caps audio at 15 MB, and requires an explicit deployment locale
+allow-list. It is inert until both a private endpoint and token are injected.
+The allow-list must contain only locales that have passed end-to-end testing
+for that deployment; do not populate all 65 model languages by default.
+
+The wrapper currently performs multilingual recognition using the official
+model interface; it does not accept a locale hint or guarantee that its output
+matches the user's selected locale. The adapter's locale allow-list is an
+Aahana product gate, not proof of language detection or accuracy. This adapter
+has mock-based contract tests only and is not connected to the chat UI.
