@@ -48,7 +48,39 @@ export const GRADE_1_MATH = {
       options: ["13", "15", "17"],
       answer: 1,
       explanation: "Counting forward from 14 gives 15. It is one more than 14.",
-      practice: "Count 12 everyday objects. Point to each object once, then write the number 12."
+      practice: "Count 12 everyday objects. Point to each object once, then write the number 12.",
+    checks: [
+        {
+          "question": "What number comes just before 10?",
+          "options": [
+            "8",
+            "9",
+            "11"
+          ],
+          "answer": 1,
+          "explanation": "Nine comes immediately before ten."
+        },
+        {
+          "question": "Which number is greater?",
+          "options": [
+            "12",
+            "18",
+            "8"
+          ],
+          "answer": 1,
+          "explanation": "18 is greater than 12 and 8."
+        },
+        {
+          "question": "How many are there: ● ● ● ● ●?",
+          "options": [
+            "4",
+            "5",
+            "6"
+          ],
+          "answer": 1,
+          "explanation": "There are five dots. Count each dot once."
+        }
+      ]
     },
     {
       id: "addition-within-10",
@@ -65,7 +97,39 @@ export const GRADE_1_MATH = {
       options: ["6", "7", "8"],
       answer: 1,
       explanation: "Start at 5 and count two steps forward: 6, 7. So 5 + 2 = 7.",
-      practice: "Draw 3 circles, then 4 more. Count all the circles and write the addition sentence."
+      practice: "Draw 3 circles, then 4 more. Count all the circles and write the addition sentence.",
+    checks: [
+        {
+          "question": "What is 2 + 3?",
+          "options": [
+            "4",
+            "5",
+            "6"
+          ],
+          "answer": 1,
+          "explanation": "Two counters and three more make five."
+        },
+        {
+          "question": "What is 4 + 4?",
+          "options": [
+            "7",
+            "8",
+            "9"
+          ],
+          "answer": 1,
+          "explanation": "Four plus four equals eight."
+        },
+        {
+          "question": "You have 3 pencils and get 2 more. How many now?",
+          "options": [
+            "5",
+            "6",
+            "4"
+          ],
+          "answer": 0,
+          "explanation": "Three pencils plus two more gives five pencils."
+        }
+      ]
     },
     {
       id: "subtraction-within-10",
@@ -82,7 +146,39 @@ export const GRADE_1_MATH = {
       options: ["4", "5", "6"],
       answer: 1,
       explanation: "Count back four steps from 9: 8, 7, 6, 5. Five remain.",
-      practice: "Draw 7 stars. Cross out 2 stars. Count the stars that are left."
+      practice: "Draw 7 stars. Cross out 2 stars. Count the stars that are left.",
+    checks: [
+        {
+          "question": "What is 5 − 2?",
+          "options": [
+            "2",
+            "3",
+            "4"
+          ],
+          "answer": 1,
+          "explanation": "Taking two away from five leaves three."
+        },
+        {
+          "question": "What is 8 − 3?",
+          "options": [
+            "6",
+            "5",
+            "4"
+          ],
+          "answer": 1,
+          "explanation": "Count back three steps from eight: seven, six, five."
+        },
+        {
+          "question": "There are 6 apples. You eat 1. How many remain?",
+          "options": [
+            "4",
+            "5",
+            "6"
+          ],
+          "answer": 1,
+          "explanation": "Six take away one leaves five."
+        }
+      ]
     },
     {
       id: "shapes-and-space",
@@ -99,7 +195,39 @@ export const GRADE_1_MATH = {
       options: ["Square", "Triangle", "Circle"],
       answer: 1,
       explanation: "A triangle has three straight sides and three corners.",
-      practice: "Find one circle, one rectangle and one triangle in your home or classroom."
+      practice: "Find one circle, one rectangle and one triangle in your home or classroom.",
+    checks: [
+        {
+          "question": "How many corners does a square have?",
+          "options": [
+            "3",
+            "4",
+            "5"
+          ],
+          "answer": 1,
+          "explanation": "A square has four corners."
+        },
+        {
+          "question": "Which shape has no straight sides?",
+          "options": [
+            "Circle",
+            "Triangle",
+            "Rectangle"
+          ],
+          "answer": 0,
+          "explanation": "A circle is round and has no straight sides."
+        },
+        {
+          "question": "A book cover is usually shaped like a…",
+          "options": [
+            "Circle",
+            "Rectangle",
+            "Triangle"
+          ],
+          "answer": 1,
+          "explanation": "A book cover is commonly a rectangle."
+        }
+      ]
     },
     {
       id: "patterns-and-sorting",
@@ -116,7 +244,39 @@ export const GRADE_1_MATH = {
       options: ["Red", "Blue", "Green"],
       answer: 1,
       explanation: "The pattern alternates red and blue, so blue comes next.",
-      practice: "Make a repeating pattern using two colours of pencils or two kinds of objects."
+      practice: "Make a repeating pattern using two colours of pencils or two kinds of objects.",
+    checks: [
+        {
+          "question": "What comes next: circle, square, circle, square, …?",
+          "options": [
+            "Circle",
+            "Square",
+            "Triangle"
+          ],
+          "answer": 0,
+          "explanation": "The circle-square pattern repeats, so circle comes next."
+        },
+        {
+          "question": "Which rule sorts these: red blocks and blue blocks?",
+          "options": [
+            "Colour",
+            "Weight",
+            "Sound"
+          ],
+          "answer": 0,
+          "explanation": "The blocks are grouped by colour."
+        },
+        {
+          "question": "What comes next: 2, 4, 2, 4, …?",
+          "options": [
+            "3",
+            "2",
+            "4"
+          ],
+          "answer": 1,
+          "explanation": "The repeating pattern is 2, 4, so 2 comes next."
+        }
+      ]
     },
     {
       id: "measurement-and-data",
@@ -133,7 +293,39 @@ export const GRADE_1_MATH = {
       options: ["The 5-block ribbon", "The 8-block ribbon", "They are the same"],
       answer: 1,
       explanation: "Eight blocks is a greater length than five blocks, when measured with the same size blocks.",
-      practice: "Measure two pencils using the same paper clips. Record which one is longer."
+      practice: "Measure two pencils using the same paper clips. Record which one is longer.",
+    checks: [
+        {
+          "question": "Which is longer: 9 blocks or 6 blocks?",
+          "options": [
+            "6 blocks",
+            "9 blocks",
+            "Same length"
+          ],
+          "answer": 1,
+          "explanation": "Nine equal blocks make a longer length than six."
+        },
+        {
+          "question": "Which container holds more?",
+          "options": [
+            "A cup",
+            "A bucket",
+            "They always hold the same"
+          ],
+          "answer": 1,
+          "explanation": "A bucket usually has a greater capacity than a cup."
+        },
+        {
+          "question": "If 3 children choose apples and 2 choose pears, how many choose fruit altogether?",
+          "options": [
+            "4",
+            "5",
+            "6"
+          ],
+          "answer": 1,
+          "explanation": "Three plus two equals five children."
+        }
+      ]
     }
   ],
   completionRule: "Complete each unit lesson and answer its check-for-understanding correctly. All six units must be completed to unlock the next Grade 1 subject."
