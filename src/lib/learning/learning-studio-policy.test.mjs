@@ -398,7 +398,7 @@ test("student mode includes an interactive 3D model lab rather than image-only l
   const miniModel = world.slice(world.indexOf("export function Mini3DModel"), world.indexOf("export default function Interactive3DWorld"));
   const mainLab = world.slice(world.indexOf("export default function Interactive3DWorld"));
   assert.doesNotMatch(miniModel, /drawScene\(canvas, modelId, rotation\.yaw, rotation\.pitch, zoom, ecosystem\)/);
-  assert.match(mainLab, /drawScene\(canvas, modelId, rotation\.yaw, rotation\.pitch, zoom, ecosystem\)/);
+  assert.match(mainLab, /drawScene\(canvas, modelId, rotation\.yaw, rotation\.pitch, zoom, ecosystem(?:, time)?\)/);
   assert.match(mainLab, /\[modelId, rotation, zoom, ecosystem\]/);
   assert.match(world, /Connecting rod/);
   assert.match(world, /aria-live="polite"/);
