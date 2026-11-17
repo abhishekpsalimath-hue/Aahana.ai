@@ -833,9 +833,8 @@ export function Mini3DModel({ modelId = "planet" }) {
   </div>;
 }
 
-export default function Interactive3DWorld() {
+export default function Interactive3DWorld({ selectedPlanet, onSelectedPlanetChange }) {
   const [modelId, setModelId] = useState("solar-system");
-  const [selectedPlanet, setSelectedPlanet] = useState(null);
   const [rotation, setRotation] = useState({ yaw: -.55, pitch: -.22 });
   const [zoom, setZoom] = useState(1);
   const [conceptIndex, setConceptIndex] = useState(0);
@@ -874,7 +873,7 @@ export default function Interactive3DWorld() {
     if (moved > 10) return;
     const planetId = pickSolarSystemPlanet(canvasRef.current, event.clientX, event.clientY);
     if (planetId) {
-      setSelectedPlanet(planetId);
+      onSelectedPlanetChange(planetId);
       setConceptIndex(0);
       setRotation({ yaw: -.28, pitch: -.12 });
       setZoom(1);
@@ -899,9 +898,9 @@ export default function Interactive3DWorld() {
         <aside className="learning-3d-details">
           <span>{selectedPlanetInfo ? "PLANET EXPLORER" : "NOW EXPLORING"}</span><h3>{displayedTitle}</h3><small>{selectedPlanetInfo ? selectedPlanetInfo.family : model.subject}</small><p>{displayedDescription}</p>
           {selectedPlanetInfo && <p className="learning-planet-stats">Diameter <strong>{selectedPlanetInfo.diameter}</strong><span>·</span> Average solar distance <strong>{selectedPlanetInfo.orbit}</strong></p>}
-          {selectedPlanetInfo && <button type="button" className="learning-planet-back" onClick={() => { setSelectedPlanet(null); setRotation({ yaw: -.55, pitch: -.22 }); setZoom(1); }}>← Back to all eight planets</button>}
+          {selectedPlanetInfo && <button type="button" className="learning-planet-back" onClick={() => { onSelectedPlanetChange(null); setRotation({ yaw: -.55, pitch: -.22 }); setZoom(1); }}>← Back to all eight planets</button>}
           {modelId === "solar-system" && !selectedPlanetInfo && <p className="learning-planet-instruction">Tap any planet in the 3D scene or choose its name below to enter its world.</p>}
-          {modelId === "solar-system" && <div className="learning-planet-picker" role="group" aria-label="Choose a planet">{solarPlanets.map((planet) => <button type="button" key={planet.id} className={selectedPlanet === planet.id ? "active" : ""} aria-pressed={selectedPlanet === planet.id} onClick={() => { setSelectedPlanet(planet.id); setRotation({ yaw: -.28, pitch: -.12 }); setZoom(1); }}>{planet.label}</button>)}</div>}
+          {modelId === "solar-system" && <div className="learning-planet-picker" role="group" aria-label="Choose a planet">{solarPlanets.map((planet) => <button type="button" key={planet.id} className={selectedPlanet === planet.id ? "active" : ""} aria-pressed={selectedPlanet === planet.id} onClick={() => { onSelectedPlanetChange(planet.id); setRotation({ yaw: -.28, pitch: -.12 }); setZoom(1); }}>{planet.label}</button>)}</div>}
           {(modelId === "cell" || modelId === "plant-cell") && <div className="learning-3d-experiment" aria-label="Interactive cell biology lab">
             <span>EXPLORE CELL STRUCTURES</span>
             <p>Switch between an animal cell and a plant cell. Highlight an organelle to discover its role. The structures are simplified teaching illustrations, not to scale.</p>
