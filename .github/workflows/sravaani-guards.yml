@@ -9,6 +9,7 @@ on:
       - "src/lib/voice/README.md"
       - "src/app/api/voice/transcribe/route.js"
       - "src/app/api/voice/speech/route.js"
+      - "src/app/api/chat/route.js"
       - "src/app/assistant-workspace.jsx"
       - "src/lib/voice/audio-wav.*"
       - "src/lib/voice/locale-detection.*"
@@ -25,6 +26,7 @@ on:
       - "src/app/api/voice/transcribe/route.js"
       - "src/app/api/voice/speech/route.js"
       - "src/app/api/voice/capabilities/route.js"
+      - "src/app/api/chat/route.js"
       - "src/lib/voice/audio-wav.*"
       - "src/lib/voice/locale-detection.*"
       - "src/lib/voice/locale-support.*"
@@ -63,3 +65,5 @@ jobs:
         run: node --check ../../src/app/api/voice/speech/route.js
       - name: Syntax-check authenticated voice capabilities route
         run: node --check ../../src/app/api/voice/capabilities/route.js
+      - name: Syntax-check chat route
+        run: node --check ../../src/app/api/chat/route.js
