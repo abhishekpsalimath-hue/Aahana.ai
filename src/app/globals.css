@@ -575,3 +575,35 @@ button,input,textarea,select{font-family:var(--font-ui)}
 @media(max-height:700px) and (max-width:600px){
   .founder-welcome-note{margin-top:18px;margin-bottom:14px}
 }
+
+/* Motion cleanup: keep the welcome starfield atmospheric, not glitchy.
+   The only intentional glitch accent belongs to the Aahana AI welcome word. */
+.welcome .cosmic-field::before,
+.welcome .cosmic-field::after,
+.welcome .cosmic-nebula,
+.welcome .cosmic-stars,
+.welcome .cosmic-core{
+  animation:none!important;
+  will-change:auto;
+}
+.welcome .cosmic-field::before{opacity:.22;transform:none;filter:none}
+.welcome .cosmic-field::after{opacity:.12;transform:none;filter:none}
+.welcome .cosmic-nebula{opacity:.58;transform:none;filter:blur(34px)}
+.welcome .cosmic-stars{opacity:.22;transform:none}
+.welcome .cosmic-core{opacity:.32;transform:translate(-50%,-50%)}
+.founder-welcome-note .welcome-brand-word{
+  animation:welcome-brand-arrive 1.25s cubic-bezier(.16,1,.3,1) 1.45s forwards,
+    aahana-type-shimmer 7s ease-in-out 2.7s infinite,
+    aahana-welcome-glitch 6.8s steps(1,end) 3.4s infinite;
+}
+@keyframes aahana-welcome-glitch{
+  0%,91%,93%,95%,100%{transform:translate3d(0,0,0);filter:none}
+  91.3%{transform:translate3d(-1px,0,0);filter:drop-shadow(2px 0 #a8dfff) drop-shadow(-2px 0 #d9a8ff)}
+  91.8%{transform:translate3d(1px,0,0);filter:drop-shadow(-2px 0 #a8dfff) drop-shadow(2px 0 #d9a8ff)}
+  92.3%{transform:translate3d(0,0,0);filter:none}
+  94%{transform:translate3d(1px,0,0);filter:drop-shadow(-1px 0 #a8dfff)}
+  94.5%{transform:translate3d(0,0,0);filter:none}
+}
+@media(prefers-reduced-motion:reduce){
+  .founder-welcome-note .welcome-brand-word{animation:none!important;opacity:1;transform:none;filter:none}
+}
