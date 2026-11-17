@@ -10,6 +10,7 @@ const Interactive3DWorld = dynamic(() => import("./interactive-3d-world"), {
   loading: () => <div className="learning-3d-loading" role="status">Preparing the interactive 3D environment…</div>,
 });
 import { learningCategories, allLearningSubjects, findLearningSubjects } from "@/lib/learning/learning-catalog";
+import { getLearningCurriculum, getLearningReadiness } from "@/lib/learning/curriculum-engine";
 
 const learningModes = [
   { id: "story", title: "Story Mode", icon: "✦", detail: "Turn a difficult idea into a memorable story.", prompt: "Teach me through a vivid, age-appropriate story. Introduce the concept naturally, then connect each part of the story to the real idea." },
@@ -215,6 +216,40 @@ function SpaceExplorer({ selectedPlanet, onSelectPlanet }) {
             : <p className="space-challenge-feedback">Choose an answer. If you need a clue, Aahana will help you try another way.</p>}
       </section>
       <p className="space-explorer-note">Every planet has a different story. You can revisit worlds and try their challenges again anytime.</p>
+    </section>
+  );
+}
+
+function SolarSystemCurriculum({ onStartUnit }) {
+  const curriculum = getLearningCurriculum("nature-planet-exploration-solar-system");
+  const readiness = getLearningReadiness("nature-planet-exploration-solar-system");
+  const [activeUnitId, setActiveUnitId] = useState(curriculum?.units?.[0]?.id || "");
+  if (!curriculum) return null;
+  const activeUnit = curriculum.units.find((unit) => unit.id === activeUnitId) || curriculum.units[0];
+  return (
+    <section className="solar-curriculum" aria-label="Our Solar System learning pathway">
+      <div className="learning-section-heading">
+        <div><span>YOUR LEARNING PATHWAY</span><h2>{curriculum.title}</h2></div>
+        <span className="space-explorer-tag">{curriculum.units.length} UNITS</span>
+      </div>
+      <p className="space-explorer-intro">A guided route through the Solar System. Pick a unit to see what you will learn, then begin a visual lesson with Aahana.</p>
+      <div className="solar-curriculum-layout">
+        <div className="solar-curriculum-units" role="group" aria-label="Choose a Solar System unit">
+          {curriculum.units.map((unit, index) => (
+            <button type="button" key={unit.id} className={activeUnit.id === unit.id ? "solar-curriculum-unit active" : "solar-curriculum-unit"} onClick={() => setActiveUnitId(unit.id)} aria-pressed={activeUnit.id === unit.id}>
+              <span>{String(index + 1).padStart(2, "0")}</span><strong>{unit.title}</strong><i aria-hidden="true">{activeUnit.id === unit.id ? "●" : "○"}</i>
+            </button>
+          ))}
+        </div>
+        <article className="solar-curriculum-detail" aria-live="polite">
+          <span className="space-lab-kicker">UNIT {curriculum.units.findIndex((unit) => unit.id === activeUnit.id) + 1} · LEARNING GOALS</span>
+          <h3>{activeUnit.title}</h3>
+          <ul>{activeUnit.outcomes.map((outcome) => <li key={outcome}>{outcome}</li>)}</ul>
+          <div className="solar-curriculum-concepts"><span>KEY IDEAS</span><p>{activeUnit.concepts.join(" · ")}</p></div>
+          <button type="button" className="solar-curriculum-start" onClick={() => onStartUnit(activeUnit)}>Start this unit <span aria-hidden="true">→</span></button>
+        </article>
+      </div>
+      <p className="solar-curriculum-readiness">Curriculum outline authored · Lesson visuals marked {readiness.lesson === "review-required" ? "for scientific review" : readiness.lesson} before full lesson sign-off.</p>
     </section>
   );
 }
@@ -512,6 +547,13 @@ export default function LearningStudio({ userEmail = "" }) {
 
       <SpaceExplorer selectedPlanet={selectedPlanet} onSelectPlanet={setSelectedPlanet} />
       <Interactive3DWorld selectedPlanet={selectedPlanet} onSelectedPlanetChange={setSelectedPlanet} />
+      <SolarSystemCurriculum onStartUnit={(unit) => {
+        setCategory("Nature, planet & exploration");
+        setSubject("Solar System");
+        setLearningMode("visual");
+        setQuestion(`Teach me the unit “${unit.title}” from Our Solar System. Cover these learning goals: ${unit.outcomes.join("; ")}. Explain step by step, use accurate comparisons, and check my understanding with one question at a time.`);
+        document.querySelector(".learning-profile")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }} />
 
       <section className="learning-profile" aria-label="Personalise your learning">
         <div className="learning-section-heading"><div><span>YOUR LEARNING SPACE</span><h2>Let’s make this yours</h2></div><button type="button" onClick={resetSession} disabled={busy}>New session</button></div>
