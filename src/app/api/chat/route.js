@@ -82,11 +82,12 @@ export async function POST(request) {
   const mode = ["solve", "create", "write", "build", "improve", "learn"].includes(body?.mode) ? body.mode : "solve";
   const allowedGradeBands = ["primary", "middle", "secondary", "higher-secondary", "college", "adult", "not-sure"];
   const allowedLearningModes = ["story", "visual", "play", "adventure", "talk", "experiment"];
+  const allowedLearningSubjects = ["Anything / explore", "Mathematics", "Science", "Physics", "Chemistry", "Biology", "History", "Geography", "Civics", "English", "Languages", "Computer science", "Technology & AI", "Economics", "Arts & creativity", "Everyday skills"];
   const rawLearningProfile = body?.learningProfile && typeof body.learningProfile === "object" ? body.learningProfile : {};
   const learningProfile = mode === "learn" ? {
     gradeBand: allowedGradeBands.includes(rawLearningProfile.gradeBand) ? rawLearningProfile.gradeBand : "not-sure",
-    subject: typeof rawLearningProfile.subject === "string" ? rawLearningProfile.subject.slice(0, 60) : "Anything / explore",
-    language: typeof rawLearningProfile.language === "string" ? rawLearningProfile.language.slice(0, 35) : "Use my language",
+    subject: allowedLearningSubjects.includes(rawLearningProfile.subject) ? rawLearningProfile.subject : "Anything / explore",
+    language: typeof rawLearningProfile.language === "string" && /^[\\p{L}\\p{M}\\s-]{1,35}$/u.test(rawLearningProfile.language.trim()) ? rawLearningProfile.language.trim() : "Use my language",
     learningMode: allowedLearningModes.includes(rawLearningProfile.learningMode) ? rawLearningProfile.learningMode : "talk",
   } : null;
   const learningModeGuidance = {
