@@ -362,3 +362,8 @@
 .learning-3d-experiment[aria-label="Interactive chemistry molecule lab"] { border-color:rgba(157,131,216,.34); background:rgba(112,83,155,.12); }
 .learning-3d-experiment[aria-label="Interactive chemistry molecule lab"]>span { color:#c6a8f4; }
 .learning-3d-experiment[aria-label="Interactive chemistry molecule lab"] button.active { border-color:#b99ce8; background:rgba(157,131,216,.23); color:#eee2ff; }
+
+/* Interactive cell biology explorer */
+.learning-3d-experiment[aria-label="Interactive cell biology lab"] { border-color:rgba(121,200,178,.32); background:rgba(77,151,126,.1); }
+.learning-3d-experiment[aria-label="Interactive cell biology lab"]>span { color:#9ed9c5; }
+.learning-3d-experiment[aria-label="Interactive cell biology lab"] button.active { border-color:#85cdb5; background:rgba(87,173,143,.2); color:#d8f4e9; }
