@@ -558,7 +558,7 @@
 .school-check{margin-top:16px;padding-top:15px;border-top:1px solid #3b3248}
 .school-check>strong{font-size:14px;line-height:1.5}
 .school-answer-options{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
-.school-answer-options button,.school-check-button{border:1px solid #554765;background:#211b2c;color:#eee7f7;border-radius:9px;padding:9px 14px;font:600 12px inherit;cursor:pointer}
+.school-answer-options button,.school-check-button{border:1px solid #554765;background:#211b2c;color:#eee7f7;border-radius:9px;padding:9px 14px;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer}
 .school-answer-options button.selected{border-color:#c5a5f5;background:#44335e}
 .school-check-button{background:#bda4f3;color:#17121f;border-color:#bda4f3;font-weight:800}
 .school-check-button:disabled{opacity:.45;cursor:not-allowed}
@@ -592,6 +592,7 @@
 .counter-board-controls,.counter-board-challenge{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px}
 .counter-board-controls button,.counter-board-challenge button{min-height:38px;padding:8px 13px;border:1px solid #76618e;border-radius:10px;background:#342844;color:#f4efff;font:600 12px inherit;cursor:pointer}
 .counter-board-controls button:disabled{opacity:.4;cursor:not-allowed}
+.counter-board button:focus-visible{outline:3px solid #f3c76b;outline-offset:3px}
 .counter-board-challenge{justify-content:flex-start}
 .counter-board-challenge span{font-size:11px;color:#c9bbd8;margin-right:4px}
 .counter-board-challenge button[aria-pressed=true]{background:#c6a6f4;color:#21182d;border-color:#c6a6f4}
