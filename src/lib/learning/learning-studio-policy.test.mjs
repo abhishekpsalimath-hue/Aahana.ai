@@ -323,7 +323,7 @@ test("student mode includes an interactive 3D model lab rather than image-only l
   const world = readFileSync(worldPath, "utf8");
   assert.match(studio, /import Interactive3DWorld from ".\/interactive-3d-world"/);
   assert.match(studio, /<Interactive3DWorld \/>/);
-  for (const model of ["planet", "molecule", "atom", "dna", "cube", "terrain", "cell", "solar-system", "plant-cell", "heart", "pyramid", "ecosystem", "engine"]) assert.ok(world.includes(`id: "${model}"`), `Missing 3D model: ${model}`);
+  for (const model of ["planet", "molecule", "atom", "dna", "cube", "terrain", "cell", "solar-system", "plant-cell", "heart", "pyramid", "ecosystem", "engine", "cart"]) assert.ok(world.includes(`id: "${model}"`), `Missing 3D model: ${model}`);
   assert.match(world, /getContext\("2d"\)/);
   assert.match(world, /rotatePoint/);
   assert.match(world, /onPointerDown/);
@@ -344,6 +344,14 @@ test("student mode includes an interactive 3D model lab rather than image-only l
   for (const stage of ["intake", "compression", "power", "exhaust"]) assert.ok(world.includes(stage), `Missing engine cycle stage: ${stage}`);
   assert.match(world, /Restart cycle/);
   assert.match(world, /conceptual teaching model, not a timed or mechanically accurate engine simulation/);
+  assert.match(world, /Force & motion cart/);
+  assert.match(world, /TRY A FORCE & FRICTION EXPERIMENT/);
+  assert.match(world, /physicsForce/);
+  assert.match(world, /physicsFriction/);
+  assert.match(world, /Balanced forces/);
+  assert.match(world, /qualitative illustration, not a measured prediction/);
+  assert.match(world, /Applied force/);
+  assert.match(world, /Net force/);
   const miniModel = world.slice(world.indexOf("export function Mini3DModel"), world.indexOf("export default function Interactive3DWorld"));
   const mainLab = world.slice(world.indexOf("export default function Interactive3DWorld"));
   assert.doesNotMatch(miniModel, /drawScene\(canvas, modelId, rotation\.yaw, rotation\.pitch, zoom, ecosystem\)/);
