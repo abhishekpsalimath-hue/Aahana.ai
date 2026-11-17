@@ -184,7 +184,7 @@ test("learning memory is opt-in, authenticated, owner-scoped and deletable", () 
   assert.match(learningMemoryRoute, /\.like\("content", "learning_journey:%"\)/);
   assert.match(learningMemoryRoute, /Enable private memory before saving/);
   assert.match(learningMemoryRoute, /export async function DELETE/);
-  assert.match(studio, /const \\[learningMemory, setLearningMemory\\] = useState\\(\\{ enabled: false, journeys: \\[\\] \\}\\)/);
+  assert.match(studio, /const \[learningMemory, setLearningMemory\] = useState\(\{ enabled: false, journeys: \[\] \}\)/);
   assert.match(studio, /async function updateLearningMemoryConsent\\(\\)/);
   assert.match(studio, /fetch\\("\\/api\\/memories"/);
   assert.match(studio, /async function deleteLearningJourney\\(id\\)/);
