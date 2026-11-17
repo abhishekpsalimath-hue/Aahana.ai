@@ -347,6 +347,11 @@ test("student mode includes an interactive 3D model lab rather than image-only l
   for (const model of ["planet", "molecule", "atom", "dna", "cube", "terrain", "cell", "solar-system", "plant-cell", "heart", "pyramid", "ecosystem", "engine", "cart"]) assert.ok(world.includes(`id: "${model}"`), `Missing 3D model: ${model}`);
   assert.match(world, /getContext\("2d"\)/);
   assert.match(world, /rotatePoint/);
+  assert.match(world, /world-atlas\/countries-110m\.json/);
+  assert.match(world, /topojson-client/);
+  assert.match(world, /Natural Earth 1:110m country boundaries/);
+  assert.match(world, /104\.5\/2/);
+  assert.match(world, /basePairs=20/);
   assert.match(world, /onPointerDown/);
   assert.match(world, /onWheel/);
   assert.match(world, /Zoom in/);
