@@ -102,3 +102,34 @@ Sources:
 - Maya 2 Native model card: https://huggingface.co/maya-research/maya2-native
 - AI4Bharat IndicConformer: https://github.com/AI4Bharat/IndicConformerASR
 - OpenAI Whisper: https://github.com/openai/whisper
+
+
+## Maya 2 Native adapter (server-side only)
+
+`maya-tts-provider.mjs` implements the synthesis provider contract against the
+documented private Maya HTTP endpoint:
+
+- `POST /v1/audio/speech` with `input`, `language`, `voice`, and
+  `response_format: "wav"`.
+- Converts Aahana BCP 47 locales to Maya's language codes.
+- Returns audio bytes and MIME type to the existing speech runtime.
+- Passes through request cancellation, rejects unsupported locales and
+  non-audio/empty/oversized responses.
+- Accepts an optional bearer token for an authenticated reverse proxy; the
+  Maya inference server itself does not implement authentication.
+
+This adapter is inert until a trusted server-side caller supplies an endpoint.
+Use HTTPS, or loopback HTTP for local development. Never put the model server
+on the public internet without an authenticated gateway, network restrictions,
+request limits and monitoring. Do not pass user-controlled URLs into the
+adapter. Do not import or instantiate it from client components; keep endpoint
+and proxy credentials in server-only environment variables.
+
+The adapter has mock-based tests only. It has not been connected to a running
+Maya model, and does not claim production speech support. The documented
+reference deployment needs Linux, Python 3.10–3.12, CUDA 12.8 and an NVIDIA GPU;
+the model documentation reports approximately 9.2 GB peak GPU memory even for
+one serving seat. Benchmark actual hardware before provisioning.
+
+Official interface and hardware documentation:
+https://huggingface.co/maya-research/maya2-native
