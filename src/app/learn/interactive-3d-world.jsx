@@ -142,6 +142,39 @@ function drawScene(canvas, modelId, yaw, pitch, zoom) {
   ctx.fillText("DRAG TO ROTATE · SCROLL TO ZOOM", w / 2, h - 17);
 }
 
+
+export function Mini3DModel({ modelId = "planet" }) {
+  const [rotation, setRotation] = useState({ yaw: -.55, pitch: -.22 });
+  const [zoom, setZoom] = useState(1);
+  const canvasRef = useRef(null);
+  const dragRef = useRef(null);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const render = () => drawScene(canvas, modelId, rotation.yaw, rotation.pitch, zoom);
+    render();
+    const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(render) : null;
+    observer?.observe(canvas);
+    return () => observer?.disconnect();
+  }, [modelId, rotation, zoom]);
+  function pointerDown(event) {
+    dragRef.current = { x: event.clientX, y: event.clientY, yaw: rotation.yaw, pitch: rotation.pitch };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }
+  function pointerMove(event) {
+    if (!dragRef.current) return;
+    setRotation({ yaw: dragRef.current.yaw + (event.clientX - dragRef.current.x) * .009, pitch: clamp(dragRef.current.pitch + (event.clientY - dragRef.current.y) * .009, -1.35, 1.35) });
+  }
+  return <div className="learning-3d-inline">
+    <canvas ref={canvasRef} role="img" aria-label={`Interactive rotating 3D ${modelId} model`} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={() => { dragRef.current = null; }} onPointerCancel={() => { dragRef.current = null; }} onWheel={(event) => { event.preventDefault(); setZoom((value) => clamp(value - event.deltaY * .001, .65, 1.8)); }} />
+    <div className="learning-3d-inline-controls">
+      <button type="button" onClick={() => setZoom((value) => clamp(value + .12, .65, 1.8))} aria-label="Zoom in">＋</button>
+      <button type="button" onClick={() => setZoom((value) => clamp(value - .12, .65, 1.8))} aria-label="Zoom out">−</button>
+      <button type="button" onClick={() => { setRotation({ yaw: -.55, pitch: -.22 }); setZoom(1); }}>Reset</button>
+    </div>
+  </div>;
+}
+
 export default function Interactive3DWorld() {
   const [modelId, setModelId] = useState("planet");
   const [rotation, setRotation] = useState({ yaw: -.55, pitch: -.22 });
