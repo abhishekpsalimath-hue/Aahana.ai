@@ -136,7 +136,7 @@ test("non-quiz learning modes request a validated structured animated lesson", (
   assert.match(route, /aahana_motion_lesson_v1/);
   assert.match(route, /visual \(exactly one of fraction, orbit, water-cycle, plant-growth, number-line, molecule, concept-map\)/);
   assert.match(route, /3 to 5 scenes/);
-  assert.match(route, /challenge \(object with question string, options array of exactly 3 short strings/);
+  assert.match(route, /Each challenge must contain question, exactly 3 unique options/);
   assert.match(route, /visualData with label/);
   assert.match(route, /progress \(integer 0 to 100 representing the proportion or stage actually depicted\)/);
   assert.match(route, /support \(object with visual set to a different valid visual type/);
@@ -157,10 +157,10 @@ test("animated lesson renderer validates scene data and provides subject-specifi
   assert.match(animated, /scene\.narration\.length <= 1200/);
   assert.match(animated, /scene\.challenge\.options\.every[\s\S]*option\.length <= 120/);
   assert.match(animated, /scene\.challenge\.explanation\.length <= 500/);
-  assert.match(animated, /scene\.visualData\.label\.length <= 90/);
-  assert.match(animated, /scene\.visualData\.value\.length <= 36/);
-  assert.match(animated, /scene\.visualData\.progress >= 0 && scene\.visualData\.progress <= 100/);
-  assert.match(animated, /scene\.visualData\.comparison/);
+  assert.match(animated, /data\.label\.length <= 90/);
+  assert.match(animated, /data\.value\.length <= 36/);
+  assert.match(animated, /data\.progress >= 0 && data\.progress <= 100/);
+  assert.match(animated, /data\.comparison\.length <= 120/);
   assert.match(animated, /validVisualData\(scene\.support\.visualData\)/);
   assert.match(animated, /scene\.support\.visual !== scene\.visual/);
   assert.match(animated, /scene\.challenge\.hints\.length === 2/);
