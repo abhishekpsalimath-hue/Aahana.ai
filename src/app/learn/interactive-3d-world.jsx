@@ -378,7 +378,9 @@ function drawScene(canvas, modelId, yaw, pitch, zoom, ecosystem = {}, time = 0) 
     const ac = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
     const normal = [ab[1] * ac[2] - ab[2] * ac[1], ab[2] * ac[0] - ab[0] * ac[2], ab[0] * ac[1] - ab[1] * ac[0]];
     const normalLength = Math.hypot(...normal) || 1;
-    const light = Math.max(0, (normal[0] * -.32 + normal[1] * -.42 + normal[2] * .85) / normalLength);
+    const lightX = -.32 + Math.sin(time * .00035) * .12;
+    const lightY = -.42 + Math.cos(time * .00028) * .08;
+    const light = Math.max(0, (normal[0] * lightX + normal[1] * lightY + normal[2] * .85) / normalLength);
     const brightness = .76 + light * .34;
     ctx.fillStyle = illuminateFace(face.color, brightness);
     ctx.globalAlpha = face.solid ? .94 : .98;
@@ -399,6 +401,10 @@ function drawScene(canvas, modelId, yaw, pitch, zoom, ecosystem = {}, time = 0) 
 
 
 function animateScene(canvas, render) {
+  if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+    render(0);
+    return () => {};
+  }
   let frame = 0;
   let lastFrame = 0;
   const tick = (time) => {
