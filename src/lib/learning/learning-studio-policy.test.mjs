@@ -333,3 +333,13 @@ test("student mode includes an interactive 3D model lab rather than image-only l
   assert.match(styles, /\.learning-3d-viewer canvas/);
   assert.match(styles, /touch-action:none/);
 });
+
+test("animated lesson schema and tutor prompts can select embedded interactive 3D scenes", () => {
+  for (const visual of ["3d-planet", "3d-molecule", "3d-atom", "3d-dna", "3d-geometry", "3d-terrain"]) {
+    assert.ok(animated.includes(`"${visual}"`), `Animated lesson renderer missing ${visual}`);
+    assert.ok(route.includes(visual), `Tutor prompt missing ${visual}`);
+  }
+  assert.match(animated, /Mini3DModel modelId={model3d}/);
+  assert.match(route, /3D AND SPATIAL LEARNING/);
+  assert.match(route, /interactive 3D lesson visuals/);
+});
