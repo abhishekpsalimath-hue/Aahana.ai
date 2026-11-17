@@ -39,6 +39,8 @@ test("Grade 1 Mathematics has a complete six-unit authored core", () => {
 
 test("grade curriculum is available independently and never gates another subject", () => {
   assert.equal(getGradeLearningCurriculum(1, "Mathematics").grade, 1);
+  assert.equal(getGradeLearningCurriculum(1, "Arithmetic").grade, 1);
+  assert.equal(getGradeLearningCurriculum(1, "Maths practice").grade, 1);
   assert.equal(getGradeLearningCurriculum(1, "English").grade, 1);
   assert.equal(getGradeLearningCurriculum(1, "English").units.length, 6);
   assert.equal(getGradeLearningCurriculum(1, "EVS").units.length, 6);
