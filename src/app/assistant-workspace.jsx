@@ -7,6 +7,7 @@ import { findBestSpeechVoice, getBrowserVoiceCapabilities } from "@/lib/voice/br
 import { encodeMonoPcm16Wav } from "@/lib/voice/audio-wav.mjs";
 import { inferSpeechLocale } from "@/lib/voice/locale-detection.mjs";
 import { shouldFallbackToDeviceSpeech } from "@/lib/voice/speech-fallback-policy.mjs";
+import CreatorStudio from "./learn/creator-studio";
 
 const modes = [
   { id: "solve", label: "Solve", hint: "Work through a problem" },
@@ -141,6 +142,7 @@ function evaluateArithmetic(input) {
 export default function Home({ userEmail = "", aiEnabled = false }) {
   const router = useRouter();
   const [mode, setMode] = useState("solve");
+  const [creativeStudioOpen, setCreativeStudioOpen] = useState(false);
   const [prompt, setPrompt] = useState("");
   const [imageFile, setImageFile] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -991,6 +993,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         <div className="side-label">WORKSPACE</div>
         <button className={selectedProjectId ? "side-item assistant-nav" : "side-item active assistant-nav"} type="button" onClick={() => selectProject(null)}>✳ <span>Assistant</span></button>
         <a className="side-item muted learning-nav" href="/learn" aria-label="Open Student Mode">✧ <span>Student Mode</span></a>
+        <button className={creativeStudioOpen ? "side-item active" : "side-item muted"} type="button" onClick={() => setCreativeStudioOpen((value) => !value)}>✦ <span>Creative Studio</span></button>
         <button className={historyOpen ? "side-item active history-toggle" : "side-item muted history-toggle"} type="button" onClick={toggleHistory}>◷ <span>History</span></button>
         {historyOpen && (
           <div className="history-list">
@@ -1103,7 +1106,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       <section className="main-panel">
         <header className="topbar">
           <div className="breadcrumb">Workspace <span>/</span> {selectedProjectId ? (projects.find((item) => item.id === selectedProjectId)?.name || "Project") : "Assistant"}</div>
-          <div className="top-actions"><button className="mobile-history-toggle" type="button" onClick={toggleProjects}>Projects</button><button className="mobile-history-toggle" type="button" onClick={toggleHistory}>History</button><button className="mobile-history-toggle" type="button" onClick={toggleFiles}>Files</button><button className="mobile-history-toggle" type="button" onClick={toggleMemoryPanel}>Memory</button><a className="student-mode-shortcut" href="/learn">✧ Student Mode</a><span>Private workspace</span></div>
+          <div className="top-actions"><button className="mobile-history-toggle" type="button" onClick={toggleProjects}>Projects</button><button className="mobile-history-toggle" type="button" onClick={toggleHistory}>History</button><button className="mobile-history-toggle" type="button" onClick={toggleFiles}>Files</button><button className="mobile-history-toggle" type="button" onClick={toggleMemoryPanel}>Memory</button><a className="student-mode-shortcut" href="/learn">✧ Student Mode</a><button className="mobile-history-toggle" type="button" onClick={() => setCreativeStudioOpen((value) => !value)}>Creative Studio</button><span>Private workspace</span></div>
         </header>
         {projectsOpen && (
           <div className="mobile-project-panel">
@@ -1299,6 +1302,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
             </>
           )}
         </div>
+        {creativeStudioOpen && <section className="assistant-creative-studio" aria-label="Creative Studio"><div className="assistant-creative-studio-heading"><span>AAHANA CREATIVE WORKSPACE</span><button type="button" className="copy-message" onClick={() => setCreativeStudioOpen(false)}>Close</button></div><CreatorStudio /></section>}
         <footer className="footer"><span>Aahana</span><span>Thoughtfully made for what’s next.</span></footer>
       </section>
     </main>
