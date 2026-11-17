@@ -131,6 +131,17 @@ export default function AnimatedLesson({ content, memoryEnabled = false, onSaveJ
     <div className={solved ? "motion-stage is-celebrating" : "motion-stage"}>
       <div className="motion-stardust" aria-hidden="true"><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/></div>
       <AnimatedVisual visual={displayedVisual} paused={paused}/>
+      <div className={`motion-companion ${solved ? "is-happy" : ""}`} aria-label="Aahana learning companion">
+        <svg viewBox="0 0 88 88" role="img" aria-label="A friendly little star companion">
+          <defs><linearGradient id="buddyGlow" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#ffe7a6"/><stop offset="1" stopColor="#c6a7f5"/></linearGradient></defs>
+          <path d="M44 5 54 29 80 31 60 49 66 75 44 62 22 75 28 49 8 31 34 29Z" fill="url(#buddyGlow)" stroke="#fff0c8" strokeWidth="2.5" strokeLinejoin="round"/>
+          <ellipse cx="35" cy="40" rx="4" ry="6" fill="#332744"/><ellipse cx="53" cy="40" rx="4" ry="6" fill="#332744"/>
+          <path d="M38 51q6 7 12 0" fill="none" stroke="#704d70" strokeWidth="2.5" strokeLinecap="round"/>
+          <circle cx="26" cy="49" r="4" fill="#f39ab2" opacity=".8"/><circle cx="62" cy="49" r="4" fill="#f39ab2" opacity=".8"/>
+          <path d="m17 13-4-5m58 5 4-5" stroke="#fff0c8" strokeWidth="2" strokeLinecap="round"/>
+        </svg>
+        <span aria-live="polite">{solved ? "You did it! ✨" : showSupport ? "We can try a new way!" : "Let's discover together!"}</span>
+      </div>
       <div className="motion-caption">{showSupport ? "Let's look at it another way" : scene.caption}</div>
       <div className="motion-data" aria-label={`${displayedData.label}: ${displayedData.value} ${displayedData.unit}`}>
         <div className="motion-data-copy"><span>{displayedData.label}</span><strong>{displayedData.value}{displayedData.unit ? ` ${displayedData.unit}` : ""}</strong></div>
