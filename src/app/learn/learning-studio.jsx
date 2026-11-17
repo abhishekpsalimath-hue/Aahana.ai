@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import "./learning-studio.css";
 import AnimatedLesson, { AnimatedVisual, readMotionLesson } from "./animated-lesson";
+import Interactive3DWorld from "./interactive-3d-world";
 import { learningCategories, allLearningSubjects } from "@/lib/learning/learning-catalog";
 
 const learningModes = [
@@ -475,6 +476,7 @@ export default function LearningStudio({ userEmail = "" }) {
       }} />
 
       <SpaceExplorer />
+      <Interactive3DWorld />
 
       <section className="learning-profile" aria-label="Personalise your learning">
         <div className="learning-section-heading"><div><span>YOUR LEARNING SPACE</span><h2>Let’s make this yours</h2></div><button type="button" onClick={resetSession} disabled={busy}>New session</button></div>
