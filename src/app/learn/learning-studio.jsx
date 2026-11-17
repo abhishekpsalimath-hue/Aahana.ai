@@ -25,6 +25,51 @@ const gradeBands = [
 
 const subjects = ["Anything / explore", "Mathematics", "Science", "Physics", "Chemistry", "Biology", "History", "Geography", "Civics", "English", "Languages", "Computer science", "Technology & AI", "Economics", "Arts & creativity", "Everyday skills"];
 const curricula = ["Not specified", "CBSE", "ICSE", "Karnataka State Board", "Other Indian State Board", "Cambridge International", "International Baccalaureate (IB)", "England National Curriculum", "US Common Core", "Other / help me choose"];
+function readQuizPayload(content) {
+  if (typeof content !== "string") return null;
+  const cleaned = content.trim().replace(/^\`\`\`(?:json)?\\s*/i, "").replace(/\\s*\`\`\`$/, "");
+  try {
+    const value = JSON.parse(cleaned);
+    if (value?.type !== "aahana_quiz_v1" || !Array.isArray(value.questions) || value.questions.length < 1 || value.questions.length > 5) return null;
+    const questions = value.questions.filter((item) =>
+      typeof item?.question === "string" && item.question.trim() &&
+      Array.isArray(item.options) && item.options.length === 4 &&
+      item.options.every((option) => typeof option === "string" && option.trim()) &&
+      new Set(item.options).size === 4 &&
+      Number.isInteger(item.correctIndex) && item.correctIndex >= 0 && item.correctIndex < 4 &&
+      typeof item.explanation === "string" && item.explanation.trim()
+    );
+    if (questions.length !== value.questions.length) return null;
+    return { title: typeof value.title === "string" ? value.title : "Quick challenge", questions };
+  } catch {
+    return null;
+  }
+}
+
+function InteractiveQuiz({ quiz }) {
+  const [answers, setAnswers] = useState({});
+  const completed = quiz.questions.every((_, index) => Number.isInteger(answers[index]));
+  const score = quiz.questions.reduce((total, item, index) => total + (answers[index] === item.correctIndex ? 1 : 0), 0);
+  return (
+    <div className="learning-quiz">
+      <div className="learning-quiz-heading"><strong>{quiz.title}</strong><span>{completed ? `Score: ${score}/${quiz.questions.length}` : `${Object.keys(answers).length}/${quiz.questions.length} answered`}</span></div>
+      {quiz.questions.map((item, index) => {
+        const selected = answers[index];
+        return <section className="learning-quiz-question" key={index}>
+          <h3>{index + 1}. {item.question}</h3>
+          <div className="learning-quiz-options">
+            {item.options.map((option, optionIndex) => <button type="button" key={optionIndex} disabled={Number.isInteger(selected)} className={Number.isInteger(selected) && optionIndex === item.correctIndex ? "correct" : Number.isInteger(selected) && selected === optionIndex ? "incorrect" : ""} onClick={() => setAnswers((current) => ({ ...current, [index]: optionIndex }))}>
+              <span>{String.fromCharCode(65 + optionIndex)}</span>{option}
+            </button>)}
+          </div>
+          {Number.isInteger(selected) && <p className={selected === item.correctIndex ? "learning-quiz-feedback correct" : "learning-quiz-feedback incorrect"}>{selected === item.correctIndex ? "Correct. " : "Not quite. "}{item.explanation}</p>}
+        </section>;
+      })}
+      {completed && <div className="learning-quiz-finish"><strong>{score === quiz.questions.length ? "Excellent work!" : "Good effort — every question is a chance to learn."}</strong><button type="button" onClick={() => setAnswers({})}>Try again</button></div>}
+    </div>
+  );
+}
+
 
 export default function LearningStudio({ userEmail = "" }) {
   const [gradeBand, setGradeBand] = useState("not-sure");
@@ -218,7 +263,9 @@ export default function LearningStudio({ userEmail = "" }) {
         {messages.length > 0 && <div className="learning-conversation" aria-live="polite">
           {messages.map((item, index) => <article className={item.role === "user" ? "learning-message learner" : "learning-message tutor"} key={index}>
             <small>{item.role === "user" ? "YOU" : "AAHANA"}</small>
-            {item.content ? <p>{item.content}</p> : <div className="learning-thinking"><i /><i /><i /> Preparing your lesson</div>}
+            {item.content ? (learningMode === "play" && item.role === "assistant" && readQuizPayload(item.content)
+              ? <InteractiveQuiz quiz={readQuizPayload(item.content)} />
+              : <p>{item.content}</p>) : <div className="learning-thinking"><i /><i /><i /> Preparing your lesson</div>}
           </article>)}
         </div>}
         <form className="learning-composer" onSubmit={startLearning}>
