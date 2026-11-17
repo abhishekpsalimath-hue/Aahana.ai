@@ -75,3 +75,21 @@ test("curriculum selection is restored with the learner profile and handled caut
   assert.match(route, /Curriculum: \$\{learningProfile\.curriculum\}/);
   assert.match(route, /Do not claim exact syllabus alignment or exam-board coverage unless verified/);
 });
+
+test("Play and Solve requests a strict structured quiz from the tutor", () => {
+  assert.match(route, /learningProfile\.learningMode === "play"/);
+  assert.match(route, /type set to aahana_quiz_v1/);
+  assert.match(route, /correctIndex \(integer 0 to 3\)/);
+  assert.match(route, /exactly four distinct strings/);
+});
+
+test("Learning Studio validates and renders interactive quizzes with feedback and scoring", () => {
+  assert.match(studio, /function readQuizPayload\(content\)/);
+  assert.match(studio, /value\?\.type !== "aahana_quiz_v1"/);
+  assert.match(studio, /item\.options\.length === 4/);
+  assert.match(studio, /Number\.isInteger\(item\.correctIndex\)/);
+  assert.match(studio, /function InteractiveQuiz\(\{ quiz \}\)/);
+  assert.match(studio, /onClick=\{\(\) => setAnswers/);
+  assert.match(studio, /Score: \$\{score\}/);
+  assert.match(studio, /Try again/);
+});
