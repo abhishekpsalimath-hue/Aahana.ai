@@ -137,6 +137,14 @@ test("learning motion respects reduced-motion accessibility preferences", () => 
 test("non-quiz learning modes request a validated structured animated lesson", () => {
   assert.match(route, /ANIMATED LESSON OUTPUT/);
   assert.match(route, /aahana_motion_lesson_v1/);
+  assert.match(route, /response_format: \{ type: "json_object" \}/);
+  assert.match(route, /SOLAR SYSTEM LEARNING EXPERIENCE/);
+  assert.match(route, /not a written presentation script or storyboard/);
+  assert.match(route, /3d-solar-system/);
+  assert.match(animated, /"3d-solar-system": "solar-system"/);
+  assert.match(animated, /Try the interactive lesson again/);
+  assert.match(studio, /Building your interactive lesson/);
+  assert.match(studio, /startLearning\(null, previousQuestion, false\)/);
   assert.match(route, /visual \(exactly one of fraction, orbit, water-cycle, plant-growth, number-line, molecule, concept-map, timeline, bar-chart, anatomy, circuit, code-flow, sound-wave, map, 3d-planet, 3d-molecule, 3d-atom, 3d-dna, 3d-geometry, 3d-terrain\)/);
   assert.match(route, /3 to 5 scenes/);
   assert.match(route, /Each challenge must contain question, exactly 3 unique options/);
