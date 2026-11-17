@@ -367,3 +367,16 @@
 .learning-3d-experiment[aria-label="Interactive cell biology lab"] { border-color:rgba(121,200,178,.32); background:rgba(77,151,126,.1); }
 .learning-3d-experiment[aria-label="Interactive cell biology lab"]>span { color:#9ed9c5; }
 .learning-3d-experiment[aria-label="Interactive cell biology lab"] button.active { border-color:#85cdb5; background:rgba(87,173,143,.2); color:#d8f4e9; }
+
+
+/* Calm learning UI: preserve animations that explain a concept, remove decorative loops. */
+.learning-mode-icon{animation:none!important}
+.learning-quiz-sparkle,.learning-celebration{animation:none!important}
+.motion-stage:before,.motion-stage:after,.motion-stardust i{animation:none!important}
+.motion-stage:before,.motion-stage:after{opacity:.24;transform:none}
+.motion-stardust i{opacity:.24;transform:none;box-shadow:0 0 5px 1px #d7c2ff55}
+.motion-companion svg{animation:none!important}
+.space-sun-core{animation:none!important}
+@media(prefers-reduced-motion:reduce){
+  .learning-mode-icon,.learning-quiz-sparkle,.learning-celebration,.motion-stage:before,.motion-stage:after,.motion-stardust i,.motion-companion,.motion-companion svg,.space-sun-core{animation:none!important}
+}
