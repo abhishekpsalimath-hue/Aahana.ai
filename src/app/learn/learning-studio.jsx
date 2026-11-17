@@ -393,11 +393,11 @@ export default function LearningStudio({ userEmail = "" }) {
     }
   }
 
-  async function startLearning(event, retryText = "", appendUser = true) {
+  async function startLearning(event, retryText = "", appendUser = true, retryProfile = null) {
     event?.preventDefault();
     const requestText = (retryText || question).trim();
     if (!requestText || busy) return;
-    const profile = { gradeBand, subject, curriculum, language, learningMode };
+    const profile = retryProfile || { gradeBand, subject, curriculum, language, learningMode };
     if (!retryText) setQuestion("");
     setError("");
     setBusy(true);
@@ -595,7 +595,7 @@ export default function LearningStudio({ userEmail = "" }) {
                         onSaveJourney={(journey) => saveLearningJourney(journey, item.profile)}
                         onRetry={() => {
                           const previousQuestion = messages.slice(0, index).reverse().find((message) => message.role === "user")?.content;
-                          if (previousQuestion) startLearning(null, previousQuestion, false);
+                          if (previousQuestion) startLearning(null, previousQuestion, false, item.profile || { gradeBand, subject, curriculum, language, learningMode: messageMode });
                         }}
                       />
                     : <p>{item.content}</p>) : <div className="learning-thinking"><i /><i /><i /> Preparing your lesson</div>}
