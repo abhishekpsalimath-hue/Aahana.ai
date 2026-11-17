@@ -305,14 +305,14 @@ function SolarSystemCurriculum({ onStartUnit }) {
 
 export default function LearningStudio({ userEmail = "" }) {
   const [selectedPlanet, setSelectedPlanet] = useState(null);
-  const [gradeBand, setGradeBand] = useState("not-sure");
-  const [schoolGrade, setSchoolGrade] = useState("");
+  const [gradeBand, setGradeBand] = useState("primary");
+  const [schoolGrade, setSchoolGrade] = useState("1");
   const [subject, setSubject] = useState("Anything / explore");
   const [category, setCategory] = useState("Explore anything");
   const categorySubjects = learningCategories.find((item) => item.name === category)?.subjects || learningCategories[0].subjects;
   const [curriculum, setCurriculum] = useState("Not specified");
   const [language, setLanguage] = useState("Use my language");
-  const [learningMode, setLearningMode] = useState("story");
+  const [learningMode, setLearningMode] = useState("talk");
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState([]);
   const [conversationId, setConversationId] = useState(null);
@@ -584,132 +584,23 @@ export default function LearningStudio({ userEmail = "" }) {
         <nav><Link href="/">Assistant</Link><span className="learning-user">{userEmail || "Your workspace"}</span></nav>
       </header>
 
-      <section className="learning-hero">
-        <div className="learning-kicker">Aahana Learning Studio</div>
-        <h1>Curiosity looks good<br /><em>on you.</em></h1>
-        <p>Explore ideas, ask anything and learn in a way that makes sense to you. No pressure to know the answer before you begin.</p>
+      <section className="learning-hero student-welcome">
+        <div className="learning-kicker">YOUR LEARNING FRIEND</div>
+        <h1>Hi, curious mind!<br /><em>I'm Aahana.</em></h1>
+        <p>Tell me what you're learning or what feels confusing. We'll figure it out together, one small step at a time.</p>
       </section>
 
-
-      <LearningCategoryExplorer onChooseCategory={(name, selectedSubject) => {
-        const selectedCategory = learningCategories.find((item) => item.name === name);
-        setCategory(name);
-        setSubject(selectedSubject || selectedCategory?.subjects?.[0] || "Anything / explore");
-        document.querySelector(".learning-profile")?.scrollIntoView({ behavior: "smooth", block: "start" });
-      }} />
-
-      <CatalogueCoverage />
-      <SpaceExplorer selectedPlanet={selectedPlanet} onSelectPlanet={setSelectedPlanet} />
-      <Interactive3DWorld selectedPlanet={selectedPlanet} onSelectedPlanetChange={setSelectedPlanet} />
-      <CreatorStudio />
-      <SolarSystemCurriculum onStartUnit={(unit) => {
-        setCategory("Nature, planet & exploration");
-        setSubject("Solar System");
-        setLearningMode("visual");
-        setQuestion(`Teach me the unit “${unit.title}” from Our Solar System. Cover these learning goals: ${unit.outcomes.join("; ")}. Explain step by step, use accurate comparisons, and check my understanding with one question at a time.`);
-        document.querySelector(".learning-profile")?.scrollIntoView({ behavior: "smooth", block: "start" });
-      }} />
-
-      <section className="learning-profile" aria-label="Personalise your learning">
-        <div className="learning-section-heading"><div><span>YOUR LEARNING SPACE</span><h2>Let’s make this yours</h2></div><button type="button" onClick={resetSession} disabled={busy}>New session</button></div>
-        <div className="learning-select-grid">
-          <label>Learning level
-            <select value={gradeBand} onChange={(event) => setGradeBand(event.target.value)} disabled={busy}>
-              {gradeBands.map(([value, label]) => <option value={value} key={value}>{label}</option>)}
-            </select>
-          </label>
-          <label>School grade (optional)
-            <select value={schoolGrade} onChange={(event) => setSchoolGrade(event.target.value)} disabled={busy}>
-              <option value="">Not specified</option>
-              {Array.from({ length: 10 }, (_, index) => String(index + 1)).map((value) => <option value={value} key={value}>Grade {value}</option>)}
-            </select>
-          </label>
-          <label>Learning category
-            <select value={category} onChange={(event) => {
-              const nextCategory = learningCategories.find((item) => item.name === event.target.value);
-              setCategory(event.target.value);
-              if (nextCategory?.subjects?.length) setSubject(nextCategory.subjects[0]);
-            }} disabled={busy}>
-              {learningCategories.map((item) => <option value={item.name} key={item.name}>{item.name}</option>)}
-            </select>
-          </label>
-          <label>Choose a subject or topic
-            <select value={categorySubjects.includes(subject) ? subject : categorySubjects[0]} onChange={(event) => setSubject(event.target.value)} disabled={busy}>
-              {categorySubjects.map((value) => <option key={value}>{value}</option>)}
-            </select>
-          </label>
-          <label>Curriculum / education board
-            <select value={curriculum} onChange={(event) => setCurriculum(event.target.value)} disabled={busy}>
-              {curricula.map((value) => <option key={value}>{value}</option>)}
-            </select>
-          </label>
-          <label>Learning language
-            <input value={language} onChange={(event) => setLanguage(event.target.value.slice(0, 35))} maxLength={35} disabled={busy} placeholder="e.g. ಕನ್ನಡ, हिन्दी, English" aria-label="Learning language" />
-          </label>
-        </div>
-      </section>
-
-      <section className="learning-history" aria-label="Previous learning sessions">
-        <div className="learning-section-heading"><div><span>YOUR PROGRESS</span><h2>Pick up where you left off</h2></div><button type="button" onClick={loadLearningHistory} disabled={historyLoading}>Refresh</button></div>
-        {historyLoading ? <p className="learning-history-empty">Loading your learning sessions…</p>
-          : historyError ? <p className="learning-error" role="alert">{historyError}</p>
-          : history.length === 0 ? <p className="learning-history-empty">Your learning sessions will appear here after your first lesson.</p>
-          : <div className="learning-history-list">{history.map((item) => <button type="button" className={conversationId === item.id ? "learning-history-item current" : "learning-history-item"} key={item.id} onClick={() => resumeLearning(item.id)} disabled={busy || Boolean(loadingConversationId)}>
-              <span><strong>{item.title || "Learning session"}</strong><small>{new Date(item.updated_at).toLocaleString()}</small></span>
-              <em>{loadingConversationId === item.id ? "Opening…" : conversationId === item.id ? "Open" : "Resume"}</em>
-            </button>)}</div>}
-      </section>
-
-      <section className="learning-journey" aria-label="My learning journey">
-        <div className="learning-section-heading">
-          <div><span>YOUR PRIVATE LEARNING MEMORY</span><h2>My learning journey</h2></div>
-          <button type="button" onClick={updateLearningMemoryConsent} disabled={memoryBusy || memoryLoading}>
-            {memoryBusy ? "Updating…" : learningMemory.enabled ? "Turn memory off" : "Turn memory on"}
-          </button>
-        </div>
-        <p className="learning-journey-intro">Aahana can remember completed animated lessons you choose to save. It records topics and learning paths—not grades or intelligence. Your saved journeys are private to your account, and you can delete them here.</p>
-        {memoryLoading ? <p className="learning-history-empty">Checking your private learning memory…</p>
-          : memoryError ? <p className="learning-error" role="alert">{memoryError}</p>
-          : <p className="learning-memory-status">{learningMemory.enabled ? "Private memory is on. Saving a lesson is always your choice." : "Private memory is off. Turn it on only if you want Aahana to remember saved learning journeys."}</p>}
-        {memoryNotice && <p className="learning-memory-notice" role="status">{memoryNotice}</p>}
-        {learningMemory.journeys.length > 0 && <div className="learning-journey-list">
-          {learningMemory.journeys.map((item) => <article className="learning-journey-item" key={item.id}>
-            <div><strong>{item.journey.title}</strong><span>{item.journey.subject} · {item.journey.gradeBand} · {item.journey.language}</span>
-              <small>{new Date(item.createdAt).toLocaleDateString()} · {item.journey.exploredScenes} scenes explored · {item.journey.attempts} attempts · {item.journey.adaptedScenes} alternate explanations</small>{item.journey.scenes?.some((scene) => scene.alternateExplanationUsed) && <small>Explore again: {item.journey.scenes.filter((scene) => scene.alternateExplanationUsed).map((scene) => scene.caption).join(", ")}</small>}</div>
-            <button type="button" onClick={() => deleteLearningJourney(item.id)} disabled={memoryBusy}>Delete</button>
-          </article>)}
-        </div>}
-        {!memoryLoading && learningMemory.journeys.length === 0 && <p className="learning-history-empty">No saved journeys yet. Finish an animated lesson and choose “Save to my journey”.</p>}
-      </section>
-      {learningMemory.enabled && learningMemory.journeys.length > 0 && <section className="learning-roadmap" aria-label="Your next learning steps">
-        <div className="learning-section-heading"><div><span>BUILT FROM YOUR SAVED JOURNEYS</span><h2>Your next discoveries</h2></div></div>
-        <p>These are gentle suggestions based only on lessons you chose to save. They are invitations—not grades or assumptions about what you know.</p>
-        {uniqueRevisitTopics.length > 0 && <div className="learning-roadmap-group">
-          <h3>Explore with a fresh explanation</h3>
-          {uniqueRevisitTopics.map((topic) => <article className="learning-roadmap-item" key={topic.subject + topic.title}>
-            <div><strong>{topic.title}</strong><small>{topic.subject} · from {topic.lessonTitle}</small></div>
-            <button type="button" onClick={() => exploreRoadmapTopic(topic, true)}>Explore again</button>
-          </article>)}
-        </div>}
-        {learningRoadmap.latest && <div className="learning-roadmap-group">
-          <h3>Continue your curiosity</h3>
-          <article className="learning-roadmap-item">
-            <div><strong>{learningRoadmap.latest.title}</strong><small>{learningRoadmap.latest.subject} · build a new connection</small></div>
-            <button type="button" onClick={() => exploreRoadmapTopic(learningRoadmap.latest)}>Continue</button>
-          </article>
-        </div>}
-      </section>}
-      <section className="learning-modes">
-        <div className="learning-section-heading"><div><span>CHOOSE YOUR JOURNEY</span><h2>How would you like to learn?</h2></div></div>
-        <div className="learning-mode-grid">
-          {learningModes.map((item) => (
-            <button key={item.id} type="button" className={learningMode === item.id ? "learning-mode-card selected" : "learning-mode-card"} onClick={() => setLearningMode(item.id)} aria-pressed={learningMode === item.id} disabled={busy}>
-              <span className="learning-mode-icon" aria-hidden="true">{item.icon}</span>
-              <strong>{item.title}</strong><span>{item.detail}</span>
-              <small>{learningMode === item.id ? "Selected" : "Choose this mode"}</small>
-            </button>
-          ))}
-        </div>
+      <section className="learning-profile student-grade-picker" aria-label="Choose your school grade">
+        <label htmlFor="student-school-grade">Which grade are you in?</label>
+        <select id="student-school-grade" value={schoolGrade} onChange={(event) => {
+          const nextGrade = event.target.value;
+          setSchoolGrade(nextGrade);
+          const numericGrade = Number(nextGrade);
+          setGradeBand(numericGrade <= 5 ? "primary" : numericGrade <= 8 ? "middle" : "secondary");
+        }} disabled={busy}>
+          <option value="">Choose your grade</option>
+          {Array.from({ length: 10 }, (_, index) => String(index + 1)).map((value) => <option value={value} key={value}>Grade {value}</option>)}
+        </select>
       </section>
 
       <section className="learning-session">
@@ -739,14 +630,14 @@ export default function LearningStudio({ userEmail = "" }) {
           })}
         </div>}
         <form className="learning-composer" onSubmit={startLearning}>
-          <label htmlFor="learning-question">What would you like to understand today?</label>
-          <textarea id="learning-question" value={question} onChange={(event) => setQuestion(event.target.value)} rows={3} maxLength={8000} disabled={busy} placeholder="For example: Why does the Moon look bigger near the horizon? Or teach me fractions using pizza…" />
+          <label htmlFor="learning-question">What would you like me to help you understand?</label>
+          <textarea id="learning-question" value={question} onChange={(event) => setQuestion(event.target.value)} rows={3} maxLength={8000} disabled={busy} placeholder="Hi Aahana, I am [your name]. I am in Grade 4. Can you explain fractions with a simple picture?" />
           <div><span>{learningModes.find((item) => item.id === learningMode)?.detail}</span><button type="submit" disabled={!question.trim() || busy}>{busy ? "Learning…" : "Start learning"}</button></div>
         </form>
         {error && <p className="learning-error" role="alert">{error}</p>}
-        <p className="learning-note">Aahana keeps explanations in text. Visual diagrams, experiments and generated media are offered only when the required capability is actually available.</p>
+        <p className="learning-note">You only need to ask. Aahana can choose a simple explanation, example, diagram or interactive lesson when that capability is available.</p>
       </section>
-      <footer className="learning-footer"><span>Aahana Learning Studio</span><span>Wonder first. Understanding follows.</span></footer>
+      <footer className="learning-footer"><span>Aahana Student Mode</span><span>One question at a time.</span></footer>
     </main>
   );
 }
