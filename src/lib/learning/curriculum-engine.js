@@ -149,7 +149,7 @@ const authoredSubjectSeeds = [
     ["Describe features used to study an ancient civilisation","Interpret archaeological evidence with attention to context","Compare civilisations without assuming they followed identical paths"],
     [["How historians study the past",["Distinguish archaeological remains from later written accounts","Explain why context and dating affect interpretation"],["archaeology","artefact","stratigraphy","dating"]],["Cities and exchange",["Identify roles of settlement, agriculture, craft and trade","Use material evidence to infer connections cautiously"],["settlement","surplus","trade","urbanisation"]],["Compare responsibly",["Compare two societies using defined criteria","Recognise gaps and uncertainty in surviving evidence"],["comparison","continuity","change","evidence gap"]]],
     ["evidence classification","trade-network interpretation","criteria-based comparison"]],
-  ["Earth systems & sustainability","Climate change","Climate change: evidence, impacts and responses",
+  ["Earth systems & sustainability","Climate systems","Climate change: evidence, impacts and responses",
     ["Distinguish weather variability from long-term climate trends","Explain the enhanced greenhouse effect using energy flow","Compare mitigation and adaptation responses with their trade-offs"],
     [["Weather and climate evidence",["Explain the difference between daily weather and climate statistics","Interpret a trend while recognising variability and uncertainty"],["weather","climate","trend","baseline"]],["Greenhouse effect",["Describe how greenhouse gases absorb and re-emit infrared energy","Distinguish the natural greenhouse effect from its human-driven enhancement"],["infrared","greenhouse gas","energy balance","emissions"]],["Responses and choices",["Classify an action as mitigation, adaptation or both","Compare responses by effectiveness, equity and feasibility"],["mitigation","adaptation","resilience","equity"]]],
     ["weather-climate classification","energy-flow explanation","response trade-off analysis"]],
@@ -414,7 +414,7 @@ const additionalAuthoredCurricula = [
     "lessonStatus": "content-authored-review-required"
   },
   {
-    "subjectId": "earth-systems-sustainability-climate-change",
+    "subjectId": "earth-systems-sustainability-climate-systems",
     "version": 1,
     "title": "Climate change: evidence, impacts and responses",
     "suggestedLevels": [
@@ -564,7 +564,7 @@ const additionalAuthoredCurricula = [
     "lessonStatus": "content-authored-review-required"
   }
 ];
-export const completeAuthoredCurricula = [...allAuthoredCurricula, ...additionalAuthoredCurricula];
+export const completeAuthoredCurricula = [...new Map([...allAuthoredCurricula, ...additionalAuthoredCurricula].map((item) => [item.subjectId, item])).values()];
 const curriculumBySubjectId = new Map(completeAuthoredCurricula.map((item) => [item.subjectId, item]));
 
 export function getLearningCurriculum(subjectId) {
