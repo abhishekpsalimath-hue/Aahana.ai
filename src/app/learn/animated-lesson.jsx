@@ -109,7 +109,7 @@ export function AnimatedVisual({ visual, paused = false }) {
 }
 
 export default function AnimatedLesson({ content, topic = "", memoryEnabled = false, onSaveJourney, onRetry }) {
-  const isSolarSystemTopic = /\\b(?:solar system|planets?|sun|mercury|venus|earth|mars|jupiter|saturn|uranus|neptune|planetary orbit)\\b/i.test(topic);
+  const isSolarSystemTopic = /\b(?:solar system|planets?|sun|mercury|venus|earth|mars|jupiter|saturn|uranus|neptune|planetary orbit)\b/i.test(topic);
   const lesson = useMemo(() => readMotionLesson(content) || (isSolarSystemTopic ? solarSystemFallbackLesson : null), [content, isSolarSystemTopic]);
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
