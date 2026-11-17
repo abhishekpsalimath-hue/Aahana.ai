@@ -18,6 +18,19 @@ const models = [
   { id: "engine", label: "Mechanical engine", subject: "Engineering · Physics", description: "Inspect a simplified mechanical assembly with a crankshaft, connecting rods and piston-like cylinders. It is a conceptual model, not a working engine simulation.", color: "#91a8c7" },
 ];
 
+const modelExplorations = {
+  ecosystem: [
+    { title: "Producers", question: "Where does most energy in this habitat begin?", explanation: "Green plants are producers. They capture energy from sunlight and store some of it as chemical energy through photosynthesis." },
+    { title: "Food web", question: "What connects plants, herbivores and predators?", explanation: "A food web links many food chains. Energy moves when organisms eat plants or other organisms; arrows point from the food to the eater." },
+    { title: "Habitat balance", question: "What might happen if the water source disappears?", explanation: "Organisms that depend on that water may move, decline or compete more strongly. A habitat is a connected system, so one change can affect many populations." },
+  ],
+  engine: [
+    { title: "Piston", question: "Which part moves back and forth inside a cylinder?", explanation: "The piston travels up and down inside the cylinder. In an engine, expanding hot gases push it and transfer force to the connecting rod." },
+    { title: "Connecting rod", question: "How does the piston pass motion to the crankshaft?", explanation: "The connecting rod links the piston to the crankshaft. It transmits the piston's reciprocating motion to the rotating crank." },
+    { title: "Crankshaft", question: "What does the crankshaft do with this motion?", explanation: "The crankshaft converts the piston's back-and-forth movement into rotation that can drive other parts. This model is conceptual, not a working simulation." },
+  ],
+};
+
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 const rotatePoint = ([x, y, z], yaw, pitch) => {
   const cy = Math.cos(yaw), sy = Math.sin(yaw), cx = Math.cos(pitch), sx = Math.sin(pitch);
@@ -228,6 +241,7 @@ function drawScene(canvas, modelId, yaw, pitch, zoom) {
 export function Mini3DModel({ modelId = "planet" }) {
   const [rotation, setRotation] = useState({ yaw: -.55, pitch: -.22 });
   const [zoom, setZoom] = useState(1);
+  const [conceptIndex, setConceptIndex] = useState(0);
   const canvasRef = useRef(null);
   const dragRef = useRef(null);
   useEffect(() => {
@@ -303,8 +317,16 @@ export default function Interactive3DWorld() {
         </div>
         <aside className="learning-3d-details">
           <span>NOW EXPLORING</span><h3>{model.label}</h3><small>{model.subject}</small><p>{model.description}</p>
+          <div className="learning-3d-concept-panel" aria-live="polite">
+            <span>DISCOVERY GUIDE</span>
+            <div className="learning-3d-concept-tabs">
+              {(modelExplorations[modelId] || [{ title: "Observe", question: "What details can you notice as you rotate this model?", explanation: model.description }]).map((concept, index) => <button type="button" key={concept.title} className={conceptIndex === index ? "active" : ""} onClick={() => setConceptIndex(index)} aria-pressed={conceptIndex === index}>{concept.title}</button>)}
+            </div>
+            <strong>{(modelExplorations[modelId] || [{ question: "What details can you notice as you rotate this model?", explanation: model.description }])[conceptIndex]?.question}</strong>
+            <p>{(modelExplorations[modelId] || [{ question: "What details can you notice as you rotate this model?", explanation: model.description }])[conceptIndex]?.explanation}</p>
+          </div>
           <div className="learning-3d-model-list" aria-label="Choose a 3D model">
-            {models.map((item) => <button type="button" key={item.id} className={item.id === modelId ? "active" : ""} onClick={() => { setModelId(item.id); setRotation({ yaw: -.55, pitch: -.22 }); setZoom(1); }} aria-pressed={item.id === modelId}>{item.label}</button>)}
+            {models.map((item) => <button type="button" key={item.id} className={item.id === modelId ? "active" : ""} onClick={() => { setModelId(item.id); setConceptIndex(0); setRotation({ yaw: -.55, pitch: -.22 }); setZoom(1); }} aria-pressed={item.id === modelId}>{item.label}</button>)}
           </div>
           <p className="learning-3d-hint">On a touch screen, drag with one finger to rotate. Use the zoom controls to look closer.</p>
         </aside>
