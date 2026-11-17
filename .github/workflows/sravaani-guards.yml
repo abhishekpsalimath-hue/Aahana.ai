@@ -30,3 +30,9 @@ jobs:
           python-version: "3.12"
       - name: Run dependency-free request guard tests
         run: python -m unittest -v test_request_validation.py
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Run SraVaani provider adapter tests
+        run: node --test ../../src/lib/voice/sravaani-asr-provider.test.mjs
