@@ -128,7 +128,8 @@ export default function AnimatedLesson({ content, memoryEnabled = false, onSaveJ
 
   return <section className="motion-lesson" aria-label="Animated lesson">
     <div className="motion-lesson-head"><div><span>EXPLORE IT IN MOTION</span><h3>{lesson.title}</h3></div><span>SCENE {index + 1} / {lesson.scenes.length}</span></div>
-    <div className="motion-stage">
+    <div className={solved ? "motion-stage is-celebrating" : "motion-stage"}>
+      <div className="motion-stardust" aria-hidden="true"><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/></div>
       <AnimatedVisual visual={displayedVisual} paused={paused}/>
       <div className="motion-caption">{showSupport ? "Let's look at it another way" : scene.caption}</div>
       <div className="motion-data" aria-label={`${displayedData.label}: ${displayedData.value} ${displayedData.unit}`}>
