@@ -13,6 +13,8 @@ test("chat API accepts the dedicated learn mode and validates learner profile fi
   assert.match(route, /allowedGradeBands/);
   assert.match(route, /allowedLearningModes/);
   assert.match(route, /allowedLearningSubjects/);
+  assert.match(route, /allowedCurricula/);
+  assert.match(route, /curriculum: allowedCurricula/);
   assert.match(route, /\\p\{L\}/);
   assert.match(route, /mode === "learn" \?/);
   assert.match(route, /learningProfile\.language/);
@@ -40,6 +42,8 @@ test("student studio exposes all six agreed learning experiences", () => {
   ]) assert.ok(studio.includes(phrase), `Missing learning experience: ${phrase}`);
   assert.match(studio, /Learning level/);
   assert.match(studio, /Learning language/);
+  assert.match(studio, /Curriculum \/ education board/);
+  assert.match(studio, /curriculum, language, learningMode/);
   assert.match(studio, /What are you exploring\?/);
 });
 
@@ -63,4 +67,11 @@ test("learner preferences are saved per conversation and restored when resuming 
   assert.match(studio, /setGradeBand\(savedProfile\.gradeBand\)/);
   assert.match(studio, /setSubject\(savedProfile\.subject\)/);
   assert.match(studio, /setLearningMode\(savedProfile\.learningMode\)/);
+});
+
+test("curriculum selection is restored with the learner profile and handled cautiously by the tutor", () => {
+  assert.match(studio, /curricula\.includes\(savedProfile\.curriculum\)/);
+  assert.match(studio, /setCurriculum\(savedProfile\.curriculum\)/);
+  assert.match(route, /Curriculum: \$\{learningProfile\.curriculum\}/);
+  assert.match(route, /Do not claim exact syllabus alignment or exam-board coverage unless verified/);
 });
