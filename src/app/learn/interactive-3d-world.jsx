@@ -322,7 +322,7 @@ function illuminateFace(color, brightness) {
   return `rgb(${channels.map((value) => Math.round(clamp(value * brightness, 0, 255))).join(",")})`;
 }
 
-function drawScene(canvas, modelId, yaw, pitch, zoom, ecosystem = {}) {
+function drawScene(canvas, modelId, yaw, pitch, zoom, ecosystem = {}, time = 0) {
   const rect = canvas.getBoundingClientRect();
   const dpr = Math.min(window.devicePixelRatio || 1, 3);
   const width = Math.max(1, Math.round(rect.width * dpr)), height = Math.max(1, Math.round(rect.height * dpr));
@@ -334,13 +334,21 @@ function drawScene(canvas, modelId, yaw, pitch, zoom, ecosystem = {}) {
   ctx.imageSmoothingQuality = "high";
   const w = rect.width, h = rect.height;
   ctx.clearRect(0, 0, w, h);
-  const glow = ctx.createRadialGradient(w * .5, h * .48, 4, w * .5, h * .48, h * .55);
-  glow.addColorStop(0, "#30294a"); glow.addColorStop(1, "#100f1b");
+  const pulse = .5 + Math.sin(time * .0012) * .045;
+  const glow = ctx.createRadialGradient(w * .5, h * .46, 3, w * .5, h * .46, h * .62);
+  glow.addColorStop(0, "rgba(91,73,130," + pulse + ")"); glow.addColorStop(.58, "#211b31"); glow.addColorStop(1, "#100f1b");
   ctx.fillStyle = glow; ctx.fillRect(0, 0, w, h);
-  for (let i = 0; i < 42; i++) {
-    const x = (i * 97 % 997) / 997 * w, y = (i * 53 % 991) / 991 * h;
-    ctx.fillStyle = "rgba(226,215,255,.35)"; ctx.fillRect(x, y, 1.2, 1.2);
+  for (let i = 0; i < 64; i++) {
+    const x = (i * 97 % 997) / 997 * w;
+    const y = (i * 53 % 991) / 991 * h;
+    const twinkle = .18 + (Math.sin(time * .0015 + i * 1.71) + 1) * .17;
+    const radius = i % 9 === 0 ? 1.8 : 1.05;
+    ctx.beginPath(); ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(226,215,255," + twinkle + ")"; ctx.fill();
   }
+  const modelAura = ctx.createRadialGradient(w * .5, h * .49, 2, w * .5, h * .49, Math.min(w, h) * .34);
+  modelAura.addColorStop(0, "rgba(180,151,255,.12)"); modelAura.addColorStop(1, "rgba(180,151,255,0)");
+  ctx.fillStyle = modelAura; ctx.fillRect(0, 0, w, h);
   const model = makeModel(modelId, ecosystem);
   const drawables = model.map((face) => {
     const offset = face.offset || [0, 0, 0];
@@ -390,6 +398,20 @@ function drawScene(canvas, modelId, yaw, pitch, zoom, ecosystem = {}) {
 }
 
 
+function animateScene(canvas, render) {
+  let frame = 0;
+  let lastFrame = 0;
+  const tick = (time) => {
+    if (time - lastFrame >= 33) {
+      render(time);
+      lastFrame = time;
+    }
+    frame = requestAnimationFrame(tick);
+  };
+  frame = requestAnimationFrame(tick);
+  return () => cancelAnimationFrame(frame);
+}
+
 export function Mini3DModel({ modelId = "planet" }) {
   const [rotation, setRotation] = useState({ yaw: -.55, pitch: -.22 });
   const [zoom, setZoom] = useState(1);
@@ -398,11 +420,11 @@ export function Mini3DModel({ modelId = "planet" }) {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const render = () => drawScene(canvas, modelId, rotation.yaw, rotation.pitch, zoom);
-    render();
-    const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(render) : null;
+    const render = (time = 0) => drawScene(canvas, modelId, rotation.yaw, rotation.pitch, zoom, {}, time);
+    const stopAnimation = animateScene(canvas, render);
+    const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(() => render()) : null;
     observer?.observe(canvas);
-    return () => observer?.disconnect();
+    return () => { stopAnimation(); observer?.disconnect(); };
   }, [modelId, rotation, zoom]);
   function pointerDown(event) {
     dragRef.current = { x: event.clientX, y: event.clientY, yaw: rotation.yaw, pitch: rotation.pitch };
@@ -435,11 +457,11 @@ export default function Interactive3DWorld() {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const render = () => drawScene(canvas, modelId, rotation.yaw, rotation.pitch, zoom, ecosystem);
-    render();
-    const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(render) : null;
+    const render = (time = 0) => drawScene(canvas, modelId, rotation.yaw, rotation.pitch, zoom, ecosystem, time);
+    const stopAnimation = animateScene(canvas, render);
+    const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(() => render()) : null;
     observer?.observe(canvas);
-    return () => observer?.disconnect();
+    return () => { stopAnimation(); observer?.disconnect(); };
   }, [modelId, rotation, zoom, ecosystem]);
 
   function onPointerDown(event) {
