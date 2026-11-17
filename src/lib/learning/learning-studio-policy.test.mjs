@@ -25,7 +25,7 @@ test("learning instructions are included in the actual model system prompt", () 
   for (const phrase of [
     "Aahana Learning Studio",
     "Adapt the vocabulary, examples",
-    "Let the learner answer before revealing the solution",
+    "wait for the learner's attempt",
     "Correct misconceptions gently",
     "Never pretend media was created",
   ]) assert.ok(systemPrompt.includes(phrase), `Missing learning policy: ${phrase}`);
