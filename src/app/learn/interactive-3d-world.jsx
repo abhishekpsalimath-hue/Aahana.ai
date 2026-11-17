@@ -310,7 +310,7 @@ export function Mini3DModel({ modelId = "planet" }) {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const render = () => drawScene(canvas, modelId, rotation.yaw, rotation.pitch, zoom, ecosystem);
+    const render = () => drawScene(canvas, modelId, rotation.yaw, rotation.pitch, zoom);
     render();
     const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(render) : null;
     observer?.observe(canvas);
@@ -347,7 +347,7 @@ export default function Interactive3DWorld() {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const render = () => drawScene(canvas, modelId, rotation.yaw, rotation.pitch, zoom);
+    const render = () => drawScene(canvas, modelId, rotation.yaw, rotation.pitch, zoom, ecosystem);
     render();
     const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(render) : null;
     observer?.observe(canvas);
