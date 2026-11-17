@@ -316,3 +316,20 @@ test("learning universe presents every catalogue category as a selectable destin
   assert.match(studio, /professional/);
   assert.match(route, /"early-years", "primary", "middle", "secondary", "higher-secondary", "college", "postgraduate", "professional", "adult", "not-sure"/);
 });
+
+
+test("student mode includes an interactive 3D model lab rather than image-only learning", () => {
+  const worldPath = fileURLToPath(new URL("../../app/learn/interactive-3d-world.jsx", import.meta.url));
+  const world = readFileSync(worldPath, "utf8");
+  assert.match(studio, /import Interactive3DWorld from ".\/interactive-3d-world"/);
+  assert.match(studio, /<Interactive3DWorld \/>/);
+  for (const model of ["planet", "molecule", "atom", "dna", "cube", "terrain"]) assert.ok(world.includes(`id: "${model}"`), `Missing 3D model: ${model}`);
+  assert.match(world, /getContext\("2d"\)/);
+  assert.match(world, /rotatePoint/);
+  assert.match(world, /onPointerDown/);
+  assert.match(world, /onWheel/);
+  assert.match(world, /Zoom in/);
+  assert.match(world, /Reset view/);
+  assert.match(styles, /\.learning-3d-viewer canvas/);
+  assert.match(styles, /touch-action:none/);
+});
