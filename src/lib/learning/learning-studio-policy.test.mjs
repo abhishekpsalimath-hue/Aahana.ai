@@ -333,6 +333,12 @@ test("student mode includes an interactive 3D model lab rather than image-only l
   assert.match(world, /modelExplorations/);
   assert.match(world, /DISCOVERY GUIDE/);
   assert.match(world, /Food web/);
+  assert.match(world, /TRY A HABITAT EXPERIMENT/);
+  assert.match(world, /rainfall: "regular"/);
+  assert.match(world, /waterSource/);
+  assert.match(world, /pollution/);
+  assert.match(world, /Reset experiment/);
+  assert.match(world, /qualitative teaching outcomes/);
   assert.match(world, /Connecting rod/);
   assert.match(world, /aria-live="polite"/);
   for (const concept of ["Equator & poles", "Molecular shape", "Atomic identity", "Base pairs", "Vertices", "Contour lines", "Mitochondria", "Planet groups", "Chloroplasts", "Body circuit", "History & engineering"]) {
