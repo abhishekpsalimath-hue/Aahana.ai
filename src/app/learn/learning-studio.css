@@ -623,3 +623,42 @@
 .pattern-builder-check{min-height:40px;border:0;border-radius:10px;background:#c6a6f4;color:#21182d;font:inherit;font-size:12px;font-weight:800;cursor:pointer}.pattern-builder-check:disabled{opacity:.45;cursor:not-allowed}.pattern-builder p{min-height:18px;margin:0;text-align:center;font-size:12px;line-height:1.5;color:#eee5ff}.pattern-builder button:focus-visible,.pattern-builder select:focus-visible{outline:3px solid #f3c76b;outline-offset:3px}
 @media(prefers-reduced-motion:reduce){.pattern-builder *{animation:none!important;transition:none!important}}
 @media(max-width:520px){.pattern-builder{padding:13px}.pattern-token{width:34px;height:34px}}
+
+
+/* Student Mode: one grade selector and one friendly learning conversation. */
+.student-welcome {
+  max-width: 760px;
+  margin-inline: auto;
+  text-align: center;
+}
+.student-welcome p {
+  max-width: 560px;
+  margin-inline: auto;
+}
+.student-grade-picker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  max-width: 520px;
+  margin: 0 auto 28px;
+  padding: 18px 22px;
+}
+.student-grade-picker label {
+  font-weight: 650;
+  white-space: nowrap;
+}
+.student-grade-picker select {
+  min-width: 170px;
+  max-width: 100%;
+}
+@media (max-width: 560px) {
+  .student-grade-picker {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .student-grade-picker select {
+    width: 100%;
+  }
+}
