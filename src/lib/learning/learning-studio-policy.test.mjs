@@ -305,3 +305,14 @@ test("Learning Studio exposes a broad category-based catalogue and validates eve
   assert.match(route, /const allowedLearningSubjects = allLearningSubjects/);
   assert.ok(catalogPath.endsWith("learning-catalog.js"));
 });
+
+test("learning universe presents every catalogue category as a selectable destination and supports expanded learner stages", () => {
+  assert.match(studio, /function LearningCategoryExplorer/);
+  assert.match(studio, /Explore every direction/);
+  assert.match(studio, /onChooseCategory/);
+  assert.match(studio, /learning-category-grid/);
+  assert.match(studio, /early-years/);
+  assert.match(studio, /postgraduate/);
+  assert.match(studio, /professional/);
+  assert.match(route, /"early-years", "primary", "middle", "secondary", "higher-secondary", "college", "postgraduate", "professional", "adult", "not-sure"/);
+});
