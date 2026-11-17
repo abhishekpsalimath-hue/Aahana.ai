@@ -118,7 +118,7 @@ export default function LearningStudio({ userEmail = "" }) {
             </select>
           </label>
           <label>Learning language
-            <input value={language} onChange={(event) => setLanguage(event.target.value.slice(0, 35))} maxLength={35} disabled={busy} aria-label="Learning language" />
+            <input value={language} onChange={(event) => setLanguage(event.target.value.slice(0, 35))} maxLength={35} disabled={busy} placeholder="e.g. ಕನ್ನಡ, हिन्दी, English" aria-label="Learning language" />
           </label>
         </div>
       </section>
