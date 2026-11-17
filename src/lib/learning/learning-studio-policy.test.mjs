@@ -56,3 +56,11 @@ test("learning studio lists only learn-mode sessions and resumes through the own
   assert.match(studio, /result\.conversation\?\.mode !== "learn"/);
   assert.match(studio, /setMessages\(\(result\.messages \|\| \[\]\)\.map/);
 });
+
+test("learner preferences are saved per conversation and restored when resuming on the same device", () => {
+  assert.match(studio, /localStorage\.setItem\("aahana:learning-profile:" \+ nextId/);
+  assert.match(studio, /localStorage\.getItem\("aahana:learning-profile:" \+ result\.conversation\.id/);
+  assert.match(studio, /setGradeBand\(savedProfile\.gradeBand\)/);
+  assert.match(studio, /setSubject\(savedProfile\.subject\)/);
+  assert.match(studio, /setLearningMode\(savedProfile\.learningMode\)/);
+});
