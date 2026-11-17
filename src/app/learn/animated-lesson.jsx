@@ -88,6 +88,35 @@ const solarSystemFallbackLesson = {
   ],
 };
 
+const shapeFacts = {
+  circle: { name: "Circle", sides: 0, corners: 0, note: "A circle has one curved boundary and no corners." },
+  triangle: { name: "Triangle", sides: 3, corners: 3, note: "A triangle has three straight sides and three corners." },
+  square: { name: "Square", sides: 4, corners: 4, note: "A square has four equal straight sides and four corners." },
+  rectangle: { name: "Rectangle", sides: 4, corners: 4, note: "A rectangle has four straight sides. Opposite sides are equal." },
+};
+
+function InteractiveShapeExplorer({ paused = false }) {
+  const [selected, setSelected] = useState("triangle");
+  const fact = shapeFacts[selected];
+  return <section className={paused ? "motion-art paused shape-explorer" : "motion-art shape-explorer"} aria-label="Interactive 2D shape explorer">
+    <div className="shape-explorer-heading"><strong>Explore a shape</strong><span>Choose one to investigate</span></div>
+    <div className="shape-explorer-stage" role="img" aria-label={fact.name + " shape illustration"}>
+      <svg viewBox="0 0 220 150" aria-hidden="true">
+        {selected === "circle" && <circle cx="110" cy="75" r="54" />}
+        {selected === "triangle" && <path d="M110 18 174 128H46Z" />}
+        {selected === "square" && <rect x="54" y="19" width="112" height="112" rx="2" />}
+        {selected === "rectangle" && <rect x="32" y="38" width="156" height="74" rx="2" />}
+      </svg>
+    </div>
+    <div className="shape-explorer-choices" aria-label="Choose a shape">
+      {Object.keys(shapeFacts).map((key) => <button type="button" key={key} aria-pressed={selected === key} onClick={() => setSelected(key)}>{shapeFacts[key].name}</button>)}
+    </div>
+    <div className="shape-explorer-facts" aria-live="polite">
+      <strong>{fact.name}</strong><span>{fact.sides} straight sides · {fact.corners} corners</span><p>{fact.note}</p>
+    </div>
+  </section>;
+}
+
 function InteractiveCounterBoard({ paused = false }) {
   const [count, setCount] = useState(5);
   const [target, setTarget] = useState(8);
@@ -113,6 +142,7 @@ function InteractiveCounterBoard({ paused = false }) {
 
 export function AnimatedVisual({ visual, paused = false }) {
   if (visual === "counter-board") return <InteractiveCounterBoard paused={paused} />;
+  if (visual === "shape-explorer") return <InteractiveShapeExplorer paused={paused} />;
   const cls = paused ? "motion-art paused" : "motion-art";
   const model3d = { "3d-solar-system": "solar-system", "3d-planet": "planet", "3d-molecule": "molecule", "3d-atom": "atom", "3d-dna": "dna", "3d-geometry": "cube", "3d-terrain": "terrain", "3d-plant-cell": "plant-cell", "3d-heart": "heart", "3d-pyramid": "pyramid", "3d-ecosystem": "ecosystem", "3d-engine": "engine" }[visual];
   if (model3d) return <Mini3DModel modelId={model3d} />;
