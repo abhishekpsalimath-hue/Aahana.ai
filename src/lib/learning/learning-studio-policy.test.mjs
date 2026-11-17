@@ -278,12 +278,12 @@ test("animated lessons include a friendly companion that celebrates discovery wi
 
  
 test("interactive Solar System explorer offers eight selectable worlds, facts, orbit times and accessible controls", () => {
-  assert.match(studio, /function SpaceExplorer\(\)/);
+  assert.match(studio, /function SpaceExplorer\(\{ selectedPlanet, onSelectPlanet \}\)/);
   assert.match(studio, /const spaceWorlds = \[/);
   assert.match(studio, /role="group" aria-label="Choose a planet"/);
-  assert.match(studio, /aria-pressed=\{selected === planet\.id\}/);
+  assert.match(studio, /aria-pressed=\{selected === planet\.id\}/);\n  assert.match(studio, /const \[selectedPlanet, setSelectedPlanet\] = useState\(null\)/);\n  assert.match(studio, /<SpaceExplorer selectedPlanet=\{selectedPlanet\} onSelectPlanet=\{setSelectedPlanet\} \/>/);\n  assert.match(studio, /<Interactive3DWorld selectedPlanet=\{selectedPlanet\} onSelectedPlanetChange=\{setSelectedPlanet\} \/>/);
   assert.match(studio, /aria-live="polite"/);
-  assert.match(studio, /<SpaceExplorer \/>/);
+  assert.match(studio, /onSelectPlanet\(id\)/);
   for (const planet of ["Mercury", "Venus", "Earth", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune"]) {
     assert.ok(studio.includes('name: "' + planet + '"'), "Missing Solar System destination: " + planet);
   }
