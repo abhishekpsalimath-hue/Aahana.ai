@@ -27,7 +27,7 @@ const subjects = ["Anything / explore", "Mathematics", "Science", "Physics", "Ch
 const curricula = ["Not specified", "CBSE", "ICSE", "Karnataka State Board", "Other Indian State Board", "Cambridge International", "International Baccalaureate (IB)", "England National Curriculum", "US Common Core", "Other / help me choose"];
 function readQuizPayload(content) {
   if (typeof content !== "string") return null;
-  const cleaned = content.trim().replace(/^\s*```(?:json)?\s*/i, "").replace(/\s*```$/, "");
+  const cleaned = content.trim().replace(/^\\s*```(?:json)?\\s*/i, "").replace(/\\s*```$/, "");
   try {
     const value = JSON.parse(cleaned);
     if (value?.type !== "aahana_quiz_v1" || !Array.isArray(value.questions) || value.questions.length < 1 || value.questions.length > 5) return null;
@@ -37,10 +37,11 @@ function readQuizPayload(content) {
       item.options.every((option) => typeof option === "string" && option.trim()) &&
       new Set(item.options).size === 4 &&
       Number.isInteger(item.correctIndex) && item.correctIndex >= 0 && item.correctIndex < 4 &&
-      typeof item.explanation === "string" && item.explanation.trim()
+      typeof item.explanation === "string" && item.explanation.trim() &&
+      typeof item.hint === "string" && item.hint.trim()
     );
     if (questions.length !== value.questions.length) return null;
-    return { title: typeof value.title === "string" ? value.title : "Quick challenge", questions };
+    return { title: typeof value.title === "string" ? value.title : "A little challenge", questions };
   } catch {
     return null;
   }
@@ -48,24 +49,40 @@ function readQuizPayload(content) {
 
 function InteractiveQuiz({ quiz }) {
   const [answers, setAnswers] = useState({});
-  const completed = quiz.questions.every((_, index) => Number.isInteger(answers[index]));
+  const [attempts, setAttempts] = useState({});
+  const completed = quiz.questions.every((_, index) => answers[index] === quiz.questions[index].correctIndex);
   const score = quiz.questions.reduce((total, item, index) => total + (answers[index] === item.correctIndex ? 1 : 0), 0);
+  function choose(index, optionIndex) {
+    if (Number.isInteger(answers[index])) return;
+    setAttempts((current) => ({ ...current, [index]: (current[index] || 0) + 1 }));
+    if (optionIndex === quiz.questions[index].correctIndex) {
+      setAnswers((current) => ({ ...current, [index]: optionIndex }));
+    }
+  }
+  function retry(index) {
+    setAttempts((current) => ({ ...current, [index]: 0 }));
+  }
   return (
     <div className="learning-quiz">
-      <div className="learning-quiz-heading"><strong>{quiz.title}</strong><span>{completed ? `Score: ${score}/${quiz.questions.length}` : `${Object.keys(answers).length}/${quiz.questions.length} answered`}</span></div>
+      <div className="learning-quiz-heading"><strong>{quiz.title}</strong><span>{completed ? "Challenge complete!" : `${score}/${quiz.questions.length} discovered`}</span></div>
+      <div className="learning-quiz-progress" aria-label={`${score} of ${quiz.questions.length} questions solved`}><span style={{ width: `${(score / quiz.questions.length) * 100}%` }} /></div>
       {quiz.questions.map((item, index) => {
         const selected = answers[index];
-        return <section className="learning-quiz-question" key={index}>
-          <h3>{index + 1}. {item.question}</h3>
+        const tries = attempts[index] || 0;
+        const solved = selected === item.correctIndex;
+        return <section className={solved ? "learning-quiz-question solved" : "learning-quiz-question"} key={index}>
+          <div className="learning-quiz-question-top"><span>CHALLENGE {index + 1}</span>{solved && <span className="learning-quiz-sparkle">✦ Nice discovery!</span>}</div>
+          <h3>{item.question}</h3>
           <div className="learning-quiz-options">
-            {item.options.map((option, optionIndex) => <button type="button" key={optionIndex} disabled={Number.isInteger(selected)} className={Number.isInteger(selected) && optionIndex === item.correctIndex ? "correct" : Number.isInteger(selected) && selected === optionIndex ? "incorrect" : ""} onClick={() => setAnswers((current) => ({ ...current, [index]: optionIndex }))}>
+            {item.options.map((option, optionIndex) => <button type="button" key={optionIndex} disabled={solved} className={solved && optionIndex === item.correctIndex ? "correct" : !solved && tries > 0 && optionIndex === tries - 1 ? "gentle-hint" : ""} onClick={() => choose(index, optionIndex)}>
               <span>{String.fromCharCode(65 + optionIndex)}</span>{option}
             </button>)}
           </div>
-          {Number.isInteger(selected) && <p className={selected === item.correctIndex ? "learning-quiz-feedback correct" : "learning-quiz-feedback incorrect"}>{selected === item.correctIndex ? "Correct. " : "Not quite. "}{item.explanation}</p>}
+          {solved && <div className="learning-quiz-feedback correct"><strong>You figured it out!</strong><p>{item.explanation}</p></div>}
+          {!solved && tries > 0 && <div className="learning-quiz-feedback encouraging"><strong>Good exploring! Every try helps your brain make a new connection.</strong><p>Here's a little clue: {item.hint}</p><button type="button" onClick={() => retry(index)}>I'll try again</button></div>}
         </section>;
       })}
-      {completed && <div className="learning-quiz-finish"><strong>{score === quiz.questions.length ? "Excellent work!" : "Good effort — every question is a chance to learn."}</strong><button type="button" onClick={() => setAnswers({})}>Try again</button></div>}
+      {completed && <div className="learning-quiz-finish"><span className="learning-celebration" aria-hidden="true">✦ ✧ ★ ✧ ✦</span><strong>You did it! You solved all {quiz.questions.length} challenges.</strong><button type="button" onClick={() => { setAnswers({}); setAttempts({}); }}>Play again</button></div>}
     </div>
   );
 }
