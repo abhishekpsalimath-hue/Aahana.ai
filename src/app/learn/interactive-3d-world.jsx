@@ -71,12 +71,136 @@ function makeEarthTexture() {
   texture.anisotropy = 8;
   return texture;
 }
+const solarPlanets = [
+  { id: "mercury", label: "Mercury", distance: .78, radius: .065, color: "#8f8b85", family: "Rocky planet", description: "The smallest planet and the closest to the Sun. Its ancient surface is heavily cratered, and it has almost no atmosphere." },
+  { id: "venus", label: "Venus", distance: 1.08, radius: .105, color: "#d8b878", family: "Terrestrial planet", description: "A rocky world wrapped in thick clouds. Its intense greenhouse effect makes it the hottest planet in our Solar System." },
+  { id: "earth", label: "Earth", distance: 1.43, radius: .115, color: "#428bd1", family: "Terrestrial planet", description: "Our ocean-rich home, with a nitrogen- and oxygen-rich atmosphere and the only confirmed life known to us." },
+  { id: "mars", label: "Mars", distance: 1.78, radius: .085, color: "#bd684e", family: "Terrestrial planet", description: "A cold, dusty rocky world with giant volcanoes, ancient river-shaped landscapes and two small moons." },
+  { id: "jupiter", label: "Jupiter", distance: 2.23, radius: .27, color: "#d1ad86", family: "Gas giant", description: "The largest planet. Its atmosphere contains broad cloud bands and the long-lived Great Red Spot." },
+  { id: "saturn", label: "Saturn", distance: 2.72, radius: .23, color: "#d9c69b", family: "Gas giant", description: "A gas giant famous for its broad, bright rings made mostly of countless pieces of water ice and rock." },
+  { id: "uranus", label: "Uranus", distance: 3.18, radius: .17, color: "#91d3d6", family: "Ice giant", description: "An ice giant with a blue-green atmosphere and an extreme axial tilt, making it appear to rotate on its side." },
+  { id: "neptune", label: "Neptune", distance: 3.62, radius: .17, color: "#477bd7", family: "Ice giant", description: "A distant ice giant with a deep blue atmosphere and some of the fastest winds measured on any planet." },
+];
+
+function makePlanetTexture(planetId) {
+  if (planetId === "earth") return makeEarthTexture();
+  const planet = solarPlanets.find((item) => item.id === planetId) || solarPlanets[0];
+  const canvas = document.createElement("canvas");
+  canvas.width = 1536;
+  canvas.height = 768;
+  const ctx = canvas.getContext("2d");
+  const base = new THREE.Color(planet.color);
+  const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  gradient.addColorStop(0, base.clone().multiplyScalar(1.35).getStyle());
+  gradient.addColorStop(.5, base.getStyle());
+  gradient.addColorStop(1, base.clone().multiplyScalar(.52).getStyle());
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  if (["jupiter", "saturn", "uranus", "neptune", "venus"].includes(planetId)) {
+    const bandCount = planetId === "jupiter" ? 34 : planetId === "saturn" ? 24 : 18;
+    for (let i = 0; i < bandCount; i++) {
+      const y = (i / bandCount) * canvas.height;
+      const wave = Math.sin(i * 1.7) * 13 + Math.cos(i * .63) * 8;
+      const alpha = .08 + ((i * 7) % 5) * .025;
+      ctx.fillStyle = i % 2 ? `rgba(255,244,218,${alpha})` : `rgba(42,54,86,${alpha})`;
+      ctx.fillRect(0, y + wave, canvas.width, canvas.height / bandCount * (.42 + (i % 3) * .12));
+    }
+    if (planetId === "jupiter") {
+      ctx.fillStyle = "rgba(166,73,48,.78)";
+      ctx.beginPath(); ctx.ellipse(980, 420, 95, 42, -.12, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = "rgba(255,224,190,.34)"; ctx.lineWidth = 10;
+      ctx.beginPath(); ctx.ellipse(980, 420, 112, 51, -.12, 0, Math.PI * 2); ctx.stroke();
+    }
+    if (planetId === "venus") {
+      for (let i = 0; i < 18; i++) {
+        ctx.strokeStyle = `rgba(255,247,219,${.07 + (i % 4) * .025})`;
+        ctx.lineWidth = 18 + (i % 5) * 9;
+        ctx.beginPath(); ctx.moveTo(-80, i * 48); ctx.bezierCurveTo(360, i * 42 + 65, 980, i * 48 - 55, 1610, i * 48 + 24); ctx.stroke();
+      }
+    }
+  }
+
+  if (["mercury", "mars"].includes(planetId)) {
+    for (let i = 0; i < 95; i++) {
+      const x = (i * 197 + 83) % canvas.width;
+      const y = (i * 113 + 41) % canvas.height;
+      const radius = 5 + (i * 17) % (planetId === "mars" ? 25 : 31);
+      ctx.fillStyle = planetId === "mars" ? "rgba(74,37,32,.2)" : "rgba(34,36,42,.22)";
+      ctx.beginPath(); ctx.arc(x, y, radius, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = "rgba(255,226,197,.12)"; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(x - 2, y - 2, radius * .82, Math.PI * 1.05, Math.PI * 1.9); ctx.stroke();
+    }
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 8;
+  return texture;
+}
+
+function addPlanetAtmosphere(group, radius, color, opacity = .13) {
+  const atmosphere = new THREE.Mesh(
+    new THREE.SphereGeometry(radius * 1.055, 64, 48),
+    new THREE.MeshBasicMaterial({ color, transparent: true, opacity, side: THREE.BackSide, blending: THREE.AdditiveBlending, depthWrite: false })
+  );
+  group.add(atmosphere);
+  return atmosphere;
+}
+
+function createFocusedPlanet(group, planet) {
+  const radius = 1.18;
+  const material = new THREE.MeshStandardMaterial({ map: makePlanetTexture(planet.id), roughness: planet.id === "venus" ? .68 : .82, metalness: .015 });
+  const body = sphere(group, [0, 0, 0], radius, 0xffffff, { material, segments: 96 });
+  body.userData.planetId = planet.id;
+  addPlanetAtmosphere(group, radius, planet.id === "earth" ? 0x63b9ff : planet.id === "venus" ? 0xe7c17b : planet.id === "neptune" ? 0x3679ff : 0x9bb6d8, planet.id === "earth" ? .22 : .11);
+
+  if (planet.id === "earth") {
+    sphere(group, [0, 0, 0], radius * 1.009, 0xffffff, {
+      material: new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: .09, roughness: 1, wireframe: true, depthWrite: false }),
+      segments: 72,
+    });
+    const moonOrbit = new THREE.Mesh(new THREE.TorusGeometry(1.62, .006, 8, 160), new THREE.MeshBasicMaterial({ color: 0x9bbce7, transparent: true, opacity: .26 }));
+    moonOrbit.rotation.x = Math.PI / 2.4; group.add(moonOrbit);
+    const moon = sphere(group, [1.62, .1, 0], .16, 0xc9cbd0, { roughness: .95 });
+    moon.userData.isMoon = true;
+  }
+
+  if (planet.id === "saturn" || planet.id === "uranus") {
+    const ring = new THREE.Mesh(
+      new THREE.RingGeometry(planet.id === "saturn" ? 1.48 : 1.42, planet.id === "saturn" ? 2.05 : 1.72, 160),
+      new THREE.MeshStandardMaterial({ color: planet.id === "saturn" ? 0xd8c7a3 : 0x9ac9d0, side: THREE.DoubleSide, transparent: true, opacity: .78, roughness: .88 })
+    );
+    ring.rotation.x = Math.PI / 2.35;
+    group.add(ring);
+    if (planet.id === "saturn") {
+      const gap = new THREE.Mesh(new THREE.RingGeometry(1.69, 1.73, 160), new THREE.MeshBasicMaterial({ color: 0x28283a, side: THREE.DoubleSide }));
+      gap.rotation.copy(ring.rotation); group.add(gap);
+    }
+  }
+  if (planet.id === "jupiter") {
+    const storm = sphere(group, [.28, .16, 1.14], .105, 0xb85d43, { segments: 24, roughness: .85 });
+    storm.scale.set(1.35, .58, .2);
+  }
+}
+
 function addStars(scene) {
-  const positions=new Float32Array(1500*3);
-  for(let i=0;i<1500;i++){const r=18+Math.random()*24,a=Math.random()*Math.PI*2,z=Math.random()*2-1,s=Math.sqrt(1-z*z);positions[i*3]=r*s*Math.cos(a);positions[i*3+1]=r*z;positions[i*3+2]=r*s*Math.sin(a);}
-  const geometry=new THREE.BufferGeometry();geometry.setAttribute("position",new THREE.BufferAttribute(positions,3));
-  const material=new THREE.PointsMaterial({color:0xc9d9ff,size:.075,transparent:true,opacity:.78,sizeAttenuation:true});
-  scene.add(new THREE.Points(geometry,material));
+  const positions = new Float32Array(2200 * 3);
+  for (let i = 0; i < 2200; i++) {
+    const radius = 18 + Math.random() * 34;
+    const angle = Math.random() * Math.PI * 2;
+    const vertical = Math.random() * 2 - 1;
+    const spread = Math.sqrt(1 - vertical * vertical);
+    positions[i * 3] = radius * spread * Math.cos(angle);
+    positions[i * 3 + 1] = radius * vertical;
+    positions[i * 3 + 2] = radius * spread * Math.sin(angle);
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+  const material = new THREE.PointsMaterial({ color: 0xd7e7ff, size: .085, transparent: true, opacity: .9, sizeAttenuation: true });
+  const stars = new THREE.Points(geometry, material);
+  scene.add(stars);
+  return stars;
 }
 
 function sphere(group, position, radius, color, options={}) {
@@ -94,7 +218,7 @@ function rod(group,a,b,color=0xb9c8e2,radius=.035) {
   const mesh=new THREE.Mesh(new THREE.CylinderGeometry(radius,radius,delta.length(),20),new THREE.MeshStandardMaterial({color,metalness:.45,roughness:.28}));
   mesh.position.copy(start).add(end).multiplyScalar(.5);mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),delta.normalize());group.add(mesh);return mesh;
 }
-function makeSceneModel(group,id) {
+function makeSceneModel(group,id,selectedPlanet=null) {
   if(id==="planet"){
     const earth=sphere(group,[0,0,0],1,"#ffffff",{material:new THREE.MeshStandardMaterial({map:makeEarthTexture(),roughness:.86})});
     const clouds=sphere(group,[0,0,0],1.008,"#ffffff",{material:new THREE.MeshStandardMaterial({color:0xffffff,transparent:true,opacity:.13,roughness:1,wireframe:true})});
@@ -104,11 +228,54 @@ function makeSceneModel(group,id) {
     const pole=sphere(axis,[0,1.32,0],.035,0xddeeff);sphere(axis,[0,-1.32,0],.035,0xddeeff);
     return;
   }
-  if(id==="solar-system"){
-    sphere(group,[0,0,0],.48,0xffc65e,{material:new THREE.MeshStandardMaterial({color:0xffc65e,emissive:0xff8b24,emissiveIntensity:1.3,roughness:.7})});
-    const planets=[[.8,.07,0x9a8a78,.09],[1.18,.11,0xd8b47a,.15],[1.62,.13,0x428bd1,.16],[2.05,.12,0xc66d4d,.12],[2.85,.32,0xd5b18a,.32],[3.65,.28,0xd8c28c,.28],[4.45,.22,0x8bd5d8,.22],[5.15,.22,0x4779d5,.22]];
-    planets.forEach(([r,s,c,size],i)=>{const ring=new THREE.Mesh(new THREE.TorusGeometry(r,.004,6,180),new THREE.MeshBasicMaterial({color:0x8290b5,transparent:true,opacity:.28}));ring.rotation.x=Math.PI/2;group.add(ring);sphere(group,[r,0,0],size,c);});
-    const saturn=new THREE.Mesh(new THREE.TorusGeometry(.43,.075,12,64),new THREE.MeshStandardMaterial({color:0xd9c49c,roughness:.7}));saturn.rotation.x=1.25;saturn.position.set(2.85,0,0);group.add(saturn);return;
+  if (id === "solar-system") {
+    if (selectedPlanet) {
+      const planet = solarPlanets.find((item) => item.id === selectedPlanet);
+      if (planet) createFocusedPlanet(group, planet);
+      return;
+    }
+
+    const sun = sphere(group, [0, 0, 0], .38, 0xffc45c, {
+      material: new THREE.MeshStandardMaterial({ color: 0xffd16a, emissive: 0xff7a18, emissiveIntensity: 2.1, roughness: .5 }),
+      segments: 72,
+    });
+    sun.userData.isSunCore = true;
+    [0.48, .59, .72].forEach((radius, index) => {
+      const glow = sphere(group, [0, 0, 0], radius, 0xffa83b, {
+        material: new THREE.MeshBasicMaterial({ color: index === 0 ? 0xffc56d : 0xff8a35, transparent: true, opacity: .12 - index * .025, side: THREE.BackSide, blending: THREE.AdditiveBlending, depthWrite: false }),
+        segments: 48,
+      });
+      glow.userData.isSunGlow = true;
+    });
+
+    solarPlanets.forEach((planet, index) => {
+      const orbit = new THREE.Mesh(
+        new THREE.TorusGeometry(planet.distance, .004, 6, 220),
+        new THREE.MeshBasicMaterial({ color: 0x8ea5cf, transparent: true, opacity: .24, depthWrite: false })
+      );
+      orbit.rotation.x = Math.PI / 2;
+      group.add(orbit);
+
+      const pivot = new THREE.Group();
+      pivot.userData.orbitSpeed = .000035 + (7 - index) * .000004;
+      pivot.userData.orbitPhase = index * .47;
+      group.add(pivot);
+      const body = sphere(pivot, [planet.distance, 0, 0], planet.radius, 0xffffff, {
+        material: new THREE.MeshStandardMaterial({ map: makePlanetTexture(planet.id), roughness: .82, metalness: .01 }),
+        segments: 48,
+      });
+      body.userData.planetId = planet.id;
+      if (planet.id === "saturn" || planet.id === "uranus") {
+        const ring = new THREE.Mesh(
+          new THREE.RingGeometry(planet.radius * 1.28, planet.radius * (planet.id === "saturn" ? 2.0 : 1.65), 80),
+          new THREE.MeshStandardMaterial({ color: planet.id === "saturn" ? 0xd7c59e : 0x8bc5d0, side: THREE.DoubleSide, transparent: true, opacity: .76, roughness: .9 })
+        );
+        ring.position.set(planet.distance, 0, 0);
+        ring.rotation.set(Math.PI / 2.3, 0, .08);
+        pivot.add(ring);
+      }
+    });
+    return;
   }
   if(id==="molecule"){
     // Water geometry: O-H bond length 0.9572 Å and H-O-H angle 104.5°.
@@ -194,7 +361,7 @@ function makeSceneModel(group,id) {
     const push=tube(group,[[-1.05,.3,0],[-.82,.3,0],[-.68,.3,0]],0xf2cf83,.025);return;
   }
 }
-function createThreeScene(canvas,id) {
+function createThreeScene(canvas,id,selectedPlanet=null) {
   let renderer;
   try { renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:"low-power"}); }
   catch { return null; }
@@ -206,10 +373,11 @@ function createThreeScene(canvas,id) {
   scene.add(new THREE.HemisphereLight(0xb8d7ff,0x1a1825,2.05));
   const key=new THREE.DirectionalLight(0xffe4c2,3.2);key.position.set(-3,4,5);scene.add(key);
   const rim=new THREE.DirectionalLight(0x6b8fff,2.1);rim.position.set(4,-2,-4);scene.add(rim);
-  addStars(scene);
-  const group=new THREE.Group();scene.add(group);
-  makeSceneModel(group,id);
-  const state={renderer,scene,camera,group,id,width:0,height:0};
+  const stars = addStars(scene);
+  const group = new THREE.Group();
+  scene.add(group);
+  makeSceneModel(group, id, selectedPlanet);
+  const state = { renderer, scene, camera, group, id, selectedPlanet, stars, width: 0, height: 0 };
   threeScenes.set(canvas,state);return state;
 }
 function clearSceneGroup(group) {
@@ -218,18 +386,78 @@ function clearSceneGroup(group) {
     if(object.material){const materials=Array.isArray(object.material)?object.material:[object.material];materials.forEach(material=>{material.map?.dispose();material.dispose();});}
   });
 }
-function renderThreeScene(canvas,id,yaw,pitch,zoom) {
-  let state=threeScenes.get(canvas);
-  if(!state){state=createThreeScene(canvas,id);if(!state){const ctx=canvas.getContext("2d");if(ctx){ctx.clearRect(0,0,canvas.width,canvas.height);ctx.fillStyle="#d8c8f1";ctx.font="14px sans-serif";ctx.textAlign="center";ctx.fillText("3D preview is unavailable on this device",canvas.width/2,canvas.height/2);}return;}}
-  if(state.id!==id){
+function renderThreeScene(canvas, id, yaw, pitch, zoom, time = 0, selectedPlanet = null) {
+  let state = threeScenes.get(canvas);
+  if (!state) {
+    state = createThreeScene(canvas, id, selectedPlanet);
+    if (!state) {
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#d8c8f1";
+        ctx.font = "14px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("3D preview is unavailable on this device", canvas.width / 2, canvas.height / 2);
+      }
+      return;
+    }
+  }
+  if (state.id !== id || state.selectedPlanet !== selectedPlanet) {
     state.scene.remove(state.group);
     clearSceneGroup(state.group);
-    state.group=new THREE.Group();state.scene.add(state.group);state.id=id;
-    makeSceneModel(state.group,id);
+    state.group = new THREE.Group();
+    state.scene.add(state.group);
+    state.id = id;
+    state.selectedPlanet = selectedPlanet;
+    makeSceneModel(state.group, id, selectedPlanet);
   }
-  const rect=canvas.getBoundingClientRect();const width=Math.max(1,Math.round(rect.width)),height=Math.max(1,Math.round(rect.height));
-  if(width!==state.width||height!==state.height){state.renderer.setSize(width,height,false);state.camera.aspect=width/height;state.camera.updateProjectionMatrix();state.width=width;state.height=height;}
-  state.group.rotation.set(pitch,yaw,0);state.camera.position.z=5.8/zoom;state.camera.updateProjectionMatrix();state.renderer.render(state.scene,state.camera);
+
+  const rect = canvas.getBoundingClientRect();
+  const width = Math.max(1, Math.round(rect.width));
+  const height = Math.max(1, Math.round(rect.height));
+  if (width !== state.width || height !== state.height) {
+    state.renderer.setSize(width, height, false);
+    state.camera.aspect = width / height;
+    state.camera.updateProjectionMatrix();
+    state.width = width;
+    state.height = height;
+  }
+
+  state.group.rotation.set(pitch, yaw + (id === "solar-system" ? time * .000025 : time * .000012), 0);
+  state.stars.rotation.y = time * .000008;
+  state.group.children.forEach((child) => {
+    if (typeof child.userData?.orbitSpeed === "number") {
+      child.rotation.y = time * child.userData.orbitSpeed + child.userData.orbitPhase;
+    }
+    if (child.userData?.isSunCore) {
+      const pulse = 1 + Math.sin(time * .0015) * .035;
+      child.scale.setScalar(pulse);
+    }
+  });
+
+  const baseCamera = id === "solar-system"
+    ? selectedPlanet ? 4.25 : Math.max(5.8, 8.5 / Math.max(state.camera.aspect, .65))
+    : 5.8;
+  state.camera.position.z = baseCamera / zoom;
+  state.camera.updateProjectionMatrix();
+  state.scene.updateMatrixWorld(true);
+  state.renderer.render(state.scene, state.camera);
+}
+
+function pickSolarSystemPlanet(canvas, clientX, clientY) {
+  const state = threeScenes.get(canvas);
+  if (!state || state.id !== "solar-system" || state.selectedPlanet) return null;
+  const rect = canvas.getBoundingClientRect();
+  if (!rect.width || !rect.height) return null;
+  const pointer = new THREE.Vector2(
+    ((clientX - rect.left) / rect.width) * 2 - 1,
+    -((clientY - rect.top) / rect.height) * 2 + 1
+  );
+  state.scene.updateMatrixWorld(true);
+  const raycaster = new THREE.Raycaster();
+  raycaster.setFromCamera(pointer, state.camera);
+  const hits = raycaster.intersectObjects(state.group.children, true);
+  return hits.map((hit) => hit.object.userData?.planetId).find(Boolean) || null;
 }
 function disposeThreeScene(canvas){const state=threeScenes.get(canvas);if(!state)return;state.scene.traverse(object=>{object.geometry?.dispose();if(object.material){const materials=Array.isArray(object.material)?object.material:[object.material];materials.forEach(m=>{m.map?.dispose();m.dispose();});}});state.renderer.dispose();threeScenes.delete(canvas);}
 
@@ -554,14 +782,23 @@ function illuminateFace(color, brightness) {
   return `rgb(${channels.map((value) => Math.round(clamp(value * brightness, 0, 255))).join(",")})`;
 }
 
-function drawScene(canvas, modelId, yaw, pitch, zoom) {
-  renderThreeScene(canvas, modelId, yaw, pitch, zoom);
+function drawScene(canvas, modelId, yaw, pitch, zoom, ecosystem = {}, time = 0, selectedPlanet = null) {
+  renderThreeScene(canvas, modelId, yaw, pitch, zoom, time, selectedPlanet);
 }
 
-
 function animateScene(canvas, render) {
-  render(0);
-  return () => {};
+  let frame = 0;
+  let active = true;
+  const tick = (time) => {
+    if (!active) return;
+    render(time);
+    frame = window.requestAnimationFrame(tick);
+  };
+  frame = window.requestAnimationFrame(tick);
+  return () => {
+    active = false;
+    if (frame) window.cancelAnimationFrame(frame);
+  };
 }
 
 export function Mini3DModel({ modelId = "planet" }) {
@@ -598,6 +835,7 @@ export function Mini3DModel({ modelId = "planet" }) {
 
 export default function Interactive3DWorld() {
   const [modelId, setModelId] = useState("planet");
+  const [selectedPlanet, setSelectedPlanet] = useState(null);
   const [rotation, setRotation] = useState({ yaw: -.55, pitch: -.22 });
   const [zoom, setZoom] = useState(1);
   const [conceptIndex, setConceptIndex] = useState(0);
@@ -605,16 +843,19 @@ export default function Interactive3DWorld() {
   const canvasRef = useRef(null);
   const dragRef = useRef(null);
   const model = models.find((item) => item.id === modelId) || models[0];
+  const selectedPlanetInfo = solarPlanets.find((item) => item.id === selectedPlanet) || null;
+  const displayedTitle = selectedPlanetInfo ? selectedPlanetInfo.label : model.label;
+  const displayedDescription = selectedPlanetInfo ? selectedPlanetInfo.description : model.description;
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const render = (time = 0) => drawScene(canvas, modelId, rotation.yaw, rotation.pitch, zoom, ecosystem, time);
+    const render = (time = 0) => drawScene(canvas, modelId, rotation.yaw, rotation.pitch, zoom, ecosystem, time, selectedPlanet);
     const stopAnimation = animateScene(canvas, render);
     const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(() => render()) : null;
     observer?.observe(canvas);
     return () => { stopAnimation(); observer?.disconnect(); };
-  }, [modelId, rotation, zoom, ecosystem]);
+  }, [modelId, selectedPlanet, rotation, zoom, ecosystem]);
 
   function onPointerDown(event) {
     dragRef.current = { x: event.clientX, y: event.clientY, yaw: rotation.yaw, pitch: rotation.pitch };
@@ -625,7 +866,20 @@ export default function Interactive3DWorld() {
     const dx = event.clientX - dragRef.current.x, dy = event.clientY - dragRef.current.y;
     setRotation({ yaw: dragRef.current.yaw + dx * .009, pitch: clamp(dragRef.current.pitch + dy * .009, -1.35, 1.35) });
   }
-  function onPointerUp() { dragRef.current = null; }
+  function onPointerUp(event) {
+    const drag = dragRef.current;
+    dragRef.current = null;
+    if (!drag || modelId !== "solar-system" || selectedPlanet) return;
+    const moved = Math.hypot(event.clientX - drag.x, event.clientY - drag.y);
+    if (moved > 10) return;
+    const planetId = pickSolarSystemPlanet(canvasRef.current, event.clientX, event.clientY);
+    if (planetId) {
+      setSelectedPlanet(planetId);
+      setConceptIndex(0);
+      setRotation({ yaw: -.28, pitch: -.12 });
+      setZoom(1);
+    }
+  }
   function onWheel(event) { event.preventDefault(); setZoom((value) => clamp(value - event.deltaY * .001, .65, 1.8)); }
 
   return (
@@ -634,7 +888,7 @@ export default function Interactive3DWorld() {
       <p className="space-explorer-intro">These are interactive 3D educational models—not flat pictures. Choose a model, drag to rotate it, and zoom in to inspect its structure.</p>
       <div className="learning-3d-layout">
         <div className="learning-3d-viewer">
-          <canvas ref={canvasRef} role="application" tabIndex={0} aria-label={`Interactive 3D model: ${model.label}. Drag or use arrow keys to rotate the viewing angle.`} onKeyDown={(event) => { if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) { event.preventDefault(); setRotation((value) => ({ yaw: value.yaw + (event.key === "ArrowLeft" ? -.12 : event.key === "ArrowRight" ? .12 : 0), pitch: clamp(value.pitch + (event.key === "ArrowUp" ? -.12 : event.key === "ArrowDown" ? .12 : 0), -1.35, 1.35) })); } }} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp} onWheel={onWheel} />
+          <canvas ref={canvasRef} role="application" tabIndex={0} aria-label={modelId === "solar-system" && !selectedPlanet ? "Interactive solar system. Tap a planet to open a detailed 3D view, or drag to rotate the system." : `Interactive 3D model: ${displayedTitle}. Drag or use arrow keys to rotate the viewing angle.`} onKeyDown={(event) => { if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) { event.preventDefault(); setRotation((value) => ({ yaw: value.yaw + (event.key === "ArrowLeft" ? -.12 : event.key === "ArrowRight" ? .12 : 0), pitch: clamp(value.pitch + (event.key === "ArrowUp" ? -.12 : event.key === "ArrowDown" ? .12 : 0), -1.35, 1.35) })); } }} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp} onWheel={onWheel} />
           <div className="learning-3d-controls">
             <button type="button" onClick={() => setZoom((value) => clamp(value + .12, .65, 1.8))} aria-label="Zoom in">＋</button>
             <button type="button" onClick={() => setZoom((value) => clamp(value - .12, .65, 1.8))} aria-label="Zoom out">−</button>
@@ -643,7 +897,10 @@ export default function Interactive3DWorld() {
           </div>
         </div>
         <aside className="learning-3d-details">
-          <span>NOW EXPLORING</span><h3>{model.label}</h3><small>{model.subject}</small><p>{model.description}</p>
+          <span>{selectedPlanetInfo ? "PLANET EXPLORER" : "NOW EXPLORING"}</span><h3>{displayedTitle}</h3><small>{selectedPlanetInfo ? selectedPlanetInfo.family : model.subject}</small><p>{displayedDescription}</p>
+          {selectedPlanetInfo && <button type="button" className="learning-planet-back" onClick={() => { setSelectedPlanet(null); setRotation({ yaw: -.55, pitch: -.22 }); setZoom(1); }}>← Back to all eight planets</button>}
+          {modelId === "solar-system" && !selectedPlanetInfo && <p className="learning-planet-instruction">Tap any planet in the 3D scene or choose its name below to enter its world.</p>}
+          {modelId === "solar-system" && <div className="learning-planet-picker" role="group" aria-label="Choose a planet">{solarPlanets.map((planet) => <button type="button" key={planet.id} className={selectedPlanet === planet.id ? "active" : ""} aria-pressed={selectedPlanet === planet.id} onClick={() => { setSelectedPlanet(planet.id); setRotation({ yaw: -.28, pitch: -.12 }); setZoom(1); }}>{planet.label}</button>)}</div>}
           {(modelId === "cell" || modelId === "plant-cell") && <div className="learning-3d-experiment" aria-label="Interactive cell biology lab">
             <span>EXPLORE CELL STRUCTURES</span>
             <p>Switch between an animal cell and a plant cell. Highlight an organelle to discover its role. The structures are simplified teaching illustrations, not to scale.</p>
@@ -739,7 +996,7 @@ export default function Interactive3DWorld() {
             <p>{(modelExplorations[modelId] || [{ question: "What details can you notice as you rotate this model?", explanation: model.description }])[conceptIndex]?.explanation}</p>
           </div>
           <div className="learning-3d-model-list" aria-label="Choose a 3D model">
-            {models.map((item) => <button type="button" key={item.id} className={item.id === modelId ? "active" : ""} onClick={() => { setModelId(item.id); setConceptIndex(0); setRotation({ yaw: -.55, pitch: -.22 }); setZoom(1); }} aria-pressed={item.id === modelId}>{item.label}</button>)}
+            {models.map((item) => <button type="button" key={item.id} className={item.id === modelId ? "active" : ""} onClick={() => { setModelId(item.id); setSelectedPlanet(null); setConceptIndex(0); setRotation({ yaw: -.55, pitch: -.22 }); setZoom(1); }} aria-pressed={item.id === modelId}>{item.label}</button>)}
           </div>
           <p className="learning-3d-hint">On a touch screen, drag with one finger to rotate. Use the zoom controls to look closer.</p>
         </aside>
