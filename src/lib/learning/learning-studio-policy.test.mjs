@@ -142,6 +142,10 @@ test("non-quiz learning modes request a validated structured animated lesson", (
   assert.match(route, /not a written presentation script or storyboard/);
   assert.match(route, /3d-solar-system/);
   assert.match(animated, /"3d-solar-system": "solar-system"/);
+  assert.match(animated, /const solarSystemFallbackLesson/);
+  assert.match(animated, /Journey Through Our Solar System/);
+  assert.match(animated, /isSolarSystemTopic \? solarSystemFallbackLesson/);
+  assert.match(studio, /topic=\{messages\.slice\(0, index\)\.reverse\(\)/);
   assert.match(animated, /Try the interactive lesson again/);
   assert.match(studio, /Building your interactive lesson/);
   assert.match(studio, /startLearning\(null, previousQuestion, false\)/);
