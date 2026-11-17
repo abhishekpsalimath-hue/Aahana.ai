@@ -355,3 +355,10 @@
 .motion-lesson-unavailable p { margin:8px 0 14px; color:#cfc3e2; line-height:1.55; }
 .motion-lesson-unavailable button { min-height:42px; padding:9px 16px; border:1px solid rgba(211,190,255,.55); border-radius:999px; background:#6e5797; color:white; font-weight:650; cursor:pointer; }
 .motion-lesson-unavailable button:focus-visible { outline:2px solid #e2d2ff; outline-offset:3px; }
+
+/* Chemistry Lab controls */
+.learning-3d-experiment-control select { min-width:0; max-width:100%; padding:9px 12px; border:1px solid rgba(190,190,210,.3); border-radius:10px; background:#252137; color:#f3edf9; font:inherit; }
+.learning-3d-experiment-control select:focus-visible { outline:2px solid #d8c4ff; outline-offset:3px; }
+.learning-3d-experiment[aria-label="Interactive chemistry molecule lab"] { border-color:rgba(157,131,216,.34); background:rgba(112,83,155,.12); }
+.learning-3d-experiment[aria-label="Interactive chemistry molecule lab"]>span { color:#c6a8f4; }
+.learning-3d-experiment[aria-label="Interactive chemistry molecule lab"] button.active { border-color:#b99ce8; background:rgba(157,131,216,.23); color:#eee2ff; }
