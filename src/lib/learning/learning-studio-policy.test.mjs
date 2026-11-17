@@ -78,14 +78,14 @@ test("learning studio lists only learn-mode sessions and resumes through the own
 test("learner preferences are saved per conversation and restored when resuming on the same device", () => {
   assert.match(studio, /localStorage\.setItem\("aahana:learning-profile:" \+ nextId/);
   assert.match(studio, /localStorage\.getItem\("aahana:learning-profile:" \+ result\.conversation\.id/);
-  assert.match(studio, /setGradeBand\(savedProfile\.gradeBand\)/);
-  assert.match(studio, /setSubject\(savedProfile\.subject\)/);
-  assert.match(studio, /setLearningMode\(savedProfile\.learningMode\)/);
+  assert.match(studio, /setGradeBand\(resumedProfile\.gradeBand\)/);
+  assert.match(studio, /setSubject\(resumedProfile\.subject\)/);
+  assert.match(studio, /setLearningMode\(resumedProfile\.learningMode\)/);
 });
 
 test("curriculum selection is restored with the learner profile and handled cautiously by the tutor", () => {
   assert.match(studio, /curricula\.includes\(savedProfile\.curriculum\)/);
-  assert.match(studio, /setCurriculum\(savedProfile\.curriculum\)/);
+  assert.match(studio, /setCurriculum\(resumedProfile\.curriculum\)/);
   assert.match(route, /Curriculum: \$\{learningProfile\.curriculum\}/);
   assert.match(route, /Do not claim exact syllabus alignment or exam-board coverage unless verified/);
 });
