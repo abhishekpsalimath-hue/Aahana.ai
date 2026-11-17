@@ -63,7 +63,7 @@ function readQuizPayload(content) {
       Number.isInteger(item.correctIndex) && item.correctIndex >= 0 && item.correctIndex < 4 &&
       typeof item.explanation === "string" && item.explanation.trim() &&
       typeof item.hint === "string" && item.hint.trim() &&
-      ["fraction", "orbit", "water-cycle", "plant-growth", "number-line", "molecule", "concept-map", "timeline", "bar-chart", "anatomy", "circuit", "code-flow", "sound-wave", "map"].includes(item.visual)
+      ["fraction", "orbit", "water-cycle", "plant-growth", "number-line", "molecule", "concept-map", "timeline", "bar-chart", "anatomy", "circuit", "code-flow", "sound-wave", "map", "3d-planet", "3d-molecule", "3d-atom", "3d-dna", "3d-geometry", "3d-terrain"].includes(item.visual)
     );
     if (questions.length !== value.questions.length) return null;
     return { title: typeof value.title === "string" ? value.title : "A little challenge", questions };
