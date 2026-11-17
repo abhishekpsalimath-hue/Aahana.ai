@@ -32,7 +32,7 @@ const gradeBands = [
 const subjects = allLearningSubjects;
 const curricula = ["Not specified", "CBSE", "ICSE", "Karnataka State Board", "Other Indian State Board", "Cambridge International", "International Baccalaureate (IB)", "England National Curriculum", "US Common Core", "Other / help me choose"];
 
-function CatalogueCoverage() {
+export function CatalogueCoverage() {
   const coverage = getCatalogueCoverageSummary();
   return (
     <section className="catalogue-coverage" aria-label="Learning catalogue curriculum coverage">
@@ -56,7 +56,7 @@ function CatalogueCoverage() {
   );
 }
 
-function LearningCategoryExplorer({ onChooseCategory }) {
+export function LearningCategoryExplorer({ onChooseCategory }) {
   const [query, setQuery] = useState("");
   const matches = findLearningSubjects(query, 12);
   return (
@@ -166,7 +166,7 @@ const spaceWorlds = [
   { id: "neptune", name: "Neptune", color: "#668de7", orbit: "164.8 Earth years", fact: "Neptune is a distant ice giant with supersonic winds and a deep blue atmosphere. It takes almost 165 Earth years to orbit the Sun.", wonder: "Neptune was first identified through mathematical predictions before it was directly observed.", diameter: "49,528 km", sizeFactor: 3.88, challenge: { question: "What is famous about Neptune's weather?", options: ["Supersonic winds", "Daily snowstorms of metal", "No winds at all"], correct: 0, hint: "Its winds can move faster than the speed of sound on Earth." }, },
 ];
 
-function SpaceExplorer({ selectedPlanet, onSelectPlanet }) {
+export function SpaceExplorer({ selectedPlanet, onSelectPlanet }) {
   const selected = selectedPlanet || "earth";
   const [visited, setVisited] = useState(["earth"]);
   const [solved, setSolved] = useState([]);
@@ -240,7 +240,7 @@ function SpaceExplorer({ selectedPlanet, onSelectPlanet }) {
   );
 }
 
-function SolarSystemCurriculum({ onStartUnit }) {
+export function SolarSystemCurriculum({ onStartUnit }) {
   const curriculum = getLearningCurriculum("nature-planet-exploration-solar-system");
   const readiness = getLearningReadiness("nature-planet-exploration-solar-system");
   const [activeUnitId, setActiveUnitId] = useState(curriculum?.units?.[0]?.id || "");
