@@ -574,7 +574,7 @@ test("home image generation route checks private Cloudflare configuration and va
 test("learning universe supports cross-category subject discovery and direct subject selection", () => {
   assert.match(studio, /Find a subject across the learning universe/);
   assert.match(studio, /Search all learning subjects/);
-  assert.match(studio, /item\.subjects\.filter\(\(subjectName\)/);
+  assert.match(studio, /findLearningSubjects\(query, 12\)/);
   assert.match(studio, /onChooseCategory\(item\.category, item\.subject\)/);
   assert.match(studio, /setSubject\(selectedSubject \|\| selectedCategory\?\.subjects\?\.\[0\]/);
   assert.match(styles, /\.learning-topic-results/);
@@ -583,9 +583,7 @@ test("learning universe supports cross-category subject discovery and direct sub
 
 test("learning catalogue exposes stable, searchable subject records without overstating lesson readiness", async () => {
   const catalog = await import(new URL("./learning-catalog.js", import.meta.url));
-  assert.equal(catalog.learningSubjectIndex.length, catalog.allLearningSubjects.length +
-    catalog.learningCategories.reduce((sum, category) => sum + category.subjects.length, 0) -
-    catalog.allLearningSubjects.length);
+  assert.equal(catalog.learningSubjectIndex.length, catalog.learningCategories.reduce((sum, category) => sum + category.subjects.length, 0));
   assert.ok(catalog.learningSubjectIndex.every((item) => item.id && item.category && item.subject && item.status === "discoverable"));
   assert.equal(new Set(catalog.learningSubjectIndex.map((item) => item.id)).size, catalog.learningSubjectIndex.length);
   const physics = catalog.findLearningSubjects("phys", 5);
