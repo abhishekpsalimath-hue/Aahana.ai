@@ -21,6 +21,7 @@ on:
       - "src/lib/voice/README.md"
       - "src/app/assistant-workspace.jsx"
       - "src/app/api/voice/transcribe/route.js"
+      - "src/app/api/voice/speech/route.js"
       - "src/lib/voice/audio-wav.*"
 
 permissions:
@@ -51,3 +52,5 @@ jobs:
         run: node --test ../../src/lib/voice/audio-wav.test.mjs
       - name: Syntax-check authenticated transcription route
         run: node --check ../../src/app/api/voice/transcribe/route.js
+      - name: Syntax-check authenticated speech synthesis route
+        run: node --check ../../src/app/api/voice/speech/route.js
