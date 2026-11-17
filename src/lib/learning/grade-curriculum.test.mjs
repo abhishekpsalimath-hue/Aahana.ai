@@ -15,6 +15,8 @@ test("the interactive counter board is wired into the lesson visual renderer", (
   assert.match(renderer, /"counter-board"/);
   assert.match(renderer, /InteractiveCounterBoard/);
   assert.match(renderer, /InteractiveShapeExplorer/);
+  assert.match(renderer, /InteractivePatternBuilder/);
+  assert.match(renderer, /aria-label="Choose the next item"/);
   assert.match(renderer, /aria-label="Choose a shape"/);
   assert.match(styles, /\.shape-explorer-stage/);
   assert.match(renderer, /aria-label="Add one counter"/);
@@ -35,6 +37,7 @@ test("Grade 1 Mathematics has a complete six-unit authored core", () => {
     assert.ok(unit.lessonDesign.interaction);
     if (["counting-to-20", "addition-within-10", "subtraction-within-10"].includes(unit.id)) assert.equal(unit.lessonDesign.visual, "counter-board");
     if (unit.id === "shapes-and-space") assert.equal(unit.lessonDesign.visual, "shape-explorer");
+    if (unit.id === "patterns-and-sorting") assert.equal(unit.lessonDesign.visual, "pattern-builder");
     assert.equal(unit.assessmentDesign.formativeChecks.length, 3);
     assert.ok(unit.assessmentDesign.independentCheck);
     assert.ok(unit.assessmentDesign.feedback);
