@@ -42,3 +42,20 @@
 .learning-history-item strong{font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .learning-history-item small{font-size:10px;color:#9991a6}
 .learning-history-item em{font-style:normal;color:#c7b0f4;font-size:10px;font-weight:700;white-space:nowrap}
+
+.learning-quiz{display:grid;gap:18px;padding:18px;border:1px solid #4b3d60;border-radius:15px;background:linear-gradient(145deg,#191522,#12101a);color:#f5f0fa}
+.learning-quiz-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.learning-quiz-heading strong{font-size:15px}.learning-quiz-heading span{font-size:11px;color:#c7b0f4}
+.learning-quiz-question{display:grid;gap:11px;padding-top:15px;border-top:1px solid #332c40}
+.learning-quiz-question h3{font-size:14px;line-height:1.6;margin:0;font-weight:650}
+.learning-quiz-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.learning-quiz-options button{display:flex;align-items:flex-start;gap:10px;text-align:left;padding:11px;border:1px solid #393246;border-radius:10px;background:#17131f;color:#eee8f5;font-size:12px;line-height:1.5;cursor:pointer}
+.learning-quiz-options button:hover:not(:disabled){border-color:#a68bd0;background:#211b2d}
+.learning-quiz-options button:disabled{cursor:default;opacity:.82}
+.learning-quiz-options button span{display:grid;place-items:center;flex:0 0 22px;height:22px;border-radius:7px;background:#2b2437;color:#d9c8f3;font-weight:700}
+.learning-quiz-options button.correct{border-color:#4b9b77;background:#14271f}.learning-quiz-options button.incorrect{border-color:#b66d72;background:#2a191d}
+.learning-quiz-feedback{margin:0;padding:10px 12px;border-radius:9px;font-size:12px;line-height:1.6;background:#201b2b;color:#e5dced}
+.learning-quiz-feedback.correct{border-left:3px solid #65b58e}.learning-quiz-feedback.incorrect{border-left:3px solid #d28b91}
+.learning-quiz-finish{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:12px;border-top:1px solid #332c40;font-size:12px}
+.learning-quiz-finish button{border:1px solid #80699f;border-radius:9px;padding:8px 12px;background:#292138;color:#f4eaff;cursor:pointer}
+@media(max-width:640px){.learning-quiz-options{grid-template-columns:1fr}.learning-quiz-finish{align-items:flex-start;flex-direction:column}}
