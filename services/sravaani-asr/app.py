@@ -6,10 +6,8 @@ both Hugging Face and service credentials are configured.
 """
 from __future__ import annotations
 
-import hmac
 import io
 import os
-import re
 import tempfile
 import threading
 from contextlib import asynccontextmanager
@@ -20,6 +18,8 @@ import torch
 from fastapi import FastAPI, File, Header, HTTPException, UploadFile
 from starlette.concurrency import run_in_threadpool
 from transformers import AutoModel
+
+from request_validation import authorization_matches, valid_model_revision, valid_service_token, validate_audio_upload
 
 MODEL_ID = "ARTPARK-IISc/SraVaani-1.0"
 MAX_UPLOAD_BYTES = 15 * 1024 * 1024
@@ -40,11 +40,11 @@ def _validate_startup_config() -> None:
             "Refusing to load SraVaani custom code. Audit the pinned model "
             "revision, then set ALLOW_AUDITED_REMOTE_CODE=true explicitly."
         )
-    if not re.fullmatch(r"[0-9a-fA-F]{40,64}", MODEL_REVISION):
+    if not valid_model_revision(MODEL_REVISION):
         raise RuntimeError("HF_MODEL_REVISION must be an immutable 40–64 character commit SHA.")
     if not HF_TOKEN:
         raise RuntimeError("HF_TOKEN is required; accept the gated model terms first.")
-    if len(SERVICE_TOKEN) < 32:
+    if not valid_service_token(SERVICE_TOKEN):
         raise RuntimeError("SRAVAANI_API_TOKEN must be a random secret of at least 32 characters.")
 
 
@@ -72,15 +72,11 @@ app = FastAPI(
 
 
 def _authenticate(authorization: str | None) -> None:
-    expected = f"Bearer {SERVICE_TOKEN}"
-    if not authorization or not hmac.compare_digest(authorization, expected):
+    if not authorization_matches(authorization, SERVICE_TOKEN):
         raise HTTPException(status_code=401, detail="Unauthorized")
 
 
 def _transcribe_wav(audio_bytes: bytes) -> str:
-    # soundfile can decode formats other than WAV, so enforce the container too.
-    if len(audio_bytes) < 12 or audio_bytes[:4] != b"RIFF" or audio_bytes[8:12] != b"WAVE":
-        raise HTTPException(status_code=415, detail="Only RIFF/WAVE audio is accepted.")
     # Decode before writing anything to disk.
     try:
         samples, sample_rate = sf.read(io.BytesIO(audio_bytes), dtype="float32", always_2d=True)
@@ -127,12 +123,12 @@ async def transcribe(
     authorization: str | None = Header(default=None),
 ):
     _authenticate(authorization)
-    if file.content_type not in {"audio/wav", "audio/x-wav", "audio/wave", "application/octet-stream"}:
-        raise HTTPException(status_code=415, detail="Only WAV audio is accepted.")
     audio_bytes = await file.read(MAX_UPLOAD_BYTES + 1)
-    if not audio_bytes:
-        raise HTTPException(status_code=400, detail="Audio file is empty.")
-    if len(audio_bytes) > MAX_UPLOAD_BYTES:
-        raise HTTPException(status_code=413, detail="Audio upload exceeds the 15 MB limit.")
+    validation_error = validate_audio_upload(audio_bytes, file.content_type or "")
+    if validation_error:
+        status_code = 413 if len(audio_bytes) > MAX_UPLOAD_BYTES else (
+            400 if not audio_bytes else 415
+        )
+        raise HTTPException(status_code=status_code, detail=validation_error)
     transcript = await run_in_threadpool(_transcribe_wav, audio_bytes)
     return {"text": transcript, "provider": "sravaani-1.0", "audio_retained": False}
