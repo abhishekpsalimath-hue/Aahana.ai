@@ -104,3 +104,23 @@
 .native-motion-status{color:#cdb5f2;font-size:10px}
 .native-motion-disclosure{display:block;margin-top:13px;color:#a99fb7;font-size:10px;line-height:1.6}
 @media(max-width:620px){.native-motion-studio{padding:15px;margin:20px auto}.native-motion-heading{display:grid}.native-motion-transport{align-items:stretch}.native-motion-keyframes{grid-template-columns:1fr 1fr}}
+
+.native-3d-studio{max-width:1160px;margin:18px auto 30px;padding:24px;border:1px solid #493b5d;border-radius:22px;background:linear-gradient(145deg,#1b1928,#11101a);color:#f5f0fa}
+.native-3d-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:18px}
+.native-3d-heading span{font-size:9px;letter-spacing:1.5px;font-weight:800;color:#c7b0f4}
+.native-3d-heading h3{margin:7px 0;color:#fff;font:800 23px Manrope,sans-serif}
+.native-3d-heading p{margin:0;color:#b9b0c6;font-size:11px;line-height:1.6}
+.native-3d-heading>button,.native-3d-controls>button{border:1px solid #c5a9ef;border-radius:9px;background:#c5a9ef;color:#21172f;padding:9px 13px;font:700 10px 'DM Sans',sans-serif;cursor:pointer}
+.native-3d-workspace{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(220px,.7fr);gap:14px}
+.native-3d-viewport{height:430px;min-width:0;overflow:hidden;border:1px solid #51445f;border-radius:14px;background:#171421}
+.native-3d-viewport canvas{display:block;width:100%;height:100%}
+.native-3d-controls{display:grid;align-content:start;gap:13px;padding:14px;border:1px solid #40354f;border-radius:12px;background:#15121e}
+.native-3d-controls>label:not(.native-3d-check){display:grid;gap:6px;color:#cfc4dc;font-size:10px;font-weight:700}
+.native-3d-controls select{width:100%;padding:9px;border:1px solid #4b405d;border-radius:8px;background:#201b2a;color:#f5f0fa;font-size:11px}
+.native-3d-controls input[type=color]{width:100%;height:34px;border:0;background:transparent}
+.native-3d-check{display:flex;align-items:center;gap:8px;color:#d2c6df;font-size:10px}
+.native-3d-check input{accent-color:#c5a9ef}
+.native-3d-controls p{margin:0;color:#a99fb7;font-size:10px;line-height:1.6}
+.native-3d-status{color:#cdb5f2;font-size:10px}
+.native-3d-disclosure{display:block;margin-top:12px;color:#a99fb7;font-size:10px;line-height:1.6}
+@media(max-width:760px){.native-3d-workspace{grid-template-columns:1fr}.native-3d-viewport{height:340px}.native-3d-heading{display:grid}.native-3d-studio{padding:15px;margin:20px auto}}
