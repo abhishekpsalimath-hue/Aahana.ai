@@ -74,7 +74,7 @@ function InteractiveQuiz({ quiz }) {
           <div className="learning-quiz-question-top"><span>CHALLENGE {index + 1}</span>{solved && <span className="learning-quiz-sparkle">✦ Nice discovery!</span>}</div>
           <h3>{item.question}</h3>
           <div className="learning-quiz-options">
-            {item.options.map((option, optionIndex) => <button type="button" key={optionIndex} disabled={solved} className={solved && optionIndex === item.correctIndex ? "correct" : !solved && tries > 0 && optionIndex === tries - 1 ? "gentle-hint" : ""} onClick={() => choose(index, optionIndex)}>
+            {item.options.map((option, optionIndex) => <button type="button" key={optionIndex} disabled={solved} className={solved && optionIndex === item.correctIndex ? "correct" : ""} onClick={() => choose(index, optionIndex)}>
               <span>{String.fromCharCode(65 + optionIndex)}</span>{option}
             </button>)}
           </div>
