@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Mini3DModel } from "./interactive-3d-world";
 
-const visualTypes = new Set(["counter-board", "shape-explorer", "fraction", "orbit", "water-cycle", "plant-growth", "number-line", "molecule", "concept-map", "timeline", "bar-chart", "anatomy", "circuit", "code-flow", "sound-wave", "map", "3d-solar-system", "3d-planet", "3d-molecule", "3d-atom", "3d-dna", "3d-geometry", "3d-terrain", "3d-plant-cell", "3d-heart", "3d-pyramid", "3d-ecosystem", "3d-engine"]);
+const visualTypes = new Set(["counter-board", "shape-explorer", "pattern-builder", "fraction", "orbit", "water-cycle", "plant-growth", "number-line", "molecule", "concept-map", "timeline", "bar-chart", "anatomy", "circuit", "code-flow", "sound-wave", "map", "3d-solar-system", "3d-planet", "3d-molecule", "3d-atom", "3d-dna", "3d-geometry", "3d-terrain", "3d-plant-cell", "3d-heart", "3d-pyramid", "3d-ecosystem", "3d-engine"]);
 
 function validVisualData(data) {
   return typeof data?.label === "string" && data.label.trim() && data.label.length <= 90 &&
@@ -95,6 +95,22 @@ const shapeFacts = {
   rectangle: { name: "Rectangle", sides: 4, corners: 4, note: "A rectangle has four straight sides. Opposite sides are equal." },
 };
 
+function InteractivePatternBuilder() {
+  const [pattern, setPattern] = useState("AB");
+  const [choice, setChoice] = useState("");
+  const [checked, setChecked] = useState(false);
+  const answer = pattern === "AB" ? "A" : pattern === "AAB" ? "A" : "B";
+  const choices = pattern === "AB" ? ["A", "B"] : pattern === "AAB" ? ["A", "B"] : ["A", "B"];
+  const sequence = pattern === "AB" ? ["A","B","A","B","A"] : pattern === "AAB" ? ["A","A","B","A","A"] : ["A","B","B","A","B"];
+  return <section className="pattern-builder" aria-label="Interactive repeating pattern builder">
+    <div className="pattern-builder-heading"><strong>What comes next?</strong><span>Find the part that repeats.</span></div>
+    <div className="pattern-builder-sequence" aria-label="Pattern sequence">{sequence.map((item, index) => <span className={"pattern-token pattern-token-" + item.toLowerCase()} key={index}>{item}</span>)}<span className="pattern-token pattern-token-empty" aria-label="Missing next item">?</span></div>
+    <div className="pattern-builder-controls"><label htmlFor="pattern-kind">Choose a pattern</label><select id="pattern-kind" value={pattern} onChange={(event) => { setPattern(event.target.value); setChoice(""); setChecked(false); }}><option value="AB">A, B repeating</option><option value="AAB">A, A, B repeating</option><option value="ABB">A, B, B repeating</option></select></div>
+    <div className="pattern-builder-choices" aria-label="Choose the next item">{choices.map((item) => <button type="button" key={item} aria-pressed={choice === item} onClick={() => { setChoice(item); setChecked(false); }}>{item}</button>)}</div>
+    <button className="pattern-builder-check" type="button" disabled={!choice} onClick={() => setChecked(true)}>Check answer</button>
+    <p aria-live="polite">{checked ? choice === answer ? "That’s right! You found the repeating rule." : "Good try. Look at the repeating group and try once more." : "Say the repeating group aloud, then choose the next item."}</p>
+  </section>;
+}
 function InteractiveShapeExplorer({ paused = false }) {
   const [selected, setSelected] = useState("triangle");
   const fact = shapeFacts[selected];
@@ -143,6 +159,7 @@ function InteractiveCounterBoard({ paused = false }) {
 export function AnimatedVisual({ visual, paused = false }) {
   if (visual === "counter-board") return <InteractiveCounterBoard paused={paused} />;
   if (visual === "shape-explorer") return <InteractiveShapeExplorer paused={paused} />;
+  if (visual === "pattern-builder") return <InteractivePatternBuilder />;
   const cls = paused ? "motion-art paused" : "motion-art";
   const model3d = { "3d-solar-system": "solar-system", "3d-planet": "planet", "3d-molecule": "molecule", "3d-atom": "atom", "3d-dna": "dna", "3d-geometry": "cube", "3d-terrain": "terrain", "3d-plant-cell": "plant-cell", "3d-heart": "heart", "3d-pyramid": "pyramid", "3d-ecosystem": "ecosystem", "3d-engine": "engine" }[visual];
   if (model3d) return <Mini3DModel modelId={model3d} />;
