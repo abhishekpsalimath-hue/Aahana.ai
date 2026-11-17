@@ -312,3 +312,7 @@
 .learning-3d-inline-controls{display:flex;justify-content:flex-end;gap:7px;padding:8px;border-top:1px solid #342b43}
 .learning-3d-inline-controls button{border:1px solid #514365;border-radius:8px;background:#211b2d;color:#eee6fa;padding:6px 10px;font-size:10px}
 @media(max-width:640px){.learning-3d-inline canvas{height:210px}}
+
+
+/* Keyboard focus for interactive 3D learning canvases */
+.learning-3d-viewer canvas:focus-visible,.learning-3d-inline canvas:focus-visible{outline:2px solid #d5c2ff;outline-offset:3px}
