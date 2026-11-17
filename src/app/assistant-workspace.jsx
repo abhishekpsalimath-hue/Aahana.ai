@@ -274,7 +274,17 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       const transcript = event.results?.[0]?.[0]?.transcript || "";
       if (transcript) setPrompt((current) => current ? current + " " + transcript : transcript);
     };
-    recognition.onerror = () => setError("Voice recognition could not complete. Check microphone permission and try again.");
+    recognition.onerror = (event) => {
+      const messages = {
+        "not-allowed": "Microphone access is blocked. Allow microphone permission in your browser settings.",
+        "service-not-allowed": "This browser does not allow its speech-recognition service.",
+        "language-not-supported": `This browser's speech service does not support ${voiceLanguage}. Choose another language or use text input.`,
+        "audio-capture": "No working microphone was detected. Check your microphone connection.",
+        "no-speech": "No speech was detected. Try speaking a little closer to the microphone.",
+        "network": "The browser speech service could not connect. Check your internet connection.",
+      };
+      setError(messages[event?.error] || "Voice recognition could not complete. You can still type your message.");
+    };
     recognition.onend = () => setListening(false);
     try { recognition.start(); } catch { setListening(false); setError("Voice input is already active. Please try again."); }
   }
@@ -1048,8 +1058,8 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
               <select aria-label="Voice input language" value={voiceLanguage} onChange={(event) => setVoiceLanguage(event.target.value)} className="copy-message">{voiceLanguages.map(([code, label]) => <option key={code} value={code}>{label}</option>)}</select>
               <button className="copy-message" type="button" onClick={startVoiceInput} disabled={listening || busy}>{listening ? "Listening…" : "Speak"}</button>
               <span className="voice-capability-note" role="status">
-                Input: {speechInputAvailable ? "browser available" : "not available"} ·
-                Output for {voiceLanguage}: {findBestSpeechVoice(speechVoices, voiceLanguage) ? "device voice available" : "no device voice"}
+                Input: {speechInputAvailable ? "browser API detected; language coverage unverified" : "not available"} ·
+                Output for {voiceLanguage}: {findBestSpeechVoice(speechVoices, voiceLanguage) ? "matching device voice found" : "no matching device voice"}
               </span>
               <label className="copy-message" style={{display:"inline-flex",alignItems:"center",gap:6}}>
                 <input type="checkbox" checked={autoSpeak} onChange={(event) => setAutoSpeak(event.target.checked)} />
