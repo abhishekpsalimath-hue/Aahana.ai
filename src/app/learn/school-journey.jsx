@@ -37,16 +37,17 @@ export default function SchoolJourney() {
     const selected = answers[unit.id];
     if (!Number.isInteger(selected)) return;
     if (selected === unit.answer) {
-      setProgress((previous) => ({
-        ...previous,
-        [mathKey]: {
-          ...(previous[mathKey] || {}),
-          units: {
-            ...(previous[mathKey]?.units || {}),
-            [unit.id]: { complete: true, completedAt: new Date().toISOString() }
-          }
-        }
-      }));
+      setProgress((previous) => {
+        const units = {
+          ...(previous[mathKey]?.units || {}),
+          [unit.id]: { complete: true, completedAt: new Date().toISOString() }
+        };
+        const subjectComplete = GRADE_1_MATH.units.every((item) => units[item.id]?.complete);
+        return {
+          ...previous,
+          [mathKey]: { ...(previous[mathKey] || {}), units, complete: subjectComplete }
+        };
+      });
       setFeedback((previous) => ({ ...previous, [unit.id]: { correct: true, message: unit.explanation } }));
     } else {
       setFeedback((previous) => ({ ...previous, [unit.id]: { correct: false, message: "Not quite. Read the example again, then try another answer." } }));
