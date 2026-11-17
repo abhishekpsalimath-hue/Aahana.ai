@@ -400,3 +400,16 @@
 .motion-progress-steps span.completed{background:#c7adf3}
 .motion-save-error{margin:0;color:#f0b9c3;font-size:11px;line-height:1.5}
 @media(prefers-reduced-motion:reduce){.motion-progress-track>span{transition:none}}
+
+
+/* Planet selection and cinematic solar-system explorer */
+.learning-3d-viewer{background:radial-gradient(ellipse at 50% 42%,#182b4b 0%,#0c1325 48%,#080b16 100%)}
+.learning-3d-viewer canvas{background:transparent}
+.learning-planet-instruction{margin:10px 0 4px!important;color:#d5c8ef!important;font-size:11px!important}
+.learning-planet-picker{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:12px 0}
+.learning-planet-picker button,.learning-planet-back{min-height:38px;border:1px solid rgba(151,177,222,.35);border-radius:10px;background:linear-gradient(145deg,rgba(35,49,78,.9),rgba(21,25,43,.96));color:#e8efff;padding:8px 10px;font-size:11px;font-weight:700;text-align:left;cursor:pointer;transition:border-color .2s ease,background .2s ease,transform .2s ease}
+.learning-planet-picker button:hover,.learning-planet-back:hover{border-color:#a9c8ff;transform:translateY(-1px)}
+.learning-planet-picker button.active{border-color:#b6d7ff;background:linear-gradient(145deg,rgba(64,91,138,.9),rgba(42,49,82,.98));box-shadow:0 0 18px rgba(91,151,255,.16);color:#fff}
+.learning-planet-back{margin:4px 0 10px;border-color:rgba(187,166,235,.48);background:rgba(75,55,108,.35);color:#e7dcff}
+@media(max-width:760px){.learning-planet-picker{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(prefers-reduced-motion:reduce){.learning-planet-picker button,.learning-planet-back{transition:none}}
