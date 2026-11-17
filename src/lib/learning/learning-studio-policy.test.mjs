@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { buildResearchQuery, rankAndDedupeResearchResults } from "../research/research-policy.mjs";
 import "./learning-memory.test.mjs";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -508,4 +509,25 @@ test("Aahana applies a global, multi-region knowledge standard and broadens evid
   assert.match(route, /official data/);
   assert.match(route, /compare countries/);
   assert.match(route, /global ranking/);
+});
+
+
+test("global research queries request geographically diverse primary evidence", () => {
+  const globalQuery = buildResearchQuery("Compare education outcomes across countries");
+  assert.match(globalQuery, /geographically diverse evidence/i);
+  assert.match(globalQuery, /primary sources/i);
+  assert.match(globalQuery, /country-specific findings/i);
+  assert.equal(buildResearchQuery("Explain photosynthesis"), "Explain photosynthesis");
+});
+
+test("research results reject unsafe URLs and deduplicate tracking variants by canonical URL", () => {
+  const ranked = rankAndDedupeResearchResults([
+    { url: "https://example.org/report?utm_source=newsletter", content: "Lower ranked duplicate", score: 0.3 },
+    { url: "https://example.org/report", content: "Higher ranked canonical source", score: 0.9 },
+    { url: "http://insecure.example.org/report", content: "Insecure source", score: 1 },
+    { url: "https://another.org/study", content: "Independent source", score: 0.6 },
+  ], 5);
+  assert.equal(ranked.length, 2);
+  assert.equal(ranked[0].content, "Higher ranked canonical source");
+  assert.equal(ranked[1].url, "https://another.org/study");
 });
