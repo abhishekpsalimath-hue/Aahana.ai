@@ -1162,7 +1162,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         <div className="welcome">
           {!messages.length && <div className="cosmic-field" aria-hidden="true"><span className="cosmic-nebula" /><span className="cosmic-stars cosmic-stars-far" /><span className="cosmic-stars cosmic-stars-mid" /><span className="cosmic-stars cosmic-stars-near" /><span className="cosmic-core" /></div>}
           {!messages.length && <div className="founder-welcome-note" aria-label="I'm happy to welcome you on this journey with Aahana AI. Abhishekayya Salimath.">
-            <p>I'm happy to welcome you on this journey with <em>Aahana AI</em>.</p>
+            <p><span className="welcome-line welcome-line-one">I'm happy to welcome you</span><span className="welcome-line welcome-line-two">on this journey with</span><em className="welcome-brand-word">Aahana AI.</em></p>
             <strong>Abhishekayya Salimath</strong>
           </div>}
           <div className="welcome-signal" aria-hidden="true">
