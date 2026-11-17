@@ -6,10 +6,14 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 const routePath = fileURLToPath(new URL("../../app/api/chat/route.js", import.meta.url));
+const worldPath = fileURLToPath(new URL("../../app/learn/interactive-3d-world.jsx", import.meta.url));
+const imageGenerationRoutePath = fileURLToPath(new URL("../../app/api/images/generate/route.js", import.meta.url));
 const studioPath = fileURLToPath(new URL("../../app/learn/learning-studio.jsx", import.meta.url));
 const animatedPath = fileURLToPath(new URL("../../app/learn/animated-lesson.jsx", import.meta.url));
 const learningMemoryPath = fileURLToPath(new URL("../../app/api/learning-journey/route.js", import.meta.url));
 const route = readFileSync(routePath, "utf8");
+const world = readFileSync(worldPath, "utf8");
+const imageGenerationRoute = readFileSync(imageGenerationRoutePath, "utf8");
 const studio = readFileSync(studioPath, "utf8");
 const animated = readFileSync(animatedPath, "utf8");
 const learningMemoryRoute = readFileSync(learningMemoryPath, "utf8");
@@ -530,4 +534,34 @@ test("research results reject unsafe URLs and deduplicate tracking variants by c
   assert.equal(ranked.length, 2);
   assert.equal(ranked[0].content, "Higher ranked canonical source");
   assert.equal(ranked[1].url, "https://another.org/study");
+});
+
+
+test("solar system opens by default and all eight planets can be selected from the scene or accessible controls", () => {
+  assert.match(world, /useState\("solar-system"\)/);
+  assert.match(world, /function pickSolarSystemPlanet\(/);
+  assert.match(world, /new THREE\.Raycaster\(\)/);
+  assert.match(world, /setSelectedPlanet\(planetId\)/);
+  assert.match(world, /learning-planet-picker/);
+  for (const planet of ["mercury", "venus", "earth", "mars", "jupiter", "saturn", "uranus", "neptune"]) {
+    assert.ok(world.includes(`id: "${planet}"`), `Missing planet: ${planet}`);
+  }
+});
+
+test("solar system has animated orbital motion, detailed planet surfaces, atmosphere and ring views", () => {
+  assert.match(world, /function makePlanetTexture\(/);
+  assert.match(world, /function createFocusedPlanet\(/);
+  assert.match(world, /function addPlanetAtmosphere\(/);
+  assert.match(world, /userData\.orbitSpeed/);
+  assert.match(world, /isSunCore/);
+  assert.match(world, /window\.requestAnimationFrame/);
+  assert.match(world, /window\.cancelAnimationFrame/);
+});
+
+test("home image generation route checks private Cloudflare configuration and validates generated image output", () => {
+  assert.match(imageGenerationRoute, /CLOUDFLARE_ACCOUNT_ID/);
+  assert.match(imageGenerationRoute, /CLOUDFLARE_API_TOKEN/);
+  assert.match(imageGenerationRoute, /@cf\/black-forest-labs\/flux-1-schnell/);
+  assert.match(imageGenerationRoute, /imageDataUrl/);
+  assert.match(imageGenerationRoute, /Please sign in to generate an image/);
 });
