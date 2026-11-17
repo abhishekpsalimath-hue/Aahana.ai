@@ -33,7 +33,7 @@ test("chat API accepts the dedicated learn mode and validates learner profile fi
 });
 
 test("reopening a learning session restores its original mode and learner profile", () => {
-  assert.match(studio, /let resumedProfile = \\{ gradeBand, schoolGrade, subject, curriculum, language, learningMode \\}/);
+  assert.ok(studio.includes("let resumedProfile = { gradeBand, schoolGrade, subject, curriculum, language, learningMode }"));
   assert.match(studio, /learningMode: resumedProfile\.learningMode/);
   assert.match(studio, /profile: resumedProfile/);
   assert.match(studio, /setLearningMode\(resumedProfile\.learningMode\)/);
@@ -59,7 +59,7 @@ test("student studio exposes all six agreed learning experiences", () => {
     "Story Mode", "Visual Explainer", "Play & Solve",
     "Adventure Mode", "Talk & Learn", "Create & Experiment",
   ]) assert.ok(studio.includes(phrase), `Missing learning experience: ${phrase}`);
-  assert.match(studio, /School grade \\(optional\\)/);
+  assert.ok(studio.includes("School grade (optional)"));
   assert.match(studio, /schoolGrade/);
   assert.match(studio, /Learning level/);
   assert.match(studio, /Learning language/);
