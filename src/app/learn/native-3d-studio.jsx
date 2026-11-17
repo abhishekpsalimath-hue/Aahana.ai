@@ -7,10 +7,10 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 const SHAPES = {
   sphere: () => new THREE.SphereGeometry(1, 64, 48),
   box: () => new THREE.BoxGeometry(1.7, 1.7, 1.7, 4, 4, 4),
-  torus: () => new THREE.TorusKnotGeometry(.72, .24, 180, 24, 2, 3),
+  torus: () => new THREE.TorusGeometry(.72, .24, 32, 100),
   cone: () => new THREE.ConeGeometry(.9, 1.8, 64, 8),
   icosahedron: () => new THREE.IcosahedronGeometry(1, 3),
-  torusKnot: () => new THREE.TorusGeometry(.72, .28, 32, 100),
+  torusKnot: () => new THREE.TorusKnotGeometry(.72, .24, 180, 24, 2, 3),
 };
 
 export default function Native3DStudio() {
@@ -18,12 +18,12 @@ export default function Native3DStudio() {
   const sceneRef = useRef(null);
   const meshRef = useRef(null);
   const rendererRef = useRef(null);
-  const autoRotateRef = useRef(autoRotate);
   const [shape, setShape] = useState("sphere");
   const [color, setColor] = useState("#b9a5d4");
   const [wireframe, setWireframe] = useState(false);
   const [autoRotate, setAutoRotate] = useState(true);
   const [status, setStatus] = useState("Interactive 3D scene ready.");
+  const autoRotateRef = useRef(autoRotate);
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -96,7 +96,6 @@ export default function Native3DStudio() {
     };
   }, []);
 
-  const autoRotateRef = useRef(autoRotate);
   useEffect(() => { autoRotateRef.current = autoRotate; }, [autoRotate]);
 
   useEffect(() => {
@@ -144,7 +143,7 @@ export default function Native3DStudio() {
       <div className="native-3d-workspace">
         <div className="native-3d-viewport" ref={mountRef} aria-label="Interactive 3D viewport" />
         <div className="native-3d-controls">
-          <label>Geometry<select value={shape} onChange={(event) => setShape(event.target.value)}><option value="sphere">Sphere</option><option value="box">Subdivided cube</option><option value="torus">Torus knot</option><option value="cone">Cone</option><option value="icosahedron">Icosphere</option><option value="torusKnot">Torus</option></select></label>
+          <label>Geometry<select value={shape} onChange={(event) => setShape(event.target.value)}><option value="sphere">Sphere</option><option value="box">Subdivided cube</option><option value="torus">Torus</option><option value="cone">Cone</option><option value="icosahedron">Icosphere</option><option value="torusKnot">Torus knot</option></select></label>
           <label>Material colour<input type="color" value={color} onChange={(event) => setColor(event.target.value)} /></label>
           <label className="native-3d-check"><input type="checkbox" checked={wireframe} onChange={(event) => setWireframe(event.target.checked)} /> Wireframe view</label>
           <label className="native-3d-check"><input type="checkbox" checked={autoRotate} onChange={(event) => setAutoRotate(event.target.checked)} /> Auto rotate</label>
