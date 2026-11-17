@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&family=Syne:wght@500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&family=Syne:wght@500;600;700;800&family=Unbounded:wght@400;500;600;700&display=swap');
 
 :root{color-scheme:dark;--bg:#09090d;--panel:#101016;--panel-2:#15151e;--line:#252431;--text:#f3f0f8;--muted:#9691a4;--lilac:#c4a7ff;--lilac-2:#a987f2}
 *{box-sizing:border-box}
@@ -507,7 +507,7 @@ button,input,textarea,select{font-family:var(--font-ui)}
 .mode{font-weight:600;letter-spacing:-.015em}
 .starter{font-weight:500;letter-spacing:-.015em}
 .composer textarea{font-size:15px;letter-spacing:-.01em}
-.founder-welcome-note p{font-family:var(--font-display);font-weight:600;letter-spacing:-.035em}
+.founder-welcome-note p{font-family:'Unbounded',var(--font-display);font-weight:500;letter-spacing:-.055em;line-height:1.55}\n.founder-welcome-note p em{font-family:'Unbounded',sans-serif;font-weight:700;letter-spacing:-.075em;text-shadow:0 0 28px #b99aff55}\n.founder-welcome-note strong{font-family:'Space Grotesk',sans-serif;font-size:clamp(13px,1.6vw,17px);font-weight:700;letter-spacing:.16em;text-transform:uppercase}\n.welcome h1,.welcome h1 em{font-family:'Unbounded',var(--font-display);font-weight:600;letter-spacing:-.085em}\n.welcome>p{font-family:'Space Grotesk',sans-serif;font-weight:400;letter-spacing:.005em}
 .founder-welcome-note strong{font-family:var(--font-micro);letter-spacing:.1em}
 .auth-card h1,.ops-hero h1,.ops-section h2,.ops-panel h2,.ops-role h3{
   font-family:var(--font-display)!important;letter-spacing:-.055em;
