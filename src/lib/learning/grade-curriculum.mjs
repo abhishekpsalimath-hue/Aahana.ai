@@ -1,5 +1,6 @@
 import { GRADE_1_MATH } from "./school-journey.mjs";
 import { GRADE_1_ENGLISH_CURRICULUM } from "./grade-1-english.mjs";
+import { GRADE_1_EVS_CURRICULUM } from "./grade-1-evs.mjs";
 
 /**
  * Grade-level lesson content is an authoring asset, not a student lock system.
@@ -125,16 +126,17 @@ export function getGradeLearningCurriculum(grade, subject) {
   const normalizedSubject = String(subject).trim().toLowerCase();
   if (normalizedSubject === "mathematics" || normalizedSubject === "maths" || normalizedSubject === "math") return GRADE_1_MATHEMATICS_CURRICULUM;
   if (normalizedSubject === "english") return GRADE_1_ENGLISH_CURRICULUM;
+  if (["evs", "environmental studies", "environmental science"].includes(normalizedSubject)) return GRADE_1_EVS_CURRICULUM;
   return null;
 }
 
 export function getGradeCurriculumCoverage() {
   return {
-    authored: GRADE_1_MATHEMATICS_CURRICULUM.units.length + GRADE_1_ENGLISH_CURRICULUM.units.length,
-    subjects: 2,
-    units: { mathematics: GRADE_1_MATHEMATICS_CURRICULUM.units.length, english: GRADE_1_ENGLISH_CURRICULUM.units.length },
-    lessonDesigns: GRADE_1_MATHEMATICS_CURRICULUM.units.filter((unit) => unit.lessonDesign).length + GRADE_1_ENGLISH_CURRICULUM.units.filter((unit) => unit.lessonDesign).length,
-    assessmentDesigns: GRADE_1_MATHEMATICS_CURRICULUM.units.filter((unit) => unit.assessmentDesign).length + GRADE_1_ENGLISH_CURRICULUM.units.filter((unit) => unit.assessmentDesign).length,
+    authored: GRADE_1_MATHEMATICS_CURRICULUM.units.length + GRADE_1_ENGLISH_CURRICULUM.units.length + GRADE_1_EVS_CURRICULUM.units.length,
+    subjects: 3,
+    units: { mathematics: GRADE_1_MATHEMATICS_CURRICULUM.units.length, english: GRADE_1_ENGLISH_CURRICULUM.units.length, evs: GRADE_1_EVS_CURRICULUM.units.length },
+    lessonDesigns: GRADE_1_MATHEMATICS_CURRICULUM.units.filter((unit) => unit.lessonDesign).length + GRADE_1_ENGLISH_CURRICULUM.units.filter((unit) => unit.lessonDesign).length + GRADE_1_EVS_CURRICULUM.units.filter((unit) => unit.lessonDesign).length,
+    assessmentDesigns: GRADE_1_MATHEMATICS_CURRICULUM.units.filter((unit) => unit.assessmentDesign).length + GRADE_1_ENGLISH_CURRICULUM.units.filter((unit) => unit.assessmentDesign).length + GRADE_1_EVS_CURRICULUM.units.filter((unit) => unit.assessmentDesign).length,
     boardMapped: false
   };
 }
