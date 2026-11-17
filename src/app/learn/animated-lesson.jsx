@@ -60,18 +60,22 @@ export default function AnimatedLesson({ content }) {
   const lesson = useMemo(() => readMotionLesson(content), [content]);
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
-  const [attempts, setAttempts] = useState(0);
+  const [sceneAttempts, setSceneAttempts] = useState({});
+  const [solvedAttempts, setSolvedAttempts] = useState({});
   const [solved, setSolved] = useState(false);
+  const attempts = sceneAttempts[index] || 0;
+  const adaptedScenes = Object.keys(solvedAttempts).filter((sceneIndex) => solvedAttempts[sceneIndex] >= 2).length;
+  const exploredScenes = Object.keys(solvedAttempts).length;
 
   useEffect(() => {
     setIndex(0);
     setPaused(false);
-    setAttempts(0);
+    setSceneAttempts({});
+    setSolvedAttempts({});
     setSolved(false);
   }, [content]);
 
   useEffect(() => {
-    setAttempts(0);
     setSolved(false);
   }, [index]);
 
@@ -84,8 +88,20 @@ export default function AnimatedLesson({ content }) {
 
   function answer(optionIndex) {
     if (solved) return;
-    if (optionIndex === challenge.correctIndex) setSolved(true);
-    else setAttempts((count) => count + 1);
+    if (optionIndex === challenge.correctIndex) {
+      setSolved(true);
+      setSolvedAttempts((current) => ({ ...current, [index]: (sceneAttempts[index] || 0) + 1 }));
+    } else {
+      setSceneAttempts((current) => ({ ...current, [index]: (current[index] || 0) + 1 }));
+    }
+  }
+
+  function restartLesson() {
+    setIndex(0);
+    setSceneAttempts({});
+    setSolvedAttempts({});
+    setSolved(false);
+    setPaused(false);
   }
 
   return <section className="motion-lesson" aria-label="Animated lesson">
@@ -121,6 +137,13 @@ export default function AnimatedLesson({ content }) {
       <button type="button" disabled={!solved} onClick={() => setIndex((n) => (n+1)%lesson.scenes.length)}>{index===lesson.scenes.length-1 ? "Replay lesson" : "Next scene"}</button>
     </div>
     {!solved && <p className="motion-unlock-note">Solve this little discovery to unlock the next scene. You can try as many times as you like.</p>}
-    {solved && index === lesson.scenes.length - 1 && <p className="motion-feedback success"><strong>Adventure complete!</strong> You explored every scene. Curiosity got you here.</p>}
+    {solved && index === lesson.scenes.length - 1 && <div className="motion-learning-reflection" aria-live="polite">
+      <strong>Adventure complete! You explored every scene.</strong>
+      <p>{adaptedScenes > 0
+        ? `You discovered ${adaptedScenes} idea${adaptedScenes === 1 ? "" : "s"} through an alternate explanation. Trying a new way is a powerful learning skill.`
+        : "You worked through every idea in this lesson. Curiosity and careful thinking helped you get here."}</p>
+      <span>{exploredScenes} of {lesson.scenes.length} scenes explored · {adaptedScenes} alternate explanation{adaptedScenes === 1 ? "" : "s"} used</span>
+      <button type="button" onClick={restartLesson}>Explore again</button>
+    </div>}
   </section>;
 }
