@@ -335,6 +335,12 @@ test("student mode includes an interactive 3D model lab rather than image-only l
   assert.match(world, /Food web/);
   assert.match(world, /Connecting rod/);
   assert.match(world, /aria-live="polite"/);
+  for (const concept of ["Equator & poles", "Molecular shape", "Atomic identity", "Base pairs", "Vertices", "Contour lines", "Mitochondria", "Planet groups", "Chloroplasts", "Body circuit", "History & engineering"]) {
+    assert.ok(world.includes(concept), `Missing model-specific discovery concept: ${concept}`);
+  }
+  for (const modelId of ["planet", "molecule", "atom", "dna", "cube", "terrain", "cell", "solar-system", "plant-cell", "heart", "pyramid", "ecosystem", "engine"]) {
+    assert.ok(world.includes(`${modelId}:`) || world.includes(`"${modelId}":`), `Missing guided exploration for ${modelId}`);
+  }
   assert.match(world, /ArrowLeft/);
   assert.match(world, /role="application"/);
   assert.match(world, /not to scale/);
