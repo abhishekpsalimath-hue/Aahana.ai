@@ -193,7 +193,9 @@ function makeModel(id, ecosystem = {}) {
     return [...ground,...stream,...forest];
   }
   if (id === "engine") {
-    const pistons=[-.62,0,.62].flatMap((x,i)=>[{points:[[x,-.4,-.18],[x,.55,-.18]],rod:true,color:i===1?"#d7b46e":"#8fa9c5"},...sphereMesh(.2,9,13,i===1?"#d7b46e":"#91a9c2").map(face=>({...face,offset:[x,.55,-.18]})),{points:[[x,-.4,-.18],[x,-.72,.2]],rod:true,color:"#c4cbd8"}]);
+    const phase = ecosystem.engineCycle || "intake";
+    const pistonY = phase === "intake" ? .34 : phase === "compression" ? .58 : phase === "power" ? -.08 : .58;
+    const pistons=[-.62,0,.62].flatMap((x,i)=>[{points:[[x,-.4,-.18],[x,pistonY,-.18]],rod:true,color:i===1?"#d7b46e":"#8fa9c5"},...sphereMesh(.2,9,13,i===1?"#d7b46e":"#91a9c2").map(face=>({...face,offset:[x,pistonY,-.18]})),{points:[[x,-.4,-.18],[x,-.72,.2]],rod:true,color:"#c4cbd8"}]);
     const crank=[{points:[[-.85,-.72,.2],[.85,-.72,.2]],rod:true,color:"#d4a95f"},{points:[[-.85,-.72,.2],[-.85,-.45,.2]],rod:true,color:"#d4a95f"},{points:[[.85,-.72,.2],[.85,-.45,.2]],rod:true,color:"#d4a95f"}];
     return [...pistons,...crank,...[-.85,.85].flatMap(x=>sphereMesh(.27,10,16,"#718eae").map(face=>({...face,offset:[x,-.95,.2]})))];
   }
@@ -339,7 +341,7 @@ export default function Interactive3DWorld() {
   const [rotation, setRotation] = useState({ yaw: -.55, pitch: -.22 });
   const [zoom, setZoom] = useState(1);
   const [conceptIndex, setConceptIndex] = useState(0);
-  const [ecosystem, setEcosystem] = useState({ rainfall: "regular", waterSource: true, pollution: false });
+  const [ecosystem, setEcosystem] = useState({ rainfall: "regular", waterSource: true, pollution: false, engineCycle: "intake" });
   const canvasRef = useRef(null);
   const dragRef = useRef(null);
   const model = models.find((item) => item.id === modelId) || models[0];
@@ -382,6 +384,25 @@ export default function Interactive3DWorld() {
         </div>
         <aside className="learning-3d-details">
           <span>NOW EXPLORING</span><h3>{model.label}</h3><small>{model.subject}</small><p>{model.description}</p>
+          {modelId === "engine" && <div className="learning-3d-experiment" aria-label="Four-stroke engine learning experiment">
+            <span>EXPLORE THE FOUR-STROKE CYCLE</span>
+            <p>Choose a stage to see a simplified piston position. This is a conceptual teaching model, not a timed or mechanically accurate engine simulation.</p>
+            <div className="learning-3d-experiment-control"><strong>Engine stage</strong><div role="group" aria-label="Engine cycle stage">
+              {[
+                ["intake", "1 · Intake"],
+                ["compression", "2 · Compression"],
+                ["power", "3 · Power"],
+                ["exhaust", "4 · Exhaust"],
+              ].map(([value, label]) => <button type="button" key={value} className={(ecosystem.engineCycle || "intake") === value ? "active" : ""} aria-pressed={(ecosystem.engineCycle || "intake") === value} onClick={() => setEcosystem((current) => ({ ...current, engineCycle: value }))}>{label}</button>)}
+            </div></div>
+            <p className="learning-3d-experiment-observation" aria-live="polite">{({
+              intake: "Intake: the piston moves down as the intake valve opens and the cylinder draws in an air–fuel mixture in a spark-ignition example.",
+              compression: "Compression: the piston moves up and compresses the charge while the valves are closed.",
+              power: "Power: combustion raises pressure and pushes the piston down, producing useful work.",
+              exhaust: "Exhaust: the piston moves up as the exhaust valve opens and pushes burnt gases out.",
+            })[ecosystem.engineCycle || "intake"]}</p>
+            <button type="button" onClick={() => setEcosystem((current) => ({ ...current, engineCycle: "intake" }))}>Restart cycle</button>
+          </div>}
           {modelId === "ecosystem" && <div className="learning-3d-experiment" aria-label="Forest habitat experiment">
             <span>TRY A HABITAT EXPERIMENT</span>
             <p>Change one condition and observe the illustrative habitat. These are qualitative teaching outcomes, not measured ecological predictions.</p>
