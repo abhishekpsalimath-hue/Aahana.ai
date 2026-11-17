@@ -334,21 +334,106 @@ function drawScene(canvas, modelId, yaw, pitch, zoom, ecosystem = {}, time = 0) 
   ctx.imageSmoothingQuality = "high";
   const w = rect.width, h = rect.height;
   ctx.clearRect(0, 0, w, h);
-  const pulse = .5 + Math.sin(time * .0012) * .045;
-  const glow = ctx.createRadialGradient(w * .5, h * .46, 3, w * .5, h * .46, h * .62);
-  glow.addColorStop(0, "rgba(91,73,130," + pulse + ")"); glow.addColorStop(.58, "#211b31"); glow.addColorStop(1, "#100f1b");
-  ctx.fillStyle = glow; ctx.fillRect(0, 0, w, h);
-  for (let i = 0; i < 64; i++) {
-    const x = (i * 97 % 997) / 997 * w;
-    const y = (i * 53 % 991) / 991 * h;
-    const twinkle = .18 + (Math.sin(time * .0015 + i * 1.71) + 1) * .17;
-    const radius = i % 9 === 0 ? 1.8 : 1.05;
-    ctx.beginPath(); ctx.arc(x, y, radius, 0, Math.PI * 2);
-    ctx.fillStyle = "rgba(226,215,255," + twinkle + ")"; ctx.fill();
+  const spaceScene = ["planet", "solar-system"].includes(modelId);
+  const biologyScene = ["dna", "cell", "plant-cell", "heart"].includes(modelId);
+  const chemistryScene = ["molecule", "atom"].includes(modelId);
+  const earthScene = ["terrain", "ecosystem"].includes(modelId);
+  const palette = spaceScene
+    ? { center: "rgba(64,91,158,.58)", mid: "#171a35", edge: "#090d1b", aura: "rgba(111,158,255,.17)" }
+    : biologyScene
+      ? { center: "rgba(34,125,119,.48)", mid: "#102a31", edge: "#08151e", aura: "rgba(94,230,190,.16)" }
+      : chemistryScene
+        ? { center: "rgba(116,74,157,.48)", mid: "#241633", edge: "#100d1d", aura: "rgba(208,145,255,.17)" }
+        : earthScene
+          ? { center: "rgba(92,119,92,.42)", mid: "#1c2b2b", edge: "#0b1518", aura: "rgba(174,211,151,.15)" }
+          : { center: "rgba(91,73,130,.5)", mid: "#211b31", edge: "#100f1b", aura: "rgba(180,151,255,.12)" };
+  const pulse = .48 + Math.sin(time * .0012) * .045;
+  const glow = ctx.createRadialGradient(w * .5, h * .46, 3, w * .5, h * .46, h * .68);
+  glow.addColorStop(0, palette.center.replace(/\\.\\d+\\)$/, `,${pulse})`));
+  glow.addColorStop(.58, palette.mid);
+  glow.addColorStop(1, palette.edge);
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, w, h);
+
+  if (spaceScene) {
+    const nebula = ctx.createRadialGradient(w * .22, h * .28, 2, w * .22, h * .28, w * .58);
+    nebula.addColorStop(0, "rgba(83,112,201,.18)");
+    nebula.addColorStop(.48, "rgba(117,67,167,.09)");
+    nebula.addColorStop(1, "rgba(117,67,167,0)");
+    ctx.fillStyle = nebula;
+    ctx.fillRect(0, 0, w, h);
+    for (let i = 0; i < 84; i++) {
+      const x = (i * 97 % 997) / 997 * w;
+      const y = (i * 53 % 991) / 991 * h;
+      const twinkle = .16 + (Math.sin(time * .0015 + i * 1.71) + 1) * .2;
+      ctx.beginPath();
+      ctx.arc(x, y, i % 11 === 0 ? 1.8 : 1, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(220,231,255,${twinkle})`;
+      ctx.fill();
+    }
+  } else if (biologyScene) {
+    for (let i = 0; i < 38; i++) {
+      const drift = time * .006 + i * 31;
+      const x = (i * 83 % 991) / 991 * w + Math.sin(drift * .012) * 12;
+      const y = (i * 47 % 983) / 983 * h + Math.cos(drift * .01) * 9;
+      const radius = 1.5 + (i % 4) * 1.1;
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(133,238,211,${.08 + (Math.sin(drift * .02) + 1) * .055})`;
+      ctx.fill();
+    }
+  } else if (chemistryScene) {
+    ctx.save();
+    ctx.strokeStyle = "rgba(196,158,235,.11)";
+    ctx.lineWidth = 1;
+    for (let i = 0; i < 7; i++) {
+      const x = (i * 173 % 997) / 997 * w;
+      const y = (i * 127 % 991) / 991 * h;
+      const dx = Math.sin(time * .0003 + i) * 15;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + w * .13 + dx, y + h * .1);
+      ctx.lineTo(x + w * .23 - dx, y - h * .04);
+      ctx.stroke();
+      for (const [px, py] of [[x, y], [x + w * .13 + dx, y + h * .1], [x + w * .23 - dx, y - h * .04]]) {
+        ctx.beginPath();
+        ctx.arc(px, py, 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(219,187,255,.45)";
+        ctx.fill();
+      }
+    }
+    ctx.restore();
+  } else if (earthScene) {
+    ctx.save();
+    ctx.strokeStyle = "rgba(184,211,168,.09)";
+    ctx.lineWidth = 1;
+    for (let i = 0; i < 8; i++) {
+      const y = h * (.55 + i * .065);
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.quadraticCurveTo(w * .5, y - 18 - i * 2, w, y + 5);
+      ctx.stroke();
+    }
+    ctx.restore();
+  } else {
+    ctx.save();
+    ctx.strokeStyle = "rgba(204,184,236,.075)";
+    ctx.lineWidth = 1;
+    const spacing = 34;
+    for (let x = -h; x < w + h; x += spacing) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x - h * .42, h);
+      ctx.stroke();
+    }
+    ctx.restore();
   }
-  const modelAura = ctx.createRadialGradient(w * .5, h * .49, 2, w * .5, h * .49, Math.min(w, h) * .34);
-  modelAura.addColorStop(0, "rgba(180,151,255,.12)"); modelAura.addColorStop(1, "rgba(180,151,255,0)");
-  ctx.fillStyle = modelAura; ctx.fillRect(0, 0, w, h);
+  const modelAura = ctx.createRadialGradient(w * .5, h * .49, 2, w * .5, h * .49, Math.min(w, h) * .38);
+  modelAura.addColorStop(0, palette.aura);
+  modelAura.addColorStop(1, "rgba(180,151,255,0)");
+  ctx.fillStyle = modelAura;
+  ctx.fillRect(0, 0, w, h);
+
   const model = makeModel(modelId, ecosystem);
   const drawables = model.map((face) => {
     const offset = face.offset || [0, 0, 0];
