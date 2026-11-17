@@ -11,6 +11,8 @@ on:
       - "src/app/api/voice/speech/route.js"
       - "src/app/assistant-workspace.jsx"
       - "src/lib/voice/audio-wav.*"
+      - "src/lib/voice/locale-detection.*"
+      - "src/lib/voice/locale-support.*"
   push:
     branches:
       - "feat/aahana-voice-runtime-adapters"
@@ -24,6 +26,8 @@ on:
       - "src/app/api/voice/speech/route.js"
       - "src/app/api/voice/capabilities/route.js"
       - "src/lib/voice/audio-wav.*"
+      - "src/lib/voice/locale-detection.*"
+      - "src/lib/voice/locale-support.*"
 
 permissions:
   contents: read
@@ -51,6 +55,8 @@ jobs:
         run: node --test ../../src/lib/voice/sravaani-asr-provider.test.mjs
       - name: Test browser WAV encoder
         run: node --test ../../src/lib/voice/audio-wav.test.mjs
+      - name: Test multilingual locale detection and coverage
+        run: node --test ../../src/lib/voice/locale-detection.test.mjs ../../src/lib/voice/locale-support.test.mjs
       - name: Syntax-check authenticated transcription route
         run: node --check ../../src/app/api/voice/transcribe/route.js
       - name: Syntax-check authenticated speech synthesis route
