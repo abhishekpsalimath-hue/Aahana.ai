@@ -34,7 +34,7 @@ export async function GET() {
       createdAt: row.created_at,
       journey: parseLearningJourney(row.content),
     })).filter((row) => row.journey);
-    return NextResponse.json({ enabled: true, journeys });
+    return NextResponse.json({ enabled, journeys });
   } catch (error) {
     console.error("Aahana learning journey load failed:", error.message);
     return NextResponse.json({ error: "Could not load your learning journey." }, { status: 500 });
