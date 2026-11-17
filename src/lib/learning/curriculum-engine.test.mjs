@@ -42,5 +42,6 @@ test("coverage summary reconciles category and subject totals", () => {
   assert.equal(summary.authoredCount, 24);
   assert.equal(completeAuthoredCurricula.length, 24);
   assert.equal(summary.requiredCount, 156);
-  assert.equal(summary.categoriesAtTarget, summary.categories.filter((item) => item.reached).length);\n  assert.ok(summary.categories.every((item) => item.authored >= 1));
+  assert.equal(summary.categoriesAtTarget, summary.categories.filter((item) => item.reached).length);
+  assert.ok(summary.categories.every((item) => item.authored >= 1));
 });
