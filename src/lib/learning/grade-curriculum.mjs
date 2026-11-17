@@ -45,7 +45,7 @@ const lessonDesign = {
     extension: "Show two different ways to take away 5 and reach the same answer."
   },
   "shapes-and-space": {
-    visual: "3d-geometry",
+    visual: "shape-explorer",
     interaction: "shape-explorer",
     visualBrief: "Large, rotatable 2D shape cards and familiar 3D objects with clearly counted sides, corners and curved boundaries.",
     scenes: [
