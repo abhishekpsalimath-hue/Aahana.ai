@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Mini3DModel } from "./interactive-3d-world";
 
-const visualTypes = new Set(["counter-board", "fraction", "orbit", "water-cycle", "plant-growth", "number-line", "molecule", "concept-map", "timeline", "bar-chart", "anatomy", "circuit", "code-flow", "sound-wave", "map", "3d-solar-system", "3d-planet", "3d-molecule", "3d-atom", "3d-dna", "3d-geometry", "3d-terrain", "3d-plant-cell", "3d-heart", "3d-pyramid", "3d-ecosystem", "3d-engine"]);
+const visualTypes = new Set(["counter-board", "shape-explorer", "fraction", "orbit", "water-cycle", "plant-growth", "number-line", "molecule", "concept-map", "timeline", "bar-chart", "anatomy", "circuit", "code-flow", "sound-wave", "map", "3d-solar-system", "3d-planet", "3d-molecule", "3d-atom", "3d-dna", "3d-geometry", "3d-terrain", "3d-plant-cell", "3d-heart", "3d-pyramid", "3d-ecosystem", "3d-engine"]);
 
 function validVisualData(data) {
   return typeof data?.label === "string" && data.label.trim() && data.label.length <= 90 &&
