@@ -139,7 +139,7 @@ test("non-quiz learning modes request a validated structured animated lesson", (
   assert.match(route, /challenge \(object with question string, options array of exactly 3 short strings/);
   assert.match(route, /fraction, orbit, water-cycle, plant-growth, number-line, molecule, concept-map/);
   assert.match(studio, /readMotionLesson\(item\.content\)/);
-  assert.match(studio, /<AnimatedLesson lesson=/);
+  assert.match(studio, /<AnimatedLesson content=\{item\.content\} \/>/);
 });
 
 test("animated lesson renderer validates scene data and provides subject-specific visuals", () => {
