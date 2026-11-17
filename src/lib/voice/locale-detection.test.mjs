@@ -56,7 +56,7 @@ test("keeps selected language for Latin-only mixed-language text", () => {
 });
 
 test("reports ties between different writing systems instead of claiming certainty", () => {
-  const result = detectSpeechLanguage("ಕನ್ನಡ English", "kn-IN");
+  const result = detectSpeechLanguage("ಕನ್ನಡ abcde", "kn-IN");
   assert.equal(result.locale, "kn-IN");
   assert.equal(result.isMixed, true);
   assert.equal(result.reason, "mixed-script-tie");
