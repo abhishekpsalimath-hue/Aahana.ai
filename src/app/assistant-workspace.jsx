@@ -990,6 +990,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         </button>
         <div className="side-label">WORKSPACE</div>
         <button className={selectedProjectId ? "side-item assistant-nav" : "side-item active assistant-nav"} type="button" onClick={() => selectProject(null)}>✳ <span>Assistant</span></button>
+        <a className="side-item muted learning-nav" href="/learn">✧ <span>Learning Studio</span></a>
         <button className={historyOpen ? "side-item active history-toggle" : "side-item muted history-toggle"} type="button" onClick={toggleHistory}>◷ <span>History</span></button>
         {historyOpen && (
           <div className="history-list">
