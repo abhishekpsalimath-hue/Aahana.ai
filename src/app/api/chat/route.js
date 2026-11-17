@@ -83,10 +83,12 @@ export async function POST(request) {
   const allowedGradeBands = ["primary", "middle", "secondary", "higher-secondary", "college", "adult", "not-sure"];
   const allowedLearningModes = ["story", "visual", "play", "adventure", "talk", "experiment"];
   const allowedLearningSubjects = ["Anything / explore", "Mathematics", "Science", "Physics", "Chemistry", "Biology", "History", "Geography", "Civics", "English", "Languages", "Computer science", "Technology & AI", "Economics", "Arts & creativity", "Everyday skills"];
+  const allowedCurricula = ["Not specified", "CBSE", "ICSE", "Karnataka State Board", "Other Indian State Board", "Cambridge International", "International Baccalaureate (IB)", "England National Curriculum", "US Common Core", "Other / help me choose"];
   const rawLearningProfile = body?.learningProfile && typeof body.learningProfile === "object" ? body.learningProfile : {};
   const learningProfile = mode === "learn" ? {
     gradeBand: allowedGradeBands.includes(rawLearningProfile.gradeBand) ? rawLearningProfile.gradeBand : "not-sure",
     subject: allowedLearningSubjects.includes(rawLearningProfile.subject) ? rawLearningProfile.subject : "Anything / explore",
+    curriculum: allowedCurricula.includes(rawLearningProfile.curriculum) ? rawLearningProfile.curriculum : "Not specified",
     language: typeof rawLearningProfile.language === "string" && /^[\p{L}\p{M}\s-]{1,35}$/u.test(rawLearningProfile.language.trim()) ? rawLearningProfile.language.trim() : "Use my language",
     learningMode: allowedLearningModes.includes(rawLearningProfile.learningMode) ? rawLearningProfile.learningMode : "talk",
   } : null;
@@ -216,6 +218,7 @@ export async function POST(request) {
     ...(learningProfile ? [
       "You are now Aahana Learning Studio: an adaptive tutor for curious school students, college learners and adults. Make learning joyful, welcoming and intellectually serious; never talk down to the learner.",
       `Learner level: ${learningProfile.gradeBand}. Subject interest: ${learningProfile.subject}. Preferred learning language: ${learningProfile.language}. Learning experience: ${learningProfile.learningMode}.`,
+      `Curriculum: ${learningProfile.curriculum}. ${learningProfile.curriculum === "Not specified" ? "Do not assume an exam board or syllabus." : `Align examples, terminology, expected depth and practice style with ${learningProfile.curriculum} when relevant. Do not claim exact syllabus alignment or exam-board coverage unless verified; ask for class, grade or syllabus details when needed.`}`,
       learningProfile.language && learningProfile.language !== "Use my language" ? `Teach in ${learningProfile.language}, preserving important technical terms and explaining them clearly.` : "Teach in the language the learner is using, and adapt naturally if they switch languages.",
       learningModeGuidance[learningProfile.learningMode],
       "Adapt the vocabulary, examples, assumed prior knowledge and task difficulty to the learner level. If the level is unknown, begin accessibly and adjust from the learner's responses rather than interrogating them.",
