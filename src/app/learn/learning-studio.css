@@ -242,3 +242,28 @@
 @keyframes space-sun-pulse{to{filter:drop-shadow(0 0 20px #ffc45fbb);transform:scale(1.07)}}
 @media(max-width:760px){.space-planet-picker{grid-template-columns:repeat(4,minmax(0,1fr))}.space-discovery{grid-template-columns:1fr}.space-discovery-side{border-left:0;border-top:1px solid #4b3d61;padding:13px 0 0}.space-explorer-tag{display:none}.space-stage svg{min-height:155px}}
 @media(prefers-reduced-motion:reduce){.space-sun-core{animation:none}.space-planet-dot{transition:none}}
+
+
+/* Solar System mission: visual scale lab, learner-led challenges and positive progress. */
+.space-mission-progress,.space-size-lab,.space-mission-challenge{margin:14px 0;padding:17px;border:1px solid #403451;border-radius:14px;background:linear-gradient(135deg,#211a2d,#15121d)}
+.space-mission-progress>div:first-child{display:flex;justify-content:space-between;gap:12px;align-items:center;color:#f2eaff;font-size:11px}
+.space-mission-progress>div:first-child strong,.space-lab-kicker{color:#cbb7ee;font-size:9px;letter-spacing:1.3px;font-weight:800}
+.space-mission-progress>div:first-child span{color:#f4d994;font-weight:700}
+.space-mission-track,.space-size-track{height:9px;overflow:hidden;border-radius:99px;background:#393047}
+.space-mission-track{margin:12px 0 7px}
+.space-mission-track span,.space-size-track i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#a98be7,#f0cf8a);transition:width .35s ease}
+.space-mission-progress p,.space-size-lab p{margin:0;color:#a99fb7;font-size:11px;line-height:1.6}
+.space-size-lab h3,.space-mission-challenge h3{margin:5px 0 7px;color:#fff;font:800 20px Manrope,sans-serif}
+.space-size-row{display:grid;grid-template-columns:58px minmax(70px,1fr) minmax(130px,auto);gap:12px;align-items:center;margin-top:15px;color:#ded4e9;font-size:11px}
+.space-size-row strong{text-align:right;color:#cbb7ee;font-size:10px}
+.space-size-track{height:12px;background:#342b40}
+.space-size-track i{min-width:3px;background:linear-gradient(90deg,#8fc7ef,#c8a8f3)}
+.space-mission-challenge{display:grid;grid-template-columns:1fr;gap:12px}
+.space-challenge-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.space-challenge-options button{min-height:46px;padding:10px;border:1px solid #4a3d5c;border-radius:10px;background:#191522;color:#e9e0f2;font:600 11px 'DM Sans',sans-serif;cursor:pointer;transition:background .18s,border-color .18s}
+.space-challenge-options button:hover:not(:disabled){border-color:#bda4f3;background:#2a2138}
+.space-challenge-options button:disabled{opacity:.75;cursor:default;border-color:#9c83c8}
+.space-challenge-feedback{margin:0;color:#b9afc8;font-size:11px;line-height:1.6}
+.space-challenge-feedback.success{color:#f4d994;font-weight:700}
+@media(max-width:560px){.space-mission-progress>div:first-child{align-items:flex-start;flex-direction:column;gap:6px}.space-size-row{grid-template-columns:48px minmax(45px,1fr);gap:8px}.space-size-row strong{grid-column:2;text-align:left}.space-challenge-options{grid-template-columns:1fr}.space-size-lab,.space-mission-challenge,.space-mission-progress{padding:13px}}
+@media(prefers-reduced-motion:reduce){.space-mission-track span,.space-size-track i,.space-challenge-options button{transition:none}}
