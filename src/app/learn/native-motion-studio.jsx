@@ -41,9 +41,19 @@ export default function NativeMotionStudio() {
   function updateKeyframe(index, patch) {
     setTimeline((current) => ({
       ...current,
-      tracks: current.tracks.map((track, trackIndex) => trackIndex !== 0 ? track : {
-        ...track,
-        keyframes: track.keyframes.map((frame, frameIndex) => frameIndex === index ? { ...frame, ...patch } : frame),
+      tracks: current.tracks.map((track, trackIndex) => {
+        if (trackIndex !== 0) return track;
+        const keyframes = track.keyframes.map((frame, frameIndex) => {
+          if (frameIndex !== index) return frame;
+          const next = { ...frame, ...patch };
+          if (patch.time !== undefined) {
+            const lower = frameIndex > 0 ? track.keyframes[frameIndex - 1].time + 1 : 0;
+            const upper = frameIndex < track.keyframes.length - 1 ? track.keyframes[frameIndex + 1].time - 1 : current.duration;
+            next.time = Math.max(lower, Math.min(upper, Number(patch.time) || 0));
+          }
+          return next;
+        });
+        return { ...track, keyframes };
       }),
     }));
     setStatus("Motion keyframe updated.");
@@ -52,12 +62,20 @@ export default function NativeMotionStudio() {
   function addKeyframe() {
     const frames = timeline.tracks[0].keyframes;
     if (frames.length >= 20) return;
-    const last = frames[frames.length - 1];
-    const timeAt = Math.max(0, Math.min(timeline.duration, last.time - 1));
-    if (frames.some((frame) => frame.time === timeAt)) return;
+    let gapIndex = 0;
+    let largestGap = 0;
+    for (let index = 0; index < frames.length - 1; index += 1) {
+      const gap = frames[index + 1].time - frames[index].time;
+      if (gap > largestGap) { largestGap = gap; gapIndex = index; }
+    }
+    if (largestGap < 2) return;
+    const left = frames[gapIndex];
+    const right = frames[gapIndex + 1];
+    const midpoint = Math.floor((left.time + right.time) / 2);
+    const value = Math.round((left.value + right.value) / 2);
     setTimeline((current) => ({
       ...current,
-      tracks: current.tracks.map((track, index) => index === 0 ? { ...track, keyframes: [...track.keyframes.slice(0, -1), { time: Math.round(timeAt / 2), value: 520, easing: "ease-in-out" }, last].sort((a, b) => a.time - b.time) } : track),
+      tracks: current.tracks.map((track, index) => index === 0 ? { ...track, keyframes: [...track.keyframes, { time: midpoint, value, easing: "ease-in-out" }].sort((a, b) => a.time - b.time) } : track),
     }));
     setStatus("A midpoint keyframe was added.");
   }
