@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { findBestSpeechVoice, getBrowserVoiceCapabilities } from "@/lib/voice/browser-capabilities.mjs";
 import { encodeMonoPcm16Wav } from "@/lib/voice/audio-wav.mjs";
+import { inferSpeechLocale } from "@/lib/voice/locale-detection.mjs";
 
 const modes = [
   { id: "solve", label: "Solve", hint: "Work through a problem" },
@@ -73,29 +74,6 @@ function isImageGenerationRequest(value) {
   const markerCount = visualMarkers.filter((pattern) => pattern.test(text)).length;
   const hasVisualSubject = /\b(?:city|metropolis|landscape|ocean|underwater|space station|planet|portrait|character|architecture|skyscraper|forest|mountain|vehicle|spaceship|animal|interior|exterior|scene|coral|submarine|building)\b/i.test(text);
   return text.length >= 100 && markerCount >= 2 && hasVisualSubject;
-}
-
-function inferSpeechLocale(text, preferredLocale = "en-IN") {
-  const value = String(text || "");
-  const has = (pattern) => pattern.test(value);
-  if (has(/\p{Script=Kannada}/u)) return "kn-IN";
-  if (has(/\p{Script=Tamil}/u)) return "ta-IN";
-  if (has(/\p{Script=Telugu}/u)) return "te-IN";
-  if (has(/\p{Script=Malayalam}/u)) return "ml-IN";
-  if (has(/\p{Script=Bengali}/u)) return "bn-IN";
-  if (has(/\p{Script=Gujarati}/u)) return "gu-IN";
-  if (has(/\p{Script=Gurmukhi}/u)) return "pa-IN";
-  if (has(/\p{Script=Oriya}/u)) return "or-IN";
-  if (has(/\p{Script=Devanagari}/u)) return /^(mr|ne|sa|kok)-/i.test(preferredLocale) ? preferredLocale : "hi-IN";
-  if (has(/[ぁ-ゟ゠-ヿ]/u)) return "ja-JP";
-  if (has(/\p{Script=Hangul}/u)) return "ko-KR";
-  if (has(/\p{Script=Han}/u)) return /^zh/i.test(preferredLocale) ? preferredLocale : "zh-CN";
-  if (has(/\p{Script=Cyrillic}/u)) return /^(uk|ru|bg|sr)-/i.test(preferredLocale) ? preferredLocale : "ru-RU";
-  if (has(/\p{Script=Arabic}/u)) return /^(ur|fa|ar)-/i.test(preferredLocale) ? preferredLocale : "ar-SA";
-  if (has(/\p{Script=Hebrew}/u)) return "he-IL";
-  if (has(/\p{Script=Thai}/u)) return "th-TH";
-  if (has(/\p{Script=Greek}/u)) return "el-GR";
-  return preferredLocale;
 }
 
 function evaluateArithmetic(input) {
