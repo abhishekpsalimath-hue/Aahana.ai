@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { findBestSpeechVoice, getBrowserVoiceCapabilities } from "@/lib/voice/browser-capabilities";
 
 const modes = [
   { id: "solve", label: "Solve", hint: "Work through a problem" },
@@ -201,12 +202,28 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [listening, setListening] = useState(false);
   const [speakingMessage, setSpeakingMessage] = useState(null);
   const [voicePreferencesLoaded, setVoicePreferencesLoaded] = useState(false);
+  const [speechVoices, setSpeechVoices] = useState([]);
+  const [speechInputAvailable, setSpeechInputAvailable] = useState(false);
   // Recognition and speech use the browser/device language packs. This list covers
   // major Indian regional languages and widely used international locales.
   const voiceLanguages = [
     ["kn-IN","ಕನ್ನಡ (Kannada)"],["hi-IN","हिन्दी (Hindi)"],["ta-IN","தமிழ் (Tamil)"],["te-IN","తెలుగు (Telugu)"],["ml-IN","മലയാളം (Malayalam)"],["mr-IN","मराठी (Marathi)"],["bn-IN","বাংলা (Bengali)"],["gu-IN","ગુજરાતી (Gujarati)"],["pa-IN","ਪੰਜਾਬੀ (Punjabi)"],["ur-IN","اردو (Urdu)"],["or-IN","ଓଡ଼ିଆ (Odia)"],["as-IN","অসমীয়া (Assamese)"],["ne-NP","नेपाली (Nepali)"],["sa-IN","संस्कृत (Sanskrit)"],["ks-IN","Kashmiri"],["sd-IN","Sindhi"],["kok-IN","Konkani"],["doi-IN","Dogri"],["mni-IN","Manipuri"],["brx-IN","Bodo"],
     ["en-IN","English (India)"],["en-US","English (US)"],["en-GB","English (UK)"],["en-AU","English (Australia)"],["en-CA","English (Canada)"],["es-ES","Español (Spanish)"],["es-MX","Spanish (Mexico)"],["fr-FR","Français (French)"],["fr-CA","French (Canada)"],["de-DE","Deutsch (German)"],["pt-BR","Português (Brazil)"],["pt-PT","Portuguese (Portugal)"],["ar-SA","العربية (Arabic)"],["ar-EG","Arabic (Egypt)"],["zh-CN","中文 (Mandarin)"],["zh-TW","Chinese (Traditional)"],["yue-HK","Cantonese"],["ja-JP","日本語 (Japanese)"],["ko-KR","한국어 (Korean)"],["ru-RU","Русский (Russian)"],["it-IT","Italiano (Italian)"],["nl-NL","Nederlands (Dutch)"],["sv-SE","Swedish"],["no-NO","Norwegian"],["da-DK","Danish"],["fi-FI","Finnish"],["is-IS","Icelandic"],["pl-PL","Polish"],["cs-CZ","Czech"],["sk-SK","Slovak"],["hu-HU","Hungarian"],["ro-RO","Romanian"],["bg-BG","Bulgarian"],["el-GR","Greek"],["tr-TR","Türkçe (Turkish)"],["he-IL","עברית (Hebrew)"],["th-TH","ไทย (Thai)"],["vi-VN","Tiếng Việt (Vietnamese)"],["id-ID","Bahasa Indonesia"],["ms-MY","Bahasa Melayu"],["fil-PH","Filipino"],["sw-KE","Swahili"],["af-ZA","Afrikaans"],["uk-UA","Ukrainian"],["hr-HR","Croatian"],["sr-RS","Serbian"],["sl-SI","Slovenian"],["lt-LT","Lithuanian"],["lv-LV","Latvian"],["et-EE","Estonian"],["fa-IR","Persian"],["am-ET","Amharic"]
   ];
+
+  useEffect(() => {
+    const refreshCapabilities = () => {
+      const recognitionAvailable = Boolean(window.SpeechRecognition || window.webkitSpeechRecognition);
+      const synthesisAvailable = Boolean(window.speechSynthesis);
+      const voices = synthesisAvailable ? window.speechSynthesis.getVoices() : [];
+      const capabilities = getBrowserVoiceCapabilities({ recognitionAvailable, synthesisAvailable, voices });
+      setSpeechInputAvailable(capabilities.inputAvailable);
+      setSpeechVoices(voices);
+    };
+    refreshCapabilities();
+    window.speechSynthesis?.addEventListener?.("voiceschanged", refreshCapabilities);
+    return () => window.speechSynthesis?.removeEventListener?.("voiceschanged", refreshCapabilities);
+  }, []);
 
   // Keep voice choices on this device. This is a convenience preference only;
   // it does not imply that the browser has a speech model for the selected locale.
@@ -272,15 +289,12 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     const utterance = new SpeechSynthesisUtterance(String(text || ""));
     const speechLanguage = inferSpeechLocale(text, voiceLanguage);
     utterance.lang = speechLanguage;
-    const voices = window.speechSynthesis.getVoices();
-    const languagePrefix = speechLanguage.split("-")[0].toLowerCase();
-    const matchingVoice = voices.find((voice) => voice.lang.toLowerCase() === speechLanguage.toLowerCase())
-      || voices.find((voice) => voice.lang.toLowerCase().startsWith(languagePrefix));
-    if (matchingVoice) {
-      utterance.voice = matchingVoice;
-    } else {
-      setError(`Your device has no installed speech voice for ${speechLanguage}. Text replies will still work; install that language's speech pack in device settings to hear it.`);
+    const matchingVoice = findBestSpeechVoice(speechVoices, speechLanguage);
+    if (!matchingVoice) {
+      setError(`Your device has no installed speech voice for ${speechLanguage}. Text replies remain available; install that language's speech pack or connect a multilingual speech provider.`);
+      return;
     }
+    utterance.voice = matchingVoice;
     utterance.onend = () => setSpeakingMessage(null);
     utterance.onerror = () => setSpeakingMessage(null);
     setSpeakingMessage(index);
@@ -1033,6 +1047,10 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
             <div className="image-attach-row">
               <select aria-label="Voice input language" value={voiceLanguage} onChange={(event) => setVoiceLanguage(event.target.value)} className="copy-message">{voiceLanguages.map(([code, label]) => <option key={code} value={code}>{label}</option>)}</select>
               <button className="copy-message" type="button" onClick={startVoiceInput} disabled={listening || busy}>{listening ? "Listening…" : "Speak"}</button>
+              <span className="voice-capability-note" role="status">
+                Input: {speechInputAvailable ? "browser available" : "not available"} ·
+                Output for {voiceLanguage}: {findBestSpeechVoice(speechVoices, voiceLanguage) ? "device voice available" : "no device voice"}
+              </span>
               <label className="copy-message" style={{display:"inline-flex",alignItems:"center",gap:6}}>
                 <input type="checkbox" checked={autoSpeak} onChange={(event) => setAutoSpeak(event.target.checked)} />
                 Auto-read replies (text stays visible)
