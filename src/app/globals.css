@@ -441,3 +441,7 @@ button:focus-visible,a:focus-visible{outline-color:#c4a7ff}
 
 .voice-capability-note{align-self:center;color:#aaa4b7;font-size:10px;line-height:1.4;letter-spacing:.1px}
 @media(max-width:760px){.voice-capability-note{width:100%;padding:2px 4px}}
+
+
+.student-mode-shortcut{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:1px solid #69528c;border-radius:9px;background:#211b2d;color:#e5d8ff;text-decoration:none;padding:8px 13px;font-size:12px;font-weight:700;white-space:nowrap}.student-mode-shortcut:hover{background:#302441;border-color:#a987f2}.student-mode-shortcut:focus-visible{outline:2px solid #c4a7ff;outline-offset:3px}
+@media(max-width:760px){.top-actions{gap:6px}.student-mode-shortcut{padding:7px 9px;font-size:11px}.top-actions>span{display:none}}
