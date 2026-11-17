@@ -454,8 +454,8 @@ export default function Interactive3DWorld() {
             <span>EXPLORE CELL STRUCTURES</span>
             <p>Switch between an animal cell and a plant cell. Highlight an organelle to discover its role. The structures are simplified teaching illustrations, not to scale.</p>
             <div className="learning-3d-experiment-control"><strong>Cell type</strong><div role="group" aria-label="Choose cell type">
-              <button type="button" className={modelId === "cell" ? "active" : ""} aria-pressed={modelId === "cell"} onClick={() => { setModelId("cell"); setConceptIndex(0); }}>Animal cell</button>
-              <button type="button" className={modelId === "plant-cell" ? "active" : ""} aria-pressed={modelId === "plant-cell"} onClick={() => { setModelId("plant-cell"); setConceptIndex(0); }}>Plant cell</button>
+              <button type="button" className={modelId === "cell" ? "active" : ""} aria-pressed={modelId === "cell"} onClick={() => { setModelId("cell"); setConceptIndex(0); setEcosystem((current) => ({ ...current, cellFocus: "all" })); }}>Animal cell</button>
+              <button type="button" className={modelId === "plant-cell" ? "active" : ""} aria-pressed={modelId === "plant-cell"} onClick={() => { setModelId("plant-cell"); setConceptIndex(0); setEcosystem((current) => ({ ...current, cellFocus: "all" })); }}>Plant cell</button>
             </div></div>
             <div className="learning-3d-experiment-control"><strong>Highlight structure</strong><div role="group" aria-label="Highlight cell structure">
               {[["all", "All"], ["nucleus", "Nucleus"], ["mitochondria", "Mitochondria"], ...(modelId === "plant-cell" ? [["chloroplasts", "Chloroplasts"], ["vacuole", "Vacuole"], ["cellWall", "Cell wall"]] : [["endoplasmicReticulum", "ER"], ["ribosomes", "Ribosomes"], ["membrane", "Membrane"]])].map(([value, label]) => <button type="button" key={value} className={ecosystem.cellFocus === value ? "active" : ""} aria-pressed={ecosystem.cellFocus === value} onClick={() => setEcosystem((current) => ({ ...current, cellFocus: value }))}>{label}</button>)}
