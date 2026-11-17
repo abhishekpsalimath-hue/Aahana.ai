@@ -473,3 +473,26 @@ test("student 3D scenes render an efficient animated starfield, atmospheric glow
   assert.match(threeD, /const lightY =/);
   assert.match(threeD, /stopAnimation\(\)/);
 });
+
+
+test("Learning Studio teaches with topic-specific context, not disconnected fact dumps", () => {
+  assert.match(route, /LEARNING CONTEXT AND DEPTH/);
+  assert.match(route, /what it is, how it works, why it matters/);
+  assert.match(route, /concrete, topic-specific examples/);
+  assert.match(route, /SCENE CONTINUITY/);
+  assert.match(route, /real-world application or consequence/);
+});
+
+test("Learning Studio enforces visual quality, truthful renderer claims and scientific accuracy", () => {
+  assert.match(route, /VISUAL ART DIRECTION AND TEACHING FIT/);
+  assert.match(route, /scientific-documentary or premium educational-visualisation aesthetic/);
+  assert.match(route, /Never describe a visual as photorealistic, high-resolution, generated or interactive unless the rendered application actually provides those properties/);
+  assert.match(route, /MISCONCEPTION AND ACCURACY CHECK/);
+  assert.match(route, /every number, unit, label, causal claim, sequence, comparison and answer key agrees/);
+});
+
+test("Learning Studio uses learner profile as a real teaching constraint", () => {
+  assert.match(route, /CONTEXTUAL ADAPTATION/);
+  assert.match(route, /grade band, subject, curriculum and language as constraints/);
+  assert.match(route, /never claim syllabus alignment without verified syllabus evidence/);
+});
