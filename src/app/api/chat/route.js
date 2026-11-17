@@ -80,7 +80,7 @@ export async function POST(request) {
     return NextResponse.json({ error: "Please attach one PNG, JPEG or WebP image under 2 MB." }, { status: 400 });
   }
   const mode = ["solve", "create", "write", "build", "improve", "learn"].includes(body?.mode) ? body.mode : "solve";
-  const allowedGradeBands = ["primary", "middle", "secondary", "higher-secondary", "college", "adult", "not-sure"];
+  const allowedGradeBands = ["early-years", "primary", "middle", "secondary", "higher-secondary", "college", "postgraduate", "professional", "adult", "not-sure"];
   const allowedLearningModes = ["story", "visual", "play", "adventure", "talk", "experiment"];
   const allowedLearningSubjects = allLearningSubjects;
   const allowedCurricula = ["Not specified", "CBSE", "ICSE", "Karnataka State Board", "Other Indian State Board", "Cambridge International", "International Baccalaureate (IB)", "England National Curriculum", "US Common Core", "Other / help me choose"];
