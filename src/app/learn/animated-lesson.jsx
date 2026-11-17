@@ -99,9 +99,9 @@ function InteractivePatternBuilder() {
   const [pattern, setPattern] = useState("AB");
   const [choice, setChoice] = useState("");
   const [checked, setChecked] = useState(false);
-  const answer = pattern === "AB" ? "A" : pattern === "AAB" ? "A" : "B";
+  const answer = pattern === "AB" ? "A" : "B";
   const choices = pattern === "AB" ? ["A", "B"] : pattern === "AAB" ? ["A", "B"] : ["A", "B"];
-  const sequence = pattern === "AB" ? ["A","B","A","B","A"] : pattern === "AAB" ? ["A","A","B","A","A"] : ["A","B","B","A","B"];
+  const sequence = pattern === "AB" ? ["A","B","A","B"] : pattern === "AAB" ? ["A","A","B","A","A"] : ["A","B","B","A","B"];
   return <section className="pattern-builder" aria-label="Interactive repeating pattern builder">
     <div className="pattern-builder-heading"><strong>What comes next?</strong><span>Find the part that repeats.</span></div>
     <div className="pattern-builder-sequence" aria-label="Pattern sequence">{sequence.map((item, index) => <span className={"pattern-token pattern-token-" + item.toLowerCase()} key={index}>{item}</span>)}<span className="pattern-token pattern-token-empty" aria-label="Missing next item">?</span></div>
