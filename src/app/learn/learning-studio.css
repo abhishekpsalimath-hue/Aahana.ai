@@ -85,3 +85,34 @@
 @keyframes learning-sparkle{0%,100%{opacity:.72;transform:scale(1)}50%{opacity:1;transform:scale(1.04)}}
 @keyframes learning-celebrate{0%,100%{transform:translateY(0) scale(1);opacity:.8}50%{transform:translateY(-3px) scale(1.08);opacity:1}}
 @media(prefers-reduced-motion:reduce){.learning-mode-icon,.learning-quiz-question,.learning-quiz-sparkle,.learning-celebration{animation:none}.learning-quiz-progress span,.learning-quiz-options button{transition:none}}
+
+/* Subject-specific animated lesson stage */
+.motion-lesson{display:grid;gap:13px;margin-top:4px;padding:16px;border:1px solid #55446f;border-radius:15px;background:linear-gradient(145deg,#1d1729,#12101a)}
+.motion-lesson-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.motion-lesson-head span{font-size:9px;letter-spacing:1.4px;color:#c7b0f4;font-weight:800}
+.motion-lesson-head h3{margin:5px 0 0;font:700 17px Manrope,sans-serif;color:#f5efff}
+.motion-stage{overflow:hidden;border:1px solid #403451;border-radius:12px;background:radial-gradient(ellipse at 50% 40%,#302442,#15121e 72%);padding:10px}
+.motion-art{display:block;width:100%;max-width:520px;height:auto;max-height:220px;margin:auto;overflow:visible}
+.motion-art .motion-piece{transform-origin:160px 82px;animation:motion-piece-turn 5s ease-in-out infinite alternate}
+.motion-art .motion-sun{animation:motion-sun-glow 2.6s ease-in-out infinite alternate}
+.motion-art .motion-orbit{transform-origin:160px 84px;animation:motion-orbit-turn 7s linear infinite}
+.motion-art .motion-rise{stroke-dasharray:8 7;animation:motion-rise-up 2s linear infinite}
+.motion-art .motion-rain{animation:motion-rain-fall .8s linear infinite}
+.motion-art .motion-grow{transform-origin:160px 125px;animation:motion-plant-grow 3s ease-in-out infinite alternate}
+.motion-art .motion-pulse{transform-origin:155px 85px;animation:motion-number-pulse 1.5s ease-in-out infinite}
+.motion-art.paused *{animation-play-state:paused!important}
+.motion-caption{padding:4px 5px 1px;text-align:center;color:#d9c9f5;font-size:12px;font-weight:700}
+.motion-narration{margin:0;color:#e8e2ef;font-size:13px;line-height:1.75;white-space:pre-wrap}
+.motion-action{padding:11px 12px;border-radius:9px;background:#211b2d;color:#d8c9ed;font-size:12px;line-height:1.6}
+.motion-action strong{color:#d5baff}
+.motion-controls{display:flex;flex-wrap:wrap;gap:8px}
+.motion-controls button{border:1px solid #695487;border-radius:9px;padding:9px 12px;background:#292138;color:#f4eaff;font-size:11px;font-weight:700;cursor:pointer}
+.motion-controls button:disabled{opacity:.4;cursor:not-allowed}
+@keyframes motion-piece-turn{to{transform:rotate(8deg) scale(.96)}}
+@keyframes motion-sun-glow{to{filter:drop-shadow(0 0 9px #f3c76b);transform:scale(1.08)}}
+@keyframes motion-orbit-turn{to{transform:rotate(360deg)}}
+@keyframes motion-rise-up{to{stroke-dashoffset:-30}}
+@keyframes motion-rain-fall{to{transform:translateY(8px);opacity:.25}}
+@keyframes motion-plant-grow{to{transform:scaleY(1.14)}}
+@keyframes motion-number-pulse{50%{transform:scale(1.25)}}
+@media(prefers-reduced-motion:reduce){.motion-art *{animation:none!important}}
