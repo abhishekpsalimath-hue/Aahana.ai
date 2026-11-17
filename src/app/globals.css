@@ -1,4 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&family=Syne:wght@500;600;700;800&display=swap');
+500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
 
 :root{color-scheme:dark;--bg:#09090d;--panel:#101016;--panel-2:#15151e;--line:#252431;--text:#f3f0f8;--muted:#9691a4;--lilac:#c4a7ff;--lilac-2:#a987f2}
 *{box-sizing:border-box}
@@ -474,3 +475,46 @@ button:focus-visible,a:focus-visible{outline-color:#c4a7ff}
 @media(prefers-reduced-motion:reduce){
   .founder-welcome-note{animation:none;opacity:1;filter:none;transform:none}
 }
+
+/* Aahana typography identity — expressive display, precise interface, readable learning. */
+:root{
+  --font-display:'Syne',sans-serif;
+  --font-ui:'Space Grotesk',sans-serif;
+  --font-micro:'DM Mono',monospace;
+}
+html,body{font-family:var(--font-ui)}
+button,input,textarea,select{font-family:var(--font-ui)}
+.brand,.auth-brand,.ops-brand{font-family:var(--font-display)!important;font-weight:800;letter-spacing:-1.25px}
+.brand{font-size:23px;letter-spacing:-1.5px}
+.welcome h1,.welcome h1 em{
+  font-family:var(--font-display);font-weight:800;
+  letter-spacing:-.075em;line-height:.99;
+}
+.welcome h1{font-size:clamp(48px,7.2vw,84px)}
+.welcome h1 em{
+  display:inline-block;
+  background:linear-gradient(100deg,#f3eaff 0%,#c7a9ff 38%,#9fdbff 72%,#f3eaff 100%);
+  background-size:220% auto;-webkit-background-clip:text;background-clip:text;color:transparent;
+  animation:aahana-type-shimmer 9s ease-in-out infinite;
+}
+.eyebrow,.side-label,.message-role,.composer-mode,.footer span:first-child{
+  font-family:var(--font-micro);letter-spacing:.13em;text-transform:uppercase;
+}
+.eyebrow{font-size:10px;letter-spacing:.2em}
+.mode,.starter,.topbar,.notice,.composer textarea,.chat-message p,
+.side-item,.history-entry,.project-entry,.student-mode-shortcut{
+  font-family:var(--font-ui);
+}
+.mode{font-weight:600;letter-spacing:-.015em}
+.starter{font-weight:500;letter-spacing:-.015em}
+.composer textarea{font-size:15px;letter-spacing:-.01em}
+.founder-welcome-note p{font-family:var(--font-display);font-weight:600;letter-spacing:-.035em}
+.founder-welcome-note strong{font-family:var(--font-micro);letter-spacing:.1em}
+.auth-card h1,.ops-hero h1,.ops-section h2,.ops-panel h2,.ops-role h3{
+  font-family:var(--font-display)!important;letter-spacing:-.055em;
+}
+@keyframes aahana-type-shimmer{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+@media(max-width:760px){
+ .welcome h1{font-size:clamp(44px,12vw,66px);letter-spacing:-.065em}
+}
+@media(prefers-reduced-motion:reduce){.welcome h1 em{animation:none}}
