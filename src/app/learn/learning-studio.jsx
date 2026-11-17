@@ -321,14 +321,14 @@ export default function LearningStudio({ userEmail = "" }) {
     }
   }
 
-  const saveLearningJourney = useCallback(async (journey) => {
+  const saveLearningJourney = useCallback(async (journey, profile = { subject, gradeBand, curriculum, language }) => {
     setMemoryError("");
     setMemoryNotice("");
     try {
       const response = await fetch("/api/learning-journey", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ journey: { ...journey, subject, gradeBand, curriculum, language } }),
+        body: JSON.stringify({ journey: { ...journey, subject: profile.subject, gradeBand: profile.gradeBand, curriculum: profile.curriculum, language: profile.language } }),
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || "Could not save this learning journey.");
@@ -339,7 +339,7 @@ export default function LearningStudio({ userEmail = "" }) {
       setMemoryError(err.message || "Could not save this learning journey.");
       return false;
     }
-  }, [subject, gradeBand, curriculum, language, loadLearningMemory]);
+  }, [loadLearningMemory]);
 
   async function deleteLearningJourney(id) {
     if (!id || memoryBusy) return;
@@ -402,8 +402,8 @@ export default function LearningStudio({ userEmail = "" }) {
     setError("");
     setBusy(true);
     setMessages((items) => appendUser
-      ? [...items, { role: "user", content: requestText }, { role: "assistant", content: "" }]
-      : items.map((item, index) => index === items.length - 1 && item.role === "assistant" ? { ...item, content: "" } : item));
+      ? [...items, { role: "user", content: requestText, learningMode, profile }, { role: "assistant", content: "", learningMode, profile }]
+      : items.map((item, index) => index === items.length - 1 && item.role === "assistant" ? { ...item, content: "", learningMode, profile } : item));
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
@@ -579,25 +579,28 @@ export default function LearningStudio({ userEmail = "" }) {
       <section className="learning-session">
         <div className="learning-section-heading"><div><span>LET’S BEGIN</span><h2>Your learning conversation</h2></div><span className="learning-session-status">{busy ? "Aahana is thinking…" : "Ready when you are"}</span></div>
         {messages.length > 0 && <div className="learning-conversation" aria-live="polite">
-          {messages.map((item, index) => <article className={item.role === "user" ? "learning-message learner" : "learning-message tutor"} key={index}>
-            <small>{item.role === "user" ? "YOU" : "AAHANA"}</small>
-            {item.content ? (learningMode === "play" && item.role === "assistant" && readQuizPayload(item.content)
-              ? <InteractiveQuiz quiz={readQuizPayload(item.content)} />
-              : item.role === "assistant" && busy && index === messages.length - 1
-                ? <div className="learning-thinking"><i /><i /><i /> {learningMode === "play" ? "Building your quiz" : "Building your interactive lesson"}</div>
-                : item.role === "assistant" && learningMode !== "play"
-                  ? <AnimatedLesson
-                      content={item.content}
-                      topic={messages.slice(0, index).reverse().find((message) => message.role === "user")?.content || ""}
-                      memoryEnabled={learningMemory.enabled}
-                      onSaveJourney={saveLearningJourney}
-                      onRetry={() => {
-                        const previousQuestion = messages.slice(0, index).reverse().find((message) => message.role === "user")?.content;
-                        if (previousQuestion) startLearning(null, previousQuestion, false);
-                      }}
-                    />
-                  : <p>{item.content}</p>) : <div className="learning-thinking"><i /><i /><i /> Preparing your lesson</div>}
-          </article>)}
+          {messages.map((item, index) => {
+            const messageMode = item.learningMode || learningMode;
+            return <article className={item.role === "user" ? "learning-message learner" : "learning-message tutor"} key={index}>
+              <small>{item.role === "user" ? "YOU" : "AAHANA"}</small>
+              {item.content ? (messageMode === "play" && item.role === "assistant" && readQuizPayload(item.content)
+                ? <InteractiveQuiz quiz={readQuizPayload(item.content)} />
+                : item.role === "assistant" && busy && index === messages.length - 1
+                  ? <div className="learning-thinking"><i /><i /><i /> {messageMode === "play" ? "Building your quiz" : "Building your interactive lesson"}</div>
+                  : item.role === "assistant" && messageMode !== "play"
+                    ? <AnimatedLesson
+                        content={item.content}
+                        topic={messages.slice(0, index).reverse().find((message) => message.role === "user")?.content || ""}
+                        memoryEnabled={learningMemory.enabled}
+                        onSaveJourney={(journey) => saveLearningJourney(journey, item.profile)}
+                        onRetry={() => {
+                          const previousQuestion = messages.slice(0, index).reverse().find((message) => message.role === "user")?.content;
+                          if (previousQuestion) startLearning(null, previousQuestion, false);
+                        }}
+                      />
+                    : <p>{item.content}</p>) : <div className="learning-thinking"><i /><i /><i /> Preparing your lesson</div>}
+            </article>;
+          })}
         </div>}
         <form className="learning-composer" onSubmit={startLearning}>
           <label htmlFor="learning-question">What would you like to understand today?</label>
