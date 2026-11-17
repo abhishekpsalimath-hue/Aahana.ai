@@ -102,7 +102,7 @@ const rotatePoint = ([x, y, z], yaw, pitch) => {
 
 function project(point, width, height, zoom) {
   const perspective = 4.8 / (4.8 - point[2] * 0.55);
-  return [width / 2 + point[0] * width * 0.28 * zoom * perspective, height / 2 + point[1] * height * 0.28 * zoom * perspective, point[2]];
+  return [width / 2 + point[0] * width * 0.32 * zoom * perspective, height / 2 + point[1] * height * 0.32 * zoom * perspective, point[2]];
 }
 
 function sphereMesh(radius = 1, latitudes = 18, longitudes = 28, color = "#4da9db") {
@@ -124,7 +124,7 @@ function sphereMesh(radius = 1, latitudes = 18, longitudes = 28, color = "#4da9d
 
 function makeModel(id, ecosystem = {}) {
   if (id === "planet") {
-    return sphereMesh(1, 22, 34, "#328cc4").map((face) => {
+    return sphereMesh(1, 32, 48, "#328cc4").map((face) => {
       const center = face.points.reduce((acc, point) => [acc[0] + point[0] / 3, acc[1] + point[1] / 3, acc[2] + point[2] / 3], [0, 0, 0]);
       const [x, y, z] = center;
       const continentA = ((x + .28) ** 2 / .2 + (y - .24) ** 2 / .28 < 1) || ((x - .38) ** 2 / .12 + (y + .12) ** 2 / .3 < 1);
@@ -316,14 +316,22 @@ function makeModel(id, ecosystem = {}) {
   return faces;
 }
 
+function illuminateFace(color, brightness) {
+  if (!/^#[0-9a-f]{6}$/i.test(color)) return color;
+  const channels = [1, 3, 5].map((start) => parseInt(color.slice(start, start + 2), 16));
+  return `rgb(${channels.map((value) => Math.round(clamp(value * brightness, 0, 255))).join(",")})`;
+}
+
 function drawScene(canvas, modelId, yaw, pitch, zoom, ecosystem = {}) {
   const rect = canvas.getBoundingClientRect();
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const dpr = Math.min(window.devicePixelRatio || 1, 3);
   const width = Math.max(1, Math.round(rect.width * dpr)), height = Math.max(1, Math.round(rect.height * dpr));
   if (canvas.width !== width || canvas.height !== height) { canvas.width = width; canvas.height = height; }
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
   const w = rect.width, h = rect.height;
   ctx.clearRect(0, 0, w, h);
   const glow = ctx.createRadialGradient(w * .5, h * .48, 4, w * .5, h * .48, h * .55);
@@ -357,8 +365,20 @@ function drawScene(canvas, modelId, yaw, pitch, zoom, ecosystem = {}) {
     }
     if (face.pts.length < 3) return;
     ctx.beginPath(); ctx.moveTo(face.pts[0][0], face.pts[0][1]); face.pts.slice(1).forEach((p) => ctx.lineTo(p[0], p[1])); ctx.closePath();
-    ctx.fillStyle = face.color; ctx.globalAlpha = face.solid ? .78 : .88; ctx.fill(); ctx.globalAlpha = 1;
-    if (face.solid) { ctx.strokeStyle = "rgba(237,225,255,.17)"; ctx.lineWidth = .65; ctx.stroke(); }
+    const [a, b, c] = face.pts;
+    const ab = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+    const ac = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
+    const normal = [ab[1] * ac[2] - ab[2] * ac[1], ab[2] * ac[0] - ab[0] * ac[2], ab[0] * ac[1] - ab[1] * ac[0]];
+    const normalLength = Math.hypot(...normal) || 1;
+    const light = Math.max(0, (normal[0] * -.32 + normal[1] * -.42 + normal[2] * .85) / normalLength);
+    const brightness = .76 + light * .34;
+    ctx.fillStyle = illuminateFace(face.color, brightness);
+    ctx.globalAlpha = face.solid ? .94 : .98;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = face.solid ? "rgba(245,239,255,.24)" : "rgba(12,10,20,.14)";
+    ctx.lineWidth = face.solid ? .85 : .38;
+    ctx.stroke();
   });
   if (modelId === "ecosystem" && ecosystem.pollution) {
     const haze = ctx.createLinearGradient(0, 0, 0, h);
