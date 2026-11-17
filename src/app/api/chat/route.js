@@ -82,7 +82,7 @@ export async function POST(request) {
   const mode = ["solve", "create", "write", "build", "improve", "learn"].includes(body?.mode) ? body.mode : "solve";
   const allowedGradeBands = ["primary", "middle", "secondary", "higher-secondary", "college", "adult", "not-sure"];
   const allowedLearningModes = ["story", "visual", "play", "adventure", "talk", "experiment"];
-  const allowedLearningSubjects = ["Anything / explore", "Mathematics", "Science", "Physics", "Chemistry", "Biology", "History", "Geography", "Civics", "English", "Languages", "Computer science", "Technology & AI", "Economics", "Arts & creativity", "Everyday skills"];
+  const allowedLearningSubjects = allLearningSubjects;
   const allowedCurricula = ["Not specified", "CBSE", "ICSE", "Karnataka State Board", "Other Indian State Board", "Cambridge International", "International Baccalaureate (IB)", "England National Curriculum", "US Common Core", "Other / help me choose"];
   const rawLearningProfile = body?.learningProfile && typeof body.learningProfile === "object" ? body.learningProfile : {};
   const learningProfile = mode === "learn" ? {
