@@ -9,6 +9,8 @@ const models = [
   { id: "dna", label: "DNA", subject: "Biology · Genetics", description: "Follow two twisting strands and the connecting base pairs of a DNA helix.", color: "#70c5a0" },
   { id: "cube", label: "3D geometry", subject: "Mathematics", description: "Rotate a cube to see its faces, edges and vertices from different angles.", color: "#c59be8" },
   { id: "terrain", label: "Mountain terrain", subject: "Geography · Geology", description: "Explore a raised terrain surface with peaks, valleys and contour-like depth.", color: "#d59b72" },
+  { id: "cell", label: "Animal cell", subject: "Biology · Life science", description: "Explore a simplified animal cell, its membrane, nucleus and organelles in three dimensions.", color: "#79c8b2" },
+  { id: "solar-system", label: "Solar system", subject: "Astronomy · Space science", description: "Compare the arrangement of the Sun and eight planets along illustrative orbital paths. Distances and sizes are not to scale.", color: "#e7b76a" },
 ];
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
@@ -63,6 +65,34 @@ function makeModel(id) {
     const paths = [0, 1, 2].map((i) => ({ orbit: true, angle: i * Math.PI / 3, color: "#8fc9ef" }));
     const electrons = [0, 1, 2].map((i) => ({ electron: true, angle: i * Math.PI * 2 / 3 }));
     return [...faces, ...paths, ...electrons];
+  }
+  if (id === "cell") {
+    const outer = sphereMesh(.92, 20, 30, "#4f9eaf").map((face) => ({ ...face, color: "#4f9eaf" }));
+    const organelles = [
+      { p: [0, .08, .08], r: .34, c: "#bd83d7" },
+      { p: [-.48, -.2, .12], r: .13, c: "#e9b66c" },
+      { p: [.46, .28, -.18], r: .16, c: "#e9b66c" },
+      { p: [.22, -.42, .3], r: .11, c: "#77c69e" },
+      { p: [-.2, .48, -.28], r: .1, c: "#77c69e" },
+      { p: [.52, -.2, .18], r: .075, c: "#e6d28a" },
+      { p: [-.48, .28, -.2], r: .075, c: "#e6d28a" },
+    ];
+    return [...outer, ...organelles.flatMap((item) => sphereMesh(item.r, 9, 14, item.c).map((face) => ({ ...face, offset: item.p })))];
+  }
+  if (id === "solar-system") {
+    const planets = [
+      { d: .48, r: .045, c: "#a9a6a0", a: .3 }, { d: .72, r: .07, c: "#d8b27a", a: 1.1 },
+      { d: .98, r: .075, c: "#4d9bd0", a: 2.1 }, { d: 1.25, r: .058, c: "#c9785d", a: 2.8 },
+      { d: 1.58, r: .15, c: "#d6b58a", a: 3.7 }, { d: 1.9, r: .13, c: "#d8c18d", a: 4.5 },
+      { d: 2.2, r: .095, c: "#7fc7d2", a: 5.2 }, { d: 2.48, r: .09, c: "#527fc2", a: 5.8 },
+    ];
+    const sun = sphereMesh(.23, 14, 22, "#f4c65e");
+    const paths = planets.map((p) => ({ orbit: true, rx: p.d, ry: p.d * .62, angle: 0, color: "rgba(210,198,230,.55)" }));
+    const worlds = planets.flatMap((p) => {
+      const pos = [Math.cos(p.a) * p.d, 0, Math.sin(p.a) * p.d];
+      return sphereMesh(p.r, 8, 12, p.c).map((face) => ({ ...face, offset: pos }));
+    });
+    return [...paths, ...sun, ...worlds];
   }
   if (id === "dna") {
     const faces = [];
@@ -127,7 +157,7 @@ function drawScene(canvas, modelId, yaw, pitch, zoom) {
   drawables.forEach((face) => {
     if (face.orbit) {
       ctx.save(); ctx.translate(w / 2, h / 2); ctx.rotate(face.angle + yaw * .18);
-      ctx.beginPath(); ctx.ellipse(0, 0, w * .22 * zoom, h * .115 * zoom, pitch * .22, 0, Math.PI * 2);
+      ctx.beginPath(); ctx.ellipse(0, 0, w * .11 * (face.rx || 2) * zoom, h * .055 * (face.ry || 1) * zoom, pitch * .22, 0, Math.PI * 2);
       ctx.strokeStyle = face.color; ctx.lineWidth = 1.4; ctx.globalAlpha = .75; ctx.stroke(); ctx.restore(); return;
     }
     if (face.electron) {
@@ -172,7 +202,7 @@ export function Mini3DModel({ modelId = "planet" }) {
     setRotation({ yaw: dragRef.current.yaw + (event.clientX - dragRef.current.x) * .009, pitch: clamp(dragRef.current.pitch + (event.clientY - dragRef.current.y) * .009, -1.35, 1.35) });
   }
   return <div className="learning-3d-inline">
-    <canvas ref={canvasRef} role="img" aria-label={`Interactive rotating 3D ${modelId} model`} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={() => { dragRef.current = null; }} onPointerCancel={() => { dragRef.current = null; }} onWheel={(event) => { event.preventDefault(); setZoom((value) => clamp(value - event.deltaY * .001, .65, 1.8)); }} />
+    <canvas ref={canvasRef} role="application" tabIndex={0} aria-label={`Interactive rotating 3D ${modelId} model. Drag to rotate, use arrow keys to rotate, and use plus or minus buttons to zoom.`} onKeyDown={(event) => { if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) { event.preventDefault(); setRotation((value) => ({ yaw: value.yaw + (event.key === "ArrowLeft" ? -.12 : event.key === "ArrowRight" ? .12 : 0), pitch: clamp(value.pitch + (event.key === "ArrowUp" ? -.12 : event.key === "ArrowDown" ? .12 : 0), -1.35, 1.35) })); } }} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={() => { dragRef.current = null; }} onPointerCancel={() => { dragRef.current = null; }} onWheel={(event) => { event.preventDefault(); setZoom((value) => clamp(value - event.deltaY * .001, .65, 1.8)); }} />
     <div className="learning-3d-inline-controls">
       <button type="button" onClick={() => setZoom((value) => clamp(value + .12, .65, 1.8))} aria-label="Zoom in">＋</button>
       <button type="button" onClick={() => setZoom((value) => clamp(value - .12, .65, 1.8))} aria-label="Zoom out">−</button>
@@ -217,7 +247,7 @@ export default function Interactive3DWorld() {
       <p className="space-explorer-intro">These are interactive 3D educational models—not flat pictures. Choose a model, drag to rotate it, and zoom in to inspect its structure.</p>
       <div className="learning-3d-layout">
         <div className="learning-3d-viewer">
-          <canvas ref={canvasRef} role="img" aria-label={`Interactive 3D model: ${model.label}. Use the rotation controls to change the viewing angle.`} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp} onWheel={onWheel} />
+          <canvas ref={canvasRef} role="application" tabIndex={0} aria-label={`Interactive 3D model: ${model.label}. Drag or use arrow keys to rotate the viewing angle.`} onKeyDown={(event) => { if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) { event.preventDefault(); setRotation((value) => ({ yaw: value.yaw + (event.key === "ArrowLeft" ? -.12 : event.key === "ArrowRight" ? .12 : 0), pitch: clamp(value.pitch + (event.key === "ArrowUp" ? -.12 : event.key === "ArrowDown" ? .12 : 0), -1.35, 1.35) })); } }} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp} onWheel={onWheel} />
           <div className="learning-3d-controls">
             <button type="button" onClick={() => setZoom((value) => clamp(value + .12, .65, 1.8))} aria-label="Zoom in">＋</button>
             <button type="button" onClick={() => setZoom((value) => clamp(value - .12, .65, 1.8))} aria-label="Zoom out">−</button>
