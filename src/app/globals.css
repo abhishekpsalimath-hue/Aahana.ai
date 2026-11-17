@@ -445,3 +445,38 @@ button:focus-visible,a:focus-visible{outline-color:#c4a7ff}
 
 .student-mode-shortcut{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:1px solid #69528c;border-radius:9px;background:#211b2d;color:#e5d8ff;text-decoration:none;padding:8px 13px;font-size:12px;font-weight:700;white-space:nowrap}.student-mode-shortcut:hover{background:#302441;border-color:#a987f2}.student-mode-shortcut:focus-visible{outline:2px solid #c4a7ff;outline-offset:3px}
 @media(max-width:760px){.top-actions{gap:6px}.student-mode-shortcut{padding:7px 9px;font-size:11px}.top-actions>span{display:none}}
+
+
+/* Aahana founder character: welcome flight + Student Mode teacher companion */
+.aahana-founder-arrival{position:relative;z-index:3;display:flex;align-items:center;justify-content:center;gap:clamp(18px,4vw,58px);min-height:270px;margin:14px auto 24px;max-width:850px;pointer-events:none;animation:founder-arrival-exit 7.4s cubic-bezier(.2,.72,.2,1) 1.2s both}
+.founder-arrival-copy{display:grid;gap:10px;max-width:360px;text-align:left;animation:founder-copy-glow 2.8s ease-in-out infinite alternate}
+.founder-arrival-copy>span,.teacher-companion-copy>span{font-size:10px;letter-spacing:.2em;font-weight:800;color:#c9b5ff}
+.founder-arrival-copy strong{font:800 clamp(25px,4vw,43px)/1.08 Manrope,sans-serif;color:#fff;letter-spacing:-.04em}
+.founder-arrival-copy strong em{font-style:normal;color:#c7adff}
+.founder-arrival-copy small{font-size:13px;color:#c6bfd4}
+.founder-astronaut{position:relative;flex:none;width:clamp(150px,21vw,220px);height:250px;filter:drop-shadow(0 16px 35px #9e7bff55);animation:founder-float 3.8s ease-in-out infinite}
+.founder-astronaut img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 23%;border-radius:48% 48% 28% 28%;border:2px solid #d9caffaa;background:#9cc2d4}
+.astronaut-helmet{position:absolute;left:8%;top:-5%;width:84%;height:56%;border:8px solid #dceaff;border-radius:48% 48% 42% 42%;background:linear-gradient(145deg,#bceaff22,#6d8fbd22);box-shadow:inset 0 0 18px #d8edff88,0 0 0 3px #8c7ed4aa;pointer-events:none}
+.astronaut-helmet i{position:absolute;inset:12% 10% 16%;border-radius:48%;border:1px solid #fff9;background:linear-gradient(135deg,#b7eaff25,#7b6bbd18 52%,#fff2);box-shadow:inset 0 0 22px #d9eaff55}
+.astronaut-suit{position:absolute;bottom:-3%;left:-8%;width:116%;height:34%;border-radius:40% 40% 16% 16%;background:linear-gradient(120deg,#f1f5ff,#9eafd0 48%,#e7ecfa);border:4px solid #fff;box-shadow:inset 0 0 0 3px #8c9ec4}
+.astronaut-suit:before{content:"✦";position:absolute;left:44%;top:18%;color:#7964b4;font-size:23px}
+.astronaut-thruster{position:absolute;right:-18%;bottom:12%;font-size:35px;color:#d8c2ff;text-shadow:0 0 22px #c5a4ff;animation:thruster-pulse .55s ease-in-out infinite alternate}
+.founder-brand-flight{position:absolute;top:8px;left:50%;transform:translateX(-50%);font:800 20px Manrope,sans-serif;color:#f5f0ff;text-shadow:0 0 22px #b99aff;opacity:0;animation:brand-dock 7.4s cubic-bezier(.2,.72,.2,1) 1.2s both}
+.founder-brand-flight b{color:#c7adff}
+@keyframes founder-float{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-13px) rotate(2deg)}}
+@keyframes founder-copy-glow{from{filter:drop-shadow(0 0 0 #a98bff00)}to{filter:drop-shadow(0 0 18px #a98bff44)}}
+@keyframes thruster-pulse{from{transform:scale(.8) rotate(-8deg);opacity:.65}to{transform:scale(1.2) rotate(8deg);opacity:1}}
+@keyframes founder-arrival-exit{0%{opacity:0;transform:translate3d(0,34px,0) scale(.82)}10%{opacity:1;transform:translate3d(0,0,0) scale(1)}43%{opacity:1;transform:translate3d(0,0,0) scale(1)}68%{opacity:1;transform:translate3d(-42vw,-42vh,0) scale(.16)}82%{opacity:.95;transform:translate3d(0,0,0) scale(1.18)}100%{opacity:0;transform:translate3d(0,-10vh,0) scale(1.8)}}
+@keyframes brand-dock{0%,42%{opacity:0;transform:translate(-50%,18px) scale(.7)}62%,74%{opacity:1;transform:translate(-50%,-4px) scale(.8)}100%{opacity:0;transform:translate(-50%,-10px) scale(.65)}}
+.aahana-teacher-companion{position:relative;display:flex;align-items:center;justify-content:space-between;gap:18px;max-width:820px;margin:30px auto 0;padding:18px 24px 0;min-height:210px;border:1px solid #7865a355;border-radius:22px;background:linear-gradient(110deg,#171322dd,#252039bb);overflow:hidden;text-align:left}
+.teacher-companion-copy{position:relative;z-index:2;max-width:440px;padding:12px 0 20px}
+.teacher-companion-copy strong{display:block;margin:8px 0 6px;font:800 clamp(20px,3vw,28px) Manrope,sans-serif;color:#fff}
+.teacher-companion-copy p{margin:0 0 12px;color:#c9c2d7;font-size:13px;line-height:1.6}
+.teacher-companion-copy small{font-size:9px;letter-spacing:.16em;color:#a995d8}
+.teacher-character{position:relative;flex:none;width:180px;height:205px;align-self:flex-end;filter:drop-shadow(0 0 22px #a98bff33)}
+.teacher-character img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 18%;border-radius:48% 48% 0 0;background:#9cc2d4}
+.teacher-cap{position:absolute;top:-7px;left:23%;z-index:2;width:54%;height:27px;border-radius:8px 8px 3px 3px;background:linear-gradient(90deg,#3c315a,#8b75bb,#3c315a);border-top:3px solid #cdbbff;color:#f5eaff;text-align:center;font-size:17px}
+.teacher-coat{position:absolute;z-index:1;bottom:0;left:-9%;width:118%;height:35%;background:linear-gradient(100deg,#f7f3ff,#c7bedf 50%,#f5f1ff);clip-path:polygon(13% 0,38% 12%,50% 28%,62% 12%,87% 0,100% 100%,0 100%);border-radius:18px 18px 0 0}
+.teacher-pointer{position:absolute;z-index:3;right:-5px;top:49%;width:55px;height:4px;border-radius:4px;background:#d9b779;transform:rotate(-35deg);transform-origin:left center;box-shadow:0 0 8px #d9b77966}
+@media(max-width:640px){.aahana-founder-arrival{min-height:240px;gap:8px;margin:10px auto 18px}.founder-arrival-copy{max-width:52%;gap:7px}.founder-arrival-copy>span{font-size:8px;letter-spacing:.12em}.founder-arrival-copy small{font-size:10px}.founder-astronaut{width:125px;height:190px}.astronaut-helmet{border-width:6px}.aahana-teacher-companion{padding:12px 14px 0;min-height:190px;gap:6px}.teacher-character{width:118px;height:175px;margin-right:-6px}.teacher-companion-copy p{font-size:11px}.teacher-companion-copy>span{font-size:8px;letter-spacing:.1em}.teacher-companion-copy small{font-size:8px}}
+@media(prefers-reduced-motion:reduce){.aahana-founder-arrival,.founder-astronaut,.founder-arrival-copy,.astronaut-thruster,.founder-brand-flight{animation:none!important}.aahana-founder-arrival{opacity:1;transform:none}.founder-brand-flight{display:none}}

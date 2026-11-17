@@ -1161,6 +1161,15 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
 
         <div className="welcome">
           {!messages.length && <div className="cosmic-field" aria-hidden="true"><span className="cosmic-nebula" /><span className="cosmic-stars cosmic-stars-far" /><span className="cosmic-stars cosmic-stars-mid" /><span className="cosmic-stars cosmic-stars-near" /><span className="cosmic-core" /></div>}
+          {!messages.length && <div className="aahana-founder-arrival" aria-label="Welcome to Aahana AI">
+            <div className="founder-arrival-copy"><span>YOUR COSMIC COMPANION</span><strong>Welcome to <em>Aahana AI</em></strong><small>Curiosity is your launchpad. Let’s explore.</small></div>
+            <div className="founder-astronaut" aria-hidden="true">
+              <img src="/aahana-founder.webp" alt="" fetchPriority="high" />
+              <span className="astronaut-helmet"><i /></span><span className="astronaut-suit" />
+              <span className="astronaut-thruster">✦</span>
+            </div>
+            <div className="founder-brand-flight" aria-hidden="true">Aahana <b>ai</b></div>
+          </div>}
           <div className="welcome-signal" aria-hidden="true">
             <span className="signal-orbit signal-orbit-one" />
             <span className="signal-orbit signal-orbit-two" />
