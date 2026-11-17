@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { logSystemEvent, recordUserOpsEvent } from "@/lib/operations/server";
 import { buildResearchQuery, rankAndDedupeResearchResults } from "@/lib/research/research-policy.mjs";
+import { getGradeLearningCurriculum } from "@/lib/learning/curriculum-engine.js";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -88,12 +89,18 @@ export async function POST(request) {
   const rawLearningProfile = body?.learningProfile && typeof body.learningProfile === "object" ? body.learningProfile : {};
   const learningProfile = mode === "learn" ? {
     gradeBand: allowedGradeBands.includes(rawLearningProfile.gradeBand) ? rawLearningProfile.gradeBand : "not-sure",
+    schoolGrade: ["1","2","3","4","5","6","7","8","9","10"].includes(String(rawLearningProfile.schoolGrade)) ? Number(rawLearningProfile.schoolGrade) : null,
     subject: allowedLearningSubjects.includes(rawLearningProfile.subject) ? rawLearningProfile.subject : "Anything / explore",
     curriculum: allowedCurricula.includes(rawLearningProfile.curriculum) ? rawLearningProfile.curriculum : "Not specified",
     language: typeof rawLearningProfile.language === "string" && /^[\p{L}\p{M}\s-]{1,35}$/u.test(rawLearningProfile.language.trim()) ? rawLearningProfile.language.trim() : "Use my language",
     learningMode: allowedLearningModes.includes(rawLearningProfile.learningMode) ? rawLearningProfile.learningMode : "talk",
   } : null;
   const isSolarSystemRequest = mode === "learn" && /\b(?:solar system|planets?|sun|mercury|venus|earth|mars|jupiter|saturn|uranus|neptune|planetary orbit)\b/i.test(prompt);
+  const gradeCurriculum = learningProfile?.schoolGrade ? getGradeLearningCurriculum(learningProfile.schoolGrade, learningProfile.subject) : null;
+  const gradeCurriculumGuidance = gradeCurriculum ? [
+    "AUTHORED GRADE " + gradeCurriculum.grade + " " + gradeCurriculum.subject.toUpperCase() + " CORE: Use this board-neutral authored curriculum as the teaching source. Select the most relevant unit for the learner request; do not force an unrelated unit. Curriculum: " + JSON.stringify({ title: gradeCurriculum.title, designPrinciples: gradeCurriculum.designPrinciples, units: gradeCurriculum.units.map((unit) => ({ id: unit.id, title: unit.title, objective: unit.objective, teach: unit.teach, example: unit.example, practice: unit.practice, question: unit.question, options: unit.options, answer: unit.answer, explanation: unit.explanation, checks: unit.checks, lessonDesign: unit.lessonDesign, assessmentDesign: unit.assessmentDesign })) }),
+    "Teach the selected unit faithfully, use its examples and practice as a foundation, and keep its assessment answers correct. You may expand with accurate age-appropriate explanation, but do not contradict the authored unit. Convert its lesson design into the existing interactive lesson format; visual briefs are design guidance, not proof a visual has already been rendered. If the request is outside these units, answer normally at the selected grade level and do not pretend it is covered by this curriculum.",
+  ] : [];
   const learningModeGuidance = {
     story: "Use a memorable, age-appropriate story and explicitly connect its events to the real concept.",
     visual: "Use accurate text diagrams, labelled steps, spatial descriptions and comparisons. Do not claim to have generated an image or animation unless an actual tool result is available.",
@@ -222,7 +229,8 @@ export async function POST(request) {
     `The selected mode is: ${mode}. Match your response to this mode: solve, create, write, build, improve or learn.`,
     ...(learningProfile ? [
       "You are now Aahana Learning Studio: an adaptive tutor for curious school students, college learners and adults. Make learning joyful, welcoming and intellectually serious; never talk down to the learner.",
-      `Learner level: ${learningProfile.gradeBand}. Subject interest: ${learningProfile.subject}. Preferred learning language: ${learningProfile.language}. Learning experience: ${learningProfile.learningMode}.`,
+      `Learner level: ${learningProfile.gradeBand}${learningProfile.schoolGrade ? `, Grade ${learningProfile.schoolGrade}` : ""}. Subject interest: ${learningProfile.subject}. Preferred learning language: ${learningProfile.language}. Learning experience: ${learningProfile.learningMode}.`,
+      ...gradeCurriculumGuidance,
       `Curriculum: ${learningProfile.curriculum}. ${learningProfile.curriculum === "Not specified" ? "Do not assume an exam board or syllabus." : `Align examples, terminology, expected depth and practice style with ${learningProfile.curriculum} when relevant. Do not claim exact syllabus alignment or exam-board coverage unless verified; ask for class, grade or syllabus details when needed.`}`,
       learningProfile.language && learningProfile.language !== "Use my language" ? `Teach in ${learningProfile.language}, preserving important technical terms and explaining them clearly.` : "Teach in the language the learner is using, and adapt naturally if they switch languages.",
       learningModeGuidance[learningProfile.learningMode],
