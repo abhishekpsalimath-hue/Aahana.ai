@@ -237,3 +237,15 @@ test("animated lesson controls and reduced-motion accessibility are present", ()
   assert.match(styles, /\.motion-support-explanation/);
   assert.match(styles, /\.motion-learning-reflection/);
 });
+
+
+test("animated lessons include a friendly companion that celebrates discovery without reacting negatively to mistakes", () => {
+  assert.match(animated, /motion-companion/);
+  assert.match(animated, /A friendly little star companion/);
+  assert.match(animated, /You did it!/);
+  assert.match(animated, /Let's discover together!/);
+  assert.match(animated, /We can try a new way!/);
+  assert.match(styles, /@keyframes buddy-float/);
+  assert.match(styles, /@keyframes buddy-celebrate/);
+  assert.match(styles, /prefers-reduced-motion:reduce/);
+});
