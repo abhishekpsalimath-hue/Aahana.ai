@@ -592,3 +592,26 @@ test("learning catalogue exposes stable, searchable subject records without over
   assert.deepEqual(catalog.findLearningSubjects("x"), []);
   assert.ok(catalog.findLearningSubjects("science", 100).length <= 50);
 });
+
+test("curriculum engine separates discovery from authored curriculum and lesson readiness", async () => {
+  const engine = await import("./curriculum-engine.js");
+  const solarSystemId = "nature-planet-exploration-solar-system";
+  const curriculum = engine.getLearningCurriculum(solarSystemId);
+  assert.ok(curriculum);
+  assert.equal(curriculum.curriculumStatus, "authored");
+  assert.equal(curriculum.lessonStatus, "review-required");
+  assert.equal(curriculum.units.length, 4);
+  assert.ok(curriculum.learningOutcomes.length >= 3);
+  assert.ok(curriculum.units.every((unit) => unit.id && unit.title && unit.outcomes.length));
+  assert.deepEqual(engine.getLearningReadiness(solarSystemId), {
+    subjectId: solarSystemId,
+    discovery: "available",
+    curriculum: "authored",
+    lesson: "review-required",
+    curriculumVersion: 1
+  });
+  const unknown = engine.getLearningReadiness("not-a-real-subject");
+  assert.equal(unknown.discovery, "unknown");
+  assert.equal(unknown.curriculum, "not-authored");
+  assert.equal(engine.getLearningCurriculum("not-a-real-subject"), null);
+});
