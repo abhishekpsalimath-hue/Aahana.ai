@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import "./learning-studio.css";
+import AnimatedLesson, { readMotionLesson } from "./animated-lesson";
 
 const learningModes = [
   { id: "story", title: "Story Mode", icon: "✦", detail: "Turn a difficult idea into a memorable story.", prompt: "Teach me through a vivid, age-appropriate story. Introduce the concept naturally, then connect each part of the story to the real idea." },
@@ -284,6 +285,8 @@ export default function LearningStudio({ userEmail = "" }) {
               ? <InteractiveQuiz quiz={readQuizPayload(item.content)} />
               : learningMode === "play" && item.role === "assistant" && busy && index === messages.length - 1
                 ? <div className="learning-thinking"><i /><i /><i /> Building your quiz</div>
+                : readMotionLesson(item.content)
+                ? <AnimatedLesson lesson={readMotionLesson(item.content)} />
                 : <p>{item.content}</p>) : <div className="learning-thinking"><i /><i /><i /> Preparing your lesson</div>}
           </article>)}
         </div>}
