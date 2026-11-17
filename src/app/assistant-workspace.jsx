@@ -350,13 +350,13 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
           const wav = encodeMonoPcm16Wav(mono, decoded.sampleRate);
           if (wav.size > 15 * 1024 * 1024) throw new Error("This recording is larger than the 15 MB voice upload limit.");
           const form = new FormData();
-          form.append("audio", wav, "aahana-recording.wav");
+          form.append("file", wav, "aahana-recording.wav");
           form.append("locale", voiceLanguage);
           form.append("consent", "true");
           const response = await fetch("/api/voice/transcribe", { method: "POST", body: form });
           const result = await response.json().catch(() => ({}));
           if (!response.ok) throw new Error(result.error || "The private speech service is unavailable or not configured yet.");
-          const transcript = String(result.transcript || "").trim();
+          const transcript = String(result.text || "").trim();
           if (!transcript) throw new Error("The speech service returned an empty transcript.");
           setPrompt((current) => current ? current + " " + transcript : transcript);
           setError("");
