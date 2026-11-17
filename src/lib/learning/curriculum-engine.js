@@ -563,7 +563,7 @@ const additionalAuthoredCurricula = [
     "lessonStatus": "content-authored-review-required"
   }
 ];
-const completeAuthoredCurricula = [...allAuthoredCurricula, ...additionalAuthoredCurricula];\nconst curriculumBySubjectId = new Map(completeAuthoredCurricula.map((item) => [item.subjectId, item]));
+export const completeAuthoredCurricula = [...allAuthoredCurricula, ...additionalAuthoredCurricula];\nconst curriculumBySubjectId = new Map(completeAuthoredCurricula.map((item) => [item.subjectId, item]));
 
 export function getLearningCurriculum(subjectId) {
   return curriculumBySubjectId.get(subjectId) || null;
