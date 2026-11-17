@@ -116,7 +116,7 @@ function sphereMesh(radius = 1, latitudes = 18, longitudes = 28, color = "#4da9d
   return faces;
 }
 
-function makeModel(id) {
+function makeModel(id, ecosystem = {}) {
   if (id === "planet") {
     return sphereMesh(1, 22, 34, "#328cc4").map((face) => {
       const center = face.points.reduce((acc, point) => [acc[0] + point[0] / 3, acc[1] + point[1] / 3, acc[2] + point[2] / 3], [0, 0, 0]);
@@ -183,10 +183,14 @@ function makeModel(id) {
   }
   if (id === "ecosystem") {
     const ground = [], n = 10;
-    for (let z=0;z<n;z++) for(let x=0;x<n;x++){const x0=(x/n-.5)*2.8,x1=((x+1)/n-.5)*2.8,z0=(z/n-.5)*2.2,z1=((z+1)/n-.5)*2.2,y=-.62+.06*Math.sin(x0*3)*Math.cos(z0*2);ground.push({points:[[x0,y,z0],[x1,y,z0],[x1,y,z1],[x0,y,z1]],color:(x+z)%2?"#537e57":"#638d5d",solid:true});}
+    const dry = ecosystem.rainfall === "low";
+    const polluted = Boolean(ecosystem.pollution);
+    const waterPresent = ecosystem.waterSource !== false;
+    for (let z=0;z<n;z++) for(let x=0;x<n;x++){const x0=(x/n-.5)*2.8,x1=((x+1)/n-.5)*2.8,z0=(z/n-.5)*2.2,z1=((z+1)/n-.5)*2.2,y=-.62+.06*Math.sin(x0*3)*Math.cos(z0*2);ground.push({points:[[x0,y,z0],[x1,y,z0],[x1,y,z1],[x0,y,z1]],color:dry?((x+z)%2?"#9a8058":"#a88d61"):((x+z)%2?"#537e57":"#638d5d"),solid:true});}
     const trees=[[-.9,.1,-.45],[-.35,.12,-.65],[.48,.08,-.55],[.95,.08,.1],[-.7,.08,.55],[.25,.1,.58]];
-    const forest=trees.flatMap(([x,y,z],i)=>[{points:[[x,y-.05,z],[x,y+.58,z]],rod:true,color:"#896448"},...sphereMesh(.34,9,13,i%2?"#4f9d68":"#68b879").map(face=>({...face,offset:[x,y+.82,z]})),...sphereMesh(.22,8,12,"#83c98a").map(face=>({...face,offset:[x+.16,y+1.03,z+.05]}))]);
-    return [...ground,{points:[[-1.3,-.55,.2],[-.5,-.53,.1]],rod:true,color:"#62b8d5"},{points:[[-.5,-.53,.1],[.4,-.54,.2]],rod:true,color:"#62b8d5"},...forest];
+    const forest=trees.flatMap(([x,y,z],i)=>[{points:[[x,y-.05,z],[x,y+.58,z]],rod:true,color:"#896448"},...sphereMesh(.34,9,13,dry?"#a18a59":polluted?"#718b61":i%2?"#4f9d68":"#68b879").map(face=>({...face,offset:[x,y+.82,z]})),...sphereMesh(.22,8,12,dry?"#b29a67":polluted?"#87946b":"#83c98a").map(face=>({...face,offset:[x+.16,y+1.03,z+.05]}))]);
+    const stream = waterPresent ? [{points:[[-1.3,-.55,.2],[-.5,-.53,.1]],rod:true,color:"#62b8d5"},{points:[[-.5,-.53,.1],[.4,-.54,.2]],rod:true,color:"#62b8d5"}] : [];
+    return [...ground,...stream,...forest];
   }
   if (id === "engine") {
     const pistons=[-.62,0,.62].flatMap((x,i)=>[{points:[[x,-.4,-.18],[x,.55,-.18]],rod:true,color:i===1?"#d7b46e":"#8fa9c5"},...sphereMesh(.2,9,13,i===1?"#d7b46e":"#91a9c2").map(face=>({...face,offset:[x,.55,-.18]})),{points:[[x,-.4,-.18],[x,-.72,.2]],rod:true,color:"#c4cbd8"}]);
@@ -244,7 +248,7 @@ function makeModel(id) {
   return faces;
 }
 
-function drawScene(canvas, modelId, yaw, pitch, zoom) {
+function drawScene(canvas, modelId, yaw, pitch, zoom, ecosystem = {}) {
   const rect = canvas.getBoundingClientRect();
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
   const width = Math.max(1, Math.round(rect.width * dpr)), height = Math.max(1, Math.round(rect.height * dpr));
@@ -261,7 +265,7 @@ function drawScene(canvas, modelId, yaw, pitch, zoom) {
     const x = (i * 97 % 997) / 997 * w, y = (i * 53 % 991) / 991 * h;
     ctx.fillStyle = "rgba(226,215,255,.35)"; ctx.fillRect(x, y, 1.2, 1.2);
   }
-  const model = makeModel(modelId);
+  const model = makeModel(modelId, ecosystem);
   const drawables = model.map((face) => {
     const offset = face.offset || [0, 0, 0];
     const pts = face.points ? face.points.map((p) => project(rotatePoint([p[0] + offset[0], p[1] + offset[1], p[2] + offset[2]], yaw, pitch), w, h, zoom)) : [];
@@ -288,6 +292,11 @@ function drawScene(canvas, modelId, yaw, pitch, zoom) {
     ctx.fillStyle = face.color; ctx.globalAlpha = face.solid ? .78 : .88; ctx.fill(); ctx.globalAlpha = 1;
     if (face.solid) { ctx.strokeStyle = "rgba(237,225,255,.17)"; ctx.lineWidth = .65; ctx.stroke(); }
   });
+  if (modelId === "ecosystem" && ecosystem.pollution) {
+    const haze = ctx.createLinearGradient(0, 0, 0, h);
+    haze.addColorStop(0, "rgba(155,160,166,.18)"); haze.addColorStop(1, "rgba(155,160,166,.04)");
+    ctx.fillStyle = haze; ctx.fillRect(0, 0, w, h);
+  }
   ctx.fillStyle = "rgba(235,226,255,.72)"; ctx.font = "11px sans-serif"; ctx.textAlign = "center";
   ctx.fillText("DRAG TO ROTATE · SCROLL TO ZOOM", w / 2, h - 17);
 }
@@ -301,12 +310,12 @@ export function Mini3DModel({ modelId = "planet" }) {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const render = () => drawScene(canvas, modelId, rotation.yaw, rotation.pitch, zoom);
+    const render = () => drawScene(canvas, modelId, rotation.yaw, rotation.pitch, zoom, ecosystem);
     render();
     const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(render) : null;
     observer?.observe(canvas);
     return () => observer?.disconnect();
-  }, [modelId, rotation, zoom]);
+  }, [modelId, rotation, zoom, ecosystem]);
   function pointerDown(event) {
     dragRef.current = { x: event.clientX, y: event.clientY, yaw: rotation.yaw, pitch: rotation.pitch };
     event.currentTarget.setPointerCapture(event.pointerId);
@@ -330,6 +339,7 @@ export default function Interactive3DWorld() {
   const [rotation, setRotation] = useState({ yaw: -.55, pitch: -.22 });
   const [zoom, setZoom] = useState(1);
   const [conceptIndex, setConceptIndex] = useState(0);
+  const [ecosystem, setEcosystem] = useState({ rainfall: "regular", waterSource: true, pollution: false });
   const canvasRef = useRef(null);
   const dragRef = useRef(null);
   const model = models.find((item) => item.id === modelId) || models[0];
@@ -372,6 +382,15 @@ export default function Interactive3DWorld() {
         </div>
         <aside className="learning-3d-details">
           <span>NOW EXPLORING</span><h3>{model.label}</h3><small>{model.subject}</small><p>{model.description}</p>
+          {modelId === "ecosystem" && <div className="learning-3d-experiment" aria-label="Forest habitat experiment">
+            <span>TRY A HABITAT EXPERIMENT</span>
+            <p>Change one condition and observe the illustrative habitat. These are qualitative teaching outcomes, not measured ecological predictions.</p>
+            <div className="learning-3d-experiment-control"><strong>Rainfall</strong><div role="group" aria-label="Rainfall level"><button type="button" className={ecosystem.rainfall === "regular" ? "active" : ""} aria-pressed={ecosystem.rainfall === "regular"} onClick={() => setEcosystem((value) => ({ ...value, rainfall: "regular" }))}>Regular</button><button type="button" className={ecosystem.rainfall === "low" ? "active" : ""} aria-pressed={ecosystem.rainfall === "low"} onClick={() => setEcosystem((value) => ({ ...value, rainfall: "low" }))}>Low</button></div></div>
+            <div className="learning-3d-experiment-control"><strong>Water source</strong><button type="button" className={ecosystem.waterSource ? "active" : ""} aria-pressed={ecosystem.waterSource} onClick={() => setEcosystem((value) => ({ ...value, waterSource: !value.waterSource }))}>{ecosystem.waterSource ? "Present" : "Removed"}</button></div>
+            <div className="learning-3d-experiment-control"><strong>Air pollution</strong><button type="button" className={ecosystem.pollution ? "active" : ""} aria-pressed={ecosystem.pollution} onClick={() => setEcosystem((value) => ({ ...value, pollution: !value.pollution }))}>{ecosystem.pollution ? "Higher" : "Lower"}</button></div>
+            <p className="learning-3d-experiment-observation" aria-live="polite">{ecosystem.waterSource && ecosystem.rainfall === "regular" && !ecosystem.pollution ? "Balanced starting scene: the stream is present and foliage is shown as healthy." : `${!ecosystem.waterSource ? "The stream is removed. " : ""}${ecosystem.rainfall === "low" ? "Lower rainfall changes the ground and foliage colours. " : ""}${ecosystem.pollution ? "A visible haze represents an added pollution pressure. " : ""}Discuss which organisms may be affected and why.`}</p>
+            <button type="button" onClick={() => setEcosystem({ rainfall: "regular", waterSource: true, pollution: false })}>Reset experiment</button>
+          </div>}
           <div className="learning-3d-concept-panel" aria-live="polite">
             <span>DISCOVERY GUIDE</span>
             <div className="learning-3d-concept-tabs">
