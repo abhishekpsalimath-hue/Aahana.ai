@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import {
   GRADE_1_MATHEMATICS_CURRICULUM,
   GRADE_1_ENGLISH_CURRICULUM,
@@ -7,6 +8,17 @@ import {
   getGradeLearningCurriculum,
   getGradeCurriculumCoverage
 } from "./grade-curriculum.mjs";
+
+test("the interactive counter board is wired into the lesson visual renderer", () => {
+  const renderer = readFileSync(new URL("../../app/learn/animated-lesson.jsx", import.meta.url), "utf8");
+  const styles = readFileSync(new URL("../../app/learn/learning-studio.css", import.meta.url), "utf8");
+  assert.match(renderer, /"counter-board"/);
+  assert.match(renderer, /InteractiveCounterBoard/);
+  assert.match(renderer, /aria-label="Add one counter"/);
+  assert.match(renderer, /aria-label="Remove one counter"/);
+  assert.match(styles, /\.counter-board-track/);
+  assert.match(styles, /prefers-reduced-motion:reduce/);
+});
 
 test("Grade 1 Mathematics has a complete six-unit authored core", () => {
   const curriculum = getGradeLearningCurriculum(1, "Mathematics");
