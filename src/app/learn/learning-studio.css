@@ -316,3 +316,13 @@
 
 /* Keyboard focus for interactive 3D learning canvases */
 .learning-3d-viewer canvas:focus-visible,.learning-3d-inline canvas:focus-visible{outline:2px solid #d5c2ff;outline-offset:3px}
+
+
+/* Guided discovery prompts inside the 3D learning lab */
+.learning-3d-concept-panel{margin-top:14px;padding:13px;border:1px solid rgba(166,145,205,.28);border-radius:13px;background:rgba(65,49,83,.22)}
+.learning-3d-concept-panel>span{display:block;color:#c7b0f4;font-size:9px;font-weight:800;letter-spacing:1.2px}
+.learning-3d-concept-tabs{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.learning-3d-concept-tabs button{border:1px solid #514365;border-radius:8px;background:#211b2d;color:#eee6fa;padding:6px 9px;font-size:10px;cursor:pointer}
+.learning-3d-concept-tabs button.active{border-color:#c7a9f5;background:#3a2c51;color:#fff}
+.learning-3d-concept-panel strong{display:block;color:#fff;font-size:12px;line-height:1.5}
+.learning-3d-concept-panel p{margin:6px 0 0;color:#c8bfd3;font-size:11px;line-height:1.6}
