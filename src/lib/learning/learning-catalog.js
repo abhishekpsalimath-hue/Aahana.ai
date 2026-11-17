@@ -18,6 +18,9 @@ export const learningCategories = [
   { name: "Practical life skills", subjects: ["Cooking", "Home management", "Basic repairs", "Personal safety", "Road safety", "Travel skills", "Time management", "Decision making", "Problem solving", "First-time technology use", "Sustainable living", "Gardening at home"] },
   { name: "Nature, planet & exploration", subjects: ["Wildlife", "Marine life", "Forests", "Biodiversity", "Climate change", "Conservation", "Space exploration", "Solar System", "Stars and galaxies", "Dinosaurs", "Natural disasters", "Maps and navigation"] },
   { name: "Sports & games", subjects: ["Sports science", "Cricket", "Football", "Basketball", "Badminton", "Chess", "Athletics", "Yoga", "Game design", "Strategy and logic games"] },
+  { name: "Global systems & world affairs", subjects: ["International relations", "Geopolitics", "Diplomacy", "Global governance", "United Nations and international organisations", "International law", "Global trade", "Migration and diaspora studies", "Development studies", "Comparative politics", "Conflict resolution and peace studies", "Human geography", "Globalisation"] },
+  { name: "Cultures & civilisations", subjects: ["World civilisations", "Ancient civilisations", "Indigenous knowledge systems", "Cultural heritage", "Folklore and mythology", "Comparative religion", "World festivals and traditions", "Languages and cultural change", "Ethnomusicology"] },
+  { name: "Earth systems & sustainability", subjects: ["Climate systems", "Climate adaptation", "Ocean currents", "Water resources", "Disaster risk reduction", "Circular economy", "Sustainable cities", "Biodiversity conservation", "Environmental policy", "Energy transitions"] },
   { name: "Research & advanced learning", subjects: ["Scientific method", "Research methodology", "Academic writing", "Statistics for research", "Literature review", "Experimental design", "Data interpretation", "Advanced interdisciplinary topics"] },
 ];
 
