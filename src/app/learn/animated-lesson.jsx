@@ -24,7 +24,7 @@ export function readMotionLesson(content) {
   }
 }
 
-function SceneArt({ visual, paused }) {
+export function AnimatedVisual({ visual, paused = false }) {
   const cls = paused ? "motion-art paused" : "motion-art";
   if (visual === "fraction") return <svg className={cls} viewBox="0 0 320 170" role="img" aria-label="A circle divided into equal fraction parts"><circle cx="160" cy="82" r="58" fill="#211b2d" stroke="#bda4f3" strokeWidth="3"/><path d="M160 24 A58 58 0 0 1 218 82 L160 82Z" fill="#c7a9f5" className="motion-piece"/><path d="M218 82 A58 58 0 0 1 160 140 L160 82Z" fill="#8e75c2"/><path d="M160 140 A58 58 0 0 1 102 82 L160 82Z" fill="#5f4b83"/><path d="M102 82 A58 58 0 0 1 160 24 L160 82Z" fill="#3e3157"/><path d="M160 24V140M102 82H218" stroke="#eee5ff" strokeWidth="2"/><text x="160" y="160" textAnchor="middle" fill="#e8ddfa" fontSize="11">4 equal parts</text></svg>;
   if (visual === "orbit") return <svg className={cls} viewBox="0 0 320 170" role="img" aria-label="A planet moving around a star"><ellipse cx="160" cy="84" rx="112" ry="48" fill="none" stroke="#9b86c5" strokeDasharray="5 5" strokeWidth="2"/><circle cx="160" cy="84" r="22" fill="#f3c76b" className="motion-sun"/><circle cx="272" cy="84" r="9" fill="#83c8ed" className="motion-orbit"/><circle cx="272" cy="84" r="3" fill="#d8f3ff"/><text x="160" y="130" textAnchor="middle" fill="#e8ddfa" fontSize="11">Gravity keeps the orbit curved</text></svg>;
@@ -43,7 +43,7 @@ export default function AnimatedLesson({ lesson }) {
   const scene = lesson.scenes[index];
   return <section className="motion-lesson" aria-label="Animated lesson">
     <div className="motion-lesson-head"><div><span>EXPLORE IT IN MOTION</span><h3>{lesson.title}</h3></div><span>{index + 1} / {lesson.scenes.length}</span></div>
-    <div className="motion-stage"><SceneArt visual={scene.visual} paused={paused}/><div className="motion-caption">{scene.caption}</div></div>
+    <div className="motion-stage"><AnimatedVisual visual={scene.visual} paused={paused}/><div className="motion-caption">{scene.caption}</div></div>
     <p className="motion-narration">{scene.narration}</p>
     <div className="motion-action"><strong>Try this:</strong> {scene.action}</div>
     <div className="motion-controls">
