@@ -16,6 +16,7 @@ const models = [
   { id: "pyramid", label: "Ancient pyramid", subject: "History · Geometry", description: "Rotate a simplified pyramid monument to inspect triangular faces, a square base and its three-dimensional form.", color: "#d7b17c" },
   { id: "ecosystem", label: "Forest ecosystem", subject: "Ecology · Environmental science", description: "Explore a simplified forest habitat with trees, plants, water and terrain. Organisms and relationships are illustrative, not a measured ecosystem.", color: "#77b982" },
   { id: "engine", label: "Mechanical engine", subject: "Engineering · Physics", description: "Inspect a simplified mechanical assembly with a crankshaft, connecting rods and piston-like cylinders. It is a conceptual model, not a working engine simulation.", color: "#91a8c7" },
+  { id: "cart", label: "Force & motion cart", subject: "Physics · Mechanics", description: "Experiment with a small cart to explore how a push and friction affect motion. The movement is a qualitative learning illustration, not a measured physics simulation.", color: "#e2ae70" },
 ];
 
 const modelExplorations = {
@@ -83,6 +84,11 @@ const modelExplorations = {
     { title: "Piston", question: "Which part moves back and forth inside a cylinder?", explanation: "The piston travels up and down inside the cylinder. In an engine, expanding hot gases push it and transfer force to the connecting rod." },
     { title: "Connecting rod", question: "How does the piston pass motion to the crankshaft?", explanation: "The connecting rod links the piston to the crankshaft. It transmits the piston's reciprocating motion to the rotating crank." },
     { title: "Crankshaft", question: "What does the crankshaft do with this motion?", explanation: "The crankshaft converts the piston's back-and-forth movement into rotation that can drive other parts. This model is conceptual, not a working simulation." },
+  ],
+  cart: [
+    { title: "Applied force", question: "What can make the cart speed up?", explanation: "A push is an applied force. When the push is greater than opposing forces, the cart can accelerate in the direction of the net force." },
+    { title: "Friction", question: "Why does the cart resist moving?", explanation: "Friction acts between surfaces in contact and opposes sliding or rolling motion. The amount depends on the surfaces and the physical situation." },
+    { title: "Net force", question: "What happens when the push and friction balance?", explanation: "When forces balance, the net force is zero and acceleration is zero. An already-moving cart can keep moving at constant velocity in an idealised situation." },
   ],
 };
 
@@ -191,6 +197,24 @@ function makeModel(id, ecosystem = {}) {
     const forest=trees.flatMap(([x,y,z],i)=>[{points:[[x,y-.05,z],[x,y+.58,z]],rod:true,color:"#896448"},...sphereMesh(.34,9,13,dry?"#a18a59":polluted?"#718b61":i%2?"#4f9d68":"#68b879").map(face=>({...face,offset:[x,y+.82,z]})),...sphereMesh(.22,8,12,dry?"#b29a67":polluted?"#87946b":"#83c98a").map(face=>({...face,offset:[x+.16,y+1.03,z+.05]}))]);
     const stream = waterPresent ? [{points:[[-1.3,-.55,.2],[-.5,-.53,.1]],rod:true,color:"#62b8d5"},{points:[[-.5,-.53,.1],[.4,-.54,.2]],rod:true,color:"#62b8d5"}] : [];
     return [...ground,...stream,...forest];
+  }
+  if (id === "cart") {
+    const force = clamp(Number(ecosystem.physicsForce ?? 3), 0, 5);
+    const friction = clamp(Number(ecosystem.physicsFriction ?? 1), 0, 5);
+    const displacement = clamp((force - friction) * .16, -0.7, 0.7);
+    const x = displacement;
+    const body = [
+      { points: [[x-.55,-.12,-.18],[x+.55,-.12,-.18],[x+.55,.25,-.18],[x-.55,.25,-.18]], color: "#d89a5b", solid: true },
+      { points: [[x-.55,.25,-.18],[x+.55,.25,-.18],[x+.38,.48,-.18],[x-.38,.48,-.18]], color: "#efc48c", solid: true },
+      { points: [[x-.55,-.12,-.18],[x-.55,.25,-.18],[x-.55,.25,.25],[x-.55,-.12,.25]], color: "#b97845", solid: true },
+      { points: [[x+.55,-.12,-.18],[x+.55,.25,-.18],[x+.55,.25,.25],[x+.55,-.12,.25]], color: "#c98750", solid: true },
+      { points: [[-1.35,-.56,0],[1.35,-.56,0]], rod: true, color: "#9ba6b8" },
+      { points: [[x-.28,-.25,-.18],[x-.28,-.25,.25]], rod: true, color: "#64748b" },
+      { points: [[x+.28,-.25,-.18],[x+.28,-.25,.25]], rod: true, color: "#64748b" },
+    ];
+    const wheels = [-.28,.28].flatMap(dx => [-.18,.25].flatMap(z => sphereMesh(.17,9,13,"#596579").map(face=>({...face,offset:[x+dx,-.35,z]}))));
+    const forceArrow = force > 0 ? [{points:[[x+.58,.05,.18],[x+.58+force*.12,.05,.18]],rod:true,color:"#e7bd63"},{points:[[x+.58+force*.12,.05,.18],[x+.48+force*.12,.13,.18]],rod:true,color:"#e7bd63"},{points:[[x+.58+force*.12,.05,.18],[x+.48+force*.12,-.03,.18]],rod:true,color:"#e7bd63"}] : [];
+    return [...body,...wheels,...forceArrow];
   }
   if (id === "engine") {
     const phase = ecosystem.engineCycle || "intake";
@@ -341,7 +365,7 @@ export default function Interactive3DWorld() {
   const [rotation, setRotation] = useState({ yaw: -.55, pitch: -.22 });
   const [zoom, setZoom] = useState(1);
   const [conceptIndex, setConceptIndex] = useState(0);
-  const [ecosystem, setEcosystem] = useState({ rainfall: "regular", waterSource: true, pollution: false, engineCycle: "intake" });
+  const [ecosystem, setEcosystem] = useState({ rainfall: "regular", waterSource: true, pollution: false, engineCycle: "intake", physicsForce: 3, physicsFriction: 1 });
   const canvasRef = useRef(null);
   const dragRef = useRef(null);
   const model = models.find((item) => item.id === modelId) || models[0];
@@ -384,6 +408,18 @@ export default function Interactive3DWorld() {
         </div>
         <aside className="learning-3d-details">
           <span>NOW EXPLORING</span><h3>{model.label}</h3><small>{model.subject}</small><p>{model.description}</p>
+          {modelId === "cart" && <div className="learning-3d-experiment" aria-label="Force and friction experiment">
+            <span>TRY A FORCE & FRICTION EXPERIMENT</span>
+            <p>Change the push and surface friction. Watch the cart shift to explore the idea of net force. This is a qualitative illustration, not a measured prediction.</p>
+            <div className="learning-3d-experiment-control"><label htmlFor="physics-force">Applied push: {ecosystem.physicsForce}/5</label>
+              <input id="physics-force" type="range" min="0" max="5" step="1" value={ecosystem.physicsForce} onChange={(event) => setEcosystem((current) => ({ ...current, physicsForce: Number(event.target.value) }))} />
+            </div>
+            <div className="learning-3d-experiment-control"><label htmlFor="physics-friction">Surface friction: {ecosystem.physicsFriction}/5</label>
+              <input id="physics-friction" type="range" min="0" max="5" step="1" value={ecosystem.physicsFriction} onChange={(event) => setEcosystem((current) => ({ ...current, physicsFriction: Number(event.target.value) }))} />
+            </div>
+            <p className="learning-3d-experiment-observation" aria-live="polite">{ecosystem.physicsForce === ecosystem.physicsFriction ? "Balanced forces: the net force is zero in this simplified comparison. Acceleration is zero." : ecosystem.physicsForce > ecosystem.physicsFriction ? "The push is greater than the opposing friction in this illustration, so the cart shifts in the push direction." : "Friction is greater than the push in this illustration, so the net force points opposite the push."}</p>
+            <button type="button" onClick={() => setEcosystem((current) => ({ ...current, physicsForce: 3, physicsFriction: 1 }))}>Reset experiment</button>
+          </div>}
           {modelId === "engine" && <div className="learning-3d-experiment" aria-label="Four-stroke engine learning experiment">
             <span>EXPLORE THE FOUR-STROKE CYCLE</span>
             <p>Choose a stage to see a simplified piston position. This is a conceptual teaching model, not a timed or mechanically accurate engine simulation.</p>
