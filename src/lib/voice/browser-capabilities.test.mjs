@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {
   findBestSpeechVoice,
   getBrowserVoiceCapabilities,
-} from "./browser-capabilities.js";
+} from "./browser-capabilities.mjs";
 
 const voices = [
   { name: "English India", lang: "en-IN" },
