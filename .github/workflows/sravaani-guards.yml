@@ -11,6 +11,8 @@ on:
       - "src/app/api/voice/speech/route.js"
       - "src/app/api/chat/route.js"
       - "src/app/assistant-workspace.jsx"
+      - "src/app/learn/**"
+      - "src/lib/learning/**"
       - "src/lib/voice/audio-wav.*"
       - "src/lib/voice/locale-detection.*"
       - "src/lib/voice/locale-support.*"
@@ -18,6 +20,7 @@ on:
   push:
     branches:
       - "feat/aahana-voice-runtime-adapters"
+      - "feat/aahana-learning-studio"
     paths:
       - "services/sravaani-asr/**"
       - ".github/workflows/sravaani-guards.yml"
@@ -28,6 +31,8 @@ on:
       - "src/app/api/voice/speech/route.js"
       - "src/app/api/voice/capabilities/route.js"
       - "src/app/api/chat/route.js"
+      - "src/app/learn/**"
+      - "src/lib/learning/**"
       - "src/lib/voice/audio-wav.*"
       - "src/lib/voice/locale-detection.*"
       - "src/lib/voice/locale-support.*"
@@ -65,6 +70,8 @@ jobs:
         run: node --test ../../src/lib/voice/chat-language-policy.test.mjs
       - name: Test device speech fallback policy
         run: node --test ../../src/lib/voice/speech-fallback-policy.test.mjs
+      - name: Test Aahana Learning Studio policy and integration
+        run: node --test ../../src/lib/learning/learning-studio-policy.test.mjs
       - name: Syntax-check authenticated transcription route
         run: node --check ../../src/app/api/voice/transcribe/route.js
       - name: Syntax-check authenticated speech synthesis route
