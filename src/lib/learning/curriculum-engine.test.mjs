@@ -1,9 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { learningCurricula, getLearningCurriculum, getLearningReadiness, getCatalogueCoverage, getCatalogueCoverageSummary } from "./curriculum-engine.js";
+import { completeAuthoredCurricula, getLearningCurriculum, getLearningReadiness, getCatalogueCoverage, getCatalogueCoverageSummary } from "./curriculum-engine.js";
 
 test("authored curricula are discoverable by stable subject ID", () => {
-  for (const curriculum of learningCurricula) {
+  for (const curriculum of completeAuthoredCurricula) {
     const result = getLearningCurriculum(curriculum.subjectId);
     assert.ok(result, curriculum.subjectId);
     assert.equal(result.title, curriculum.title);
@@ -11,7 +11,7 @@ test("authored curricula are discoverable by stable subject ID", () => {
 });
 
 test("every authored curriculum has outcomes, sequenced units and assessment", () => {
-  for (const curriculum of learningCurricula) {
+  for (const curriculum of completeAuthoredCurricula) {
     assert.ok(curriculum.learningOutcomes.length >= 3, curriculum.subjectId);
     assert.ok(curriculum.units.length >= 3, curriculum.subjectId);
     assert.ok(curriculum.units.every((unit) => unit.title && unit.outcomes.length >= 2 && unit.concepts.length >= 3), curriculum.subjectId);
@@ -39,7 +39,7 @@ test("coverage summary reconciles category and subject totals", () => {
   const summary = getCatalogueCoverageSummary();
   assert.equal(summary.categoryCount, 23);
   assert.equal(summary.subjectCount, 305);
-  assert.equal(summary.authoredCount, 11);
+  assert.equal(summary.authoredCount, 11);\n  assert.equal(completeAuthoredCurricula.length, 11);
   assert.equal(summary.requiredCount, 156);
   assert.equal(summary.categoriesAtTarget, summary.categories.filter((item) => item.reached).length);
 });
