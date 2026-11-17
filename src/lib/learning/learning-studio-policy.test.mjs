@@ -579,3 +579,18 @@ test("learning universe supports cross-category subject discovery and direct sub
   assert.match(studio, /setSubject\(selectedSubject \|\| selectedCategory\?\.subjects\?\.\[0\]/);
   assert.match(styles, /\.learning-topic-results/);
 });
+
+
+test("learning catalogue exposes stable, searchable subject records without overstating lesson readiness", async () => {
+  const catalog = await import(new URL("./learning-catalog.js", import.meta.url));
+  assert.equal(catalog.learningSubjectIndex.length, catalog.allLearningSubjects.length +
+    catalog.learningCategories.reduce((sum, category) => sum + category.subjects.length, 0) -
+    catalog.allLearningSubjects.length);
+  assert.ok(catalog.learningSubjectIndex.every((item) => item.id && item.category && item.subject && item.status === "discoverable"));
+  assert.equal(new Set(catalog.learningSubjectIndex.map((item) => item.id)).size, catalog.learningSubjectIndex.length);
+  const physics = catalog.findLearningSubjects("phys", 5);
+  assert.ok(physics.some((item) => item.subject === "Physics"));
+  assert.ok(catalog.findLearningSubjects("KANNADA").some((item) => item.subject === "Kannada"));
+  assert.deepEqual(catalog.findLearningSubjects("x"), []);
+  assert.ok(catalog.findLearningSubjects("science", 100).length <= 50);
+});
