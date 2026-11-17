@@ -136,6 +136,7 @@ test("non-quiz learning modes request a validated structured animated lesson", (
   assert.match(route, /aahana_motion_lesson_v1/);
   assert.match(route, /visual \(exactly one of fraction, orbit, water-cycle, plant-growth, number-line, molecule, concept-map\)/);
   assert.match(route, /3 to 5 scenes/);
+  assert.match(route, /challenge \(object with question string, options array of exactly 3 short strings/);
   assert.match(route, /fraction, orbit, water-cycle, plant-growth, number-line, molecule, concept-map/);
   assert.match(studio, /readMotionLesson\(item\.content\)/);
   assert.match(studio, /<AnimatedLesson lesson=/);
@@ -145,6 +146,10 @@ test("animated lesson renderer validates scene data and provides subject-specifi
   assert.match(animated, /function readMotionLesson\(content\)/);
   assert.match(animated, /value\?\.type !== "aahana_motion_lesson_v1"/);
   assert.match(animated, /value\.scenes\.length < 2/);
+  assert.match(animated, /scene\.challenge\.options\.length === 3/);
+  assert.match(animated, /scene\.challenge\.correctIndex/);
+  assert.match(animated, /scene\.challenge\.hint/);
+  assert.match(animated, /scene\.challenge\.explanation/);
   for (const visual of ["fraction", "orbit", "water-cycle", "plant-growth", "number-line", "molecule", "concept-map"]) {
     assert.ok(animated.includes(`"${visual}"`), `Missing visual renderer: ${visual}`);
   }
@@ -153,6 +158,10 @@ test("animated lesson renderer validates scene data and provides subject-specifi
   assert.match(animated, /Previous/);
   assert.match(animated, /Next scene/);
   assert.match(animated, /Replay lesson/);
+  assert.match(animated, /disabled={!solved}/);
+  assert.match(animated, /Good thinking/);
+  assert.match(animated, /Solve this little discovery to unlock the next scene/);
+  assert.match(animated, /useMemo\(\(\) => readMotionLesson\(content\), \[content\]\)/);
 });
 
 test("animated lesson controls and reduced-motion accessibility are present", () => {
@@ -162,4 +171,6 @@ test("animated lesson controls and reduced-motion accessibility are present", ()
   assert.match(styles, /@media\(prefers-reduced-motion:reduce\)/);
   assert.match(styles, /@keyframes motion-orbit-turn/);
   assert.match(styles, /@keyframes motion-plant-grow/);
+  assert.match(styles, /\.motion-prediction-options/);
+  assert.match(styles, /\.motion-feedback\.gentle/);
 });
