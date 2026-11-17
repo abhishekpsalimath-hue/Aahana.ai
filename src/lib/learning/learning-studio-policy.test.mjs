@@ -266,3 +266,25 @@ test("interactive Solar System explorer offers eight selectable worlds, facts, o
   assert.match(styles, /@keyframes space-sun-pulse/);
   assert.match(styles, /prefers-reduced-motion:reduce/);
 });
+
+
+test("Solar System explorer includes an eight-planet mission, accessible progress, and supportive retry challenges", () => {
+  assert.match(studio, /const \[visited, setVisited\] = useState\(\["earth"\]\)/);
+  assert.match(studio, /const \[solved, setSolved\] = useState\(\[\]\)/);
+  assert.match(studio, /SPACE EXPLORER MISSION/);
+  assert.match(studio, /role="progressbar" aria-label="Planet discoveries completed"/);
+  assert.match(studio, /stars earned/);
+  assert.match(studio, /PLANET SIZE LAB/);
+  assert.match(studio, /Compare its equatorial diameter with Earth/);
+  assert.match(studio, /world\.sizeFactor/);
+  assert.match(studio, /world\.diameter/);
+  assert.match(studio, /DISCOVERY CHALLENGE/);
+  assert.match(studio, /Good exploring—try another answer/);
+  assert.match(studio, /Brilliant discovery! You earned a star/);
+  assert.match(styles, /\.space-mission-progress/);
+  assert.match(styles, /\.space-size-lab/);
+  assert.match(styles, /\.space-mission-challenge/);
+  for (const planet of ["Mercury", "Venus", "Earth", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune"]) {
+    assert.ok(studio.includes('name: "' + planet + '"'), "Missing mission world: " + planet);
+  }
+});
