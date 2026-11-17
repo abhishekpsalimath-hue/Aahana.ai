@@ -408,8 +408,8 @@ test("student mode includes an interactive 3D model lab rather than image-only l
   const miniModel = world.slice(world.indexOf("export function Mini3DModel"), world.indexOf("export default function Interactive3DWorld"));
   const mainLab = world.slice(world.indexOf("export default function Interactive3DWorld"));
   assert.doesNotMatch(miniModel, /drawScene\(canvas, modelId, rotation\.yaw, rotation\.pitch, zoom, ecosystem\)/);
-  assert.match(mainLab, /drawScene\(canvas, modelId, rotation\.yaw, rotation\.pitch, zoom, ecosystem(?:, time)?\)/);
-  assert.match(mainLab, /\[modelId, rotation, zoom, ecosystem\]/);
+  assert.match(mainLab, /drawScene\(canvas, modelId, rotation\.yaw, rotation\.pitch, zoom, ecosystem, time, selectedPlanet\)/);
+  assert.match(mainLab, /\[modelId, selectedPlanet, rotation, zoom, ecosystem\]/);
   assert.match(world, /Connecting rod/);
   assert.match(world, /aria-live="polite"/);
   for (const concept of ["Equator & poles", "Molecular shape", "Atomic identity", "Base pairs", "Vertices", "Contour lines", "Mitochondria", "Planet groups", "Chloroplasts", "Body circuit", "History & engineering"]) {
@@ -467,7 +467,7 @@ test("student 3D scenes use a real Three.js WebGL renderer with subject-specific
   assert.match(threeD, /new THREE\.WebGLRenderer/);
   assert.match(threeD, /THREE\.ACESFilmicToneMapping/);
   assert.match(threeD, /new THREE\.HemisphereLight/);
-  assert.match(threeD, /function makeSceneModel\(group,id\)/);
+  assert.match(threeD, /function makeSceneModel\(group,id,selectedPlanet=null\)/);
   assert.match(threeD, /function makeEarthTexture\(\)/);
   assert.match(threeD, /new THREE\.CanvasTexture/);
   assert.match(threeD, /new THREE\.TubeGeometry/);
@@ -476,7 +476,7 @@ test("student 3D scenes use a real Three.js WebGL renderer with subject-specific
   assert.match(threeD, /renderer\.dispose\(\)/);
   assert.match(threeD, /devicePixelRatio\|\|1,1\.75/);
   assert.match(threeD, /function animateScene\(canvas, render\)/);
-  assert.doesNotMatch(threeD, /requestAnimationFrame\(tick\)/);
+  assert.match(threeD, /window\.requestAnimationFrame\(tick\)/);
   assert.match(threeD, /setPointerCapture/);
   assert.match(threeD, /onWheel/);
 });
