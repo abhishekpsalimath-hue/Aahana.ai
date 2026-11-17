@@ -33,7 +33,7 @@ test("chat API accepts the dedicated learn mode and validates learner profile fi
 });
 
 test("reopening a learning session restores its original mode and learner profile", () => {
-  assert.match(studio, /let resumedProfile = \{ gradeBand, subject, curriculum, language, learningMode \}/);
+  assert.match(studio, /let resumedProfile = \\{ gradeBand, schoolGrade, subject, curriculum, language, learningMode \\}/);
   assert.match(studio, /learningMode: resumedProfile\.learningMode/);
   assert.match(studio, /profile: resumedProfile/);
   assert.match(studio, /setLearningMode\(resumedProfile\.learningMode\)/);
