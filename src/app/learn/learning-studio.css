@@ -165,3 +165,41 @@
 .learning-roadmap-item small{color:#aaa2b7;font-size:10px;line-height:1.5}
 .learning-roadmap-item button{flex:0 0 auto;border:1px solid #80699f;border-radius:8px;padding:8px 11px;background:#292138;color:#f0e8fa;font-size:10px;font-weight:700;cursor:pointer}
 @media(max-width:640px){.learning-roadmap-item{align-items:flex-start}.learning-roadmap-item>div{overflow-wrap:anywhere}}
+
+
+/* Wonder layer: cinematic depth, floating light and a joyful discovery burst. */
+.motion-stage{position:relative;isolation:isolate;background:
+  radial-gradient(ellipse at 50% 45%,#57407188 0%,#30244266 34%,transparent 72%),
+  radial-gradient(ellipse at 18% 18%,#8e78bd22,transparent 40%),
+  linear-gradient(155deg,#191426,#100e18 72%);box-shadow:inset 0 0 42px #a98bda12}
+.motion-stage:before,.motion-stage:after{content:"";position:absolute;inset:8% 12%;border:1px solid #c9b2f51a;border-radius:50%;pointer-events:none;z-index:-1;transform:rotate(-13deg);animation:motion-halo-drift 12s ease-in-out infinite alternate}
+.motion-stage:after{inset:17% 20%;border-color:#9edaf01c;transform:rotate(18deg);animation-delay:-5s;animation-duration:16s}
+.motion-stardust{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:2}
+.motion-stardust i{position:absolute;left:var(--x);top:var(--y);width:4px;height:4px;border-radius:50%;background:#fff2c9;box-shadow:0 0 8px 2px #d7c2ff99;opacity:.45;animation:motion-twinkle var(--duration) ease-in-out infinite alternate;animation-delay:var(--delay)}
+.motion-stardust i:nth-child(1){--x:9%;--y:22%;--duration:2.1s;--delay:-.4s}
+.motion-stardust i:nth-child(2){--x:17%;--y:72%;--duration:2.8s;--delay:-1.2s}
+.motion-stardust i:nth-child(3){--x:28%;--y:13%;--duration:1.9s;--delay:-.8s}
+.motion-stardust i:nth-child(4){--x:39%;--y:83%;--duration:2.6s;--delay:-1.6s}
+.motion-stardust i:nth-child(5){--x:51%;--y:9%;--duration:2.2s;--delay:-.3s}
+.motion-stardust i:nth-child(6){--x:63%;--y:78%;--duration:3s;--delay:-1.1s}
+.motion-stardust i:nth-child(7){--x:74%;--y:19%;--duration:2.4s;--delay:-1.7s}
+.motion-stardust i:nth-child(8){--x:86%;--y:64%;--duration:2s;--delay:-.6s}
+.motion-stardust i:nth-child(9){--x:94%;--y:31%;--duration:2.7s;--delay:-1.4s}
+.motion-stardust i:nth-child(10){--x:12%;--y:49%;--duration:2.3s;--delay:-1.9s}
+.motion-stardust i:nth-child(11){--x:82%;--y:88%;--duration:1.8s;--delay:-.9s}
+.motion-stardust i:nth-child(12){--x:46%;--y:27%;--duration:2.9s;--delay:-1.3s}
+.motion-art{position:relative;z-index:1;filter:drop-shadow(0 10px 22px #09071188)}
+.motion-art circle,.motion-art path,.motion-art ellipse{transition:filter .35s ease}
+.motion-stage.is-celebrating{border-color:#b99ae9;box-shadow:inset 0 0 55px #b99ae933,0 0 24px #b99ae922;animation:motion-discovery-bloom .9s ease-out}
+.motion-stage.is-celebrating .motion-stardust i{width:6px;height:6px;opacity:1;box-shadow:0 0 12px 4px #f5dcaeaa;animation:motion-star-burst 1.1s cubic-bezier(.16,.8,.3,1) both}
+.motion-stage.is-celebrating .motion-caption{color:#fff0c7;text-shadow:0 0 16px #d8b8ff;animation:motion-caption-pop .55s cubic-bezier(.16,.8,.3,1) both}
+.motion-feedback.success{padding:10px 12px;border:1px solid #8c79b455;border-radius:9px;background:linear-gradient(100deg,#2a2340,#1c2930);color:#e8f5dc;animation:motion-feedback-glow .8s ease-out}
+.motion-feedback.success strong{color:#f7df9f}
+.motion-data-track span{background:linear-gradient(90deg,#9c83d4,#c5a7f3,#a8d9e8);box-shadow:0 0 12px #c7a9f566}
+@keyframes motion-twinkle{from{transform:scale(.45);opacity:.18}to{transform:scale(1.35);opacity:.9}}
+@keyframes motion-halo-drift{from{transform:rotate(-13deg) scale(.96);opacity:.35}to{transform:rotate(5deg) scale(1.04);opacity:.85}}
+@keyframes motion-discovery-bloom{0%{box-shadow:inset 0 0 0 #b99ae900}45%{box-shadow:inset 0 0 70px #b99ae955,0 0 32px #b99ae944}100%{box-shadow:inset 0 0 55px #b99ae933,0 0 24px #b99ae922}}
+@keyframes motion-star-burst{0%{transform:translate(0,18px) scale(.2);opacity:0}45%{opacity:1}100%{transform:translate(var(--drift,0),-20px) scale(1.25);opacity:.15}}
+@keyframes motion-caption-pop{0%{transform:scale(.96);opacity:.55}65%{transform:scale(1.04)}100%{transform:scale(1);opacity:1}}
+@keyframes motion-feedback-glow{0%{transform:scale(.985);box-shadow:0 0 0 #c7a9f500}55%{transform:scale(1.01);box-shadow:0 0 22px #c7a9f533}100%{transform:scale(1);box-shadow:0 0 0 #c7a9f500}}
+@media(prefers-reduced-motion:reduce){.motion-stage:before,.motion-stage:after,.motion-stardust i,.motion-stage.is-celebrating,.motion-stage.is-celebrating .motion-caption,.motion-feedback.success{animation:none!important}.motion-stage.is-celebrating{box-shadow:inset 0 0 24px #b99ae922}.motion-art circle,.motion-art path,.motion-art ellipse{transition:none}}
