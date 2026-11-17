@@ -19,6 +19,61 @@ const models = [
 ];
 
 const modelExplorations = {
+  planet: [
+    { title: "Equator & poles", question: "How does the equator divide the globe?", explanation: "The equator is an imaginary circle halfway between the North and South Poles. It separates the Northern and Southern Hemispheres." },
+    { title: "Rotation", question: "What causes day and night on Earth?", explanation: "Earth rotates around its axis. The side facing the Sun experiences day while the opposite side experiences night." },
+    { title: "Latitude & longitude", question: "How can we describe a place on a globe?", explanation: "Latitude measures position north or south of the equator. Longitude measures position east or west of the Prime Meridian. Together they help locate places." },
+  ],
+  molecule: [
+    { title: "Atoms", question: "What are the three spheres representing?", explanation: "This simplified water molecule has one oxygen atom joined to two hydrogen atoms. The spheres represent atoms, not their exact relative sizes." },
+    { title: "Bonds", question: "What holds the atoms together?", explanation: "Covalent bonds form when atoms share pairs of electrons. The O–H bonds hold the water molecule together." },
+    { title: "Molecular shape", question: "Why is water not a straight-line molecule?", explanation: "The two O–H bonds form a bent shape because electron pairs around oxygen repel one another. The H–O–H angle is about 104.5 degrees." },
+  ],
+  atom: [
+    { title: "Nucleus", question: "Where are protons and neutrons found?", explanation: "Protons and neutrons are concentrated in the tiny, dense nucleus at an atom's centre. Protons have positive charge; neutrons have no electric charge." },
+    { title: "Electrons", question: "Where are electrons found?", explanation: "Electrons occupy quantum states around the nucleus. The paths shown here are a simplified teaching picture, not literal planetary orbits." },
+    { title: "Atomic identity", question: "What makes one element different from another?", explanation: "The number of protons in the nucleus is the atomic number. Every atom of a given element has the same number of protons." },
+  ],
+  dna: [
+    { title: "Double helix", question: "What shape do the two DNA strands form?", explanation: "DNA has two strands twisted into a double helix, often compared with a gently twisted ladder." },
+    { title: "Base pairs", question: "Which bases pair across the two strands?", explanation: "Adenine pairs with thymine, and cytosine pairs with guanine. These complementary pairs help DNA store and copy genetic information." },
+    { title: "Genes", question: "How do genes relate to DNA?", explanation: "A gene is a stretch of DNA whose sequence contributes to a functional product, often a protein or functional RNA. DNA contains many genes and other regions." },
+  ],
+  cube: [
+    { title: "Faces", question: "How many flat faces does a cube have?", explanation: "A cube has six square faces. Opposite faces are parallel and all edges have equal length." },
+    { title: "Edges", question: "Where do two faces meet?", explanation: "Two faces meet along an edge. A cube has twelve edges, and each edge has the same length." },
+    { title: "Vertices", question: "What is a vertex?", explanation: "A vertex is a corner where edges meet. A cube has eight vertices, six faces and twelve edges." },
+  ],
+  terrain: [
+    { title: "Peaks & valleys", question: "How can you tell a peak from a valley?", explanation: "A peak is a locally high area of land. A valley is lower ground between hills or mountains, often shaped by rivers or glaciers." },
+    { title: "Erosion", question: "What can slowly reshape a mountain slope?", explanation: "Water, wind, ice and gravity wear away and move rock and soil. This process is called erosion and it can reshape landscapes over long periods." },
+    { title: "Contour lines", question: "What does a contour line on a map connect?", explanation: "A contour line joins places with the same elevation. Close contour lines usually indicate a steeper slope than widely spaced lines." },
+  ],
+  cell: [
+    { title: "Cell membrane", question: "What surrounds and protects the cell?", explanation: "The cell membrane forms a selectively permeable boundary. It helps regulate which substances enter and leave the cell." },
+    { title: "Nucleus", question: "Where is most of a cell's DNA stored?", explanation: "In most animal cells, the nucleus contains most of the cell's genetic material and helps coordinate cell activities." },
+    { title: "Mitochondria", question: "Which organelles help release usable energy?", explanation: "Mitochondria are sites of cellular respiration and help make ATP, a molecule cells use to transfer energy. This model simplifies their shape and number." },
+  ],
+  "solar-system": [
+    { title: "The Sun", question: "Why do the planets orbit the Sun?", explanation: "The Sun's gravity keeps the planets in orbit. The planets also move sideways, so they continually fall around the Sun rather than straight into it." },
+    { title: "Planet groups", question: "How do the inner planets differ from the outer giants?", explanation: "Mercury, Venus, Earth and Mars are rocky inner planets. Jupiter and Saturn are gas giants; Uranus and Neptune are ice giants." },
+    { title: "Scale", question: "Are the planet sizes and distances shown accurately to scale?", explanation: "No. This arrangement is a learning illustration. Real planetary distances are enormous compared with the planet sizes, so a single view cannot show both clearly." },
+  ],
+  "plant-cell": [
+    { title: "Cell wall", question: "What gives a plant cell extra support?", explanation: "A rigid cell wall made mainly of cellulose surrounds the cell membrane and helps a plant cell maintain its shape." },
+    { title: "Chloroplasts", question: "Where does photosynthesis take place?", explanation: "Photosynthesis takes place in chloroplasts. Their chlorophyll absorbs light energy used to build sugars from carbon dioxide and water." },
+    { title: "Vacuole", question: "Why is the large central vacuole useful?", explanation: "The central vacuole stores water and dissolved substances. Its pressure against the cell wall helps keep many plant tissues firm." },
+  ],
+  heart: [
+    { title: "Four chambers", question: "How many chambers does a human heart have?", explanation: "The human heart has two atria and two ventricles. The atria receive blood; the ventricles pump blood out of the heart." },
+    { title: "Lung circuit", question: "Where does blood go to collect oxygen?", explanation: "The right side pumps blood to the lungs. There, blood releases carbon dioxide and takes up oxygen before returning to the left side." },
+    { title: "Body circuit", question: "Which side pumps oxygen-rich blood around the body?", explanation: "The left ventricle pumps oxygen-rich blood through the aorta to the body. This is a simplified educational overview, not a medical model." },
+  ],
+  pyramid: [
+    { title: "Square base", question: "What shape is the base of this pyramid?", explanation: "This model has a square base. A square pyramid has one square base and four triangular side faces." },
+    { title: "Triangular faces", question: "How many triangular sides meet at the top?", explanation: "Four triangular faces meet at the apex of a square pyramid. The apex is the highest point where the side faces meet." },
+    { title: "History & engineering", question: "Why were large stone pyramids challenging to build?", explanation: "Builders had to plan foundations, move and position heavy stone blocks, organise skilled workers and manage materials. Specific construction methods varied by place and period." },
+  ],
   ecosystem: [
     { title: "Producers", question: "Where does most energy in this habitat begin?", explanation: "Green plants are producers. They capture energy from sunlight and store some of it as chemical energy through photosynthesis." },
     { title: "Food web", question: "What connects plants, herbivores and predators?", explanation: "A food web links many food chains. Energy moves when organisms eat plants or other organisms; arrows point from the food to the eater." },
