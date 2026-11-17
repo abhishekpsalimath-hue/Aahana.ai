@@ -356,6 +356,16 @@ test("student mode includes an interactive 3D model lab rather than image-only l
   for (const stage of ["intake", "compression", "power", "exhaust"]) assert.ok(world.includes(stage), `Missing engine cycle stage: ${stage}`);
   assert.match(world, /Restart cycle/);
   assert.match(world, /BUILD & EXPLORE MOLECULES/);
+  assert.match(world, /EXPLORE CELL STRUCTURES/);
+  assert.match(world, /Interactive cell biology lab/);
+  assert.match(world, /cellFocus/);
+  assert.match(world, /chloroplasts/);
+  assert.match(world, /vacuole/);
+  assert.match(world, /cellWall/);
+  assert.match(world, /endoplasmicReticulum/);
+  assert.match(world, /selectively permeable boundary/);
+  assert.match(world, /Plant cells have a cell wall, chloroplasts and a large central vacuole/);
+  assert.match(world, /Animal cells have a cell membrane, nucleus, mitochondria and other organelles/);
   assert.match(world, /chemistryMolecule/);
   assert.match(world, /chemistryFocus/);
   assert.match(world, /chemistryShowBonds/);
