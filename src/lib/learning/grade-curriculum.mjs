@@ -57,7 +57,7 @@ const lessonDesign = {
     extension: "Find an object that combines more than one shape."
   },
   "patterns-and-sorting": {
-    visual: "concept-map",
+    visual: "pattern-builder",
     interaction: "pattern-builder",
     visualBrief: "A colourful pattern-building strip with movable shapes and objects; learners choose the repeating rule and extend it.",
     scenes: [
