@@ -450,3 +450,19 @@ test("interactive lessons show accessible scene progress and recover from journe
   assert.match(styles, /\.motion-progress-track/);
   assert.match(styles, /\.motion-save-error/);
 });
+
+
+test("student 3D scenes render an efficient animated starfield, atmospheric glow and moving light while respecting reduced motion", () => {
+  const threeDPath = fileURLToPath(new URL("../../app/learn/interactive-3d-world.jsx", import.meta.url));
+  const threeD = readFileSync(threeDPath, "utf8");
+  assert.match(threeD, /function animateScene\(canvas, render\)/);
+  assert.match(threeD, /requestAnimationFrame\(tick\)/);
+  assert.match(threeD, /time - lastFrame >= 33/);
+  assert.match(threeD, /prefers-reduced-motion: reduce/);
+  assert.match(threeD, /for \(let i = 0; i < 64; i\+\+\)/);
+  assert.match(threeD, /const twinkle =/);
+  assert.match(threeD, /const modelAura = ctx\.createRadialGradient/);
+  assert.match(threeD, /const lightX =/);
+  assert.match(threeD, /const lightY =/);
+  assert.match(threeD, /stopAnimation\(\)/);
+});
