@@ -72,14 +72,14 @@ function makeEarthTexture() {
   return texture;
 }
 const solarPlanets = [
-  { id: "mercury", label: "Mercury", distance: .78, radius: .065, color: "#8f8b85", family: "Rocky planet", description: "The smallest planet and the closest to the Sun. Its ancient surface is heavily cratered, and it has almost no atmosphere." },
-  { id: "venus", label: "Venus", distance: 1.08, radius: .105, color: "#d8b878", family: "Terrestrial planet", description: "A rocky world wrapped in thick clouds. Its intense greenhouse effect makes it the hottest planet in our Solar System." },
-  { id: "earth", label: "Earth", distance: 1.43, radius: .115, color: "#428bd1", family: "Terrestrial planet", description: "Our ocean-rich home, with a nitrogen- and oxygen-rich atmosphere and the only confirmed life known to us." },
-  { id: "mars", label: "Mars", distance: 1.78, radius: .085, color: "#bd684e", family: "Terrestrial planet", description: "A cold, dusty rocky world with giant volcanoes, ancient river-shaped landscapes and two small moons." },
-  { id: "jupiter", label: "Jupiter", distance: 2.23, radius: .27, color: "#d1ad86", family: "Gas giant", description: "The largest planet. Its atmosphere contains broad cloud bands and the long-lived Great Red Spot." },
-  { id: "saturn", label: "Saturn", distance: 2.72, radius: .23, color: "#d9c69b", family: "Gas giant", description: "A gas giant famous for its broad, bright rings made mostly of countless pieces of water ice and rock." },
-  { id: "uranus", label: "Uranus", distance: 3.18, radius: .17, color: "#91d3d6", family: "Ice giant", description: "An ice giant with a blue-green atmosphere and an extreme axial tilt, making it appear to rotate on its side." },
-  { id: "neptune", label: "Neptune", distance: 3.62, radius: .17, color: "#477bd7", family: "Ice giant", description: "A distant ice giant with a deep blue atmosphere and some of the fastest winds measured on any planet." },
+  { id: "mercury", label: "Mercury", distance: .78, radius: .065, color: "#8f8b85", family: "Rocky planet", diameter: "4,879 km", orbit: "0.39 AU", description: "The smallest planet and the closest to the Sun. Its ancient surface is heavily cratered, and it has almost no atmosphere." },
+  { id: "venus", label: "Venus", distance: 1.08, radius: .105, color: "#d8b878", family: "Terrestrial planet", diameter: "12,104 km", orbit: "0.72 AU", description: "A rocky world wrapped in thick clouds. Its intense greenhouse effect makes it the hottest planet in our Solar System." },
+  { id: "earth", label: "Earth", distance: 1.43, radius: .115, color: "#428bd1", family: "Terrestrial planet", diameter: "12,742 km", orbit: "1.00 AU", description: "Our ocean-rich home, with a nitrogen- and oxygen-rich atmosphere and the only confirmed life known to us." },
+  { id: "mars", label: "Mars", distance: 1.78, radius: .085, color: "#bd684e", family: "Terrestrial planet", diameter: "6,779 km", orbit: "1.52 AU", description: "A cold, dusty rocky world with giant volcanoes, ancient river-shaped landscapes and two small moons." },
+  { id: "jupiter", label: "Jupiter", distance: 2.23, radius: .27, color: "#d1ad86", family: "Gas giant", diameter: "139,820 km", orbit: "5.20 AU", description: "The largest planet. Its atmosphere contains broad cloud bands and the long-lived Great Red Spot." },
+  { id: "saturn", label: "Saturn", distance: 2.72, radius: .23, color: "#d9c69b", family: "Gas giant", diameter: "116,460 km", orbit: "9.58 AU", description: "A gas giant famous for its broad, bright rings made mostly of countless pieces of water ice and rock." },
+  { id: "uranus", label: "Uranus", distance: 3.18, radius: .17, color: "#91d3d6", family: "Ice giant", diameter: "50,724 km", orbit: "19.2 AU", description: "An ice giant with a blue-green atmosphere and an extreme axial tilt, making it appear to rotate on its side." },
+  { id: "neptune", label: "Neptune", distance: 3.62, radius: .17, color: "#477bd7", family: "Ice giant", diameter: "49,244 km", orbit: "30.05 AU", description: "A distant ice giant with a deep blue atmosphere and some of the fastest winds measured on any planet." },
 ];
 
 function makePlanetTexture(planetId) {
@@ -436,7 +436,7 @@ function renderThreeScene(canvas, id, yaw, pitch, zoom, time = 0, selectedPlanet
   });
 
   const baseCamera = id === "solar-system"
-    ? selectedPlanet ? 4.25 : Math.max(5.8, 8.5 / Math.max(state.camera.aspect, .65))
+    ? selectedPlanet ? 4.25 : Math.max(5.8, 11.8 / Math.max(state.camera.aspect, .65))
     : 5.8;
   state.camera.position.z = baseCamera / zoom;
   state.camera.updateProjectionMatrix();
@@ -898,6 +898,7 @@ export default function Interactive3DWorld() {
         </div>
         <aside className="learning-3d-details">
           <span>{selectedPlanetInfo ? "PLANET EXPLORER" : "NOW EXPLORING"}</span><h3>{displayedTitle}</h3><small>{selectedPlanetInfo ? selectedPlanetInfo.family : model.subject}</small><p>{displayedDescription}</p>
+          {selectedPlanetInfo && <p className="learning-planet-stats">Diameter <strong>{selectedPlanetInfo.diameter}</strong><span>·</span> Average solar distance <strong>{selectedPlanetInfo.orbit}</strong></p>}
           {selectedPlanetInfo && <button type="button" className="learning-planet-back" onClick={() => { setSelectedPlanet(null); setRotation({ yaw: -.55, pitch: -.22 }); setZoom(1); }}>← Back to all eight planets</button>}
           {modelId === "solar-system" && !selectedPlanetInfo && <p className="learning-planet-instruction">Tap any planet in the 3D scene or choose its name below to enter its world.</p>}
           {modelId === "solar-system" && <div className="learning-planet-picker" role="group" aria-label="Choose a planet">{solarPlanets.map((planet) => <button type="button" key={planet.id} className={selectedPlanet === planet.id ? "active" : ""} aria-pressed={selectedPlanet === planet.id} onClick={() => { setSelectedPlanet(planet.id); setRotation({ yaw: -.28, pitch: -.12 }); setZoom(1); }}>{planet.label}</button>)}</div>}
