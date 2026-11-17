@@ -440,7 +440,7 @@ test("3D learning media uses bounded high-DPI WebGL rendering and responsive sce
   const threeDPath = fileURLToPath(new URL("../../app/learn/interactive-3d-world.jsx", import.meta.url));
   const threeD = readFileSync(threeDPath, "utf8");
   assert.match(threeD, /renderer\.setPixelRatio\(Math\.min\(window\.devicePixelRatio\|\|1,1\.75\)\)/);
-  assert.match(threeD, /renderer\.setSize\(width,height,false\)/);
+  assert.match(threeD, /renderer\.setSize\(width,\s*height,\s*false\)/);
   assert.match(threeD, /PerspectiveCamera/);
   assert.match(threeD, /ResizeObserver/);
   assert.match(styles, /\.learning-3d-viewer canvas\{[^}]*height:430px/);
