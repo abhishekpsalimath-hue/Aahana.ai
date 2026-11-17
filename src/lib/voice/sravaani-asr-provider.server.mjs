@@ -79,7 +79,7 @@ export function createSraVaaniAsrProvider({
       if (!audioBlob.size || audioBlob.size > MAX_AUDIO_BYTES) {
         throw new SpeechProviderError("WAV audio must be between 1 byte and 15 MB.", "INVALID_AUDIO_SIZE");
       }
-      if (audioBlob.type && audioBlob.type !== "audio/wav" && audioBlob.type !== "audio/x-wav") {
+      if (audioBlob.type && !["audio/wav", "audio/x-wav", "audio/wave", "application/octet-stream"].includes(audioBlob.type)) {
         throw new SpeechProviderError("SraVaani accepts WAV audio only.", "INVALID_AUDIO");
       }
 
