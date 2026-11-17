@@ -626,7 +626,7 @@ export default function LearningStudio({ userEmail = "" }) {
         <form className="learning-composer" onSubmit={startLearning}>
           <label htmlFor="learning-question">What would you like me to help you understand?</label>
           <textarea id="learning-question" value={question} onChange={(event) => setQuestion(event.target.value)} rows={3} maxLength={8000} disabled={busy} placeholder="Hi Aahana, I am [your name]. I am in Grade 4. Can you explain fractions with a simple picture?" />
-          <div><span>{learningModes.find((item) => item.id === learningMode)?.detail}</span><button type="submit" disabled={!question.trim() || busy}>{busy ? "Learning…" : "Start learning"}</button></div>
+          <div><span>Aahana will choose the best way to explain it.</span><button type="submit" disabled={!question.trim() || busy}>{busy ? "Learning…" : "Start learning"}</button></div>
         </form>
         {error && <p className="learning-error" role="alert">{error}</p>}
         <p className="learning-note">You only need to ask. Aahana can choose a simple explanation, example, diagram or interactive lesson when that capability is available.</p>
