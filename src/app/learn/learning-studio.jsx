@@ -393,15 +393,17 @@ export default function LearningStudio({ userEmail = "" }) {
     }
   }
 
-  async function startLearning(event) {
-    event.preventDefault();
-    const requestText = question.trim();
+  async function startLearning(event, retryText = "", appendUser = true) {
+    event?.preventDefault();
+    const requestText = (retryText || question).trim();
     if (!requestText || busy) return;
     const profile = { gradeBand, subject, curriculum, language, learningMode };
-    setQuestion("");
+    if (!retryText) setQuestion("");
     setError("");
     setBusy(true);
-    setMessages((items) => [...items, { role: "user", content: requestText }, { role: "assistant", content: "" }]);
+    setMessages((items) => appendUser
+      ? [...items, { role: "user", content: requestText }, { role: "assistant", content: "" }]
+      : items.map((item, index) => index === items.length - 1 && item.role === "assistant" ? { ...item, content: "" } : item));
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
@@ -581,11 +583,19 @@ export default function LearningStudio({ userEmail = "" }) {
             <small>{item.role === "user" ? "YOU" : "AAHANA"}</small>
             {item.content ? (learningMode === "play" && item.role === "assistant" && readQuizPayload(item.content)
               ? <InteractiveQuiz quiz={readQuizPayload(item.content)} />
-              : learningMode === "play" && item.role === "assistant" && busy && index === messages.length - 1
-                ? <div className="learning-thinking"><i /><i /><i /> Building your quiz</div>
-                : readMotionLesson(item.content)
-                ? <AnimatedLesson content={item.content} memoryEnabled={learningMemory.enabled} onSaveJourney={saveLearningJourney} />
-                : <p>{item.content}</p>) : <div className="learning-thinking"><i /><i /><i /> Preparing your lesson</div>}
+              : item.role === "assistant" && busy && index === messages.length - 1
+                ? <div className="learning-thinking"><i /><i /><i /> {learningMode === "play" ? "Building your quiz" : "Building your interactive lesson"}</div>
+                : item.role === "assistant" && learningMode !== "play"
+                  ? <AnimatedLesson
+                      content={item.content}
+                      memoryEnabled={learningMemory.enabled}
+                      onSaveJourney={saveLearningJourney}
+                      onRetry={() => {
+                        const previousQuestion = messages.slice(0, index).reverse().find((message) => message.role === "user")?.content;
+                        if (previousQuestion) startLearning(null, previousQuestion, false);
+                      }}
+                    />
+                  : <p>{item.content}</p>) : <div className="learning-thinking"><i /><i /><i /> Preparing your lesson</div>}
           </article>)}
         </div>}
         <form className="learning-composer" onSubmit={startLearning}>
