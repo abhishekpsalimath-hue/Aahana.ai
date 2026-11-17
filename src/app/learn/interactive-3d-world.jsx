@@ -349,7 +349,7 @@ function drawScene(canvas, modelId, yaw, pitch, zoom, ecosystem = {}, time = 0) 
           : { center: "rgba(91,73,130,.5)", mid: "#211b31", edge: "#100f1b", aura: "rgba(180,151,255,.12)" };
   const pulse = .48 + Math.sin(time * .0012) * .045;
   const glow = ctx.createRadialGradient(w * .5, h * .46, 3, w * .5, h * .46, h * .68);
-  glow.addColorStop(0, palette.center.replace(/\\.\\d+\\)$/, `,${pulse})`));
+  glow.addColorStop(0, palette.center);
   glow.addColorStop(.58, palette.mid);
   glow.addColorStop(1, palette.edge);
   ctx.fillStyle = glow;
