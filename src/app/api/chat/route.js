@@ -92,7 +92,7 @@ export async function POST(request) {
     language: typeof rawLearningProfile.language === "string" && /^[\p{L}\p{M}\s-]{1,35}$/u.test(rawLearningProfile.language.trim()) ? rawLearningProfile.language.trim() : "Use my language",
     learningMode: allowedLearningModes.includes(rawLearningProfile.learningMode) ? rawLearningProfile.learningMode : "talk",
   } : null;
-  const isSolarSystemRequest = mode === "learn" && /\\b(?:solar system|planets?|sun|mercury|venus|earth|mars|jupiter|saturn|uranus|neptune|planetary orbit)\\b/i.test(prompt);
+  const isSolarSystemRequest = mode === "learn" && /\b(?:solar system|planets?|sun|mercury|venus|earth|mars|jupiter|saturn|uranus|neptune|planetary orbit)\b/i.test(prompt);
   const learningModeGuidance = {
     story: "Use a memorable, age-appropriate story and explicitly connect its events to the real concept.",
     visual: "Use accurate text diagrams, labelled steps, spatial descriptions and comparisons. Do not claim to have generated an image or animation unless an actual tool result is available.",
