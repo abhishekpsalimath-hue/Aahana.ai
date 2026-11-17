@@ -124,7 +124,7 @@ export const GRADE_1_MATHEMATICS_CURRICULUM = {
 export function getGradeLearningCurriculum(grade, subject) {
   if (Number(grade) !== 1) return null;
   const normalizedSubject = String(subject).trim().toLowerCase();
-  if (normalizedSubject === "mathematics" || normalizedSubject === "maths" || normalizedSubject === "math") return GRADE_1_MATHEMATICS_CURRICULUM;
+  if (["mathematics", "maths", "math", "arithmetic", "maths practice", "number systems", "mathematical reasoning"].includes(normalizedSubject)) return GRADE_1_MATHEMATICS_CURRICULUM;
   if (normalizedSubject === "english") return GRADE_1_ENGLISH_CURRICULUM;
   if (["evs", "environmental studies", "environmental science"].includes(normalizedSubject)) return GRADE_1_EVS_CURRICULUM;
   return null;
