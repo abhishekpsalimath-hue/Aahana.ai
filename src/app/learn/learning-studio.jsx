@@ -108,6 +108,12 @@ export default function LearningStudio({ userEmail = "" }) {
   const [historyError, setHistoryError] = useState("");
   const [loadingConversationId, setLoadingConversationId] = useState(null);
 
+  const [learningMemory, setLearningMemory] = useState({ enabled: false, journeys: [] });
+  const [memoryLoading, setMemoryLoading] = useState(true);
+  const [memoryBusy, setMemoryBusy] = useState(false);
+  const [memoryError, setMemoryError] = useState("");
+  const [memoryNotice, setMemoryNotice] = useState("");
+
   const loadLearningHistory = useCallback(async () => {
     setHistoryLoading(true);
     setHistoryError("");
@@ -123,7 +129,86 @@ export default function LearningStudio({ userEmail = "" }) {
     }
   }, []);
 
-  useEffect(() => { loadLearningHistory(); }, [loadLearningHistory]);
+
+  const loadLearningMemory = useCallback(async () => {
+    setMemoryLoading(true);
+    setMemoryError("");
+    try {
+      const response = await fetch("/api/learning-journey", { cache: "no-store" });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Could not load your learning journey.");
+      setLearningMemory({ enabled: result.enabled === true, journeys: result.journeys || [] });
+    } catch (err) {
+      setMemoryError(err.message || "Could not load your learning journey.");
+    } finally {
+      setMemoryLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { loadLearningHistory(); loadLearningMemory(); }, [loadLearningHistory, loadLearningMemory]);
+
+  async function updateLearningMemoryConsent() {
+    if (memoryBusy) return;
+    setMemoryBusy(true);
+    setMemoryError("");
+    setMemoryNotice("");
+    try {
+      const action = learningMemory.enabled ? "disable" : "enable";
+      const response = await fetch("/api/memories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Could not update private memory.");
+      await loadLearningMemory();
+      setMemoryNotice(action === "enable"
+        ? "Private learning memory is on. You choose which completed journeys to save."
+        : "Private learning memory is off. Existing saved journeys remain available until you delete them.");
+    } catch (err) {
+      setMemoryError(err.message || "Could not update private memory.");
+    } finally {
+      setMemoryBusy(false);
+    }
+  }
+
+  const saveLearningJourney = useCallback(async (journey) => {
+    setMemoryError("");
+    setMemoryNotice("");
+    try {
+      const response = await fetch("/api/learning-journey", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ journey: { ...journey, subject, gradeBand, curriculum, language } }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Could not save this learning journey.");
+      await loadLearningMemory();
+      setMemoryNotice("Saved to your private learning journey.");
+      return true;
+    } catch (err) {
+      setMemoryError(err.message || "Could not save this learning journey.");
+      return false;
+    }
+  }, [subject, gradeBand, curriculum, language, loadLearningMemory]);
+
+  async function deleteLearningJourney(id) {
+    if (!id || memoryBusy) return;
+    setMemoryBusy(true);
+    setMemoryError("");
+    setMemoryNotice("");
+    try {
+      const response = await fetch("/api/learning-journey?id=" + encodeURIComponent(id), { method: "DELETE" });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Could not delete this learning journey.");
+      setLearningMemory((current) => ({ ...current, journeys: current.journeys.filter((item) => item.id !== id) }));
+      setMemoryNotice("That learning journey was deleted.");
+    } catch (err) {
+      setMemoryError(err.message || "Could not delete this learning journey.");
+    } finally {
+      setMemoryBusy(false);
+    }
+  }
 
   async function resumeLearning(id) {
     if (busy || loadingConversationId) return;
@@ -265,6 +350,28 @@ export default function LearningStudio({ userEmail = "" }) {
               <em>{loadingConversationId === item.id ? "Opening…" : conversationId === item.id ? "Open" : "Resume"}</em>
             </button>)}</div>}
       </section>
+
+      <section className="learning-journey" aria-label="My learning journey">
+        <div className="learning-section-heading">
+          <div><span>YOUR PRIVATE LEARNING MEMORY</span><h2>My learning journey</h2></div>
+          <button type="button" onClick={updateLearningMemoryConsent} disabled={memoryBusy || memoryLoading}>
+            {memoryBusy ? "Updating…" : learningMemory.enabled ? "Turn memory off" : "Turn memory on"}
+          </button>
+        </div>
+        <p className="learning-journey-intro">Aahana can remember completed animated lessons you choose to save. It records topics and learning paths—not grades or intelligence. Your saved journeys are private to your account, and you can delete them here.</p>
+        {memoryLoading ? <p className="learning-history-empty">Checking your private learning memory…</p>
+          : memoryError ? <p className="learning-error" role="alert">{memoryError}</p>
+          : <p className="learning-memory-status">{learningMemory.enabled ? "Private memory is on. Saving a lesson is always your choice." : "Private memory is off. Turn it on only if you want Aahana to remember saved learning journeys."}</p>}
+        {memoryNotice && <p className="learning-memory-notice" role="status">{memoryNotice}</p>}
+        {learningMemory.journeys.length > 0 && <div className="learning-journey-list">
+          {learningMemory.journeys.map((item) => <article className="learning-journey-item" key={item.id}>
+            <div><strong>{item.journey.title}</strong><span>{item.journey.subject} · {item.journey.gradeBand} · {item.journey.language}</span>
+              <small>{new Date(item.createdAt).toLocaleDateString()} · {item.journey.exploredScenes} scenes explored · {item.journey.attempts} attempts · {item.journey.adaptedScenes} alternate explanations</small></div>
+            <button type="button" onClick={() => deleteLearningJourney(item.id)} disabled={memoryBusy}>Delete</button>
+          </article>)}
+        </div>}
+        {!memoryLoading && learningMemory.journeys.length === 0 && <p className="learning-history-empty">No saved journeys yet. Finish an animated lesson and choose “Save to my journey”.</p>}
+      </section>
       <section className="learning-modes">
         <div className="learning-section-heading"><div><span>CHOOSE YOUR JOURNEY</span><h2>How would you like to learn?</h2></div></div>
         <div className="learning-mode-grid">
@@ -288,7 +395,7 @@ export default function LearningStudio({ userEmail = "" }) {
               : learningMode === "play" && item.role === "assistant" && busy && index === messages.length - 1
                 ? <div className="learning-thinking"><i /><i /><i /> Building your quiz</div>
                 : readMotionLesson(item.content)
-                ? <AnimatedLesson content={item.content} />
+                ? <AnimatedLesson content={item.content} memoryEnabled={learningMemory.enabled} onSaveJourney={saveLearningJourney} />
                 : <p>{item.content}</p>) : <div className="learning-thinking"><i /><i /><i /> Preparing your lesson</div>}
           </article>)}
         </div>}
