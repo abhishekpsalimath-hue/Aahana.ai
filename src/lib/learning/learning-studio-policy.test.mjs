@@ -137,6 +137,8 @@ test("non-quiz learning modes request a validated structured animated lesson", (
   assert.match(route, /visual \(exactly one of fraction, orbit, water-cycle, plant-growth, number-line, molecule, concept-map\)/);
   assert.match(route, /3 to 5 scenes/);
   assert.match(route, /challenge \(object with question string, options array of exactly 3 short strings/);
+  assert.match(route, /visualData with label/);
+  assert.match(route, /progress \(integer 0 to 100 representing the proportion or stage actually depicted\)/);
   assert.match(route, /fraction, orbit, water-cycle, plant-growth, number-line, molecule, concept-map/);
   assert.match(studio, /readMotionLesson\(item\.content\)/);
   assert.match(studio, /<AnimatedLesson content=\{item\.content\} \/>/);
@@ -153,6 +155,11 @@ test("animated lesson renderer validates scene data and provides subject-specifi
   assert.match(animated, /scene\.narration\.length <= 1200/);
   assert.match(animated, /scene\.challenge\.options\.every[\s\S]*option\.length <= 120/);
   assert.match(animated, /scene\.challenge\.explanation\.length <= 500/);
+  assert.match(animated, /scene\.visualData\.label\.length <= 90/);
+  assert.match(animated, /scene\.visualData\.value\.length <= 36/);
+  assert.match(animated, /scene\.visualData\.progress >= 0 && scene\.visualData\.progress <= 100/);
+  assert.match(animated, /scene\.visualData\.comparison/);
+  assert.match(animated, /motion-data-track/);
   for (const visual of ["fraction", "orbit", "water-cycle", "plant-growth", "number-line", "molecule", "concept-map"]) {
     assert.ok(animated.includes(`"${visual}"`), `Missing visual renderer: ${visual}`);
   }
@@ -176,4 +183,6 @@ test("animated lesson controls and reduced-motion accessibility are present", ()
   assert.match(styles, /@keyframes motion-plant-grow/);
   assert.match(styles, /\.motion-prediction-options/);
   assert.match(styles, /\.motion-feedback\.gentle/);
+  assert.match(styles, /\.motion-data-track/);
+  assert.match(styles, /\.motion-data-copy/);
 });
