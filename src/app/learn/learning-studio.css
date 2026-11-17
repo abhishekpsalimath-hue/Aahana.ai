@@ -326,3 +326,16 @@
 .learning-3d-concept-tabs button.active{border-color:#c7a9f5;background:#3a2c51;color:#fff}
 .learning-3d-concept-panel strong{display:block;color:#fff;font-size:12px;line-height:1.5}
 .learning-3d-concept-panel p{margin:6px 0 0;color:#c8bfd3;font-size:11px;line-height:1.6}
+
+
+/* Learner-controlled ecosystem experiment */
+.learning-3d-experiment{margin:14px 0;padding:14px;border:1px solid rgba(160,190,150,.24);border-radius:16px;background:rgba(89,126,83,.09)}
+.learning-3d-experiment>span{font-size:.68rem;letter-spacing:.12em;font-weight:800;color:#a8d49c}
+.learning-3d-experiment>p{font-size:.82rem;line-height:1.5;color:var(--muted,#b9b4c8)}
+.learning-3d-experiment-control{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:10px 0;font-size:.84rem}
+.learning-3d-experiment-control>div{display:flex;gap:6px}
+.learning-3d-experiment button{border:1px solid rgba(190,190,210,.25);border-radius:999px;padding:7px 11px;background:rgba(255,255,255,.06);color:inherit;font:inherit;cursor:pointer}
+.learning-3d-experiment button.active{border-color:#9bc88e;background:rgba(117,174,105,.2);color:#d8f1cf}
+.learning-3d-experiment button:focus-visible{outline:2px solid #b9d9a6;outline-offset:3px}
+.learning-3d-experiment .learning-3d-experiment-observation{padding:10px;border-radius:10px;background:rgba(255,255,255,.05);color:var(--foreground,#eee9f6)}
+@media(prefers-reduced-motion:reduce){.learning-3d-experiment *{scroll-behavior:auto!important}}
