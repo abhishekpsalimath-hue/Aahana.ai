@@ -299,6 +299,5 @@ export const GRADE_1_MATH = {
         }
       ]
     }
-  ],
-  completionRule: "Complete each unit lesson and answer its check-for-understanding correctly. All six units must be completed to unlock the next Grade 1 subject."
+  ]
 };
