@@ -437,3 +437,16 @@ test("3D learning media uses high-density rendering, denser globe geometry and l
   assert.match(styles, /\.learning-3d-viewer canvas\{[^}]*height:430px/);
   assert.match(styles, /\.motion-art\{[^}]*max-width:760px[^}]*max-height:320px/);
 });
+
+
+test("interactive lessons show accessible scene progress and recover from journey-save failures", () => {
+  assert.match(animated, /motion-progress/);
+  assert.match(animated, /role="progressbar"/);
+  assert.match(animated, /aria-valuenow={exploredScenes}/);
+  assert.match(animated, /motion-progress-steps/);
+  assert.match(animated, /finally \{/);
+  assert.match(animated, /setJourneySaving\(false\)/);
+  assert.match(animated, /journeySaveError/);
+  assert.match(styles, /\.motion-progress-track/);
+  assert.match(styles, /\.motion-save-error/);
+});
