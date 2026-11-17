@@ -26,9 +26,9 @@ const modelExplorations = {
     { title: "Latitude & longitude", question: "How can we describe a place on a globe?", explanation: "Latitude measures position north or south of the equator. Longitude measures position east or west of the Prime Meridian. Together they help locate places." },
   ],
   molecule: [
-    { title: "Atoms", question: "What are the three spheres representing?", explanation: "This simplified water molecule has one oxygen atom joined to two hydrogen atoms. The spheres represent atoms, not their exact relative sizes." },
-    { title: "Bonds", question: "What holds the atoms together?", explanation: "Covalent bonds form when atoms share pairs of electrons. The O–H bonds hold the water molecule together." },
-    { title: "Molecular shape", question: "Why is water not a straight-line molecule?", explanation: "The two O–H bonds form a bent shape because electron pairs around oxygen repel one another. The H–O–H angle is about 104.5 degrees." },
+    { title: "Atoms", question: "What are the spheres representing?", explanation: "Atoms are the building blocks of molecules. In water, one oxygen atom is joined to two hydrogen atoms. Atom sizes in this teaching model are illustrative." },
+    { title: "Bonds", question: "What holds the atoms together?", explanation: "Covalent bonds form when atoms share electron pairs. The bonds connect atoms into a molecule." },
+    { title: "Molecular shape", question: "Why do molecules have different shapes?", explanation: "The arrangement of bonds and electron pairs influences molecular geometry. Water is bent, carbon dioxide is linear, and methane is tetrahedral." },
   ],
   atom: [
     { title: "Nucleus", question: "Where are protons and neutrons found?", explanation: "Protons and neutrons are concentrated in the tiny, dense nucleus at an atom's centre. Protons have positive charge; neutrons have no electric charge." },
@@ -134,9 +134,44 @@ function makeModel(id, ecosystem = {}) {
     });
   }
   if (id === "molecule") {
-    const atoms = [{ p: [0, 0, 0], r: .34, c: "#e9edf7" }, { p: [-.72, -.48, .12], r: .22, c: "#e66b78" }, { p: [.72, -.48, .12], r: .22, c: "#e66b78" }];
-    const rods = [[atoms[0].p, atoms[1].p], [atoms[0].p, atoms[2].p]];
-    return [...rods.map(([a, b]) => ({ points: [a, b], rod: true, color: "#a8b6d0" })), ...atoms.flatMap((atom) => sphereMesh(atom.r, 10, 16, atom.c).map((face) => ({ ...face, offset: atom.p })))];
+    const kind = ecosystem.chemistryMolecule || "water";
+    const focus = ecosystem.chemistryFocus || "all";
+    const definitions = {
+      water: {
+        atoms: [
+          { element: "O", p: [0, .08, 0], r: .36, c: "#e66b78", role: "oxygen" },
+          { element: "H", p: [-.68, -.43, .12], r: .23, c: "#e9edf7", role: "hydrogen" },
+          { element: "H", p: [.68, -.43, .12], r: .23, c: "#e9edf7", role: "hydrogen" },
+        ],
+        bonds: [[0, 1], [0, 2]],
+      },
+      carbonDioxide: {
+        atoms: [
+          { element: "O", p: [-.9, 0, 0], r: .27, c: "#e66b78", role: "oxygen" },
+          { element: "C", p: [0, 0, 0], r: .31, c: "#737b8d", role: "carbon" },
+          { element: "O", p: [.9, 0, 0], r: .27, c: "#e66b78", role: "oxygen" },
+        ],
+        bonds: [[0, 1], [1, 2]],
+      },
+      methane: {
+        atoms: [
+          { element: "C", p: [0, 0, 0], r: .32, c: "#737b8d", role: "carbon" },
+          { element: "H", p: [.72, .55, .55], r: .2, c: "#e9edf7", role: "hydrogen" },
+          { element: "H", p: [-.72, .55, -.55], r: .2, c: "#e9edf7", role: "hydrogen" },
+          { element: "H", p: [.55, -.65, -.55], r: .2, c: "#e9edf7", role: "hydrogen" },
+          { element: "H", p: [-.55, -.65, .55], r: .2, c: "#e9edf7", role: "hydrogen" },
+        ],
+        bonds: [[0, 1], [0, 2], [0, 3], [0, 4]],
+      },
+    };
+    const molecule = definitions[kind] || definitions.water;
+    const atoms = molecule.atoms.map((atom) => ({
+      ...atom,
+      c: focus === "all" || focus === atom.role ? atom.c : "#55566a",
+      r: focus === "all" || focus === atom.role ? atom.r : atom.r * .88,
+    }));
+    const rods = ecosystem.chemistryShowBonds === false ? [] : molecule.bonds.map(([a, b]) => [atoms[a].p, atoms[b].p]);
+    return [...rods.map(([a, b]) => ({ points: [a, b], rod: true, color: "#b9c8e2" })), ...atoms.flatMap((atom) => sphereMesh(atom.r, 10, 16, atom.c).map((face) => ({ ...face, offset: atom.p })))];
   }
   if (id === "atom") {
     const nucleus = [[-.16, 0, 0], [.12, .12, .04], [.12, -.12, -.06], [0, .08, .15]];
@@ -365,7 +400,7 @@ export default function Interactive3DWorld() {
   const [rotation, setRotation] = useState({ yaw: -.55, pitch: -.22 });
   const [zoom, setZoom] = useState(1);
   const [conceptIndex, setConceptIndex] = useState(0);
-  const [ecosystem, setEcosystem] = useState({ rainfall: "regular", waterSource: true, pollution: false, engineCycle: "intake", physicsForce: 3, physicsFriction: 1 });
+  const [ecosystem, setEcosystem] = useState({ rainfall: "regular", waterSource: true, pollution: false, engineCycle: "intake", physicsForce: 3, physicsFriction: 1, chemistryMolecule: "water", chemistryFocus: "all", chemistryShowBonds: true });
   const canvasRef = useRef(null);
   const dragRef = useRef(null);
   const model = models.find((item) => item.id === modelId) || models[0];
@@ -408,6 +443,29 @@ export default function Interactive3DWorld() {
         </div>
         <aside className="learning-3d-details">
           <span>NOW EXPLORING</span><h3>{model.label}</h3><small>{model.subject}</small><p>{model.description}</p>
+          {modelId === "molecule" && <div className="learning-3d-experiment" aria-label="Interactive chemistry molecule lab">
+            <span>BUILD & EXPLORE MOLECULES</span>
+            <p>Choose a molecule, focus on an element, and show or hide its bonds. Rotate the model to inspect its shape. These are simplified educational models, not electron-density or scale-accurate simulations.</p>
+            <div className="learning-3d-experiment-control"><label htmlFor="chemistry-molecule">Molecule</label>
+              <select id="chemistry-molecule" value={ecosystem.chemistryMolecule} onChange={(event) => setEcosystem((current) => ({ ...current, chemistryMolecule: event.target.value, chemistryFocus: "all" }))}>
+                <option value="water">Water · H₂O</option>
+                <option value="carbonDioxide">Carbon dioxide · CO₂</option>
+                <option value="methane">Methane · CH₄</option>
+              </select>
+            </div>
+            <div className="learning-3d-experiment-control"><strong>Highlight element</strong><div role="group" aria-label="Highlight element">
+              {[["all", "All atoms"], ["oxygen", "Oxygen"], ["hydrogen", "Hydrogen"], ["carbon", "Carbon"]].map(([value, label]) => <button type="button" key={value} className={ecosystem.chemistryFocus === value ? "active" : ""} aria-pressed={ecosystem.chemistryFocus === value} onClick={() => setEcosystem((current) => ({ ...current, chemistryFocus: value }))}>{label}</button>)}
+            </div></div>
+            <div className="learning-3d-experiment-control"><strong>Covalent bonds</strong>
+              <button type="button" className={ecosystem.chemistryShowBonds ? "active" : ""} aria-pressed={ecosystem.chemistryShowBonds} onClick={() => setEcosystem((current) => ({ ...current, chemistryShowBonds: !current.chemistryShowBonds }))}>{ecosystem.chemistryShowBonds ? "Bonds visible" : "Bonds hidden"}</button>
+            </div>
+            <p className="learning-3d-experiment-observation" aria-live="polite">{({
+              water: "Water (H₂O): two hydrogen atoms are covalently bonded to one oxygen atom. Its molecular shape is bent, with an H–O–H angle of about 104.5°.",
+              carbonDioxide: "Carbon dioxide (CO₂): one carbon atom is bonded to two oxygen atoms. The molecule is linear, with a bond angle of 180°.",
+              methane: "Methane (CH₄): one carbon atom forms four single covalent bonds to hydrogen atoms. The molecule has a tetrahedral shape, with bond angles of about 109.5°.",
+            })[ecosystem.chemistryMolecule]}</p>
+            <button type="button" onClick={() => setEcosystem((current) => ({ ...current, chemistryMolecule: "water", chemistryFocus: "all", chemistryShowBonds: true }))}>Reset molecule lab</button>
+          </div>}
           {modelId === "cart" && <div className="learning-3d-experiment" aria-label="Force and friction experiment">
             <span>TRY A FORCE & FRICTION EXPERIMENT</span>
             <p>Change the push and surface friction. Watch the cart shift to explore the idea of net force. This is a qualitative illustration, not a measured prediction.</p>
