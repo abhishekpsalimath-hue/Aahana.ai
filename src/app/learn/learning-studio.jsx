@@ -588,6 +588,7 @@ export default function LearningStudio({ userEmail = "" }) {
                 : item.role === "assistant" && learningMode !== "play"
                   ? <AnimatedLesson
                       content={item.content}
+                      topic={messages.slice(0, index).reverse().find((message) => message.role === "user")?.content || ""}
                       memoryEnabled={learningMemory.enabled}
                       onSaveJourney={saveLearningJourney}
                       onRetry={() => {
