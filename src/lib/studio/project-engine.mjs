@@ -63,7 +63,7 @@ export function validateStudioProject(input) {
     const size = Number(asset.size);
     if (!Number.isSafeInteger(size) || size < 0 || size > MAX_FILE_SIZE) return null;
     const storageKey = safeString(asset.storageKey, 240);
-    if (!storageKey || storageKey.startsWith("/") || storageKey.includes("..") || storageKey.includes("\\\\")) return null;
+    if (!storageKey || storageKey.startsWith("/") || storageKey.includes("..") || storageKey.includes("\\")) return null;
     assets.push({
       id: asset.id,
       kind: asset.kind,
