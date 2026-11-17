@@ -8,6 +8,7 @@ on:
       - "src/lib/voice/sravaani-asr-provider.*"
       - "src/lib/voice/README.md"
       - "src/app/api/voice/transcribe/route.js"
+      - "src/app/api/voice/speech/route.js"
       - "src/app/assistant-workspace.jsx"
       - "src/lib/voice/audio-wav.*"
   push:
