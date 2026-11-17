@@ -188,7 +188,8 @@ const authoredCurricula = authoredSubjectSeeds.map(([category, subject, title, l
   };
 });
 
-\nconst allAuthoredCurricula = [...learningCurricula, ...authoredCurricula];
+
+const allAuthoredCurricula = [...learningCurricula, ...authoredCurricula];
 const additionalAuthoredCurricula = [
   {
     "subjectId": "agriculture-food-systems-soil-science",
@@ -563,10 +564,30 @@ const additionalAuthoredCurricula = [
     "lessonStatus": "content-authored-review-required"
   }
 ];
-export const completeAuthoredCurricula = [...allAuthoredCurricula, ...additionalAuthoredCurricula];\nconst curriculumBySubjectId = new Map(completeAuthoredCurricula.map((item) => [item.subjectId, item]));
+export const completeAuthoredCurricula = [...allAuthoredCurricula, ...additionalAuthoredCurricula];
+const curriculumBySubjectId = new Map(completeAuthoredCurricula.map((item) => [item.subjectId, item]));
 
 export function getLearningCurriculum(subjectId) {
   return curriculumBySubjectId.get(subjectId) || null;
 }
 
-export function getLearningReadiness(subjectId) {\n  const subject = learningSubjectIndex.find((item) => item.id === subjectId);\n  if (!subject) return { subjectId, discovery: "unknown", curriculum: "not-authored", lesson: "not-authored" };\n  const curriculum = getLearningCurriculum(subjectId);\n  return { subjectId, discovery: "available", curriculum: curriculum?.curriculumStatus || "not-authored", lesson: curriculum?.lessonStatus || "not-authored", curriculumVersion: curriculum?.version ?? null };\n}\n\nexport function getCatalogueCoverage() {\n  return learningCategories.map((category) => {\n    const subjects = category.subjects.map((name) => learningSubjectIndex.find((item) => item.category === category.name && item.subject === name)).filter(Boolean);\n    const authored = subjects.filter((subject) => curriculumBySubjectId.has(subject.id)).length;\n    const required = Math.ceil(subjects.length / 2);\n    return { category: category.name, total: subjects.length, authored, required, percentage: subjects.length ? Math.round(authored / subjects.length * 100) : 0, reached: authored >= required };\n  });\n}\n\nexport function getCatalogueCoverageSummary() {\n  const categories = getCatalogueCoverage();\n  return { categoryCount: categories.length, subjectCount: categories.reduce((sum, item) => sum + item.total, 0), authoredCount: categories.reduce((sum, item) => sum + item.authored, 0), requiredCount: categories.reduce((sum, item) => sum + item.required, 0), categoriesAtTarget: categories.filter((item) => item.reached).length, categories };\n}\n
+export function getLearningReadiness(subjectId) {
+  const subject = learningSubjectIndex.find((item) => item.id === subjectId);
+  if (!subject) return { subjectId, discovery: "unknown", curriculum: "not-authored", lesson: "not-authored" };
+  const curriculum = getLearningCurriculum(subjectId);
+  return { subjectId, discovery: "available", curriculum: curriculum?.curriculumStatus || "not-authored", lesson: curriculum?.lessonStatus || "not-authored", curriculumVersion: curriculum?.version ?? null };
+}
+
+export function getCatalogueCoverage() {
+  return learningCategories.map((category) => {
+    const subjects = category.subjects.map((name) => learningSubjectIndex.find((item) => item.category === category.name && item.subject === name)).filter(Boolean);
+    const authored = subjects.filter((subject) => curriculumBySubjectId.has(subject.id)).length;
+    const required = Math.ceil(subjects.length / 2);
+    return { category: category.name, total: subjects.length, authored, required, percentage: subjects.length ? Math.round(authored / subjects.length * 100) : 0, reached: authored >= required };
+  });
+}
+
+export function getCatalogueCoverageSummary() {
+  const categories = getCatalogueCoverage();
+  return { categoryCount: categories.length, subjectCount: categories.reduce((sum, item) => sum + item.total, 0), authoredCount: categories.reduce((sum, item) => sum + item.authored, 0), requiredCount: categories.reduce((sum, item) => sum + item.required, 0), categoriesAtTarget: categories.filter((item) => item.reached).length, categories };
+}
