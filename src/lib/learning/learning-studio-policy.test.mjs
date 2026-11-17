@@ -330,6 +330,11 @@ test("student mode includes an interactive 3D model lab rather than image-only l
   assert.match(world, /onWheel/);
   assert.match(world, /Zoom in/);
   assert.match(world, /Reset view/);
+  assert.match(world, /modelExplorations/);
+  assert.match(world, /DISCOVERY GUIDE/);
+  assert.match(world, /Food web/);
+  assert.match(world, /Connecting rod/);
+  assert.match(world, /aria-live="polite"/);
   assert.match(world, /ArrowLeft/);
   assert.match(world, /role="application"/);
   assert.match(world, /not to scale/);
