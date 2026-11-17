@@ -11,6 +11,9 @@ const models = [
   { id: "terrain", label: "Mountain terrain", subject: "Geography · Geology", description: "Explore a raised terrain surface with peaks, valleys and contour-like depth.", color: "#d59b72" },
   { id: "cell", label: "Animal cell", subject: "Biology · Life science", description: "Explore a simplified animal cell, its membrane, nucleus and organelles in three dimensions.", color: "#79c8b2" },
   { id: "solar-system", label: "Solar system", subject: "Astronomy · Space science", description: "Compare the arrangement of the Sun and eight planets along illustrative orbital paths. Distances and sizes are not to scale.", color: "#e7b76a" },
+  { id: "plant-cell", label: "Plant cell", subject: "Biology · Botany", description: "Explore a simplified plant cell with a cell wall, membrane, large vacuole, nucleus and chloroplasts.", color: "#8dc78a" },
+  { id: "heart", label: "Heart model", subject: "Biology · Human body", description: "Inspect a simplified educational heart showing four chamber regions and major vessel pathways. It is not a medical or surgical model.", color: "#df8b9c" },
+  { id: "pyramid", label: "Ancient pyramid", subject: "History · Geometry", description: "Rotate a simplified pyramid monument to inspect triangular faces, a square base and its three-dimensional form.", color: "#d7b17c" },
 ];
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
@@ -78,6 +81,35 @@ function makeModel(id) {
       { p: [-.48, .28, -.2], r: .075, c: "#e6d28a" },
     ];
     return [...outer, ...organelles.flatMap((item) => sphereMesh(item.r, 9, 14, item.c).map((face) => ({ ...face, offset: item.p })))];
+  }
+  if (id === "plant-cell") {
+    const box = [[-1,-.72,-.72],[1,-.72,-.72],[1,.72,-.72],[-1,.72,-.72],[-1,-.72,.72],[1,-.72,.72],[1,.72,.72],[-1,.72,.72]];
+    const shell = [[0,1,2,3],[4,5,6,7],[0,1,5,4],[2,3,7,6],[1,2,6,5],[0,3,7,4]].map((face,i)=>({points:face.map(n=>box[n]),color:i%2?"#7ebd83":"#a5d69a",solid:true}));
+    const parts = [
+      {p:[0,0,0],r:.42,c:"#76b9d9"}, {p:[-.55,.28,.18],r:.16,c:"#9b75c8"},
+      {p:[.48,.36,-.22],r:.13,c:"#e7c36e"}, {p:[-.48,-.35,-.18],r:.13,c:"#e7c36e"},
+      {p:[.5,-.3,.22],r:.13,c:"#e7c36e"}, {p:[-.05,.52,-.3],r:.1,c:"#9b75c8"},
+    ];
+    return [...shell,...parts.flatMap((part)=>sphereMesh(part.r,8,12,part.c).map((face)=>({...face,offset:part.p})))];
+  }
+  if (id === "heart") {
+    const parts = [
+      {p:[-.28,.18,0],r:.48,c:"#c95e78"},{p:[.28,.18,0],r:.48,c:"#d97786"},
+      {p:[-.22,-.34,.04],r:.38,c:"#b84d69"},{p:[.22,-.34,.04],r:.38,c:"#d05d70"},
+      {p:[-.2,.78,-.08],r:.12,c:"#6b9dc7"},{p:[.22,.78,-.08],r:.12,c:"#c96a62"},
+    ];
+    const vessels=[{a:[-.2,.68,-.08],b:[-.34,1.18,-.08],c:"#6b9dc7"},{a:[.22,.68,-.08],b:[.42,1.12,-.08],c:"#c96a62"}];
+    return [...vessels.map(v=>({points:[v.a,v.b],rod:true,color:v.c})),...parts.flatMap(part=>sphereMesh(part.r,10,14,part.c).map(face=>({...face,offset:part.p})))];
+  }
+  if (id === "pyramid") {
+    const base=[[-1,-.7,-1],[1,-.7,-1],[1,-.7,1],[-1,-.7,1]], tip=[0,1,0];
+    return [
+      {points:[base[0],base[1],tip],color:"#d8b77f",solid:true},
+      {points:[base[1],base[2],tip],color:"#c8a36d",solid:true},
+      {points:[base[2],base[3],tip],color:"#e0c18e",solid:true},
+      {points:[base[3],base[0],tip],color:"#b99060",solid:true},
+      {points:base,color:"#9e815f",solid:true},
+    ];
   }
   if (id === "solar-system") {
     const planets = [
