@@ -1,0 +1,32 @@
+name: SraVaani request-guard tests
+
+on:
+  pull_request:
+    paths:
+      - "services/sravaani-asr/**"
+      - ".github/workflows/sravaani-guards.yml"
+  push:
+    branches:
+      - "feat/aahana-voice-runtime-adapters"
+    paths:
+      - "services/sravaani-asr/**"
+      - ".github/workflows/sravaani-guards.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  request-guards:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/sravaani-asr
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run dependency-free request guard tests
+        run: python -m unittest -v test_request_validation.py
