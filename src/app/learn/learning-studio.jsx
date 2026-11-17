@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import "./learning-studio.css";
+import CreatorStudio from "./creator-studio";
 import AnimatedLesson, { AnimatedVisual, readMotionLesson } from "./animated-lesson";
 const Interactive3DWorld = dynamic(() => import("./interactive-3d-world"), {
   ssr: false,
@@ -570,6 +571,7 @@ export default function LearningStudio({ userEmail = "" }) {
 
       <SpaceExplorer selectedPlanet={selectedPlanet} onSelectPlanet={setSelectedPlanet} />
       <Interactive3DWorld selectedPlanet={selectedPlanet} onSelectedPlanetChange={setSelectedPlanet} />
+      <CreatorStudio />
       <SolarSystemCurriculum onStartUnit={(unit) => {
         setCategory("Nature, planet & exploration");
         setSubject("Solar System");
