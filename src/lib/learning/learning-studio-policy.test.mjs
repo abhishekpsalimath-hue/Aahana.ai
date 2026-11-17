@@ -426,18 +426,16 @@ test("animated lesson schema and tutor prompts can select embedded interactive 3
 });
 
 
-test("3D learning media uses high-density rendering, denser globe geometry and larger visual stages", () => {
+test("3D learning media uses bounded high-DPI WebGL rendering and responsive scene stages", () => {
   const threeDPath = fileURLToPath(new URL("../../app/learn/interactive-3d-world.jsx", import.meta.url));
   const threeD = readFileSync(threeDPath, "utf8");
-  assert.match(threeD, /devicePixelRatio \|\| 1, 3/);
-  assert.match(threeD, /imageSmoothingQuality = "high"/);
-  assert.match(threeD, /sphereMesh\(1, 32, 48, "#328cc4"\)/);
-  assert.match(threeD, /function illuminateFace\(color, brightness\)/);
-  assert.match(threeD, /const brightness = \.76 \+ light \* \.34/);
+  assert.match(threeD, /renderer\.setPixelRatio\(Math\.min\(window\.devicePixelRatio\|\|1,1\.75\)\)/);
+  assert.match(threeD, /renderer\.setSize\(width,height,false\)/);
+  assert.match(threeD, /PerspectiveCamera/);
+  assert.match(threeD, /ResizeObserver/);
   assert.match(styles, /\.learning-3d-viewer canvas\{[^}]*height:430px/);
   assert.match(styles, /\.motion-art\{[^}]*max-width:760px[^}]*max-height:320px/);
 });
-
 
 test("interactive lessons show accessible scene progress and recover from journey-save failures", () => {
   assert.match(animated, /motion-progress/);
@@ -452,28 +450,26 @@ test("interactive lessons show accessible scene progress and recover from journe
 });
 
 
-test("student 3D scenes render an efficient animated starfield, atmospheric glow and moving light while respecting reduced motion", () => {
+test("student 3D scenes use a real Three.js WebGL renderer with subject-specific geometry and lifecycle cleanup", () => {
   const threeDPath = fileURLToPath(new URL("../../app/learn/interactive-3d-world.jsx", import.meta.url));
   const threeD = readFileSync(threeDPath, "utf8");
+  assert.match(threeD, /import \* as THREE from "three"/);
+  assert.match(threeD, /new THREE\.WebGLRenderer/);
+  assert.match(threeD, /THREE\.ACESFilmicToneMapping/);
+  assert.match(threeD, /new THREE\.HemisphereLight/);
+  assert.match(threeD, /function makeSceneModel\(group,id\)/);
+  assert.match(threeD, /function makeEarthTexture\(\)/);
+  assert.match(threeD, /new THREE\.CanvasTexture/);
+  assert.match(threeD, /new THREE\.TubeGeometry/);
+  assert.match(threeD, /new THREE\.BufferGeometry/);
+  assert.match(threeD, /function disposeThreeScene\(canvas\)/);
+  assert.match(threeD, /renderer\.dispose\(\)/);
+  assert.match(threeD, /devicePixelRatio\|\|1,1\.75/);
   assert.match(threeD, /function animateScene\(canvas, render\)/);
-  assert.match(threeD, /requestAnimationFrame\(tick\)/);
-  assert.match(threeD, /time - lastFrame >= 33/);
-  assert.match(threeD, /prefers-reduced-motion: reduce/);
-  assert.match(threeD, /for \(let i = 0; i < 84; i\+\+\)/);
-  assert.match(threeD, /const twinkle =/);
-  assert.match(threeD, /const spaceScene = \["planet", "solar-system"\]\.includes\(modelId\)/);
-  assert.match(threeD, /const biologyScene = \["dna", "cell", "plant-cell", "heart"\]\.includes\(modelId\)/);
-  assert.match(threeD, /const chemistryScene = \["molecule", "atom"\]\.includes\(modelId\)/);
-  assert.match(threeD, /const earthScene = \["terrain", "ecosystem"\]\.includes\(modelId\)/);
-  assert.match(threeD, /rgba\(133,238,211/);
-  assert.match(threeD, /rgba\(196,158,235/);
-  assert.match(threeD, /rgba\(184,211,168/);
-  assert.match(threeD, /const modelAura = ctx\.createRadialGradient/);
-  assert.match(threeD, /const lightX =/);
-  assert.match(threeD, /const lightY =/);
-  assert.match(threeD, /stopAnimation\(\)/);
+  assert.doesNotMatch(threeD, /requestAnimationFrame\(tick\)/);
+  assert.match(threeD, /setPointerCapture/);
+  assert.match(threeD, /onWheel/);
 });
-
 
 test("Learning Studio teaches with topic-specific context, not disconnected fact dumps", () => {
   assert.match(route, /LEARNING CONTEXT AND DEPTH/);
