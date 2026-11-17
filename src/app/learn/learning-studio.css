@@ -571,3 +571,12 @@
 .school-achievement p,.school-journey-note{font-size:12px;line-height:1.7;color:#b8afc5}
 .school-journey-note{margin-top:20px}
 @media(max-width:680px){.school-journey-overview{grid-template-columns:1fr}.school-subject-status{max-width:105px;text-align:right}.school-work-heading{align-items:flex-start}.school-unit{padding:14px}.school-unit-top{font-size:9px}}
+
+
+/* Multi-question Grade 1 maths mastery checks */
+.school-check-question{padding:13px 0;border-top:1px solid #393044}
+.school-check-question>p{margin:0 0 9px;color:#eee7f7;font-size:13px;font-weight:700;line-height:1.55}
+.school-check-question .school-answer-options{margin:8px 0}
+.school-check-question .school-answer-options button:disabled{opacity:.72;cursor:default}
+.school-check-question .school-check-button{min-height:36px}
+@media(max-width:520px){.school-answer-options{display:grid;grid-template-columns:1fr}.school-answer-options button{text-align:left;min-height:40px}}
