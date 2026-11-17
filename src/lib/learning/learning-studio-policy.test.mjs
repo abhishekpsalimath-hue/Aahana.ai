@@ -5,8 +5,10 @@ import { fileURLToPath } from "node:url";
 
 const routePath = fileURLToPath(new URL("../../app/api/chat/route.js", import.meta.url));
 const studioPath = fileURLToPath(new URL("../../app/learn/learning-studio.jsx", import.meta.url));
+const animatedPath = fileURLToPath(new URL("../../app/learn/animated-lesson.jsx", import.meta.url));
 const route = readFileSync(routePath, "utf8");
 const studio = readFileSync(studioPath, "utf8");
+const animated = readFileSync(animatedPath, "utf8");
 const stylesPath = fileURLToPath(new URL("../../app/learn/learning-studio.css", import.meta.url));
 const styles = readFileSync(stylesPath, "utf8");
 
@@ -124,4 +126,36 @@ test("learning motion respects reduced-motion accessibility preferences", () => 
   assert.match(styles, /@keyframes learning-icon-float/);
   assert.match(styles, /@keyframes learning-scene-in/);
   assert.match(styles, /@media\s*\(prefers-reduced-motion:reduce\)/);
+});
+
+
+test("non-quiz learning modes request a validated structured animated lesson", () => {
+  assert.match(route, /ANIMATED LESSON OUTPUT/);
+  assert.match(route, /aahana_motion_lesson_v1/);
+  assert.match(route, /3 to 5 scenes/);
+  assert.match(route, /fraction, orbit, water-cycle, plant-growth, number-line, molecule, concept-map/);
+  assert.match(studio, /readMotionLesson\(item\.content\)/);
+  assert.match(studio, /<AnimatedLesson lesson=/);
+});
+
+test("animated lesson renderer validates scene data and provides subject-specific visuals", () => {
+  assert.match(animated, /function readMotionLesson\(content\)/);
+  assert.match(animated, /value\?\.type !== "aahana_motion_lesson_v1"/);
+  assert.match(animated, /value\.scenes\.length < 2/);
+  for (const visual of ["fraction", "orbit", "water-cycle", "plant-growth", "number-line", "molecule", "concept-map"]) {
+    assert.ok(animated.includes(`"${visual}"`), `Missing visual renderer: ${visual}`);
+  }
+  assert.match(animated, /Pause motion/);
+  assert.match(animated, /Previous/);
+  assert.match(animated, /Next scene/);
+  assert.match(animated, /Replay lesson/);
+});
+
+test("animated lesson controls and reduced-motion accessibility are present", () => {
+  assert.match(animated, /setPaused/);
+  assert.match(animated, /setIndex/);
+  assert.match(styles, /\.motion-art\.paused/);
+  assert.match(styles, /@media\(prefers-reduced-motion:reduce\)/);
+  assert.match(styles, /@keyframes motion-orbit-turn/);
+  assert.match(styles, /@keyframes motion-plant-grow/);
 });
