@@ -479,21 +479,8 @@ function drawScene(canvas, modelId, yaw, pitch, zoom) {
 
 
 function animateScene(canvas, render) {
-  if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
-    render(0);
-    return () => {};
-  }
-  let frame = 0;
-  let lastFrame = 0;
-  const tick = (time) => {
-    if (time - lastFrame >= 33) {
-      render(time);
-      lastFrame = time;
-    }
-    frame = requestAnimationFrame(tick);
-  };
-  frame = requestAnimationFrame(tick);
-  return () => cancelAnimationFrame(frame);
+  render(0);
+  return () => {};
 }
 
 export function Mini3DModel({ modelId = "planet" }) {
