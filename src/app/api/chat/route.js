@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { logSystemEvent, recordUserOpsEvent } from "@/lib/operations/server";
+import { buildResearchQuery, rankAndDedupeResearchResults } from "@/lib/research/research-policy.mjs";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -328,7 +329,7 @@ export async function POST(request) {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            query: prompt.slice(0, 1000),
+            query: buildResearchQuery(prompt),
             search_depth: "advanced",
             max_results: 10,
             include_answer: false,
@@ -339,18 +340,8 @@ export async function POST(request) {
         });
         if (searchResponse.ok) {
           const searchData = await searchResponse.json();
-          const rankedResults = (Array.isArray(searchData.results) ? searchData.results : [])
-            .filter((item) => {
-              if (typeof item?.url !== "string" || typeof item?.content !== "string" || !item.content.trim()) return false;
-              try {
-                const parsed = new URL(item.url);
-                return parsed.protocol === "https:" && parsed.hostname.includes(".");
-              } catch {
-                return false;
-              }
-            })
+          const rankedResults = rankAndDedupeResearchResults(searchData.results, 10)
             .filter((item) => typeof item.score !== "number" || item.score >= 0.15)
-            .sort((a, b) => (Number(b.score) || 0) - (Number(a.score) || 0))
             .slice(0, 5);
           const sources = rankedResults.map((item, index) => ({
             number: index + 1,
