@@ -249,3 +249,20 @@ test("animated lessons include a friendly companion that celebrates discovery wi
   assert.match(styles, /@keyframes buddy-celebrate/);
   assert.match(styles, /prefers-reduced-motion:reduce/);
 });
+
+ 
+test("interactive Solar System explorer offers eight selectable worlds, facts, orbit times and accessible controls", () => {
+  assert.match(studio, /function SpaceExplorer\(\)/);
+  assert.match(studio, /const spaceWorlds = \[/);
+  assert.match(studio, /role="group" aria-label="Choose a planet"/);
+  assert.match(studio, /aria-pressed=\{selected === planet\.id\}/);
+  assert.match(studio, /aria-live="polite"/);
+  assert.match(studio, /<SpaceExplorer \/>/);
+  for (const planet of ["Mercury", "Venus", "Earth", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune"]) {
+    assert.ok(studio.includes('name: "' + planet + '"'), "Missing Solar System destination: " + planet);
+  }
+  assert.match(studio, /not a scale model/);
+  assert.match(styles, /\.space-planet-choice\.active/);
+  assert.match(styles, /@keyframes space-sun-pulse/);
+  assert.match(styles, /prefers-reduced-motion:reduce/);
+});
