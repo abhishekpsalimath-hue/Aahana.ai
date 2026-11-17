@@ -33,10 +33,17 @@ export default function SchoolJourney() {
   const current = getNextSchoolSubject(progress);
   const mathKey = "grade-1:mathematics";
 
-  function checkAnswer(unit) {
-    const selected = answers[unit.id];
+  function checkAnswer(unit, checkIndex) {
+    const selected = answers[unit.id + ":" + checkIndex];
+    const check = unit.checks[checkIndex];
     if (!Number.isInteger(selected)) return;
-    if (selected === unit.answer) {
+    if (selected !== check.answer) {
+      setFeedback((previous) => ({ ...previous, [unit.id + ":" + checkIndex]: { correct: false, message: "Not quite. Revisit the lesson and try again." } }));
+      return;
+    }
+    setFeedback((previous) => ({ ...previous, [unit.id + ":" + checkIndex]: { correct: true, message: check.explanation } }));
+    const allPassed = unit.checks.every((item, index) => index === checkIndex || answers[unit.id + ":" + index] === item.answer);
+    if (allPassed) {
       setProgress((previous) => {
         const units = {
           ...(previous[mathKey]?.units || {}),
@@ -48,9 +55,6 @@ export default function SchoolJourney() {
           [mathKey]: { ...(previous[mathKey] || {}), units, complete: subjectComplete }
         };
       });
-      setFeedback((previous) => ({ ...previous, [unit.id]: { correct: true, message: unit.explanation } }));
-    } else {
-      setFeedback((previous) => ({ ...previous, [unit.id]: { correct: false, message: "Not quite. Read the example again, then try another answer." } }));
     }
   }
 
@@ -131,16 +135,25 @@ export default function SchoolJourney() {
                       <div className="school-example"><strong>Let's try one</strong><p>{unit.example}</p></div>
                       <p className="school-practice"><strong>Try it yourself:</strong> {unit.practice}</p>
                       <div className="school-check">
-                        <strong>{unit.question}</strong>
-                        <div className="school-answer-options">
-                          {unit.options.map((option, optionIndex) => (
-                            <button type="button" key={option} className={answers[unit.id] === optionIndex ? "selected" : ""} onClick={() => { setAnswers((old) => ({ ...old, [unit.id]: optionIndex })); setFeedback((old) => ({ ...old, [unit.id]: null })); }}>
-                              {option}
-                            </button>
-                          ))}
-                        </div>
-                        <button type="button" className="school-check-button" disabled={!Number.isInteger(answers[unit.id])} onClick={() => checkAnswer(unit)}>Check my answer</button>
-                        {result && <p className={result.correct ? "school-feedback correct" : "school-feedback"} role="status">{result.message}</p>}
+                        <strong>Knowledge check · Answer all three to complete this unit</strong>
+                        {unit.checks.map((check, checkIndex) => {
+                          const answerKey = unit.id + ":" + checkIndex;
+                          const checkResult = feedback[answerKey];
+                          return (
+                            <div className="school-check-question" key={answerKey}>
+                              <p>{checkIndex + 1}. {check.question}</p>
+                              <div className="school-answer-options">
+                                {check.options.map((option, optionIndex) => (
+                                  <button type="button" key={option} disabled={checkResult?.correct} className={answers[answerKey] === optionIndex ? "selected" : ""} onClick={() => { setAnswers((old) => ({ ...old, [answerKey]: optionIndex })); setFeedback((old) => ({ ...old, [answerKey]: null })); }}>
+                                    {option}
+                                  </button>
+                                ))}
+                              </div>
+                              <button type="button" className="school-check-button" disabled={!Number.isInteger(answers[answerKey]) || checkResult?.correct} onClick={() => checkAnswer(unit, checkIndex)}>Check answer</button>
+                              {checkResult && <p className={checkResult.correct ? "school-feedback correct" : "school-feedback"} role="status">{checkResult.message}</p>}
+                            </div>
+                          );
+                        })}
                       </div>
                     </>
                   )}
