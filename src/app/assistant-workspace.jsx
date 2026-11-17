@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { findBestSpeechVoice, getBrowserVoiceCapabilities } from "@/lib/voice/browser-capabilities.mjs";
+import { encodeMonoPcm16Wav } from "@/lib/voice/audio-wav.mjs";
 
 const modes = [
   { id: "solve", label: "Solve", hint: "Work through a problem" },
@@ -204,6 +205,15 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [voicePreferencesLoaded, setVoicePreferencesLoaded] = useState(false);
   const [speechVoices, setSpeechVoices] = useState([]);
   const [speechInputAvailable, setSpeechInputAvailable] = useState(false);
+  const [voiceConsent, setVoiceConsent] = useState(false);
+  const [providerRecording, setProviderRecording] = useState(false);
+  const [providerTranscribing, setProviderTranscribing] = useState(false);
+  const [providerSeconds, setProviderSeconds] = useState(0);
+  const mediaRecorderRef = useRef(null);
+  const mediaStreamRef = useRef(null);
+  const recordingChunksRef = useRef([]);
+  const recordingTimerRef = useRef(null);
+  const recordingStartedAtRef = useRef(0);
   // Recognition and speech use the browser/device language packs. This list covers
   // major Indian regional languages and widely used international locales.
   const voiceLanguages = [
@@ -287,6 +297,97 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     };
     recognition.onend = () => setListening(false);
     try { recognition.start(); } catch { setListening(false); setError("Voice input is already active. Please try again."); }
+  }
+
+  useEffect(() => () => {
+    if (recordingTimerRef.current) window.clearInterval(recordingTimerRef.current);
+    mediaRecorderRef.current?.stop?.();
+    mediaStreamRef.current?.getTracks?.().forEach((track) => track.stop());
+  }, []);
+
+  async function startProviderRecording() {
+    if (!voiceConsent) {
+      setError("Please confirm that you agree to send this recording to Aahana's configured private speech service.");
+      return;
+    }
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
+      setError("Private multilingual recording is not supported by this browser. You can still use the browser Speak option or type.");
+      return;
+    }
+    try {
+      setError("");
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true } });
+      mediaStreamRef.current = stream;
+      const preferredType = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"].find((type) => MediaRecorder.isTypeSupported?.(type));
+      const recorder = preferredType ? new MediaRecorder(stream, { mimeType: preferredType }) : new MediaRecorder(stream);
+      recordingChunksRef.current = [];
+      recorder.ondataavailable = (event) => { if (event.data?.size) recordingChunksRef.current.push(event.data); };
+      recorder.onerror = () => {
+        setError("The microphone recording failed. Check microphone permission and try again.");
+        setProviderRecording(false);
+        stream.getTracks().forEach((track) => track.stop());
+      };
+      recorder.onstop = async () => {
+        if (recordingTimerRef.current) window.clearInterval(recordingTimerRef.current);
+        setProviderRecording(false);
+        stream.getTracks().forEach((track) => track.stop());
+        mediaStreamRef.current = null;
+        const recording = new Blob(recordingChunksRef.current, { type: recorder.mimeType || "audio/webm" });
+        recordingChunksRef.current = [];
+        if (!recording.size) { setError("No audio was recorded. Please try again."); return; }
+        setProviderTranscribing(true);
+        let audioContext;
+        try {
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          if (!AudioContextClass) throw new Error("Audio conversion is not supported in this browser.");
+          audioContext = new AudioContextClass();
+          const decoded = await audioContext.decodeAudioData(await recording.arrayBuffer());
+          const mono = new Float32Array(decoded.length);
+          for (let channel = 0; channel < decoded.numberOfChannels; channel++) {
+            const samples = decoded.getChannelData(channel);
+            for (let i = 0; i < samples.length; i++) mono[i] += samples[i] / decoded.numberOfChannels;
+          }
+          const wav = encodeMonoPcm16Wav(mono, decoded.sampleRate);
+          if (wav.size > 15 * 1024 * 1024) throw new Error("This recording is larger than the 15 MB voice upload limit.");
+          const form = new FormData();
+          form.append("audio", wav, "aahana-recording.wav");
+          form.append("locale", voiceLanguage);
+          form.append("consent", "true");
+          const response = await fetch("/api/voice/transcribe", { method: "POST", body: form });
+          const result = await response.json().catch(() => ({}));
+          if (!response.ok) throw new Error(result.error || "The private speech service is unavailable or not configured yet.");
+          const transcript = String(result.transcript || "").trim();
+          if (!transcript) throw new Error("The speech service returned an empty transcript.");
+          setPrompt((current) => current ? current + " " + transcript : transcript);
+          setError("");
+        } catch (err) {
+          setError(err.message || "Could not transcribe this recording. You can use browser Speak or type instead.");
+        } finally {
+          await audioContext?.close?.().catch(() => {});
+          setProviderTranscribing(false);
+        }
+      };
+      mediaRecorderRef.current = recorder;
+      recordingStartedAtRef.current = Date.now();
+      setProviderSeconds(0);
+      recorder.start(500);
+      setProviderRecording(true);
+      recordingTimerRef.current = window.setInterval(() => {
+        const elapsed = Math.floor((Date.now() - recordingStartedAtRef.current) / 1000);
+        setProviderSeconds(elapsed);
+        if (elapsed >= 60 && mediaRecorderRef.current?.state === "recording") mediaRecorderRef.current.stop();
+      }, 500);
+    } catch (err) {
+      mediaStreamRef.current?.getTracks?.().forEach((track) => track.stop());
+      mediaStreamRef.current = null;
+      setError(err.name === "NotAllowedError"
+        ? "Microphone permission was denied. Allow microphone access and try again."
+        : err.message || "Could not start microphone recording.");
+    }
+  }
+
+  function stopProviderRecording() {
+    if (mediaRecorderRef.current?.state === "recording") mediaRecorderRef.current.stop();
   }
 
   function speakResponse(text, index) {
@@ -1057,6 +1158,13 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
             <div className="image-attach-row">
               <select aria-label="Voice input language" value={voiceLanguage} onChange={(event) => setVoiceLanguage(event.target.value)} className="copy-message">{voiceLanguages.map(([code, label]) => <option key={code} value={code}>{label}</option>)}</select>
               <button className="copy-message" type="button" onClick={startVoiceInput} disabled={listening || busy}>{listening ? "Listening…" : "Speak"}</button>
+              <button className="copy-message" type="button" onClick={providerRecording ? stopProviderRecording : startProviderRecording} disabled={busy || providerTranscribing || listening}>
+                {providerRecording ? `Stop recording · ${providerSeconds}s / 60s` : providerTranscribing ? "Transcribing…" : "Private voice"}
+              </button>
+              <label className="copy-message" style={{display:"inline-flex",alignItems:"center",gap:6}}>
+                <input type="checkbox" checked={voiceConsent} onChange={(event) => setVoiceConsent(event.target.checked)} disabled={providerRecording || providerTranscribing} />
+                Allow this recording to be sent to Aahana's configured private speech service
+              </label>
               <span className="voice-capability-note" role="status">
                 Input: {speechInputAvailable ? "browser API detected; language coverage unverified" : "not available"} ·
                 Output for {voiceLanguage}: {findBestSpeechVoice(speechVoices, voiceLanguage) ? "matching device voice found" : "no matching device voice"}
