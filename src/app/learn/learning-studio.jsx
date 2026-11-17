@@ -224,32 +224,55 @@ function SolarSystemCurriculum({ onStartUnit }) {
   const curriculum = getLearningCurriculum("nature-planet-exploration-solar-system");
   const readiness = getLearningReadiness("nature-planet-exploration-solar-system");
   const [activeUnitId, setActiveUnitId] = useState(curriculum?.units?.[0]?.id || "");
+  const [completedUnits, setCompletedUnits] = useState([]);
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem("aahana:curriculum:solar-system:v1");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) setCompletedUnits(parsed.filter((id) => curriculum?.units?.some((unit) => unit.id === id)));
+      }
+    } catch { /* Progress remains available for this session if browser storage is unavailable. */ }
+  }, [curriculum]);
   if (!curriculum) return null;
   const activeUnit = curriculum.units.find((unit) => unit.id === activeUnitId) || curriculum.units[0];
+  const isComplete = completedUnits.includes(activeUnit.id);
+  function toggleCompletion() {
+    const next = isComplete ? completedUnits.filter((id) => id !== activeUnit.id) : [...completedUnits, activeUnit.id];
+    setCompletedUnits(next);
+    try { window.localStorage.setItem("aahana:curriculum:solar-system:v1", JSON.stringify(next)); } catch { /* Keep the in-memory progress for this session. */ }
+  }
   return (
     <section className="solar-curriculum" aria-label="Our Solar System learning pathway">
       <div className="learning-section-heading">
         <div><span>YOUR LEARNING PATHWAY</span><h2>{curriculum.title}</h2></div>
-        <span className="space-explorer-tag">{curriculum.units.length} UNITS</span>
+        <span className="space-explorer-tag">{completedUnits.length} / {curriculum.units.length} COMPLETED</span>
+      </div>
+      <div className="solar-curriculum-progress" role="progressbar" aria-label="Solar System unit progress" aria-valuemin={0} aria-valuemax={curriculum.units.length} aria-valuenow={completedUnits.length}>
+        <span style={{ width: `${(completedUnits.length / curriculum.units.length) * 100}%` }} />
       </div>
       <p className="space-explorer-intro">A guided route through the Solar System. Pick a unit to see what you will learn, then begin a visual lesson with Aahana.</p>
       <div className="solar-curriculum-layout">
         <div className="solar-curriculum-units" role="group" aria-label="Choose a Solar System unit">
-          {curriculum.units.map((unit, index) => (
-            <button type="button" key={unit.id} className={activeUnit.id === unit.id ? "solar-curriculum-unit active" : "solar-curriculum-unit"} onClick={() => setActiveUnitId(unit.id)} aria-pressed={activeUnit.id === unit.id}>
-              <span>{String(index + 1).padStart(2, "0")}</span><strong>{unit.title}</strong><i aria-hidden="true">{activeUnit.id === unit.id ? "●" : "○"}</i>
-            </button>
-          ))}
+          {curriculum.units.map((unit, index) => {
+            const done = completedUnits.includes(unit.id);
+            return <button type="button" key={unit.id} className={activeUnit.id === unit.id ? "solar-curriculum-unit active" : "solar-curriculum-unit"} onClick={() => setActiveUnitId(unit.id)} aria-pressed={activeUnit.id === unit.id}>
+              <span>{done ? "✓" : String(index + 1).padStart(2, "0")}</span><strong>{unit.title}</strong><i aria-label={done ? "Completed" : "Not completed"}>{done ? "DONE" : activeUnit.id === unit.id ? "SELECTED" : "OPEN"}</i>
+            </button>;
+          })}
         </div>
         <article className="solar-curriculum-detail" aria-live="polite">
           <span className="space-lab-kicker">UNIT {curriculum.units.findIndex((unit) => unit.id === activeUnit.id) + 1} · LEARNING GOALS</span>
           <h3>{activeUnit.title}</h3>
           <ul>{activeUnit.outcomes.map((outcome) => <li key={outcome}>{outcome}</li>)}</ul>
           <div className="solar-curriculum-concepts"><span>KEY IDEAS</span><p>{activeUnit.concepts.join(" · ")}</p></div>
-          <button type="button" className="solar-curriculum-start" onClick={() => onStartUnit(activeUnit)}>Start this unit <span aria-hidden="true">→</span></button>
+          <div className="solar-curriculum-actions">
+            <button type="button" className="solar-curriculum-start" onClick={() => onStartUnit(activeUnit)}>Start this unit <span aria-hidden="true">→</span></button>
+            <button type="button" className="solar-curriculum-complete" onClick={toggleCompletion} aria-pressed={isComplete}>{isComplete ? "Mark as not completed" : "Mark unit complete"}</button>
+          </div>
         </article>
       </div>
-      <p className="solar-curriculum-readiness">Curriculum outline authored · Lesson visuals marked {readiness.lesson === "review-required" ? "for scientific review" : readiness.lesson} before full lesson sign-off.</p>
+      <p className="solar-curriculum-readiness">Progress is saved in this browser on this device. Mark a unit complete when you feel ready. Curriculum outline authored · Lesson visuals marked {readiness.lesson === "review-required" ? "for scientific review" : readiness.lesson} before full lesson sign-off.</p>
     </section>
   );
 }
