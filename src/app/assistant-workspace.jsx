@@ -214,6 +214,8 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const recordingChunksRef = useRef([]);
   const recordingTimerRef = useRef(null);
   const recordingStartedAtRef = useRef(0);
+  const audioPlaybackRef = useRef(null);
+  const audioObjectUrlRef = useRef(null);
   // Recognition and speech use the browser/device language packs. This list covers
   // major Indian regional languages and widely used international locales.
   const voiceLanguages = [
@@ -303,6 +305,8 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     if (recordingTimerRef.current) window.clearInterval(recordingTimerRef.current);
     mediaRecorderRef.current?.stop?.();
     mediaStreamRef.current?.getTracks?.().forEach((track) => track.stop());
+    audioPlaybackRef.current?.pause?.();
+    if (audioObjectUrlRef.current) URL.revokeObjectURL(audioObjectUrlRef.current);
   }, []);
 
   async function startProviderRecording() {
@@ -390,25 +394,95 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     if (mediaRecorderRef.current?.state === "recording") mediaRecorderRef.current.stop();
   }
 
-  function speakResponse(text, index) {
-    if (!("speechSynthesis" in window)) {
-      setError("Spoken responses are not supported in this browser.");
+  async function speakResponse(text, index) {
+    const spokenText = String(text || "").trim();
+    if (!spokenText) return;
+    if (speakingMessage === index) {
+      audioPlaybackRef.current?.pause?.();
+      audioPlaybackRef.current = null;
+      if (audioObjectUrlRef.current) URL.revokeObjectURL(audioObjectUrlRef.current);
+      audioObjectUrlRef.current = null;
+      window.speechSynthesis?.cancel?.();
+      setSpeakingMessage(null);
       return;
     }
-    window.speechSynthesis.cancel();
-    if (speakingMessage === index) { setSpeakingMessage(null); return; }
-    const utterance = new SpeechSynthesisUtterance(String(text || ""));
-    const speechLanguage = inferSpeechLocale(text, voiceLanguage);
-    utterance.lang = speechLanguage;
+
+    window.speechSynthesis?.cancel?.();
+    audioPlaybackRef.current?.pause?.();
+    if (audioObjectUrlRef.current) URL.revokeObjectURL(audioObjectUrlRef.current);
+    audioObjectUrlRef.current = null;
+    const speechLanguage = inferSpeechLocale(spokenText, voiceLanguage);
+    setSpeakingMessage(index);
+    setError("");
+
+    try {
+      const response = await fetch("/api/voice/speech", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: spokenText.slice(0, 6000), locale: speechLanguage }),
+      });
+      if (response.ok) {
+        const audioBlob = await response.blob();
+        if (!audioBlob.size || !audioBlob.type.startsWith("audio/")) {
+          throw new Error("Aahana's speech service returned invalid audio.");
+        }
+        const objectUrl = URL.createObjectURL(audioBlob);
+        audioObjectUrlRef.current = objectUrl;
+        const audio = new Audio(objectUrl);
+        audioPlaybackRef.current = audio;
+        audio.onended = () => {
+          if (audioObjectUrlRef.current === objectUrl) {
+            URL.revokeObjectURL(objectUrl);
+            audioObjectUrlRef.current = null;
+            audioPlaybackRef.current = null;
+          }
+          setSpeakingMessage(null);
+        };
+        audio.onerror = () => {
+          if (audioObjectUrlRef.current === objectUrl) {
+            URL.revokeObjectURL(objectUrl);
+            audioObjectUrlRef.current = null;
+            audioPlaybackRef.current = null;
+          }
+          setSpeakingMessage(null);
+          setError("The generated speech could not be played on this device.");
+        };
+        await audio.play();
+        return;
+      }
+      if (![503, 404].includes(response.status)) {
+        const result = await response.json().catch(() => ({}));
+        throw new Error(result.error || "Aahana's speech service could not complete this request.");
+      }
+    } catch (err) {
+      if (err?.name === "NotAllowedError") {
+        setSpeakingMessage(null);
+        setError("Tap Listen again to allow audio playback.");
+        return;
+      }
+      if (err instanceof Error && !/Failed to fetch|NetworkError/i.test(err.message)) {
+        setSpeakingMessage(null);
+        setError(err.message || "Speech playback failed.");
+        return;
+      }
+    }
+
+    if (!("speechSynthesis" in window)) {
+      setSpeakingMessage(null);
+      setError("Spoken responses are not available. The text reply remains visible.");
+      return;
+    }
     const matchingVoice = findBestSpeechVoice(speechVoices, speechLanguage);
     if (!matchingVoice) {
-      setError(`Your device has no installed speech voice for ${speechLanguage}. Text replies remain available; install that language's speech pack or connect a multilingual speech provider.`);
+      setSpeakingMessage(null);
+      setError(`No configured speech service or installed device voice is available for ${speechLanguage}. The text reply remains visible.`);
       return;
     }
+    const utterance = new SpeechSynthesisUtterance(spokenText);
+    utterance.lang = speechLanguage;
     utterance.voice = matchingVoice;
     utterance.onend = () => setSpeakingMessage(null);
     utterance.onerror = () => setSpeakingMessage(null);
-    setSpeakingMessage(index);
     window.speechSynthesis.speak(utterance);
   }
 
