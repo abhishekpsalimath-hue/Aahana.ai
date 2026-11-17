@@ -93,19 +93,38 @@ function InteractiveQuiz({ quiz }) {
 
 
 const spaceWorlds = [
-  { id: "mercury", name: "Mercury", color: "#aaa7a5", orbit: "88 Earth days", fact: "Mercury races around the Sun in just 88 Earth days. Its surface swings between extreme heat and cold because it has almost no atmosphere to hold heat.", wonder: "A year on Mercury is shorter than a season on Earth." },
-  { id: "venus", name: "Venus", color: "#e7b77e", orbit: "225 Earth days", fact: "Venus has a thick atmosphere rich in carbon dioxide. Its clouds trap heat so effectively that its surface is hotter than Mercury's.", wonder: "Venus spins in the opposite direction to most planets." },
-  { id: "earth", name: "Earth", color: "#65b8e8", orbit: "365.25 days", fact: "Earth has liquid water on its surface and an atmosphere that supports life as we know it. Our Moon helps shape ocean tides.", wonder: "So far, Earth is the only world known to host life." },
-  { id: "mars", name: "Mars", color: "#df805e", orbit: "687 Earth days", fact: "Mars is a cold desert world with a thin atmosphere. Ancient river valleys and minerals suggest liquid water once flowed across parts of its surface.", wonder: "Olympus Mons on Mars is the tallest known volcano in the Solar System." },
-  { id: "jupiter", name: "Jupiter", color: "#d5ad83", orbit: "11.86 Earth years", fact: "Jupiter is the largest planet. It is a gas giant with powerful storms, including the Great Red Spot, which has lasted for centuries.", wonder: "Jupiter is so massive that all the other planets could fit inside it by volume." },
-  { id: "saturn", name: "Saturn", color: "#e5d09a", orbit: "29.4 Earth years", fact: "Saturn is a gas giant surrounded by spectacular rings made mostly of countless pieces of ice and rock.", wonder: "Saturn is less dense than water, although there is no ocean large enough to float it." },
-  { id: "uranus", name: "Uranus", color: "#8bd4d2", orbit: "84 Earth years", fact: "Uranus is an ice giant with a blue-green appearance from methane in its atmosphere. It rotates on its side compared with most planets.", wonder: "One Uranian season lasts about 21 Earth years." },
-  { id: "neptune", name: "Neptune", color: "#668de7", orbit: "164.8 Earth years", fact: "Neptune is a distant ice giant with supersonic winds and a deep blue atmosphere. It takes almost 165 Earth years to orbit the Sun.", wonder: "Neptune was first identified through mathematical predictions before it was directly observed." },
+  { id: "mercury", name: "Mercury", color: "#aaa7a5", orbit: "88 Earth days", fact: "Mercury races around the Sun in just 88 Earth days. Its surface swings between extreme heat and cold because it has almost no atmosphere to hold heat.", wonder: "A year on Mercury is shorter than a season on Earth.", diameter: "4,880 km", sizeFactor: 0.38, challenge: { question: "Which planet completes a trip around the Sun in just 88 Earth days?", options: ["Mercury", "Venus", "Mars"], correct: 0, hint: "It is the closest planet to the Sun." }, },
+  { id: "venus", name: "Venus", color: "#e7b77e", orbit: "225 Earth days", fact: "Venus has a thick atmosphere rich in carbon dioxide. Its clouds trap heat so effectively that its surface is hotter than Mercury's.", wonder: "Venus spins in the opposite direction to most planets.", diameter: "12,104 km", sizeFactor: 0.95, challenge: { question: "Why is Venus hotter than Mercury?", options: ["It has a thick heat-trapping atmosphere", "It is closer to the Sun", "It has many active fires"], correct: 0, hint: "Think about the greenhouse effect." }, },
+  { id: "earth", name: "Earth", color: "#65b8e8", orbit: "365.25 days", fact: "Earth has liquid water on its surface and an atmosphere that supports life as we know it. Our Moon helps shape ocean tides.", wonder: "So far, Earth is the only world known to host life.", diameter: "12,756 km", sizeFactor: 1, challenge: { question: "What makes Earth special among the worlds we know?", options: ["It has the biggest rings", "It is the only world known to host life", "It has the fastest winds"], correct: 1, hint: "Look for the world with oceans, air and life." }, },
+  { id: "mars", name: "Mars", color: "#df805e", orbit: "687 Earth days", fact: "Mars is a cold desert world with a thin atmosphere. Ancient river valleys and minerals suggest liquid water once flowed across parts of its surface.", wonder: "Olympus Mons on Mars is the tallest known volcano in the Solar System.", diameter: "6,792 km", sizeFactor: 0.53, challenge: { question: "What is Olympus Mons?", options: ["A giant volcano", "A frozen ocean", "A moon of Mars"], correct: 0, hint: "It is a huge mountain built by volcanic activity." }, },
+  { id: "jupiter", name: "Jupiter", color: "#d5ad83", orbit: "11.86 Earth years", fact: "Jupiter is the largest planet. It is a gas giant with powerful storms, including the Great Red Spot, which has lasted for centuries.", wonder: "Jupiter is so massive that all the other planets could fit inside it by volume.", diameter: "142,984 km", sizeFactor: 11.21, challenge: { question: "What kind of planet is Jupiter?", options: ["Rocky planet", "Gas giant", "Ice giant"], correct: 1, hint: "It is made mostly of hydrogen and helium." }, },
+  { id: "saturn", name: "Saturn", color: "#e5d09a", orbit: "29.4 Earth years", fact: "Saturn is a gas giant surrounded by spectacular rings made mostly of countless pieces of ice and rock.", wonder: "Saturn is less dense than water, although there is no ocean large enough to float it.", diameter: "120,536 km", sizeFactor: 9.45, challenge: { question: "What are Saturn's rings made mostly from?", options: ["Liquid water", "Ice and rocky particles", "Clouds of dust only"], correct: 1, hint: "Imagine countless tiny icy pieces orbiting together." }, },
+  { id: "uranus", name: "Uranus", color: "#8bd4d2", orbit: "84 Earth years", fact: "Uranus is an ice giant with a blue-green appearance from methane in its atmosphere. It rotates on its side compared with most planets.", wonder: "One Uranian season lasts about 21 Earth years.", diameter: "51,118 km", sizeFactor: 4.01, challenge: { question: "What is unusual about Uranus's rotation?", options: ["It spins on its side", "It does not rotate", "It spins once every day"], correct: 0, hint: "Its axial tilt is close to 98 degrees." }, },
+  { id: "neptune", name: "Neptune", color: "#668de7", orbit: "164.8 Earth years", fact: "Neptune is a distant ice giant with supersonic winds and a deep blue atmosphere. It takes almost 165 Earth years to orbit the Sun.", wonder: "Neptune was first identified through mathematical predictions before it was directly observed.", diameter: "49,528 km", sizeFactor: 3.88, challenge: { question: "What is famous about Neptune's weather?", options: ["Supersonic winds", "Daily snowstorms of metal", "No winds at all"], correct: 0, hint: "Its winds can move faster than the speed of sound on Earth." }, },
 ];
 
 function SpaceExplorer() {
   const [selected, setSelected] = useState("earth");
+  const [visited, setVisited] = useState(["earth"]);
+  const [solved, setSolved] = useState([]);
+  const [attempts, setAttempts] = useState({});
+  const [feedback, setFeedback] = useState("");
   const world = spaceWorlds.find((item) => item.id === selected) || spaceWorlds[2];
+  const choosePlanet = (id) => {
+    setSelected(id);
+    setVisited((current) => current.includes(id) ? current : [...current, id]);
+    setFeedback("");
+  };
+  const answerChallenge = (optionIndex) => {
+    if (solved.includes(world.id)) return;
+    if (optionIndex === world.challenge.correct) {
+      setSolved((current) => current.includes(world.id) ? current : [...current, world.id]);
+      setFeedback("correct");
+    } else {
+      setAttempts((current) => ({ ...current, [world.id]: (current[world.id] || 0) + 1 }));
+      setFeedback("hint");
+    }
+  };
   return (
     <section className="space-explorer" aria-label="Interactive Solar System explorer">
       <div className="learning-section-heading"><div><span>INTERACTIVE WORLD EXPLORER</span><h2>Take a trip through our Solar System</h2></div><span className="space-explorer-tag">8 WORLDS TO DISCOVER</span></div>
@@ -124,7 +143,7 @@ function SpaceExplorer() {
         <div className="space-stage-caption"><span>THE SUN</span><span>Planetary orbits • not to scale</span></div>
       </div>
       <div className="space-planet-picker" role="group" aria-label="Choose a planet">
-        {spaceWorlds.map((planet) => <button type="button" key={planet.id} className={selected === planet.id ? "space-planet-choice active" : "space-planet-choice"} onClick={() => setSelected(planet.id)} aria-pressed={selected === planet.id}>
+        {spaceWorlds.map((planet) => <button type="button" key={planet.id} className={selected === planet.id ? "space-planet-choice active" : "space-planet-choice"} onClick={() => choosePlanet(planet.id)} aria-pressed={selected === planet.id}>
           <i style={{ "--planet-color": planet.color }} aria-hidden="true" /><span>{planet.name}</span>
         </button>)}
       </div>
@@ -132,7 +151,28 @@ function SpaceExplorer() {
         <div><span>YOUR CURRENT DESTINATION</span><h3>{world.name}</h3><p>{world.fact}</p></div>
         <div className="space-discovery-side"><small>ONE ORBIT AROUND THE SUN</small><strong>{world.orbit}</strong><p>Did you know?</p><em>{world.wonder}</em></div>
       </article>
-      <p className="space-explorer-note">Keep exploring: every planet has a different story. Select another world whenever you're ready.</p>
+      <div className="space-mission-progress" aria-live="polite">
+        <div><strong>SPACE EXPLORER MISSION</strong><span>{solved.length}/8 discoveries · {solved.length} stars earned</span></div>
+        <div className="space-mission-track" role="progressbar" aria-label="Planet discoveries completed" aria-valuemin={0} aria-valuemax={8} aria-valuenow={solved.length}><span style={{ width: `${(solved.length / 8) * 100}%` }} /></div>
+        <p>{visited.length} of 8 planets visited. Explore in any order—your mission is to stay curious.</p>
+      </div>
+      <section className="space-size-lab" aria-label="Planet size comparison">
+        <div><span className="space-lab-kicker">PLANET SIZE LAB</span><h3>How big is {world.name}?</h3><p>Compare its equatorial diameter with Earth. The bars use one shared scale.</p></div>
+        <div className="space-size-row"><span>Earth</span><div className="space-size-track"><i style={{ width: `${(1 / 11.21) * 100}%` }} /></div><strong>12,756 km · 1×</strong></div>
+        <div className="space-size-row"><span>{world.name}</span><div className="space-size-track"><i style={{ width: `${(world.sizeFactor / 11.21) * 100}%` }} /></div><strong>{world.diameter} · {world.sizeFactor}× Earth</strong></div>
+      </section>
+      <section className="space-mission-challenge" aria-label={`${world.name} discovery challenge`}>
+        <div><span className="space-lab-kicker">DISCOVERY CHALLENGE</span><h3>{world.challenge.question}</h3></div>
+        <div className="space-challenge-options">
+          {world.challenge.options.map((option, index) => <button type="button" key={option} onClick={() => answerChallenge(index)} disabled={solved.includes(world.id)}>{option}</button>)}
+        </div>
+        {feedback === "correct" || solved.includes(world.id)
+          ? <p className="space-challenge-feedback success" role="status">★ Brilliant discovery! You earned a star for {world.name}.</p>
+          : feedback === "hint"
+            ? <p className="space-challenge-feedback" role="status">Good exploring—try another answer. Hint: {world.challenge.hint}</p>
+            : <p className="space-challenge-feedback">Choose an answer. If you need a clue, Aahana will help you try another way.</p>}
+      </section>
+      <p className="space-explorer-note">Every planet has a different story. You can revisit worlds and try their challenges again anytime.</p>
     </section>
   );
 }
