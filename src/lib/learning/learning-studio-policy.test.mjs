@@ -27,6 +27,13 @@ test("chat API accepts the dedicated learn mode and validates learner profile fi
   assert.match(route, /learningProfile\.language/);
 });
 
+test("reopening a learning session restores its original mode and learner profile", () => {
+  assert.match(studio, /let resumedProfile = \{ gradeBand, subject, curriculum, language, learningMode \}/);
+  assert.match(studio, /learningMode: resumedProfile\.learningMode/);
+  assert.match(studio, /profile: resumedProfile/);
+  assert.match(studio, /setLearningMode\(resumedProfile\.learningMode\)/);
+});
+
 test("learning instructions are included in the actual model system prompt", () => {
   const start = route.indexOf("const systemPrompt = [");
   const end = route.indexOf("].join(\" \");", start);
