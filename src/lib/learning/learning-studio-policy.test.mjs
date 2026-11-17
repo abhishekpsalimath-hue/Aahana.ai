@@ -98,3 +98,28 @@ test("Play and Solve keeps incomplete streamed quiz JSON out of the visible conv
   assert.match(studio, /Building your quiz/);
   assert.match(studio, /busy && index === messages\.length - 1/);
 });
+
+test("all learning modes receive animation-first visual teaching and non-shaming encouragement rules", () => {
+  assert.match(route, /ANIMATION-FIRST LEARNING/);
+  assert.match(route, /scene-by-scene directions/);
+  assert.match(route, /KINDNESS AND MOTIVATION/);
+  assert.match(route, /Never shame, scold, label, rank or discourage a learner/);
+  assert.match(route, /give one gentle clue or a simpler visual example/);
+});
+
+test("quiz mistakes invite a gentle clue and another attempt without negative labels", () => {
+  assert.match(route, /hint \(string\)/);
+  assert.match(studio, /typeof item\.hint === "string" && item\.hint\.trim\(\)/);
+  assert.match(studio, /Good exploring!/);
+  assert.match(studio, /Here's a little clue:/);
+  assert.match(studio, /I'll try again/);
+  assert.match(studio, /You figured it out!/);
+  assert.doesNotMatch(studio, /Not quite\./);
+  assert.doesNotMatch(studio, /className=.*incorrect/);
+});
+
+test("learning motion respects reduced-motion accessibility preferences", () => {
+  assert.match(styles, /@keyframes learning-icon-float/);
+  assert.match(styles, /@keyframes learning-scene-in/);
+  assert.match(styles, /@media\s*\(prefers-reduced-motion:reduce\)/);
+});
