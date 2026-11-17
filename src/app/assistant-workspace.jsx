@@ -205,6 +205,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [voicePreferencesLoaded, setVoicePreferencesLoaded] = useState(false);
   const [speechVoices, setSpeechVoices] = useState([]);
   const [speechInputAvailable, setSpeechInputAvailable] = useState(false);
+  const [voiceProviderCapabilities, setVoiceProviderCapabilities] = useState(null);
   const [voiceConsent, setVoiceConsent] = useState(false);
   const [providerRecording, setProviderRecording] = useState(false);
   const [providerTranscribing, setProviderTranscribing] = useState(false);
@@ -222,6 +223,18 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     ["kn-IN","ಕನ್ನಡ (Kannada)"],["hi-IN","हिन्दी (Hindi)"],["ta-IN","தமிழ் (Tamil)"],["te-IN","తెలుగు (Telugu)"],["ml-IN","മലയാളം (Malayalam)"],["mr-IN","मराठी (Marathi)"],["bn-IN","বাংলা (Bengali)"],["gu-IN","ગુજરાતી (Gujarati)"],["pa-IN","ਪੰਜਾਬੀ (Punjabi)"],["ur-IN","اردو (Urdu)"],["or-IN","ଓଡ଼ିଆ (Odia)"],["as-IN","অসমীয়া (Assamese)"],["ne-NP","नेपाली (Nepali)"],["sa-IN","संस्कृत (Sanskrit)"],["ks-IN","Kashmiri"],["sd-IN","Sindhi"],["kok-IN","Konkani"],["doi-IN","Dogri"],["mni-IN","Manipuri"],["brx-IN","Bodo"],
     ["en-IN","English (India)"],["en-US","English (US)"],["en-GB","English (UK)"],["en-AU","English (Australia)"],["en-CA","English (Canada)"],["es-ES","Español (Spanish)"],["es-MX","Spanish (Mexico)"],["fr-FR","Français (French)"],["fr-CA","French (Canada)"],["de-DE","Deutsch (German)"],["pt-BR","Português (Brazil)"],["pt-PT","Portuguese (Portugal)"],["ar-SA","العربية (Arabic)"],["ar-EG","Arabic (Egypt)"],["zh-CN","中文 (Mandarin)"],["zh-TW","Chinese (Traditional)"],["yue-HK","Cantonese"],["ja-JP","日本語 (Japanese)"],["ko-KR","한국어 (Korean)"],["ru-RU","Русский (Russian)"],["it-IT","Italiano (Italian)"],["nl-NL","Nederlands (Dutch)"],["sv-SE","Swedish"],["no-NO","Norwegian"],["da-DK","Danish"],["fi-FI","Finnish"],["is-IS","Icelandic"],["pl-PL","Polish"],["cs-CZ","Czech"],["sk-SK","Slovak"],["hu-HU","Hungarian"],["ro-RO","Romanian"],["bg-BG","Bulgarian"],["el-GR","Greek"],["tr-TR","Türkçe (Turkish)"],["he-IL","עברית (Hebrew)"],["th-TH","ไทย (Thai)"],["vi-VN","Tiếng Việt (Vietnamese)"],["id-ID","Bahasa Indonesia"],["ms-MY","Bahasa Melayu"],["fil-PH","Filipino"],["sw-KE","Swahili"],["af-ZA","Afrikaans"],["uk-UA","Ukrainian"],["hr-HR","Croatian"],["sr-RS","Serbian"],["sl-SI","Slovenian"],["lt-LT","Lithuanian"],["lv-LV","Latvian"],["et-EE","Estonian"],["fa-IR","Persian"],["am-ET","Amharic"]
   ];
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/voice/capabilities", { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Voice capability status unavailable");
+        return response.json();
+      })
+      .then((result) => { if (active) setVoiceProviderCapabilities(result); })
+      .catch(() => { if (active) setVoiceProviderCapabilities(null); });
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     const refreshCapabilities = () => {
@@ -1230,7 +1243,17 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
               </div>
             )}
             <div className="image-attach-row">
-              <select aria-label="Voice input language" value={voiceLanguage} onChange={(event) => setVoiceLanguage(event.target.value)} className="copy-message">{voiceLanguages.map(([code, label]) => <option key={code} value={code}>{label}</option>)}</select>
+              <select aria-label="Voice input language" value={voiceLanguage} onChange={(event) => setVoiceLanguage(event.target.value)} className="copy-message">{voiceLanguages.map(([code, label]) => {
+                const privateRecognition = voiceProviderCapabilities?.recognition?.enabled && voiceProviderCapabilities.recognition.supportedLocales.some((locale) => locale.toLowerCase() === code.toLowerCase());
+                const privateSynthesis = voiceProviderCapabilities?.synthesis?.enabled && voiceProviderCapabilities.synthesis.supportedLocales.some((locale) => locale.toLowerCase() === code.toLowerCase());
+                const deviceVoice = findBestSpeechVoice(speechVoices, code);
+                const suffix = privateRecognition && privateSynthesis ? " · Private two-way"
+                  : privateRecognition ? " · Private input"
+                  : privateSynthesis ? " · Private speech"
+                  : deviceVoice ? " · Device speech"
+                  : "";
+                return <option key={code} value={code}>{label}{suffix}</option>;
+              })}</select>
               <button className="copy-message" type="button" onClick={startVoiceInput} disabled={listening || busy}>{listening ? "Listening…" : "Speak"}</button>
               <button className="copy-message" type="button" onClick={providerRecording ? stopProviderRecording : startProviderRecording} disabled={busy || providerTranscribing || listening}>
                 {providerRecording ? `Stop recording · ${providerSeconds}s / 60s` : providerTranscribing ? "Transcribing…" : "Private voice"}
@@ -1240,8 +1263,9 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                 Allow this recording to be sent to Aahana's configured private speech service
               </label>
               <span className="voice-capability-note" role="status">
-                Input: {speechInputAvailable ? "browser API detected; language coverage unverified" : "not available"} ·
-                Output for {voiceLanguage}: {findBestSpeechVoice(speechVoices, voiceLanguage) ? "matching device voice found" : "no matching device voice"}
+                Private input: {voiceProviderCapabilities?.recognition?.enabled ? (voiceProviderCapabilities.recognition.supportedLocales.some((locale) => locale.toLowerCase() === voiceLanguage.toLowerCase()) ? "available for selected language" : "not enabled for selected language") : "not configured"} ·
+                Private speech: {voiceProviderCapabilities?.synthesis?.enabled ? (voiceProviderCapabilities.synthesis.supportedLocales.some((locale) => locale.toLowerCase() === voiceLanguage.toLowerCase()) ? "available for selected language" : "not enabled for selected language") : "not configured"} ·
+                Device speech: {findBestSpeechVoice(speechVoices, voiceLanguage) ? "voice installed" : speechInputAvailable ? "language coverage unknown" : "unavailable"}
               </span>
               <label className="copy-message" style={{display:"inline-flex",alignItems:"center",gap:6}}>
                 <input type="checkbox" checked={autoSpeak} onChange={(event) => setAutoSpeak(event.target.checked)} />
