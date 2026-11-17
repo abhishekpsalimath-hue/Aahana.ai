@@ -339,3 +339,10 @@
 .learning-3d-experiment button:focus-visible{outline:2px solid #b9d9a6;outline-offset:3px}
 .learning-3d-experiment .learning-3d-experiment-observation{padding:10px;border-radius:10px;background:rgba(255,255,255,.05);color:var(--foreground,#eee9f6)}
 @media(prefers-reduced-motion:reduce){.learning-3d-experiment *{scroll-behavior:auto!important}}
+
+
+/* Engine-cycle learning controls */
+.learning-3d-experiment-control [role="group"] { display:flex; flex-wrap:wrap; gap:7px; }
+.learning-3d-experiment-control [role="group"] button { min-height:36px; }
+.learning-3d-experiment-control [role="group"] button:focus-visible,
+.learning-3d-experiment > button:focus-visible { outline:2px solid #d8c4ff; outline-offset:3px; }
