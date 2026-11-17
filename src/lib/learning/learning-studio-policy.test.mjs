@@ -185,12 +185,12 @@ test("learning memory is opt-in, authenticated, owner-scoped and deletable", () 
   assert.match(learningMemoryRoute, /Enable private memory before saving/);
   assert.match(learningMemoryRoute, /export async function DELETE/);
   assert.match(studio, /const \[learningMemory, setLearningMemory\] = useState\(\{ enabled: false, journeys: \[\] \}\)/);
-  assert.match(studio, /async function updateLearningMemoryConsent\\(\\)/);
-  assert.match(studio, /fetch\\("\\/api\\/memories"/);
-  assert.match(studio, /async function deleteLearningJourney\\(id\\)/);
-  assert.match(studio, /fetch\\("\\/api\\/learning-journey\\?id=" \\+ encodeURIComponent\\(id\\)/);
-  assert.match(studio, /memoryEnabled=\\{learningMemory\\.enabled\\}/);
-  assert.match(studio, /onSaveJourney=\\{\\(journey\\) => saveLearningJourney\\(journey, item\\.profile\\)\\}/);
+  assert.match(studio, /async function updateLearningMemoryConsent\(\)/);
+  assert.match(studio, /fetch\("\/api\/memories"/);
+  assert.match(studio, /async function deleteLearningJourney\(id\)/);
+  assert.match(studio, /fetch\("\/api\/learning-journey\?id=" \+ encodeURIComponent\(id\)/);
+  assert.match(studio, /memoryEnabled=\{learningMemory\.enabled\}/);
+  assert.match(studio, /onSaveJourney=\{\(journey\) => saveLearningJourney\(journey, item\.profile\)\}/);
   assert.match(animated, /onSaveJourney\\(\\{/);
   assert.match(animated, /Save to my journey/);
 });
