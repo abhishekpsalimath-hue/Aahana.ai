@@ -413,3 +413,6 @@
 .learning-planet-back{margin:4px 0 10px;border-color:rgba(187,166,235,.48);background:rgba(75,55,108,.35);color:#e7dcff}
 @media(max-width:760px){.learning-planet-picker{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(prefers-reduced-motion:reduce){.learning-planet-picker button,.learning-planet-back{transition:none}}
+
+.learning-planet-stats{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin:8px 0 12px!important;padding:9px 10px;border:1px solid rgba(166,190,229,.18);border-radius:9px;background:rgba(75,105,151,.12);color:#bfcce2!important;font-size:10px!important}
+.learning-planet-stats strong{color:#f0f5ff;font-weight:800}
