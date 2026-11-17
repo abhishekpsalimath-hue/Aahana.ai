@@ -67,7 +67,7 @@ export const learningCurricula = [
 const authoredSubjectSeeds = [
   ["Explore anything","Critical thinking","Thinking clearly and testing ideas",
     ["Separate a claim from the evidence offered for it","Compare explanations using relevance and reliability","Recognise assumptions and revise a conclusion when evidence changes"],
-    [["Claims, reasons and evidence",["Identify a claim, its supporting reason and the evidence offered"],["claim","reason","evidence","example"]],["Compare explanations",["Judge whether evidence is relevant, sufficient and trustworthy"],["relevance","reliability","corroboration","bias"]],["Reach a careful conclusion",["State a proportionate conclusion and explain what could change it"],["assumption","counterexample","uncertainty","revision"]]],
+    [["Claims, reasons and evidence",["Identify a claim, its supporting reason and the evidence offered","Distinguish an observation from an opinion in a simple example"],["claim","reason","evidence","example"]],["Compare explanations",["Judge whether evidence is relevant, sufficient and trustworthy","Explain why a relevant example is stronger than an unrelated example"],["relevance","reliability","corroboration","bias"]],["Reach a careful conclusion",["State a proportionate conclusion and explain what could change it","Recognise when the available evidence is not enough to decide"],["assumption","counterexample","uncertainty","revision"]]],
     ["claim-evidence analysis","source comparison","reasoned written conclusion"]],
   ["Mathematics","Algebra","Algebra: expressions, equations and patterns",
     ["Translate a verbal relationship into an algebraic expression","Simplify expressions while preserving equality","Solve and check one-variable linear equations"],
