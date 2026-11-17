@@ -154,3 +154,14 @@
 .learning-journey-item button:disabled{opacity:.5}
 @media(max-width:640px){.learning-journey-item{align-items:flex-start}.learning-journey-item>div{overflow-wrap:anywhere}}
 .motion-learning-reflection>button+button{justify-self:start}
+
+.learning-roadmap{max-width:1160px;margin:0 auto;padding:22px 0 28px;border-top:1px solid #2d2738}
+.learning-roadmap>p{max-width:720px;color:#aaa2b7;font-size:12px;line-height:1.65}
+.learning-roadmap-group{display:grid;gap:9px;margin-top:17px}
+.learning-roadmap-group h3{margin:0;color:#d8c9ed;font-size:12px;font-weight:700}
+.learning-roadmap-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border:1px solid #403451;border-radius:10px;background:#17131f}
+.learning-roadmap-item>div{display:grid;gap:4px;min-width:0}
+.learning-roadmap-item strong{color:#f2eaff;font-size:12px}
+.learning-roadmap-item small{color:#aaa2b7;font-size:10px;line-height:1.5}
+.learning-roadmap-item button{flex:0 0 auto;border:1px solid #80699f;border-radius:8px;padding:8px 11px;background:#292138;color:#f0e8fa;font-size:10px;font-weight:700;cursor:pointer}
+@media(max-width:640px){.learning-roadmap-item{align-items:flex-start}.learning-roadmap-item>div{overflow-wrap:anywhere}}
