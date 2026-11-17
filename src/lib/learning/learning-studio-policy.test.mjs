@@ -424,3 +424,16 @@ test("animated lesson schema and tutor prompts can select embedded interactive 3
   assert.match(route, /3D AND SPATIAL LEARNING/);
   assert.match(route, /interactive 3D lesson visuals/);
 });
+
+
+test("3D learning media uses high-density rendering, denser globe geometry and larger visual stages", () => {
+  const threeDPath = fileURLToPath(new URL("../../app/learn/interactive-3d-world.jsx", import.meta.url));
+  const threeD = readFileSync(threeDPath, "utf8");
+  assert.match(threeD, /devicePixelRatio \|\| 1, 3/);
+  assert.match(threeD, /imageSmoothingQuality = "high"/);
+  assert.match(threeD, /sphereMesh\(1, 32, 48, "#328cc4"\)/);
+  assert.match(threeD, /function illuminateFace\(color, brightness\)/);
+  assert.match(threeD, /const brightness = \.76 \+ light \* \.34/);
+  assert.match(styles, /\.learning-3d-viewer canvas\{[^}]*height:430px/);
+  assert.match(styles, /\.motion-art\{[^}]*max-width:760px[^}]*max-height:320px/);
+});
