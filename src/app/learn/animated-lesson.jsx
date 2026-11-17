@@ -12,17 +12,17 @@ export function readMotionLesson(content) {
     if (value?.type !== "aahana_motion_lesson_v1" || typeof value.title !== "string" ||
         !Array.isArray(value.scenes) || value.scenes.length < 2 || value.scenes.length > 6) return null;
     const scenes = value.scenes.filter((scene) =>
-      typeof scene?.caption === "string" && scene.caption.trim() &&
-      typeof scene?.narration === "string" && scene.narration.trim() &&
+      typeof scene?.caption === "string" && scene.caption.trim() && scene.caption.length <= 120 &&
+      typeof scene?.narration === "string" && scene.narration.trim() && scene.narration.length <= 1200 &&
       visualTypes.has(scene.visual) &&
-      typeof scene?.action === "string" && scene.action.trim() &&
-      typeof scene?.challenge?.question === "string" && scene.challenge.question.trim() &&
+      typeof scene?.action === "string" && scene.action.trim() && scene.action.length <= 260 &&
+      typeof scene?.challenge?.question === "string" && scene.challenge.question.trim() && scene.challenge.question.length <= 240 &&
       Array.isArray(scene.challenge.options) && scene.challenge.options.length === 3 &&
-      scene.challenge.options.every((option) => typeof option === "string" && option.trim()) &&
+      scene.challenge.options.every((option) => typeof option === "string" && option.trim() && option.length <= 120) &&
       new Set(scene.challenge.options).size === 3 &&
       Number.isInteger(scene.challenge.correctIndex) && scene.challenge.correctIndex >= 0 && scene.challenge.correctIndex < 3 &&
-      typeof scene.challenge.hint === "string" && scene.challenge.hint.trim() &&
-      typeof scene.challenge.explanation === "string" && scene.challenge.explanation.trim()
+      typeof scene.challenge.hint === "string" && scene.challenge.hint.trim() && scene.challenge.hint.length <= 260 &&
+      typeof scene.challenge.explanation === "string" && scene.challenge.explanation.trim() && scene.challenge.explanation.length <= 500
     );
     if (scenes.length !== value.scenes.length) return null;
     return { title: value.title.slice(0, 100), scenes };
