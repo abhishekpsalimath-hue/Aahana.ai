@@ -323,7 +323,7 @@ test("student mode includes an interactive 3D model lab rather than image-only l
   const world = readFileSync(worldPath, "utf8");
   assert.match(studio, /import Interactive3DWorld from ".\/interactive-3d-world"/);
   assert.match(studio, /<Interactive3DWorld \/>/);
-  for (const model of ["planet", "molecule", "atom", "dna", "cube", "terrain", "cell", "solar-system", "plant-cell", "heart", "pyramid"]) assert.ok(world.includes(`id: "${model}"`), `Missing 3D model: ${model}`);
+  for (const model of ["planet", "molecule", "atom", "dna", "cube", "terrain", "cell", "solar-system", "plant-cell", "heart", "pyramid", "ecosystem", "engine"]) assert.ok(world.includes(`id: "${model}"`), `Missing 3D model: ${model}`);
   assert.match(world, /getContext\("2d"\)/);
   assert.match(world, /rotatePoint/);
   assert.match(world, /onPointerDown/);
@@ -338,7 +338,7 @@ test("student mode includes an interactive 3D model lab rather than image-only l
 });
 
 test("animated lesson schema and tutor prompts can select embedded interactive 3D scenes", () => {
-  for (const visual of ["3d-planet", "3d-molecule", "3d-atom", "3d-dna", "3d-geometry", "3d-terrain", "3d-plant-cell", "3d-heart", "3d-pyramid"]) {
+  for (const visual of ["3d-planet", "3d-molecule", "3d-atom", "3d-dna", "3d-geometry", "3d-terrain", "3d-plant-cell", "3d-heart", "3d-pyramid", "3d-ecosystem", "3d-engine"]) {
     assert.ok(animated.includes(`"${visual}"`), `Animated lesson renderer missing ${visual}`);
     assert.ok(route.includes(visual), `Tutor prompt missing ${visual}`);
   }
