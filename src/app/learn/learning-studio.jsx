@@ -288,7 +288,7 @@ export default function LearningStudio({ userEmail = "" }) {
               : learningMode === "play" && item.role === "assistant" && busy && index === messages.length - 1
                 ? <div className="learning-thinking"><i /><i /><i /> Building your quiz</div>
                 : readMotionLesson(item.content)
-                ? <AnimatedLesson lesson={readMotionLesson(item.content)} />
+                ? <AnimatedLesson content={item.content} />
                 : <p>{item.content}</p>) : <div className="learning-thinking"><i /><i /><i /> Preparing your lesson</div>}
           </article>)}
         </div>}
