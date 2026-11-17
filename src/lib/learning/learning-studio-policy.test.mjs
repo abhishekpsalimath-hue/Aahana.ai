@@ -323,13 +323,16 @@ test("student mode includes an interactive 3D model lab rather than image-only l
   const world = readFileSync(worldPath, "utf8");
   assert.match(studio, /import Interactive3DWorld from ".\/interactive-3d-world"/);
   assert.match(studio, /<Interactive3DWorld \/>/);
-  for (const model of ["planet", "molecule", "atom", "dna", "cube", "terrain"]) assert.ok(world.includes(`id: "${model}"`), `Missing 3D model: ${model}`);
+  for (const model of ["planet", "molecule", "atom", "dna", "cube", "terrain", "cell", "solar-system"]) assert.ok(world.includes(`id: "${model}"`), `Missing 3D model: ${model}`);
   assert.match(world, /getContext\("2d"\)/);
   assert.match(world, /rotatePoint/);
   assert.match(world, /onPointerDown/);
   assert.match(world, /onWheel/);
   assert.match(world, /Zoom in/);
   assert.match(world, /Reset view/);
+  assert.match(world, /ArrowLeft/);
+  assert.match(world, /role="application"/);
+  assert.match(world, /not to scale/);
   assert.match(styles, /\.learning-3d-viewer canvas/);
   assert.match(styles, /touch-action:none/);
 });
