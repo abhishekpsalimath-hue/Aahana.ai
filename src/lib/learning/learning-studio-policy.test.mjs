@@ -11,7 +11,7 @@ const studio = readFileSync(studioPath, "utf8");
 test("chat API accepts the dedicated learn mode and validates learner profile fields", () => {
   assert.match(route, /"improve",\s*"learn"/);
   assert.match(route, /allowedGradeBands/);
-  assert.match(route, /allowedLearningModes/);
+  assert.match(route, /allowedLearningModes/);\n  assert.match(route, /allowedLearningSubjects/);\n  assert.match(route, /\\p\{L\}/);
   assert.match(route, /mode === "learn" \?/);
   assert.match(route, /learningProfile\.language/);
 });
