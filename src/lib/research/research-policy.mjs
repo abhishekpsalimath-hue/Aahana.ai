@@ -1,4 +1,4 @@
-const GLOBAL_RESEARCH_INTENT = /\b(?:global|worldwide|international|across (?:the )?world|compare countries|between countries|cross[- ]country|global south|regional perspectives|multiple regions|world's|worldwide)\b/i;
+const GLOBAL_RESEARCH_INTENT = /\b(?:global|worldwide|international|across (?:the )?world|across (?:different )?countries|compare countries|between countries|cross[- ]country|global south|regional perspectives|multiple regions|world's|worldwide)\b/i;
 
 export function buildResearchQuery(prompt) {
   const question = String(prompt || "").trim().slice(0, 1000);
