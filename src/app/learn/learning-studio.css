@@ -305,3 +305,10 @@
 .learning-3d-hint{padding-top:12px;border-top:1px solid #393047;font-size:10px!important}
 @media(max-width:760px){.learning-3d-lab{padding:18px 14px;border-radius:20px}.learning-3d-layout{grid-template-columns:1fr}.learning-3d-viewer canvas{height:290px}.learning-3d-details{padding:15px}}
 @media(prefers-reduced-motion:reduce){.learning-3d-controls button,.learning-3d-model-list button{transition:none}}
+
+.learning-3d-inline{overflow:hidden;border:1px solid #514365;border-radius:14px;background:#100f1b}
+.learning-3d-inline canvas{display:block;width:100%;height:245px;touch-action:none;cursor:grab}
+.learning-3d-inline canvas:active{cursor:grabbing}
+.learning-3d-inline-controls{display:flex;justify-content:flex-end;gap:7px;padding:8px;border-top:1px solid #342b43}
+.learning-3d-inline-controls button{border:1px solid #514365;border-radius:8px;background:#211b2d;color:#eee6fa;padding:6px 10px;font-size:10px}
+@media(max-width:640px){.learning-3d-inline canvas{height:210px}}
