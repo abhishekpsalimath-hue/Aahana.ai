@@ -315,7 +315,7 @@ export function Mini3DModel({ modelId = "planet" }) {
     const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(render) : null;
     observer?.observe(canvas);
     return () => observer?.disconnect();
-  }, [modelId, rotation, zoom, ecosystem]);
+  }, [modelId, rotation, zoom]);
   function pointerDown(event) {
     dragRef.current = { x: event.clientX, y: event.clientY, yaw: rotation.yaw, pitch: rotation.pitch };
     event.currentTarget.setPointerCapture(event.pointerId);
@@ -352,7 +352,7 @@ export default function Interactive3DWorld() {
     const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(render) : null;
     observer?.observe(canvas);
     return () => observer?.disconnect();
-  }, [modelId, rotation, zoom]);
+  }, [modelId, rotation, zoom, ecosystem]);
 
   function onPointerDown(event) {
     dragRef.current = { x: event.clientX, y: event.clientY, yaw: rotation.yaw, pitch: rotation.pitch };
