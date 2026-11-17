@@ -137,7 +137,7 @@ test("learning motion respects reduced-motion accessibility preferences", () => 
 test("non-quiz learning modes request a validated structured animated lesson", () => {
   assert.match(route, /ANIMATED LESSON OUTPUT/);
   assert.match(route, /aahana_motion_lesson_v1/);
-  assert.match(route, /visual \(exactly one of fraction, orbit, water-cycle, plant-growth, number-line, molecule, concept-map\)/);
+  assert.match(route, /visual \(exactly one of fraction, orbit, water-cycle, plant-growth, number-line, molecule, concept-map, timeline, bar-chart, anatomy, circuit, code-flow, sound-wave, map, 3d-planet, 3d-molecule, 3d-atom, 3d-dna, 3d-geometry, 3d-terrain\)/);
   assert.match(route, /3 to 5 scenes/);
   assert.match(route, /Each challenge must contain question, exactly 3 unique options/);
   assert.match(route, /visualData with label/);
