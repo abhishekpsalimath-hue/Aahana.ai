@@ -36,16 +36,34 @@ const gradeBands = [
 const subjects = allLearningSubjects;
 const curricula = ["Not specified", "CBSE", "ICSE", "Karnataka State Board", "Other Indian State Board", "Cambridge International", "International Baccalaureate (IB)", "England National Curriculum", "US Common Core", "Other / help me choose"];
 function LearningCategoryExplorer({ onChooseCategory }) {
+  const [query, setQuery] = useState("");
+  const matches = query.trim().length < 2 ? [] : learningCategories.flatMap((item) =>
+    item.subjects.filter((subjectName) => subjectName.toLowerCase().includes(query.trim().toLowerCase()))
+      .map((subjectName) => ({ category: item.name, subject: subjectName }))
+  ).slice(0, 12);
   return (
     <section className="learning-category-explorer" aria-label="Explore learning categories">
       <div className="learning-section-heading"><div><span>THE LEARNING UNIVERSE</span><h2>Explore every direction</h2></div><span className="space-explorer-tag">{learningCategories.length} LEARNING WORLDS</span></div>
       <p className="space-explorer-intro">From the first letters and numbers to advanced research, creative practice and everyday skills—choose a world and start anywhere.</p>
+      <label className="learning-topic-search">
+        <span>Find a subject across the learning universe</span>
+        <input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search astronomy, coding, cooking, history…" aria-label="Search all learning subjects" />
+      </label>
+      {query.trim().length >= 2 && (
+        <div className="learning-topic-results" aria-live="polite">
+          {matches.length ? matches.map((item) => (
+            <button type="button" key={item.category + ":" + item.subject} onClick={() => { onChooseCategory(item.category, item.subject); setQuery(""); }}>
+              <strong>{item.subject}</strong><span>{item.category}</span>
+            </button>
+          )) : <p>No exact match yet. Try a broader subject or start with Explore anything.</p>}
+        </div>
+      )}
       <div className="learning-category-grid">
         {learningCategories.map((item) => (
           <button type="button" className="learning-category-card" key={item.name} onClick={() => onChooseCategory(item.name)}>
             <strong>{item.name}</strong>
             <span>{item.subjects.slice(0, 5).join(" · ")}</span>
-            <small>{item.subjects.length} topics <span aria-hidden="true">→</span></small>
+            <small>{item.subjects.length} subjects <span aria-hidden="true">→</span></small>
           </button>
         ))}
       </div>
@@ -488,10 +506,10 @@ export default function LearningStudio({ userEmail = "" }) {
         <p>Explore ideas, ask anything and learn in a way that makes sense to you. No pressure to know the answer before you begin.</p>
       </section>
 
-      <LearningCategoryExplorer onChooseCategory={(name) => {
+      <LearningCategoryExplorer onChooseCategory={(name, selectedSubject) => {
         const selectedCategory = learningCategories.find((item) => item.name === name);
         setCategory(name);
-        setSubject(selectedCategory?.subjects?.[0] || "Anything / explore");
+        setSubject(selectedSubject || selectedCategory?.subjects?.[0] || "Anything / explore");
         document.querySelector(".learning-profile")?.scrollIntoView({ behavior: "smooth", block: "start" });
       }} />
 
