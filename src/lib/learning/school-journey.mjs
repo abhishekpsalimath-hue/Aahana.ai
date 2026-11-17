@@ -1,32 +1,4 @@
-export const SCHOOL_JOURNEY = {
-  version: 1,
-  grades: [
-    {
-      id: "grade-1",
-      label: "Grade 1",
-      subjects: [
-        { id: "mathematics", title: "Mathematics", status: "active" },
-        { id: "english", title: "English", status: "locked" },
-        { id: "environmental-studies", title: "Environmental Studies", status: "locked" },
-        { id: "language-1", title: "First language", status: "locked" },
-        { id: "language-2", title: "Second language", status: "locked" },
-        { id: "creative-arts", title: "Art & creative activities", status: "locked" }
-      ]
-    },
-    {
-      id: "grade-2",
-      label: "Grade 2",
-      subjects: [
-        { id: "mathematics", title: "Mathematics", status: "locked" },
-        { id: "english", title: "English", status: "locked" },
-        { id: "environmental-studies", title: "Environmental Studies", status: "locked" },
-        { id: "language-1", title: "First language", status: "locked" },
-        { id: "language-2", title: "Second language", status: "locked" },
-        { id: "creative-arts", title: "Art & creative activities", status: "locked" }
-      ]
-    }
-  ]
-};
+// Grade 1 Mathematics authoring source. This module contains content only; it does not define student access or progression rules.
 
 export const GRADE_1_MATH = {
   id: "grade-1-mathematics",
@@ -330,30 +302,3 @@ export const GRADE_1_MATH = {
   ],
   completionRule: "Complete each unit lesson and answer its check-for-understanding correctly. All six units must be completed to unlock the next Grade 1 subject."
 };
-
-export function getNextSchoolSubject(progress = {}) {
-  for (const grade of SCHOOL_JOURNEY.grades) {
-    for (const subject of grade.subjects) {
-      const key = grade.id + ":" + subject.id;
-      if (!progress[key]?.complete) return { gradeId: grade.id, gradeLabel: grade.label, subject, key };
-    }
-  }
-  return null;
-}
-
-export function isGradeSubjectUnlocked(gradeId, subjectId, progress = {}) {
-  let previous = true;
-  for (const grade of SCHOOL_JOURNEY.grades) {
-    for (const subject of grade.subjects) {
-      if (grade.id === gradeId && subject.id === subjectId) return previous;
-      previous = Boolean(progress[grade.id + ":" + subject.id]?.complete);
-    }
-  }
-  return false;
-}
-
-export function getGradeOneMathProgress(progress = {}) {
-  const record = progress["grade-1:mathematics"] || {};
-  const completedUnits = GRADE_1_MATH.units.filter((unit) => record.units?.[unit.id]?.complete).length;
-  return { completedUnits, totalUnits: GRADE_1_MATH.units.length, complete: completedUnits === GRADE_1_MATH.units.length };
-}
