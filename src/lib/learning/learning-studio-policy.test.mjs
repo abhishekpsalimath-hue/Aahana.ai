@@ -544,7 +544,7 @@ test("solar system opens by default and all eight planets can be selected from t
   assert.match(world, /useState\("solar-system"\)/);
   assert.match(world, /function pickSolarSystemPlanet\(/);
   assert.match(world, /new THREE\.Raycaster\(\)/);
-  assert.match(world, /setSelectedPlanet\(planetId\)/);
+  assert.match(world, /onSelectedPlanetChange\(planetId\)/);
   assert.match(world, /learning-planet-picker/);
   for (const planet of ["mercury", "venus", "earth", "mars", "jupiter", "saturn", "uranus", "neptune"]) {
     assert.ok(world.includes(`id: "${planet}"`), `Missing planet: ${planet}`);
