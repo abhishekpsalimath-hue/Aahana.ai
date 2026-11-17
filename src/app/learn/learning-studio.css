@@ -418,3 +418,57 @@
 .learning-planet-stats strong{color:#f0f5ff;font-weight:800}
 
 .learning-3d-loading{max-width:1160px;margin:0 auto;min-height:220px;display:grid;place-items:center;border:1px solid #302a3d;border-radius:16px;background:radial-gradient(ellipse at 50% 40%,#211a32,#0d0b13 72%);color:#c9b8e8;font-size:13px;letter-spacing:.02em}
+
+
+/* Search the complete subject catalogue without forcing learners to change categories first. */
+.learning-topic-search {
+  display: grid;
+  gap: 8px;
+  max-width: 620px;
+  margin: 0 0 18px;
+  color: var(--learning-muted, #9b9aa8);
+  font-size: 0.82rem;
+}
+.learning-topic-search input {
+  width: 100%;
+  min-height: 46px;
+  padding: 0 15px;
+  border: 1px solid var(--learning-border, rgba(255,255,255,.14));
+  border-radius: 12px;
+  color: inherit;
+  background: rgba(255,255,255,.045);
+  font: inherit;
+  outline-offset: 3px;
+}
+.learning-topic-results {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 8px;
+  max-width: 900px;
+  margin: 0 0 22px;
+}
+.learning-topic-results button {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--learning-border, rgba(255,255,255,.12));
+  border-radius: 11px;
+  text-align: left;
+  color: inherit;
+  background: rgba(255,255,255,.035);
+  cursor: pointer;
+}
+.learning-topic-results button:hover,
+.learning-topic-results button:focus-visible {
+  border-color: var(--learning-accent, #b8a4e8);
+  background: rgba(255,255,255,.075);
+}
+.learning-topic-results button span,
+.learning-topic-results p {
+  color: var(--learning-muted, #9b9aa8);
+  font-size: .76rem;
+}
+@media (max-width: 600px) {
+  .learning-topic-results { grid-template-columns: 1fr; }
+}
