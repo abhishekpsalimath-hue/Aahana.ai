@@ -232,7 +232,7 @@ test("animated lesson renderer validates scene data and provides subject-specifi
   assert.match(animated, /disabled={!solved}/);
   assert.match(animated, /Good thinking/);
   assert.match(animated, /Solve this little discovery to unlock the next scene/);
-  assert.match(animated, /useMemo\(\(\) => readMotionLesson\(content\), \[content\]\)/);
+  assert.match(animated, /useMemo\(\(\) => readMotionLesson\(content\) \|\| \(isSolarSystemTopic \? solarSystemFallbackLesson : null\), \[content, isSolarSystemTopic\]\)/);
 });
 
 test("animated lesson controls and reduced-motion accessibility are present", () => {
