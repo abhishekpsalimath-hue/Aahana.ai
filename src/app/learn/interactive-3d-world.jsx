@@ -352,8 +352,10 @@ function drawScene(canvas, modelId, yaw, pitch, zoom, ecosystem = {}, time = 0) 
   glow.addColorStop(0, palette.center);
   glow.addColorStop(.58, palette.mid);
   glow.addColorStop(1, palette.edge);
+  ctx.globalAlpha = pulse;
   ctx.fillStyle = glow;
   ctx.fillRect(0, 0, w, h);
+  ctx.globalAlpha = 1;
 
   if (spaceScene) {
     const nebula = ctx.createRadialGradient(w * .22, h * .28, 2, w * .22, h * .28, w * .58);
