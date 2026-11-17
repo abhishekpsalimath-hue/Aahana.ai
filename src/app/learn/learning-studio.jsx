@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import "./learning-studio.css";
 
@@ -35,6 +35,47 @@ export default function LearningStudio({ userEmail = "" }) {
   const [conversationId, setConversationId] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+
+  const [history, setHistory] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(true);
+  const [historyError, setHistoryError] = useState("");
+  const [loadingConversationId, setLoadingConversationId] = useState(null);
+
+  async function loadLearningHistory() {
+    setHistoryLoading(true);
+    setHistoryError("");
+    try {
+      const response = await fetch("/api/conversations", { cache: "no-store" });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Could not load learning history.");
+      setHistory((result.conversations || []).filter((item) => item.mode === "learn"));
+    } catch (err) {
+      setHistoryError(err.message || "Could not load learning history.");
+    } finally {
+      setHistoryLoading(false);
+    }
+  }
+
+  useEffect(() => { loadLearningHistory(); }, []);
+
+  async function resumeLearning(id) {
+    if (busy || loadingConversationId) return;
+    setLoadingConversationId(id);
+    setError("");
+    try {
+      const response = await fetch("/api/conversations/" + encodeURIComponent(id), { cache: "no-store" });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Could not reopen this learning session.");
+      if (result.conversation?.mode !== "learn") throw new Error("This conversation is not a Learning Studio session.");
+      setConversationId(result.conversation.id);
+      setMessages((result.messages || []).map((item) => ({ role: item.role, content: item.content || "" })));
+      setQuestion("");
+    } catch (err) {
+      setError(err.message || "Could not reopen this learning session.");
+    } finally {
+      setLoadingConversationId(null);
+    }
+  }
 
   async function startLearning(event) {
     event.preventDefault();
@@ -123,6 +164,16 @@ export default function LearningStudio({ userEmail = "" }) {
         </div>
       </section>
 
+      <section className="learning-history" aria-label="Previous learning sessions">
+        <div className="learning-section-heading"><div><span>YOUR PROGRESS</span><h2>Pick up where you left off</h2></div><button type="button" onClick={loadLearningHistory} disabled={historyLoading}>Refresh</button></div>
+        {historyLoading ? <p className="learning-history-empty">Loading your learning sessions…</p>
+          : historyError ? <p className="learning-error" role="alert">{historyError}</p>
+          : history.length === 0 ? <p className="learning-history-empty">Your learning sessions will appear here after your first lesson.</p>
+          : <div className="learning-history-list">{history.map((item) => <button type="button" className={conversationId === item.id ? "learning-history-item current" : "learning-history-item"} key={item.id} onClick={() => resumeLearning(item.id)} disabled={busy || Boolean(loadingConversationId)}>
+              <span><strong>{item.title || "Learning session"}</strong><small>{new Date(item.updated_at).toLocaleString()}</small></span>
+              <em>{loadingConversationId === item.id ? "Opening…" : conversationId === item.id ? "Open" : "Resume"}</em>
+            </button>)}</div>}
+      </section>
       <section className="learning-modes">
         <div className="learning-section-heading"><div><span>CHOOSE YOUR JOURNEY</span><h2>How would you like to learn?</h2></div></div>
         <div className="learning-mode-grid">
