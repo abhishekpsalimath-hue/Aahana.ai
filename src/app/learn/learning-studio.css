@@ -350,3 +350,8 @@
 .learning-3d-experiment-control input[type="range"] { width:100%; accent-color:#b9a1e8; cursor:pointer; }
 .learning-3d-experiment-control input[type="range"]:focus-visible { outline:2px solid #d8c4ff; outline-offset:4px; border-radius:6px; }
 .learning-3d-experiment-control label { display:block; font-weight:600; margin-bottom:7px; }
+
+.motion-lesson-unavailable { margin:16px 0; padding:18px; border:1px solid rgba(190,164,243,.35); border-radius:16px; background:rgba(49,39,70,.42); color:#eee7fa; }
+.motion-lesson-unavailable p { margin:8px 0 14px; color:#cfc3e2; line-height:1.55; }
+.motion-lesson-unavailable button { min-height:42px; padding:9px 16px; border:1px solid rgba(211,190,255,.55); border-radius:999px; background:#6e5797; color:white; font-weight:650; cursor:pointer; }
+.motion-lesson-unavailable button:focus-visible { outline:2px solid #e2d2ff; outline-offset:3px; }
