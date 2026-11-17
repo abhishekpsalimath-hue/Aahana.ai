@@ -497,3 +497,15 @@ test("Learning Studio uses learner profile as a real teaching constraint", () =>
   assert.match(route, /grade band, subject, curriculum and language as constraints/);
   assert.match(route, /never claim syllabus alignment without verified syllabus evidence/);
 });
+
+test("Aahana applies a global, multi-region knowledge standard and broadens evidence-led research triggers", () => {
+  assert.match(route, /GLOBAL KNOWLEDGE STANDARD/);
+  assert.match(route, /Global South/);
+  assert.match(route, /SI units by default/);
+  assert.match(route, /KNOWLEDGE DEPTH AND COVERAGE/);
+  assert.match(route, /SOURCE AND EVIDENCE DISCIPLINE/);
+  assert.match(route, /peer-reviewed/);
+  assert.match(route, /official data/);
+  assert.match(route, /compare countries/);
+  assert.match(route, /global ranking/);
+});
