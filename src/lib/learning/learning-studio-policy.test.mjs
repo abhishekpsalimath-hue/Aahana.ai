@@ -91,8 +91,8 @@ test("Learning Studio validates and renders interactive quizzes with feedback an
   assert.match(studio, /item\.options\.length === 4/);
   assert.match(studio, /Number\.isInteger\(item\.correctIndex\)/);
   assert.match(studio, /function InteractiveQuiz\(\{ quiz \}\)/);
-  assert.match(studio, /onClick=\{\(\) => setAnswers/);
-  assert.match(studio, /Score: \$\{score\}/);
+  assert.match(studio, /function choose\(index, optionIndex\)/);
+  assert.match(studio, /discovered/);
   assert.match(studio, /Play again/);
 });
 
