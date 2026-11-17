@@ -1,4 +1,4 @@
-const GLOBAL_RESEARCH_INTENT = /\\b(?:global|worldwide|international|across (?:the )?world|compare countries|between countries|cross[- ]country|global south|regional perspectives|multiple regions|world's|worldwide)\\b/i;
+const GLOBAL_RESEARCH_INTENT = /\b(?:global|worldwide|international|across (?:the )?world|compare countries|between countries|cross[- ]country|global south|regional perspectives|multiple regions|world's|worldwide)\b/i;
 
 export function buildResearchQuery(prompt) {
   const question = String(prompt || "").trim().slice(0, 1000);
@@ -14,7 +14,7 @@ function canonicalSourceUrl(value) {
     for (const key of [...url.searchParams.keys()]) {
       if (/^(utm_.+|fbclid|gclid|mc_cid|mc_eid|ref_src)$/i.test(key)) url.searchParams.delete(key);
     }
-    url.pathname = url.pathname.replace(/\\/$/, "") || "/";
+    url.pathname = url.pathname.replace(/\/$/, "") || "/";
     url.searchParams.sort();
     return url.toString();
   } catch {
