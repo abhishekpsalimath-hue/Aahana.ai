@@ -161,8 +161,16 @@ allow-list. It is inert until both a private endpoint and token are injected.
 The allow-list must contain only locales that have passed end-to-end testing
 for that deployment; do not populate all 65 model languages by default.
 
+The authenticated `/api/voice/transcribe` route calls this adapter when the
+user is signed in, explicitly consents to send a recording, and the deployment
+has opted in with a private endpoint, server-side token, and tested locale
+allow-list. The chat composer records audio, converts it to WAV, and inserts
+the returned transcript into the editable prompt; it does not auto-submit.
+
 The wrapper currently performs multilingual recognition using the official
 model interface; it does not accept a locale hint or guarantee that its output
 matches the user's selected locale. The adapter's locale allow-list is an
-Aahana product gate, not proof of language detection or accuracy. This adapter
-has mock-based contract tests only and is not connected to the chat UI.
+Aahana product gate, not proof of language detection or accuracy. Adapter
+tests are mocked, and the live model service and end-to-end device path remain
+untested. The UI integration is present, but the provider is not active by
+default.
