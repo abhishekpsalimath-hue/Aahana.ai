@@ -41,3 +41,12 @@ transcripts/audio and unavailable providers fail with stable error codes.
 The browser SpeechRecognition and SpeechSynthesis APIs remain a local,
 best-effort fallback and are not a substitute for provider-backed multilingual
 coverage.
+
+## Locale coverage reporting
+
+Use `getSpeechLocaleSupport(capabilities, locale)` from `locale-support.mjs` to
+report recognition and synthesis independently. The result distinguishes
+`ready`, `recognition-only`, `synthesis-only`, and `unsupported`. A locale is
+never marked ready unless both enabled providers explicitly list the exact
+canonical locale. `getCommonSpeechLocales` returns the intersection for a UI
+that wants to filter to true two-way voice support.
