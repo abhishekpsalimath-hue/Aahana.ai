@@ -7,6 +7,7 @@ on:
       - ".github/workflows/sravaani-guards.yml"
       - "src/lib/voice/sravaani-asr-provider.*"
       - "src/lib/voice/README.md"
+      - "src/app/api/voice/transcribe/route.js"
   push:
     branches:
       - "feat/aahana-voice-runtime-adapters"
@@ -40,3 +41,5 @@ jobs:
           node-version: "22"
       - name: Run SraVaani provider adapter tests
         run: node --test ../../src/lib/voice/sravaani-asr-provider.test.mjs
+      - name: Syntax-check authenticated transcription route
+        run: node --check ../../src/app/api/voice/transcribe/route.js
