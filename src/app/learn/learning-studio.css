@@ -116,3 +116,16 @@
 @keyframes motion-plant-grow{to{transform:scaleY(1.14)}}
 @keyframes motion-number-pulse{50%{transform:scale(1.25)}}
 @media(prefers-reduced-motion:reduce){.motion-art *{animation:none!important}}
+
+.motion-prediction{display:grid;gap:10px;padding:13px;border:1px solid #594773;border-radius:11px;background:#191522}
+.motion-prediction>strong{font-size:13px;line-height:1.6;color:#f0e9fb}
+.motion-prediction-options{display:grid;gap:8px}
+.motion-prediction-options button{display:flex;align-items:center;gap:10px;text-align:left;border:1px solid #55466d;border-radius:9px;padding:10px 12px;background:#262033;color:#eee7f8;font-size:12px;line-height:1.5;cursor:pointer;transition:background .18s ease,border-color .18s ease}
+.motion-prediction-options button:hover:not(:disabled){background:#342a45;border-color:#9c80c8}
+.motion-prediction-options button:disabled{cursor:default;opacity:.72}
+.motion-prediction-options button span{display:grid;place-items:center;flex:0 0 23px;width:23px;height:23px;border-radius:50%;background:#45365b;color:#e7d9ff;font-weight:800}
+.motion-feedback{margin:0;font-size:12px;line-height:1.65}
+.motion-feedback.success{color:#bfe8ca}
+.motion-feedback.gentle{color:#d9c9ed}
+.motion-unlock-note{margin:0;color:#b8a9cb;font-size:10px;line-height:1.5}
+@media(prefers-reduced-motion:reduce){.motion-prediction-options button{transition:none}}
