@@ -18,6 +18,7 @@ export default function Native3DStudio() {
   const sceneRef = useRef(null);
   const meshRef = useRef(null);
   const rendererRef = useRef(null);
+  const autoRotateRef = useRef(autoRotate);
   const [shape, setShape] = useState("sphere");
   const [color, setColor] = useState("#b9a5d4");
   const [wireframe, setWireframe] = useState(false);
