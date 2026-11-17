@@ -56,9 +56,9 @@ test("learning instructions are included in the actual model system prompt", () 
 
 test("Student Mode stays focused on Grades 1–10 and keeps advanced exploration in Assistant", () => {
   assert.match(studio, /Choose your school grade/);
-  assert.match(studio, /Which grade are you in\\?/);
-  assert.match(studio, /Array\\.from\\(\\{ length: 10 \\}/);
-  assert.match(studio, /Grade \\{value\\}/);
+  assert.match(studio, /Which grade are you in\?/);
+  assert.match(studio, /Array\.from\(\{ length: 10 \}/);
+  assert.match(studio, /Grade \{value\}/);
   assert.match(studio, /Your learning conversation/);
   assert.match(studio, /Aahana will choose the best way to explain it/);
   assert.doesNotMatch(studio, /<LearningCategoryExplorer/);
