@@ -10,7 +10,7 @@
 .learning-section-heading{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:18px}
 .learning-section-heading h2{font:700 21px Manrope,sans-serif;letter-spacing:-.5px;margin:7px 0 0}
 .learning-section-heading>button{border:1px solid #4a3c61;background:#171321;color:#d9cafa;padding:9px 13px;border-radius:9px;font-size:12px}
-.learning-select-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.learning-select-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
 .learning-select-grid label{display:grid;gap:8px;color:#c9c1d4;font-size:12px}
 .learning-select-grid select,.learning-select-grid input{width:100%;min-width:0;background:#15121d;border:1px solid #3b3349;color:#f5f0fa;border-radius:10px;padding:12px;font:inherit;font-size:13px;outline:none}
 .learning-select-grid select:focus,.learning-select-grid input:focus,.learning-composer textarea:focus{border-color:#bda4f3}
