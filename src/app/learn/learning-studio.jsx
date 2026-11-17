@@ -116,6 +116,7 @@ export default function LearningStudio({ userEmail = "" }) {
       }
       answer += decoder.decode();
       setMessages((items) => items.map((item, index) => index === items.length - 1 ? { ...item, content: answer || "Let's try that question again." } : item));
+      await loadLearningHistory();
     } catch (err) {
       setError(err.message || "Something interrupted this learning session.");
       setMessages((items) => items[items.length - 1]?.role === "assistant" && !items[items.length - 1].content ? items.slice(0, -1) : items);
