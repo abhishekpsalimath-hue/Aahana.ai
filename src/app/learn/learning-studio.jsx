@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import "./learning-studio.css";
-import AnimatedLesson, { readMotionLesson } from "./animated-lesson";
+import AnimatedLesson, { AnimatedVisual, readMotionLesson } from "./animated-lesson";
 
 const learningModes = [
   { id: "story", title: "Story Mode", icon: "✦", detail: "Turn a difficult idea into a memorable story.", prompt: "Teach me through a vivid, age-appropriate story. Introduce the concept naturally, then connect each part of the story to the real idea." },
@@ -39,7 +39,8 @@ function readQuizPayload(content) {
       new Set(item.options).size === 4 &&
       Number.isInteger(item.correctIndex) && item.correctIndex >= 0 && item.correctIndex < 4 &&
       typeof item.explanation === "string" && item.explanation.trim() &&
-      typeof item.hint === "string" && item.hint.trim()
+      typeof item.hint === "string" && item.hint.trim() &&
+      ["fraction", "orbit", "water-cycle", "plant-growth", "number-line", "molecule", "concept-map"].includes(item.visual)
     );
     if (questions.length !== value.questions.length) return null;
     return { title: typeof value.title === "string" ? value.title : "A little challenge", questions };
@@ -74,6 +75,7 @@ function InteractiveQuiz({ quiz }) {
         return <section className={solved ? "learning-quiz-question solved" : "learning-quiz-question"} key={index}>
           <div className="learning-quiz-question-top"><span>CHALLENGE {index + 1}</span>{solved && <span className="learning-quiz-sparkle">✦ Nice discovery!</span>}</div>
           <h3>{item.question}</h3>
+          <AnimatedVisual visual={item.visual} />
           <div className="learning-quiz-options">
             {item.options.map((option, optionIndex) => <button type="button" key={optionIndex} disabled={solved} className={solved && optionIndex === item.correctIndex ? "correct" : ""} onClick={() => choose(index, optionIndex)}>
               <span>{String.fromCharCode(65 + optionIndex)}</span>{option}
