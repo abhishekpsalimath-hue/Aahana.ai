@@ -142,10 +142,21 @@ function createThreeScene(canvas,id) {
   const state={renderer,scene,camera,group,id,width:0,height:0};
   threeScenes.set(canvas,state);return state;
 }
+function clearSceneGroup(group) {
+  group.traverse(object => {
+    object.geometry?.dispose();
+    if(object.material){const materials=Array.isArray(object.material)?object.material:[object.material];materials.forEach(material=>{material.map?.dispose();material.dispose();});}
+  });
+}
 function renderThreeScene(canvas,id,yaw,pitch,zoom) {
   let state=threeScenes.get(canvas);
-  if(state&&state.id!==id){state.renderer.dispose();threeScenes.delete(canvas);state=null;}
   if(!state){state=createThreeScene(canvas,id);if(!state){const ctx=canvas.getContext("2d");if(ctx){ctx.clearRect(0,0,canvas.width,canvas.height);ctx.fillStyle="#d8c8f1";ctx.font="14px sans-serif";ctx.textAlign="center";ctx.fillText("3D preview is unavailable on this device",canvas.width/2,canvas.height/2);}return;}}
+  if(state.id!==id){
+    state.scene.remove(state.group);
+    clearSceneGroup(state.group);
+    state.group=new THREE.Group();state.scene.add(state.group);state.id=id;
+    makeSceneModel(state.group,id);
+  }
   const rect=canvas.getBoundingClientRect();const width=Math.max(1,Math.round(rect.width)),height=Math.max(1,Math.round(rect.height));
   if(width!==state.width||height!==state.height){state.renderer.setSize(width,height,false);state.camera.aspect=width/height;state.camera.updateProjectionMatrix();state.width=width;state.height=height;}
   state.group.rotation.set(pitch,yaw,0);state.camera.position.z=5.8/zoom;state.camera.updateProjectionMatrix();state.renderer.render(state.scene,state.camera);
