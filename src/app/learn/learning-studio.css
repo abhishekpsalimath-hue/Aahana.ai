@@ -92,7 +92,7 @@
 .motion-lesson-head span{font-size:9px;letter-spacing:1.4px;color:#c7b0f4;font-weight:800}
 .motion-lesson-head h3{margin:5px 0 0;font:700 17px Manrope,sans-serif;color:#f5efff}
 .motion-stage{overflow:hidden;border:1px solid #403451;border-radius:12px;background:radial-gradient(ellipse at 50% 40%,#302442,#15121e 72%);padding:10px}
-.motion-art{display:block;width:100%;max-width:520px;height:auto;max-height:220px;margin:auto;overflow:visible}
+.motion-art{display:block;width:100%;max-width:760px;height:auto;max-height:320px;margin:auto;overflow:visible}
 .motion-art .motion-piece{transform-origin:160px 82px;animation:motion-piece-turn 5s ease-in-out infinite alternate}
 .motion-art .motion-sun{animation:motion-sun-glow 2.6s ease-in-out infinite alternate}
 .motion-art .motion-orbit{transform-origin:160px 84px;animation:motion-orbit-turn 7s linear infinite}
@@ -288,7 +288,7 @@
 .learning-3d-lab{max-width:1120px;margin:28px auto;padding:28px;border:1px solid rgba(180,164,210,.22);border-radius:26px;background:linear-gradient(145deg,rgba(34,28,52,.9),rgba(16,18,32,.94))}
 .learning-3d-layout{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(250px,.8fr);gap:16px;align-items:stretch}
 .learning-3d-viewer{min-width:0;overflow:hidden;border:1px solid #514365;border-radius:18px;background:#100f1b}
-.learning-3d-viewer canvas{display:block;width:100%;height:370px;touch-action:none;cursor:grab;outline:none}
+.learning-3d-viewer canvas{display:block;width:100%;height:430px;touch-action:none;cursor:grab;outline:none}
 .learning-3d-viewer canvas:active{cursor:grabbing}
 .learning-3d-controls{display:flex;align-items:center;gap:8px;padding:12px;border-top:1px solid #342b43}
 .learning-3d-controls button,.learning-3d-model-list button{border:1px solid #514365;border-radius:9px;background:#211b2d;color:#eee6fa;padding:8px 11px;font-size:11px;cursor:pointer}
@@ -303,15 +303,15 @@
 .learning-3d-model-list button{min-height:40px;text-align:left}
 .learning-3d-model-list button.active{background:#3a2c51;border-color:#c7a9f5;color:#fff}
 .learning-3d-hint{padding-top:12px;border-top:1px solid #393047;font-size:10px!important}
-@media(max-width:760px){.learning-3d-lab{padding:18px 14px;border-radius:20px}.learning-3d-layout{grid-template-columns:1fr}.learning-3d-viewer canvas{height:290px}.learning-3d-details{padding:15px}}
+@media(max-width:760px){.learning-3d-lab{padding:18px 14px;border-radius:20px}.learning-3d-layout{grid-template-columns:1fr}.learning-3d-viewer canvas{height:340px}.learning-3d-details{padding:15px}}
 @media(prefers-reduced-motion:reduce){.learning-3d-controls button,.learning-3d-model-list button{transition:none}}
 
 .learning-3d-inline{overflow:hidden;border:1px solid #514365;border-radius:14px;background:#100f1b}
-.learning-3d-inline canvas{display:block;width:100%;height:245px;touch-action:none;cursor:grab}
+.learning-3d-inline canvas{display:block;width:100%;height:285px;touch-action:none;cursor:grab}
 .learning-3d-inline canvas:active{cursor:grabbing}
 .learning-3d-inline-controls{display:flex;justify-content:flex-end;gap:7px;padding:8px;border-top:1px solid #342b43}
 .learning-3d-inline-controls button{border:1px solid #514365;border-radius:8px;background:#211b2d;color:#eee6fa;padding:6px 10px;font-size:10px}
-@media(max-width:640px){.learning-3d-inline canvas{height:210px}}
+@media(max-width:640px){.learning-3d-inline canvas{height:245px}}
 
 
 /* Keyboard focus for interactive 3D learning canvases */
@@ -380,3 +380,9 @@
 @media(prefers-reduced-motion:reduce){
   .learning-mode-icon,.learning-quiz-sparkle,.learning-celebration,.motion-stage:before,.motion-stage:after,.motion-stardust i,.motion-companion,.motion-companion svg,.space-sun-core{animation:none!important}
 }
+
+/* Higher-clarity learning media: more room for diagrams and interactive models. */
+.motion-stage{padding:14px;background:radial-gradient(ellipse at 50% 42%,#382b50,#15121e 74%)}
+.motion-art{filter:drop-shadow(0 5px 16px rgba(0,0,0,.22))}
+.learning-3d-viewer canvas,.learning-3d-inline canvas{image-rendering:auto}
+@media(max-width:640px){.motion-art{max-height:280px}.motion-stage{padding:9px}}
