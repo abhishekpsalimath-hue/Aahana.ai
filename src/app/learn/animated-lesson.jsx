@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const visualTypes = new Set(["fraction", "orbit", "water-cycle", "plant-growth", "number-line", "molecule", "concept-map"]);
 
@@ -15,7 +15,14 @@ export function readMotionLesson(content) {
       typeof scene?.caption === "string" && scene.caption.trim() &&
       typeof scene?.narration === "string" && scene.narration.trim() &&
       visualTypes.has(scene.visual) &&
-      typeof scene?.action === "string" && scene.action.trim()
+      typeof scene?.action === "string" && scene.action.trim() &&
+      typeof scene?.challenge?.question === "string" && scene.challenge.question.trim() &&
+      Array.isArray(scene.challenge.options) && scene.challenge.options.length === 3 &&
+      scene.challenge.options.every((option) => typeof option === "string" && option.trim()) &&
+      new Set(scene.challenge.options).size === 3 &&
+      Number.isInteger(scene.challenge.correctIndex) && scene.challenge.correctIndex >= 0 && scene.challenge.correctIndex < 3 &&
+      typeof scene.challenge.hint === "string" && scene.challenge.hint.trim() &&
+      typeof scene.challenge.explanation === "string" && scene.challenge.explanation.trim()
     );
     if (scenes.length !== value.scenes.length) return null;
     return { title: value.title.slice(0, 100), scenes };
@@ -35,21 +42,59 @@ export function AnimatedVisual({ visual, paused = false }) {
   return <svg className={cls} viewBox="0 0 320 170" role="img" aria-label="A concept map connecting ideas"><g stroke="#9b86c5" strokeWidth="3"><path d="M160 83L75 40M160 83L245 40M160 83L75 130M160 83L245 130"/></g><circle cx="160" cy="83" r="34" fill="#8068aa"/>{[[75,40],[245,40],[75,130],[245,130]].map(([x,y],i)=><circle key={i} cx={x} cy={y} r="20" fill={i%2?"#79b7d7":"#c7a9f5"}/>)}</svg>;
 }
 
-export default function AnimatedLesson({ lesson }) {
+export default function AnimatedLesson({ content }) {
+  const lesson = useMemo(() => readMotionLesson(content), [content]);
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
-  useEffect(() => { setIndex(0); setPaused(false); }, [lesson]);
-  if (!lesson) return null;
+  const [attempts, setAttempts] = useState(0);
+  const [solved, setSolved] = useState(false);
+
+  useEffect(() => {
+    setIndex(0);
+    setPaused(false);
+    setAttempts(0);
+    setSolved(false);
+  }, [content]);
+
+  useEffect(() => {
+    setAttempts(0);
+    setSolved(false);
+  }, [index]);
+
+  if (!lesson) return <p>{content}</p>;
   const scene = lesson.scenes[index];
+  const challenge = scene.challenge;
+
+  function answer(optionIndex) {
+    if (solved) return;
+    if (optionIndex === challenge.correctIndex) setSolved(true);
+    else setAttempts((count) => count + 1);
+  }
+
   return <section className="motion-lesson" aria-label="Animated lesson">
-    <div className="motion-lesson-head"><div><span>EXPLORE IT IN MOTION</span><h3>{lesson.title}</h3></div><span>{index + 1} / {lesson.scenes.length}</span></div>
+    <div className="motion-lesson-head"><div><span>EXPLORE IT IN MOTION</span><h3>{lesson.title}</h3></div><span>SCENE {index + 1} / {lesson.scenes.length}</span></div>
     <div className="motion-stage"><AnimatedVisual visual={scene.visual} paused={paused}/><div className="motion-caption">{scene.caption}</div></div>
     <p className="motion-narration">{scene.narration}</p>
-    <div className="motion-action"><strong>Try this:</strong> {scene.action}</div>
-    <div className="motion-controls">
-      <button type="button" onClick={() => setIndex((n) => Math.max(0,n-1))} disabled={index===0}>Previous</button>
-      <button type="button" onClick={() => setPaused((v)=>!v)}>{paused ? "Play motion" : "Pause motion"}</button>
-      <button type="button" onClick={() => setIndex((n) => (n+1)%lesson.scenes.length)}>{index===lesson.scenes.length-1 ? "Replay lesson" : "Next scene"}</button>
+    <div className="motion-action"><strong>Explore:</strong> {scene.action}</div>
+    <div className="motion-prediction" aria-live="polite">
+      <strong>{challenge.question}</strong>
+      <div className="motion-prediction-options">
+        {challenge.options.map((option, optionIndex) => <button type="button" key={optionIndex} disabled={solved} aria-pressed={false} onClick={() => answer(optionIndex)}>
+          <span>{String.fromCharCode(65 + optionIndex)}</span>{option}
+        </button>)}
+      </div>
+      {solved
+        ? <p className="motion-feedback success"><strong>Great discovery!</strong> {challenge.explanation}</p>
+        : attempts > 0
+          ? <p className="motion-feedback gentle"><strong>Good thinking—let's explore again.</strong> {challenge.hint}</p>
+          : <p className="motion-feedback gentle">Take your time. Every prediction helps you understand.</p>}
     </div>
+    <div className="motion-controls">
+      <button type="button" onClick={() => setIndex((n) => Math.max(0,n-1))} disabled={index===0}>Previous scene</button>
+      <button type="button" onClick={() => setPaused((v)=>!v)}>{paused ? "Play motion" : "Pause motion"}</button>
+      <button type="button" disabled={!solved} onClick={() => setIndex((n) => (n+1)%lesson.scenes.length)}>{index===lesson.scenes.length-1 ? "Replay lesson" : "Next scene"}</button>
+    </div>
+    {!solved && <p className="motion-unlock-note">Solve this little discovery to unlock the next scene. You can try as many times as you like.</p>}
+    {solved && index === lesson.scenes.length - 1 && <p className="motion-feedback success"><strong>Adventure complete!</strong> You explored every scene. Curiosity got you here.</p>}
   </section>;
 }
