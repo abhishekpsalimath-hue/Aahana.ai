@@ -459,8 +459,15 @@ test("student 3D scenes render an efficient animated starfield, atmospheric glow
   assert.match(threeD, /requestAnimationFrame\(tick\)/);
   assert.match(threeD, /time - lastFrame >= 33/);
   assert.match(threeD, /prefers-reduced-motion: reduce/);
-  assert.match(threeD, /for \(let i = 0; i < 64; i\+\+\)/);
+  assert.match(threeD, /for \(let i = 0; i < 84; i\+\+\)/);
   assert.match(threeD, /const twinkle =/);
+  assert.match(threeD, /const spaceScene = \["planet", "solar-system"\]\.includes\(modelId\)/);
+  assert.match(threeD, /const biologyScene = \["dna", "cell", "plant-cell", "heart"\]\.includes\(modelId\)/);
+  assert.match(threeD, /const chemistryScene = \["molecule", "atom"\]\.includes\(modelId\)/);
+  assert.match(threeD, /const earthScene = \["terrain", "ecosystem"\]\.includes\(modelId\)/);
+  assert.match(threeD, /rgba\(133,238,211/);
+  assert.match(threeD, /rgba\(196,158,235/);
+  assert.match(threeD, /rgba\(184,211,168/);
   assert.match(threeD, /const modelAura = ctx\.createRadialGradient/);
   assert.match(threeD, /const lightX =/);
   assert.match(threeD, /const lightY =/);
