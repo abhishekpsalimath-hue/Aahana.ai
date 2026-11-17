@@ -18,6 +18,7 @@ test("Grade 1 Mathematics has a complete six-unit authored core", () => {
     assert.ok(unit.teach.length >= 3);
     assert.ok(unit.lessonDesign.visual);
     assert.ok(unit.lessonDesign.interaction);
+    if (["counting-to-20", "addition-within-10", "subtraction-within-10"].includes(unit.id)) assert.equal(unit.lessonDesign.visual, "counter-board");
     assert.equal(unit.assessmentDesign.formativeChecks.length, 3);
     assert.ok(unit.assessmentDesign.independentCheck);
     assert.ok(unit.assessmentDesign.feedback);
