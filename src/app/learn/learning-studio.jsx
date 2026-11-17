@@ -126,15 +126,15 @@ const spaceWorlds = [
   { id: "neptune", name: "Neptune", color: "#668de7", orbit: "164.8 Earth years", fact: "Neptune is a distant ice giant with supersonic winds and a deep blue atmosphere. It takes almost 165 Earth years to orbit the Sun.", wonder: "Neptune was first identified through mathematical predictions before it was directly observed.", diameter: "49,528 km", sizeFactor: 3.88, challenge: { question: "What is famous about Neptune's weather?", options: ["Supersonic winds", "Daily snowstorms of metal", "No winds at all"], correct: 0, hint: "Its winds can move faster than the speed of sound on Earth." }, },
 ];
 
-function SpaceExplorer() {
-  const [selected, setSelected] = useState("earth");
+function SpaceExplorer({ selectedPlanet, onSelectPlanet }) {
+  const selected = selectedPlanet || "earth";
   const [visited, setVisited] = useState(["earth"]);
   const [solved, setSolved] = useState([]);
   const [attempts, setAttempts] = useState({});
   const [feedback, setFeedback] = useState("");
   const world = spaceWorlds.find((item) => item.id === selected) || spaceWorlds[2];
   const choosePlanet = (id) => {
-    setSelected(id);
+    onSelectPlanet(id);
     setVisited((current) => current.includes(id) ? current : [...current, id]);
     setFeedback("");
   };
@@ -201,6 +201,7 @@ function SpaceExplorer() {
 }
 
 export default function LearningStudio({ userEmail = "" }) {
+  const [selectedPlanet, setSelectedPlanet] = useState(null);
   const [gradeBand, setGradeBand] = useState("not-sure");
   const [subject, setSubject] = useState("Anything / explore");
   const [category, setCategory] = useState("Explore anything");
@@ -490,8 +491,8 @@ export default function LearningStudio({ userEmail = "" }) {
         document.querySelector(".learning-profile")?.scrollIntoView({ behavior: "smooth", block: "start" });
       }} />
 
-      <SpaceExplorer />
-      <Interactive3DWorld />
+      <SpaceExplorer selectedPlanet={selectedPlanet} onSelectPlanet={setSelectedPlanet} />
+      <Interactive3DWorld selectedPlanet={selectedPlanet} onSelectedPlanetChange={setSelectedPlanet} />
 
       <section className="learning-profile" aria-label="Personalise your learning">
         <div className="learning-section-heading"><div><span>YOUR LEARNING SPACE</span><h2>Let’s make this yours</h2></div><button type="button" onClick={resetSession} disabled={busy}>New session</button></div>
