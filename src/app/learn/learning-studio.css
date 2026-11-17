@@ -416,3 +416,5 @@
 
 .learning-planet-stats{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin:8px 0 12px!important;padding:9px 10px;border:1px solid rgba(166,190,229,.18);border-radius:9px;background:rgba(75,105,151,.12);color:#bfcce2!important;font-size:10px!important}
 .learning-planet-stats strong{color:#f0f5ff;font-weight:800}
+
+.learning-3d-loading{max-width:1160px;margin:0 auto;min-height:220px;display:grid;place-items:center;border:1px solid #302a3d;border-radius:16px;background:radial-gradient(ellipse at 50% 40%,#211a32,#0d0b13 72%);color:#c9b8e8;font-size:13px;letter-spacing:.02em}
