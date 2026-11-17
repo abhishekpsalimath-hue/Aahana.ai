@@ -5,6 +5,8 @@ on:
     paths:
       - "services/sravaani-asr/**"
       - ".github/workflows/sravaani-guards.yml"
+      - "src/lib/voice/sravaani-asr-provider.*"
+      - "src/lib/voice/README.md"
   push:
     branches:
       - "feat/aahana-voice-runtime-adapters"
