@@ -9,7 +9,7 @@ const Interactive3DWorld = dynamic(() => import("./interactive-3d-world"), {
   ssr: false,
   loading: () => <div className="learning-3d-loading" role="status">Preparing the interactive 3D environment…</div>,
 });
-import { learningCategories, allLearningSubjects } from "@/lib/learning/learning-catalog";
+import { learningCategories, allLearningSubjects, findLearningSubjects } from "@/lib/learning/learning-catalog";
 
 const learningModes = [
   { id: "story", title: "Story Mode", icon: "✦", detail: "Turn a difficult idea into a memorable story.", prompt: "Teach me through a vivid, age-appropriate story. Introduce the concept naturally, then connect each part of the story to the real idea." },
@@ -37,10 +37,7 @@ const subjects = allLearningSubjects;
 const curricula = ["Not specified", "CBSE", "ICSE", "Karnataka State Board", "Other Indian State Board", "Cambridge International", "International Baccalaureate (IB)", "England National Curriculum", "US Common Core", "Other / help me choose"];
 function LearningCategoryExplorer({ onChooseCategory }) {
   const [query, setQuery] = useState("");
-  const matches = query.trim().length < 2 ? [] : learningCategories.flatMap((item) =>
-    item.subjects.filter((subjectName) => subjectName.toLowerCase().includes(query.trim().toLowerCase()))
-      .map((subjectName) => ({ category: item.name, subject: subjectName }))
-  ).slice(0, 12);
+  const matches = findLearningSubjects(query, 12);
   return (
     <section className="learning-category-explorer" aria-label="Explore learning categories">
       <div className="learning-section-heading"><div><span>THE LEARNING UNIVERSE</span><h2>Explore every direction</h2></div><span className="space-explorer-tag">{learningCategories.length} LEARNING WORLDS</span></div>
