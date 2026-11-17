@@ -191,7 +191,7 @@ test("learning memory is opt-in, authenticated, owner-scoped and deletable", () 
   assert.match(studio, /fetch\("\/api\/learning-journey\?id=" \+ encodeURIComponent\(id\)/);
   assert.match(studio, /memoryEnabled=\{learningMemory\.enabled\}/);
   assert.match(studio, /onSaveJourney=\{\(journey\) => saveLearningJourney\(journey, item\.profile\)\}/);
-  assert.match(animated, /onSaveJourney\\(\\{/);
+  assert.match(animated, /onSaveJourney\(\{/);
   assert.match(animated, /Save to my journey/);
 });
 
