@@ -51,7 +51,7 @@ test("student studio exposes all six agreed learning experiences", () => {
   assert.match(studio, /Learning language/);
   assert.match(studio, /Curriculum \/ education board/);
   assert.match(studio, /curriculum, language, learningMode/);
-  assert.match(studio, /What are you exploring\?/);
+  assert.match(studio, /Choose a subject or topic/);
 });
 
 test("learning sessions use the authenticated chat endpoint and persist under learn mode", () => {
