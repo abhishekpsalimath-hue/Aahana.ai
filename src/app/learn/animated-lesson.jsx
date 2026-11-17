@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Mini3DModel } from "./interactive-3d-world";
 
-const visualTypes = new Set(["fraction", "orbit", "water-cycle", "plant-growth", "number-line", "molecule", "concept-map", "timeline", "bar-chart", "anatomy", "circuit", "code-flow", "sound-wave", "map", "3d-solar-system", "3d-planet", "3d-molecule", "3d-atom", "3d-dna", "3d-geometry", "3d-terrain", "3d-plant-cell", "3d-heart", "3d-pyramid", "3d-ecosystem", "3d-engine"]);
+const visualTypes = new Set(["counter-board", "fraction", "orbit", "water-cycle", "plant-growth", "number-line", "molecule", "concept-map", "timeline", "bar-chart", "anatomy", "circuit", "code-flow", "sound-wave", "map", "3d-solar-system", "3d-planet", "3d-molecule", "3d-atom", "3d-dna", "3d-geometry", "3d-terrain", "3d-plant-cell", "3d-heart", "3d-pyramid", "3d-ecosystem", "3d-engine"]);
 
 function validVisualData(data) {
   return typeof data?.label === "string" && data.label.trim() && data.label.length <= 90 &&
@@ -88,7 +88,31 @@ const solarSystemFallbackLesson = {
   ],
 };
 
+function InteractiveCounterBoard({ paused = false }) {
+  const [count, setCount] = useState(5);
+  const [target, setTarget] = useState(8);
+  const reached = count === target;
+  return <section className={paused ? "motion-art paused counter-board" : "motion-art counter-board"} aria-label="Interactive counting board">
+    <div className="counter-board-heading"><strong>Build a group</strong><span>{count} of {target}</span></div>
+    <div className="counter-board-track" role="img" aria-label={count + " counters shown"}>
+      {Array.from({ length: count }, (_, index) => <span className="counter-board-piece" key={index} aria-hidden="true">{index + 1}</span>)}
+      {count === 0 && <span className="counter-board-zero">No counters yet — this is zero</span>}
+    </div>
+    <div className="counter-board-controls">
+      <button type="button" onClick={() => setCount((value) => Math.max(0, value - 1))} disabled={count === 0} aria-label="Remove one counter">− One</button>
+      <button type="button" onClick={() => setCount((value) => Math.min(20, value + 1))} disabled={count === 20} aria-label="Add one counter">+ One</button>
+      <button type="button" onClick={() => { setCount(5); setTarget(8); }}>Reset</button>
+    </div>
+    <div className="counter-board-challenge">
+      <span>Try a new target</span>
+      {[3, 6, 10, 12].map((value) => <button type="button" key={value} aria-pressed={target === value} onClick={() => setTarget(value)}>{value}</button>)}
+    </div>
+    <p className="counter-board-feedback" aria-live="polite">{reached ? "You made the target group. Great counting!" : count < target ? "Add " + (target - count) + " more to reach " + target + "." : "Take away " + (count - target) + " to reach " + target + "."}</p>
+  </section>;
+}
+
 export function AnimatedVisual({ visual, paused = false }) {
+  if (visual === "counter-board") return <InteractiveCounterBoard paused={paused} />;
   const cls = paused ? "motion-art paused" : "motion-art";
   const model3d = { "3d-solar-system": "solar-system", "3d-planet": "planet", "3d-molecule": "molecule", "3d-atom": "atom", "3d-dna": "dna", "3d-geometry": "cube", "3d-terrain": "terrain", "3d-plant-cell": "plant-cell", "3d-heart": "heart", "3d-pyramid": "pyramid", "3d-ecosystem": "ecosystem", "3d-engine": "engine" }[visual];
   if (model3d) return <Mini3DModel modelId={model3d} />;
