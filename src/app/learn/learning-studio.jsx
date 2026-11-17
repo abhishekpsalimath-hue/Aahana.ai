@@ -91,6 +91,52 @@ function InteractiveQuiz({ quiz }) {
 }
 
 
+
+const spaceWorlds = [
+  { id: "mercury", name: "Mercury", color: "#aaa7a5", orbit: "88 Earth days", fact: "Mercury races around the Sun in just 88 Earth days. Its surface swings between extreme heat and cold because it has almost no atmosphere to hold heat.", wonder: "A year on Mercury is shorter than a season on Earth." },
+  { id: "venus", name: "Venus", color: "#e7b77e", orbit: "225 Earth days", fact: "Venus has a thick atmosphere rich in carbon dioxide. Its clouds trap heat so effectively that its surface is hotter than Mercury's.", wonder: "Venus spins in the opposite direction to most planets." },
+  { id: "earth", name: "Earth", color: "#65b8e8", orbit: "365.25 days", fact: "Earth has liquid water on its surface and an atmosphere that supports life as we know it. Our Moon helps shape ocean tides.", wonder: "So far, Earth is the only world known to host life." },
+  { id: "mars", name: "Mars", color: "#df805e", orbit: "687 Earth days", fact: "Mars is a cold desert world with a thin atmosphere. Ancient river valleys and minerals suggest liquid water once flowed across parts of its surface.", wonder: "Olympus Mons on Mars is the tallest known volcano in the Solar System." },
+  { id: "jupiter", name: "Jupiter", color: "#d5ad83", orbit: "11.86 Earth years", fact: "Jupiter is the largest planet. It is a gas giant with powerful storms, including the Great Red Spot, which has lasted for centuries.", wonder: "Jupiter is so massive that all the other planets could fit inside it by volume." },
+  { id: "saturn", name: "Saturn", color: "#e5d09a", orbit: "29.4 Earth years", fact: "Saturn is a gas giant surrounded by spectacular rings made mostly of countless pieces of ice and rock.", wonder: "Saturn is less dense than water, although there is no ocean large enough to float it." },
+  { id: "uranus", name: "Uranus", color: "#8bd4d2", orbit: "84 Earth years", fact: "Uranus is an ice giant with a blue-green appearance from methane in its atmosphere. It rotates on its side compared with most planets.", wonder: "One Uranian season lasts about 21 Earth years." },
+  { id: "neptune", name: "Neptune", color: "#668de7", orbit: "164.8 Earth years", fact: "Neptune is a distant ice giant with supersonic winds and a deep blue atmosphere. It takes almost 165 Earth years to orbit the Sun.", wonder: "Neptune was first identified through mathematical predictions before it was directly observed." },
+];
+
+function SpaceExplorer() {
+  const [selected, setSelected] = useState("earth");
+  const world = spaceWorlds.find((item) => item.id === selected) || spaceWorlds[2];
+  return (
+    <section className="space-explorer" aria-label="Interactive Solar System explorer">
+      <div className="learning-section-heading"><div><span>INTERACTIVE WORLD EXPLORER</span><h2>Take a trip through our Solar System</h2></div><span className="space-explorer-tag">8 WORLDS TO DISCOVER</span></div>
+      <p className="space-explorer-intro">Choose a planet, watch its place in the planetary family, and uncover one surprising fact. The orbit drawing is a learning illustration, not a scale model.</p>
+      <div className="space-stage">
+        <svg viewBox="0 0 620 300" role="img" aria-label="Illustration of the Sun and eight planets arranged on orbital paths">
+          <defs><radialGradient id="spaceSun"><stop offset="0" stopColor="#fff4bd"/><stop offset=".65" stopColor="#ffc45f"/><stop offset="1" stopColor="#ed8747"/></radialGradient></defs>
+          {[38,65,91,118,145,172,199,226].map((radius) => <ellipse key={radius} cx="310" cy="150" rx={radius * 1.28} ry={radius * .58} fill="none" stroke="#8d7ba9" strokeOpacity=".28" strokeWidth="1.2" />)}
+          <circle cx="310" cy="150" r="20" fill="url(#spaceSun)" className="space-sun-core" />
+          <g fill="#f5e8ff"><circle cx="48" cy="46" r="2"/><circle cx="564" cy="62" r="1.7"/><circle cx="520" cy="252" r="2"/><circle cx="88" cy="232" r="1.5"/><circle cx="420" cy="28" r="1.2"/><circle cx="180" cy="274" r="1.4"/></g>
+          <g fill="none" stroke="#a99ac1" strokeOpacity=".32" strokeWidth="1.2">
+            <ellipse cx="310" cy="150" rx="49" ry="23"/><ellipse cx="310" cy="150" rx="83" ry="38"/><ellipse cx="310" cy="150" rx="116" ry="53"/><ellipse cx="310" cy="150" rx="151" ry="69"/><ellipse cx="310" cy="150" rx="185" ry="85"/><ellipse cx="310" cy="150" rx="220" ry="101"/><ellipse cx="310" cy="150" rx="255" ry="117"/><ellipse cx="310" cy="150" rx="290" ry="133"/>
+          </g>
+          {[[260,139,"#aaa7a5"],[228,169,"#e7b77e"],[194,111,"#65b8e8"],[159,185,"#df805e"],[125,95,"#d5ad83"],[90,202,"#e5d09a"],[64,72,"#8bd4d2"],[31,225,"#668de7"]].map(([x,y,color],i) => <circle key={i} cx={x} cy={y} r={selected === spaceWorlds[i].id ? 9 : 6} fill={color} stroke={selected === spaceWorlds[i].id ? "#fff" : "#211a2c"} strokeWidth={selected === spaceWorlds[i].id ? 3 : 1.5} className="space-planet-dot" />)}
+        </svg>
+        <div className="space-stage-caption"><span>THE SUN</span><span>Planetary orbits • not to scale</span></div>
+      </div>
+      <div className="space-planet-picker" role="group" aria-label="Choose a planet">
+        {spaceWorlds.map((planet) => <button type="button" key={planet.id} className={selected === planet.id ? "space-planet-choice active" : "space-planet-choice"} onClick={() => setSelected(planet.id)} aria-pressed={selected === planet.id}>
+          <i style={{ "--planet-color": planet.color }} aria-hidden="true" /><span>{planet.name}</span>
+        </button>)}
+      </div>
+      <article className="space-discovery" aria-live="polite">
+        <div><span>YOUR CURRENT DESTINATION</span><h3>{world.name}</h3><p>{world.fact}</p></div>
+        <div className="space-discovery-side"><small>ONE ORBIT AROUND THE SUN</small><strong>{world.orbit}</strong><p>Did you know?</p><em>{world.wonder}</em></div>
+      </article>
+      <p className="space-explorer-note">Keep exploring: every planet has a different story. Select another world whenever you're ready.</p>
+    </section>
+  );
+}
+
 export default function LearningStudio({ userEmail = "" }) {
   const [gradeBand, setGradeBand] = useState("not-sure");
   const [subject, setSubject] = useState("Anything / explore");
@@ -353,6 +399,8 @@ export default function LearningStudio({ userEmail = "" }) {
         <h1>Curiosity looks good<br /><em>on you.</em></h1>
         <p>Explore ideas, ask anything and learn in a way that makes sense to you. No pressure to know the answer before you begin.</p>
       </section>
+
+      <SpaceExplorer />
 
       <section className="learning-profile" aria-label="Personalise your learning">
         <div className="learning-section-heading"><div><span>YOUR LEARNING SPACE</span><h2>Let’s make this yours</h2></div><button type="button" onClick={resetSession} disabled={busy}>New session</button></div>
