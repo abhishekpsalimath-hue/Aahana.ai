@@ -580,3 +580,22 @@
 .school-check-question .school-answer-options button:disabled{opacity:.72;cursor:default}
 .school-check-question .school-check-button{min-height:36px}
 @media(max-width:520px){.school-answer-options{display:grid;grid-template-columns:1fr}.school-answer-options button{text-align:left;min-height:40px}}
+
+
+/* Interactive primary counter board */
+.counter-board{display:grid;gap:14px;padding:18px;border:1px solid #66517f;border-radius:18px;background:radial-gradient(circle at 15% 0%,#3b2d53 0,#211a2e 58%,#171421 100%);color:#f4efff}
+.counter-board-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:14px}
+.counter-board-heading span{font-size:12px;color:#cbb7ed;font-variant-numeric:tabular-nums}
+.counter-board-track{min-height:104px;display:flex;align-content:flex-start;align-items:center;justify-content:center;flex-wrap:wrap;gap:9px;padding:15px;border:1px dashed #806a9d;border-radius:13px;background:#171321}
+.counter-board-piece{display:grid;place-items:center;width:38px;height:38px;border-radius:50%;background:linear-gradient(145deg,#f3c9ff,#a88ce8);color:#241a35;font-size:12px;font-weight:800;box-shadow:0 5px 13px #09061066;animation:counter-pop .22s ease-out}
+.counter-board-zero{font-size:12px;color:#bfb2d2}
+.counter-board-controls,.counter-board-challenge{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px}
+.counter-board-controls button,.counter-board-challenge button{min-height:38px;padding:8px 13px;border:1px solid #76618e;border-radius:10px;background:#342844;color:#f4efff;font:600 12px inherit;cursor:pointer}
+.counter-board-controls button:disabled{opacity:.4;cursor:not-allowed}
+.counter-board-challenge{justify-content:flex-start}
+.counter-board-challenge span{font-size:11px;color:#c9bbd8;margin-right:4px}
+.counter-board-challenge button[aria-pressed=true]{background:#c6a6f4;color:#21182d;border-color:#c6a6f4}
+.counter-board-feedback{margin:0;font-size:12px;line-height:1.5;color:#e8d6ff;text-align:center}
+@keyframes counter-pop{from{transform:scale(.55);opacity:.3}to{transform:scale(1);opacity:1}}
+@media(prefers-reduced-motion:reduce){.counter-board-piece{animation:none}}
+@media(max-width:520px){.counter-board{padding:13px}.counter-board-piece{width:32px;height:32px}}
