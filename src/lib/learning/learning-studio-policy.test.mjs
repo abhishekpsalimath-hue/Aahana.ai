@@ -93,7 +93,7 @@ test("Learning Studio validates and renders interactive quizzes with feedback an
   assert.match(studio, /function InteractiveQuiz\(\{ quiz \}\)/);
   assert.match(studio, /onClick=\{\(\) => setAnswers/);
   assert.match(studio, /Score: \$\{score\}/);
-  assert.match(studio, /Try again/);
+  assert.match(studio, /Play again/);
 });
 
 test("Play and Solve keeps incomplete streamed quiz JSON out of the visible conversation", () => {
