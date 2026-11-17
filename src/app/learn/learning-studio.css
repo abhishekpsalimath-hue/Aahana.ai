@@ -516,3 +516,58 @@
 .catalogue-coverage-track>span{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#8d78bd,#9ac6d7)}
 .catalogue-coverage-note{margin:18px 0 0;color:#a99bb9;font-size:12px;line-height:1.55}
 @media(max-width:680px){.catalogue-coverage{padding:18px;margin:22px 12px}.catalogue-coverage-grid{grid-template-columns:1fr;gap:13px}}
+
+
+/* Sequential school achievement journey */
+.school-journey{max-width:1160px;margin:30px auto 44px;padding:28px 0;border-top:1px solid #302a3d;border-bottom:1px solid #302a3d}
+.school-journey-overview{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:20px 0 28px}
+.school-grade-card{display:grid;gap:8px;padding:20px;border:1px solid #40364f;border-radius:16px;background:#171321}
+.school-grade-card.active{border-color:#9476c8;background:linear-gradient(135deg,#211a31,#171321)}
+.school-grade-card.locked{opacity:.7}
+.school-grade-kicker,.school-work-heading>div>span{font-size:10px;font-weight:800;letter-spacing:1.5px;color:#bda4f3}
+.school-grade-card strong{font:700 24px Manrope,sans-serif}
+.school-grade-card>span:not(.school-grade-kicker){font-size:13px;color:#b8afc5}
+.school-lock-label{color:#c6a7f0!important}
+.school-subject-list{margin:22px 0 30px}
+.school-subject-list h3{font:700 17px Manrope,sans-serif;margin:0 0 12px}
+.school-subject-row{display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid #302a3d}
+.school-subject-number{width:28px;height:28px;display:grid;place-items:center;border-radius:50%;background:#292337;color:#cbb8ef;font-size:11px;font-weight:800}
+.school-subject-name{font-size:14px;font-weight:700;flex:1}
+.school-subject-status{font-size:11px;color:#958ba4}
+.school-subject-row.current .school-subject-number,.school-subject-row.done .school-subject-number{background:#574276;color:#fff}
+.school-subject-row.current .school-subject-status{color:#d2b7ff}
+.school-subject-row.done .school-subject-status{color:#a9d8bc}
+.school-work-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:14px}
+.school-work-heading h3{font:700 24px Manrope,sans-serif;margin:6px 0}
+.school-work-heading>span{font-size:12px;color:#c9b6ed}
+.school-subject-work>p{color:#b5aabd;font-size:13px;line-height:1.7}
+.school-unit-list{display:grid;gap:12px;margin-top:18px}
+.school-unit{padding:18px;border:1px solid #393144;border-radius:14px;background:#15121d}
+.school-unit.open{border-color:#8065aa;background:#1b1626}
+.school-unit.complete{border-color:#456b59}
+.school-unit.locked{opacity:.62}
+.school-unit-top{display:flex;justify-content:space-between;gap:12px;color:#a99aba;font-size:10px;letter-spacing:1px}
+.school-unit-top strong{font-size:10px;letter-spacing:0;color:#b8abc9}
+.school-unit h4{font:700 18px Manrope,sans-serif;margin:12px 0 6px}
+.school-unit-objective{color:#c0b5ce;font-size:13px;line-height:1.6;margin:0 0 12px}
+.school-teaching-steps{padding-left:22px;color:#e0d9e9;font-size:13px;line-height:1.8}
+.school-teaching-steps li{padding-left:4px;margin:5px 0}
+.school-example{padding:13px 15px;background:#282137;border-radius:10px;margin:14px 0}
+.school-example strong,.school-practice strong{color:#d3baff;font-size:12px}
+.school-example p,.school-practice{font-size:13px;line-height:1.7;color:#d4cbdf;margin:5px 0 0}
+.school-check{margin-top:16px;padding-top:15px;border-top:1px solid #3b3248}
+.school-check>strong{font-size:14px;line-height:1.5}
+.school-answer-options{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.school-answer-options button,.school-check-button{border:1px solid #554765;background:#211b2c;color:#eee7f7;border-radius:9px;padding:9px 14px;font:600 12px inherit;cursor:pointer}
+.school-answer-options button.selected{border-color:#c5a5f5;background:#44335e}
+.school-check-button{background:#bda4f3;color:#17121f;border-color:#bda4f3;font-weight:800}
+.school-check-button:disabled{opacity:.45;cursor:not-allowed}
+.school-feedback{font-size:12px;color:#ffd0a8}
+.school-feedback.correct,.school-complete-note{color:#a8dfbd}
+.school-complete-note{font-size:12px}
+.school-achievement{padding:22px;border:1px solid #628b72;border-radius:15px;background:#17251e;margin:24px 0}
+.school-achievement>span{font-size:10px;font-weight:800;letter-spacing:1.4px;color:#b7e4c4}
+.school-achievement h3{font:700 22px Manrope,sans-serif;margin:8px 0}
+.school-achievement p,.school-journey-note{font-size:12px;line-height:1.7;color:#b8afc5}
+.school-journey-note{margin-top:20px}
+@media(max-width:680px){.school-journey-overview{grid-template-columns:1fr}.school-subject-status{max-width:105px;text-align:right}.school-work-heading{align-items:flex-start}.school-unit{padding:14px}.school-unit-top{font-size:9px}}
