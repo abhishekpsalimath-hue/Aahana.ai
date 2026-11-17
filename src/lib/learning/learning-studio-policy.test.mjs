@@ -139,6 +139,8 @@ test("non-quiz learning modes request a validated structured animated lesson", (
   assert.match(route, /challenge \(object with question string, options array of exactly 3 short strings/);
   assert.match(route, /visualData with label/);
   assert.match(route, /progress \(integer 0 to 100 representing the proportion or stage actually depicted\)/);
+  assert.match(route, /support \(object with visual set to a different valid visual type/);
+  assert.match(route, /hints array of exactly 2 progressively helpful hints/);
   assert.match(route, /fraction, orbit, water-cycle, plant-growth, number-line, molecule, concept-map/);
   assert.match(studio, /readMotionLesson\(item\.content\)/);
   assert.match(studio, /<AnimatedLesson content=\{item\.content\} \/>/);
@@ -159,6 +161,13 @@ test("animated lesson renderer validates scene data and provides subject-specifi
   assert.match(animated, /scene\.visualData\.value\.length <= 36/);
   assert.match(animated, /scene\.visualData\.progress >= 0 && scene\.visualData\.progress <= 100/);
   assert.match(animated, /scene\.visualData\.comparison/);
+  assert.match(animated, /validVisualData\(scene\.support\.visualData\)/);
+  assert.match(animated, /scene\.support\.visual !== scene\.visual/);
+  assert.match(animated, /scene\.challenge\.hints\.length === 2/);
+  assert.match(animated, /const showSupport = attempts >= 2 && !solved/);
+  assert.match(animated, /displayedVisual = showSupport \? scene\.support\.visual/);
+  assert.match(animated, /scene\.support\.explanation/);
+  assert.match(animated, /challenge\.hints\[1\]/);
   assert.match(animated, /motion-data-track/);
   for (const visual of ["fraction", "orbit", "water-cycle", "plant-growth", "number-line", "molecule", "concept-map"]) {
     assert.ok(animated.includes(`"${visual}"`), `Missing visual renderer: ${visual}`);
@@ -185,4 +194,5 @@ test("animated lesson controls and reduced-motion accessibility are present", ()
   assert.match(styles, /\.motion-feedback\.gentle/);
   assert.match(styles, /\.motion-data-track/);
   assert.match(styles, /\.motion-data-copy/);
+  assert.match(styles, /\.motion-support-explanation/);
 });
