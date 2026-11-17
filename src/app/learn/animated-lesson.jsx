@@ -4,6 +4,14 @@ import { useEffect, useMemo, useState } from "react";
 
 const visualTypes = new Set(["fraction", "orbit", "water-cycle", "plant-growth", "number-line", "molecule", "concept-map"]);
 
+function validVisualData(data) {
+  return typeof data?.label === "string" && data.label.trim() && data.label.length <= 90 &&
+    typeof data.value === "string" && data.value.trim() && data.value.length <= 36 &&
+    typeof data.unit === "string" && data.unit.length <= 24 &&
+    typeof data.comparison === "string" && data.comparison.length <= 120 &&
+    Number.isInteger(data.progress) && data.progress >= 0 && data.progress <= 100;
+}
+
 export function readMotionLesson(content) {
   if (typeof content !== "string") return null;
   const cleaned = content.trim().replace(/^\s*```(?:json)?\s*/i, "").replace(/\s*```$/, "");
@@ -15,17 +23,18 @@ export function readMotionLesson(content) {
       typeof scene?.caption === "string" && scene.caption.trim() && scene.caption.length <= 120 &&
       typeof scene?.narration === "string" && scene.narration.trim() && scene.narration.length <= 1200 &&
       visualTypes.has(scene.visual) &&
-      typeof scene?.visualData?.label === "string" && scene.visualData.label.trim() && scene.visualData.label.length <= 90 &&
-      typeof scene.visualData.value === "string" && scene.visualData.value.trim() && scene.visualData.value.length <= 36 &&
-      typeof scene.visualData.unit === "string" && scene.visualData.unit.length <= 24 &&
-      typeof scene.visualData.comparison === "string" && scene.visualData.comparison.length <= 120 &&
-      Number.isInteger(scene.visualData.progress) && scene.visualData.progress >= 0 && scene.visualData.progress <= 100 &&
+      validVisualData(scene.visualData) &&
+      visualTypes.has(scene?.support?.visual) && scene.support.visual !== scene.visual &&
+      validVisualData(scene.support.visualData) &&
+      typeof scene.support.explanation === "string" && scene.support.explanation.trim() && scene.support.explanation.length <= 500 &&
       typeof scene?.action === "string" && scene.action.trim() && scene.action.length <= 260 &&
       typeof scene?.challenge?.question === "string" && scene.challenge.question.trim() && scene.challenge.question.length <= 240 &&
       Array.isArray(scene.challenge.options) && scene.challenge.options.length === 3 &&
       scene.challenge.options.every((option) => typeof option === "string" && option.trim() && option.length <= 120) &&
       new Set(scene.challenge.options).size === 3 &&
       Number.isInteger(scene.challenge.correctIndex) && scene.challenge.correctIndex >= 0 && scene.challenge.correctIndex < 3 &&
+      Array.isArray(scene.challenge.hints) && scene.challenge.hints.length === 2 &&
+      scene.challenge.hints.every((hint) => typeof hint === "string" && hint.trim() && hint.length <= 260) &&
       typeof scene.challenge.hint === "string" && scene.challenge.hint.trim() && scene.challenge.hint.length <= 260 &&
       typeof scene.challenge.explanation === "string" && scene.challenge.explanation.trim() && scene.challenge.explanation.length <= 500
     );
@@ -69,6 +78,9 @@ export default function AnimatedLesson({ content }) {
   if (!lesson) return <p>{content}</p>;
   const scene = lesson.scenes[index];
   const challenge = scene.challenge;
+  const showSupport = attempts >= 2 && !solved;
+  const displayedVisual = showSupport ? scene.support.visual : scene.visual;
+  const displayedData = showSupport ? scene.support.visualData : scene.visualData;
 
   function answer(optionIndex) {
     if (solved) return;
@@ -79,13 +91,14 @@ export default function AnimatedLesson({ content }) {
   return <section className="motion-lesson" aria-label="Animated lesson">
     <div className="motion-lesson-head"><div><span>EXPLORE IT IN MOTION</span><h3>{lesson.title}</h3></div><span>SCENE {index + 1} / {lesson.scenes.length}</span></div>
     <div className="motion-stage">
-      <AnimatedVisual visual={scene.visual} paused={paused}/>
-      <div className="motion-caption">{scene.caption}</div>
-      <div className="motion-data" aria-label={`${scene.visualData.label}: ${scene.visualData.value} ${scene.visualData.unit}`}>
-        <div className="motion-data-copy"><span>{scene.visualData.label}</span><strong>{scene.visualData.value}{scene.visualData.unit ? ` ${scene.visualData.unit}` : ""}</strong></div>
-        <div className="motion-data-track" role="img" aria-label={`Illustrated level ${scene.visualData.progress} percent`}><span style={{ width: `${scene.visualData.progress}%` }}/></div>
-        {scene.visualData.comparison && <p>{scene.visualData.comparison}</p>}
+      <AnimatedVisual visual={displayedVisual} paused={paused}/>
+      <div className="motion-caption">{showSupport ? "Let's look at it another way" : scene.caption}</div>
+      <div className="motion-data" aria-label={`${displayedData.label}: ${displayedData.value} ${displayedData.unit}`}>
+        <div className="motion-data-copy"><span>{displayedData.label}</span><strong>{displayedData.value}{displayedData.unit ? ` ${displayedData.unit}` : ""}</strong></div>
+        <div className="motion-data-track" role="img" aria-label={`Illustrated level ${displayedData.progress} percent`}><span style={{ width: `${displayedData.progress}%` }}/></div>
+        {displayedData.comparison && <p>{displayedData.comparison}</p>}
       </div>
+      {showSupport && <p className="motion-support-explanation">{scene.support.explanation}</p>}
     </div>
     <p className="motion-narration">{scene.narration}</p>
     <div className="motion-action"><strong>Explore:</strong> {scene.action}</div>
@@ -99,7 +112,7 @@ export default function AnimatedLesson({ content }) {
       {solved
         ? <p className="motion-feedback success"><strong>Great discovery!</strong> {challenge.explanation}</p>
         : attempts > 0
-          ? <p className="motion-feedback gentle"><strong>Good thinking—let's explore again.</strong> {challenge.hint}</p>
+          ? <p className="motion-feedback gentle"><strong>{showSupport ? "A different way to see it:" : "Good thinking—let's explore again."}</strong> {showSupport ? challenge.hints[1] : challenge.hints[0]}</p>
           : <p className="motion-feedback gentle">Take your time. Every prediction helps you understand.</p>}
     </div>
     <div className="motion-controls">
