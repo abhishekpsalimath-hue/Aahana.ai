@@ -133,3 +133,19 @@ one serving seat. Benchmark actual hardware before provisioning.
 
 Official interface and hardware documentation:
 https://huggingface.co/maya-research/maya2-native
+
+
+### SraVaani evaluation cautions
+
+The published 65-language count is a coverage claim, not a promise of equal
+accuracy. The current benchmark table reports average WER of 27.4 for Kannada,
+26.2 for Tamil, 27.7 for Malayalam, 54.7 for Konkani and 57.3 for Santali;
+WER varies by evaluation corpus and lower is better. Urdu and Kashmiri are not
+supported in this release. The Hugging Face checkpoint is gated, and the
+official quickstart uses `trust_remote_code=True`; review and pin the exact
+model revision and audit its code before loading it in any service. Use
+language-by-language test recordings from real speakers before enabling
+recognition in the product.
+
+Official benchmark and access notes:
+https://vaani.iisc.ac.in/models/sravaani
