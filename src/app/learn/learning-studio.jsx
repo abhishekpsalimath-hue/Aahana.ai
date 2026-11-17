@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import "./learning-studio.css";
 
@@ -41,7 +41,7 @@ export default function LearningStudio({ userEmail = "" }) {
   const [historyError, setHistoryError] = useState("");
   const [loadingConversationId, setLoadingConversationId] = useState(null);
 
-  async function loadLearningHistory() {
+  const loadLearningHistory = useCallback(async () => {
     setHistoryLoading(true);
     setHistoryError("");
     try {
@@ -54,9 +54,9 @@ export default function LearningStudio({ userEmail = "" }) {
     } finally {
       setHistoryLoading(false);
     }
-  }
+  }, []);
 
-  useEffect(() => { loadLearningHistory(); }, []);
+  useEffect(() => { loadLearningHistory(); }, [loadLearningHistory]);
 
   async function resumeLearning(id) {
     if (busy || loadingConversationId) return;
@@ -81,7 +81,6 @@ export default function LearningStudio({ userEmail = "" }) {
     event.preventDefault();
     const requestText = question.trim();
     if (!requestText || busy) return;
-    const selectedMode = learningModes.find((item) => item.id === learningMode);
     const profile = { gradeBand, subject, language, learningMode };
     setQuestion("");
     setError("");
