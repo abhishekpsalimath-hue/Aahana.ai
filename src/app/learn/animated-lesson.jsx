@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { Mini3DModel } from "./interactive-3d-world";
 
-const visualTypes = new Set(["fraction", "orbit", "water-cycle", "plant-growth", "number-line", "molecule", "concept-map", "timeline", "bar-chart", "anatomy", "circuit", "code-flow", "sound-wave", "map"]);
+const visualTypes = new Set(["fraction", "orbit", "water-cycle", "plant-growth", "number-line", "molecule", "concept-map", "timeline", "bar-chart", "anatomy", "circuit", "code-flow", "sound-wave", "map", "3d-planet", "3d-molecule", "3d-atom", "3d-dna", "3d-geometry", "3d-terrain"]);
 
 function validVisualData(data) {
   return typeof data?.label === "string" && data.label.trim() && data.label.length <= 90 &&
@@ -47,6 +48,8 @@ export function readMotionLesson(content) {
 
 export function AnimatedVisual({ visual, paused = false }) {
   const cls = paused ? "motion-art paused" : "motion-art";
+  const model3d = { "3d-planet": "planet", "3d-molecule": "molecule", "3d-atom": "atom", "3d-dna": "dna", "3d-geometry": "cube", "3d-terrain": "terrain" }[visual];
+  if (model3d) return <Mini3DModel modelId={model3d} />;
   if (visual === "fraction") return <svg className={cls} viewBox="0 0 320 170" role="img" aria-label="A circle divided into equal fraction parts"><circle cx="160" cy="82" r="58" fill="#211b2d" stroke="#bda4f3" strokeWidth="3"/><path d="M160 24 A58 58 0 0 1 218 82 L160 82Z" fill="#c7a9f5" className="motion-piece"/><path d="M218 82 A58 58 0 0 1 160 140 L160 82Z" fill="#8e75c2"/><path d="M160 140 A58 58 0 0 1 102 82 L160 82Z" fill="#5f4b83"/><path d="M102 82 A58 58 0 0 1 160 24 L160 82Z" fill="#3e3157"/><path d="M160 24V140M102 82H218" stroke="#eee5ff" strokeWidth="2"/><text x="160" y="160" textAnchor="middle" fill="#e8ddfa" fontSize="11">4 equal parts</text></svg>;
   if (visual === "orbit") return <svg className={cls} viewBox="0 0 320 170" role="img" aria-label="A planet moving around a star"><ellipse cx="160" cy="84" rx="112" ry="48" fill="none" stroke="#9b86c5" strokeDasharray="5 5" strokeWidth="2"/><circle cx="160" cy="84" r="22" fill="#f3c76b" className="motion-sun"/><circle cx="272" cy="84" r="9" fill="#83c8ed" className="motion-orbit"/><circle cx="272" cy="84" r="3" fill="#d8f3ff"/><text x="160" y="130" textAnchor="middle" fill="#e8ddfa" fontSize="11">Gravity keeps the orbit curved</text></svg>;
   if (visual === "water-cycle") return <svg className={cls} viewBox="0 0 320 170" role="img" aria-label="Water moving through the water cycle"><path d="M20 130 Q70 105 120 130T220 130T320 130V170H20Z" fill="#386c9b"/><circle cx="55" cy="35" r="17" fill="#f4cf78"/><path d="M145 105 C120 75 155 58 145 30M185 105 C165 75 200 55 190 25" fill="none" stroke="#a8d9f2" strokeWidth="4" strokeLinecap="round" className="motion-rise"/><path d="M225 52q-12-18-27 0q-16-16-28 1q-20 1-13 19h73q12-17-5-20" fill="#d5c9ed"/><path d="M205 80l-6 12m24-12-6 12m-34-12-6 12" stroke="#8ed1f4" strokeWidth="3" strokeLinecap="round" className="motion-rain"/><text x="160" y="157" textAnchor="middle" fill="#fff" fontSize="10">Evaporation • condensation • rain</text></svg>;
