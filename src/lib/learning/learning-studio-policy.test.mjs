@@ -150,6 +150,9 @@ test("animated lesson renderer validates scene data and provides subject-specifi
   assert.match(animated, /scene\.challenge\.correctIndex/);
   assert.match(animated, /scene\.challenge\.hint/);
   assert.match(animated, /scene\.challenge\.explanation/);
+  assert.match(animated, /scene\.narration\.length <= 1200/);
+  assert.match(animated, /scene\.challenge\.options\.every[\s\S]*option\.length <= 120/);
+  assert.match(animated, /scene\.challenge\.explanation\.length <= 500/);
   for (const visual of ["fraction", "orbit", "water-cycle", "plant-growth", "number-line", "molecule", "concept-map"]) {
     assert.ok(animated.includes(`"${visual}"`), `Missing visual renderer: ${visual}`);
   }
