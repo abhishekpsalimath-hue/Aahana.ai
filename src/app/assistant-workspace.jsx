@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { findBestSpeechVoice, getBrowserVoiceCapabilities } from "@/lib/voice/browser-capabilities.mjs";
 import { encodeMonoPcm16Wav } from "@/lib/voice/audio-wav.mjs";
 import { inferSpeechLocale } from "@/lib/voice/locale-detection.mjs";
+import { shouldFallbackToDeviceSpeech } from "@/lib/voice/speech-fallback-policy.mjs";
 
 const modes = [
   { id: "solve", label: "Solve", hint: "Work through a problem" },
@@ -441,7 +442,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         await audio.play();
         return;
       }
-      if (![503, 404].includes(response.status)) {
+      if (!shouldFallbackToDeviceSpeech(response.status)) {
         const result = await response.json().catch(() => ({}));
         throw new Error(result.error || "Aahana's speech service could not complete this request.");
       }
