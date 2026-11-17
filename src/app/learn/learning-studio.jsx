@@ -28,7 +28,7 @@ const subjects = ["Anything / explore", "Mathematics", "Science", "Physics", "Ch
 const curricula = ["Not specified", "CBSE", "ICSE", "Karnataka State Board", "Other Indian State Board", "Cambridge International", "International Baccalaureate (IB)", "England National Curriculum", "US Common Core", "Other / help me choose"];
 function readQuizPayload(content) {
   if (typeof content !== "string") return null;
-  const cleaned = content.trim().replace(/^\\s*```(?:json)?\\s*/i, "").replace(/\\s*```$/, "");
+  const cleaned = content.trim().replace(/^\s*```(?:json)?\\s*/i, "").replace(/\s*```$/, "");
   try {
     const value = JSON.parse(cleaned);
     if (value?.type !== "aahana_quiz_v1" || !Array.isArray(value.questions) || value.questions.length < 1 || value.questions.length > 5) return null;
