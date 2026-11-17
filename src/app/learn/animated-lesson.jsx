@@ -56,13 +56,15 @@ export function AnimatedVisual({ visual, paused = false }) {
   return <svg className={cls} viewBox="0 0 320 170" role="img" aria-label="A concept map connecting ideas"><g stroke="#9b86c5" strokeWidth="3"><path d="M160 83L75 40M160 83L245 40M160 83L75 130M160 83L245 130"/></g><circle cx="160" cy="83" r="34" fill="#8068aa"/>{[[75,40],[245,40],[75,130],[245,130]].map(([x,y],i)=><circle key={i} cx={x} cy={y} r="20" fill={i%2?"#79b7d7":"#c7a9f5"}/>)}</svg>;
 }
 
-export default function AnimatedLesson({ content }) {
+export default function AnimatedLesson({ content, memoryEnabled = false, onSaveJourney }) {
   const lesson = useMemo(() => readMotionLesson(content), [content]);
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const [sceneAttempts, setSceneAttempts] = useState({});
   const [solvedAttempts, setSolvedAttempts] = useState({});
   const [solved, setSolved] = useState(false);
+  const [journeySaving, setJourneySaving] = useState(false);
+  const [journeySaved, setJourneySaved] = useState(false);
   const attempts = sceneAttempts[index] || 0;
   const adaptedScenes = Object.keys(solvedAttempts).filter((sceneIndex) => solvedAttempts[sceneIndex] >= 2).length;
   const exploredScenes = Object.keys(solvedAttempts).length;
@@ -73,6 +75,7 @@ export default function AnimatedLesson({ content }) {
     setSceneAttempts({});
     setSolvedAttempts({});
     setSolved(false);
+    setJourneySaved(false);
   }, [content]);
 
   useEffect(() => {
@@ -102,6 +105,21 @@ export default function AnimatedLesson({ content }) {
     setSolvedAttempts({});
     setSolved(false);
     setPaused(false);
+  }
+
+  async function saveJourney() {
+    if (!memoryEnabled || !onSaveJourney || journeySaving || journeySaved) return;
+    setJourneySaving(true);
+    const attemptsUsed = Object.values(solvedAttempts).reduce((total, count) => total + count, 0);
+    const saved = await onSaveJourney({
+      title: lesson.title,
+      sceneCount: lesson.scenes.length,
+      attempts: attemptsUsed,
+      adaptedScenes,
+      exploredScenes,
+    });
+    if (saved) setJourneySaved(true);
+    setJourneySaving(false);
   }
 
   return <section className="motion-lesson" aria-label="Animated lesson">
@@ -144,6 +162,9 @@ export default function AnimatedLesson({ content }) {
         : "You worked through every idea in this lesson. Curiosity and careful thinking helped you get here."}</p>
       <span>{exploredScenes} of {lesson.scenes.length} scenes explored · {adaptedScenes} alternate explanation{adaptedScenes === 1 ? "" : "s"} used</span>
       <button type="button" onClick={restartLesson}>Explore again</button>
+      {memoryEnabled
+        ? <button type="button" onClick={saveJourney} disabled={journeySaving || journeySaved}>{journeySaved ? "Saved to your journey" : journeySaving ? "Saving…" : "Save to my journey"}</button>
+        : <p>Turn on private learning memory above if you would like to save this journey.</p>}
     </div>}
   </section>;
 }
