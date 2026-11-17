@@ -23,11 +23,15 @@ function configuredProvider() {
 
   if (!baseUrl || !authorizationToken || supportedLocales.length === 0) return null;
 
-  return createSraVaaniAsrProvider({
-    baseUrl,
-    authorizationToken,
-    supportedLocales,
-  });
+  try {
+    return createSraVaaniAsrProvider({
+      baseUrl,
+      authorizationToken,
+      supportedLocales,
+    });
+  } catch {
+    return null;
+  }
 }
 
 export async function POST(request) {
@@ -37,6 +41,11 @@ export async function POST(request) {
 
   if (process.env.AAHANA_SRAVAANI_ENABLED !== "true") {
     return jsonError("Multilingual voice recognition is not enabled on this deployment.", 503);
+  }
+
+  const contentLength = Number(request.headers.get("content-length") || 0);
+  if (contentLength > MAX_AUDIO_BYTES + 64 * 1024) {
+    return jsonError("Audio upload exceeds the 15 MB limit.", 413);
   }
 
   let form;
@@ -73,7 +82,7 @@ export async function POST(request) {
       text: result.text,
       locale: result.locale,
       provider: "sravaani-1.0",
-      audioRetainedByAahana: false,
+      audioSavedToConversation: false,
     });
   } catch (error) {
     const status = error?.code === "UNSUPPORTED_LOCALE" ? 400
