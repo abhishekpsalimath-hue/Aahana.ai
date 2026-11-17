@@ -607,3 +607,7 @@ button,input,textarea,select{font-family:var(--font-ui)}
 @media(prefers-reduced-motion:reduce){
   .founder-welcome-note .welcome-brand-word{animation:none!important;opacity:1;transform:none;filter:none}
 }
+
+
+/* Keep chat surfaces calm; reserve expressive glitch motion for the Aahana welcome word only. */
+.main-panel::before{animation:none!important;background-position:0 0;opacity:.06}
