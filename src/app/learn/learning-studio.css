@@ -282,3 +282,26 @@
 @keyframes motion-wave-flow{0%{stroke-dashoffset:0}100%{stroke-dashoffset:-48}}
 .motion-wave{stroke-dasharray:9 7;animation:motion-wave-flow 2.4s linear infinite}
 @media(prefers-reduced-motion:reduce){.motion-wave{animation:none}}
+
+
+/* Interactive 3D student lab */
+.learning-3d-lab{max-width:1120px;margin:28px auto;padding:28px;border:1px solid rgba(180,164,210,.22);border-radius:26px;background:linear-gradient(145deg,rgba(34,28,52,.9),rgba(16,18,32,.94))}
+.learning-3d-layout{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(250px,.8fr);gap:16px;align-items:stretch}
+.learning-3d-viewer{min-width:0;overflow:hidden;border:1px solid #514365;border-radius:18px;background:#100f1b}
+.learning-3d-viewer canvas{display:block;width:100%;height:370px;touch-action:none;cursor:grab;outline:none}
+.learning-3d-viewer canvas:active{cursor:grabbing}
+.learning-3d-controls{display:flex;align-items:center;gap:8px;padding:12px;border-top:1px solid #342b43}
+.learning-3d-controls button,.learning-3d-model-list button{border:1px solid #514365;border-radius:9px;background:#211b2d;color:#eee6fa;padding:8px 11px;font-size:11px;cursor:pointer}
+.learning-3d-controls button:hover,.learning-3d-model-list button:hover{border-color:#c1a5f2}
+.learning-3d-controls span{margin-left:auto;color:#a99fb7;font-size:10px}
+.learning-3d-details{padding:20px;border:1px solid #403451;border-radius:18px;background:rgba(15,13,23,.72)}
+.learning-3d-details>span{font-size:9px;letter-spacing:1.4px;font-weight:800;color:#c7b0f4}
+.learning-3d-details h3{margin:8px 0 4px;font:800 24px Manrope,sans-serif;color:#fff}
+.learning-3d-details small{color:#bda4f3;font-size:11px}
+.learning-3d-details p{color:#b9b0c6;font-size:12px;line-height:1.65}
+.learning-3d-model-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:18px}
+.learning-3d-model-list button{min-height:40px;text-align:left}
+.learning-3d-model-list button.active{background:#3a2c51;border-color:#c7a9f5;color:#fff}
+.learning-3d-hint{padding-top:12px;border-top:1px solid #393047;font-size:10px!important}
+@media(max-width:760px){.learning-3d-lab{padding:18px 14px;border-radius:20px}.learning-3d-layout{grid-template-columns:1fr}.learning-3d-viewer canvas{height:290px}.learning-3d-details{padding:15px}}
+@media(prefers-reduced-motion:reduce){.learning-3d-controls button,.learning-3d-model-list button{transition:none}}
