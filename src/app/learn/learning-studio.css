@@ -129,3 +129,11 @@
 .motion-feedback.gentle{color:#d9c9ed}
 .motion-unlock-note{margin:0;color:#b8a9cb;font-size:10px;line-height:1.5}
 @media(prefers-reduced-motion:reduce){.motion-prediction-options button{transition:none}}
+
+.motion-data{display:grid;gap:7px;margin:10px auto 2px;max-width:440px;padding:10px 12px;border:1px solid #4b3d61;border-radius:10px;background:#1b1724}
+.motion-data-copy{display:flex;justify-content:space-between;align-items:center;gap:12px;color:#cfc1e1;font-size:11px}
+.motion-data-copy strong{color:#f2eaff;font-size:14px;font-variant-numeric:tabular-nums}
+.motion-data-track{height:7px;overflow:hidden;border-radius:99px;background:#3a3048}
+.motion-data-track span{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#8f78c4,#c6a8ef);transition:width .55s ease}
+.motion-data>p{margin:0;color:#b9aacb;font-size:10px;line-height:1.5}
+@media(prefers-reduced-motion:reduce){.motion-data-track span{transition:none}}
