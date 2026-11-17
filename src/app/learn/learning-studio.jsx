@@ -300,7 +300,7 @@ export function SolarSystemCurriculum({ onStartUnit }) {
 export default function LearningStudio({ userEmail = "" }) {
   const [selectedPlanet, setSelectedPlanet] = useState(null);
   const [gradeBand, setGradeBand] = useState("primary");
-  const [schoolGrade, setSchoolGrade] = useState("1");
+  const [schoolGrade, setSchoolGrade] = useState("");
   const [subject, setSubject] = useState("Anything / explore");
   const [category, setCategory] = useState("Explore anything");
   const categorySubjects = learningCategories.find((item) => item.name === category)?.subjects || learningCategories[0].subjects;
@@ -586,7 +586,7 @@ export default function LearningStudio({ userEmail = "" }) {
 
       <section className="learning-profile student-grade-picker" aria-label="Choose your school grade">
         <label htmlFor="student-school-grade">Which grade are you in?</label>
-        <select id="student-school-grade" value={schoolGrade} onChange={(event) => {
+        <select id="student-school-grade" required value={schoolGrade} onChange={(event) => {
           const nextGrade = event.target.value;
           setSchoolGrade(nextGrade);
           const numericGrade = Number(nextGrade);
@@ -626,7 +626,7 @@ export default function LearningStudio({ userEmail = "" }) {
         <form className="learning-composer" onSubmit={startLearning}>
           <label htmlFor="learning-question">What would you like me to help you understand?</label>
           <textarea id="learning-question" value={question} onChange={(event) => setQuestion(event.target.value)} rows={3} maxLength={8000} disabled={busy} placeholder="Hi Aahana, I am [your name]. I am in Grade 4. Can you explain fractions with a simple picture?" />
-          <div><span>Aahana will choose the best way to explain it.</span><button type="submit" disabled={!question.trim() || busy}>{busy ? "Learning…" : "Start learning"}</button></div>
+          <div><span>Aahana will choose the best way to explain it.</span><button type="submit" disabled={!schoolGrade || !question.trim() || busy}>{busy ? "Learning…" : "Start learning"}</button></div>
         </form>
         {error && <p className="learning-error" role="alert">{error}</p>}
         <p className="learning-note">You only need to ask. Aahana can choose a simple explanation, example, diagram or interactive lesson when that capability is available.</p>
