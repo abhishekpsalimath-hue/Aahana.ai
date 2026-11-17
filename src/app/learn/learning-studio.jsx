@@ -2,14 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import dynamic from "next/dynamic";
 import "./learning-studio.css";
-import CreatorStudio from "./creator-studio";
 import AnimatedLesson, { AnimatedVisual, readMotionLesson } from "./animated-lesson";
-const Interactive3DWorld = dynamic(() => import("./interactive-3d-world"), {
-  ssr: false,
-  loading: () => <div className="learning-3d-loading" role="status">Preparing the interactive 3D environment…</div>,
-});
 import { learningCategories, allLearningSubjects, findLearningSubjects } from "@/lib/learning/learning-catalog";
 import { getLearningCurriculum, getLearningReadiness, getCatalogueCoverageSummary } from "@/lib/learning/curriculum-engine";
 
