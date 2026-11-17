@@ -278,3 +278,7 @@
 .learning-category-card small{margin-top:auto;color:#d9c7ff;font-size:11px;letter-spacing:.04em}
 @media(max-width:760px){.learning-category-explorer{padding:18px 14px;border-radius:20px}.learning-category-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.learning-category-card{min-height:142px;padding:13px}}
 @media(max-width:420px){.learning-category-grid{grid-template-columns:1fr}.learning-category-card{min-height:unset}}
+
+@keyframes motion-wave-flow{0%{stroke-dashoffset:0}100%{stroke-dashoffset:-48}}
+.motion-wave{stroke-dasharray:9 7;animation:motion-wave-flow 2.4s linear infinite}
+@media(prefers-reduced-motion:reduce){.motion-wave{animation:none}}
