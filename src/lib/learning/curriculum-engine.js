@@ -1,6 +1,7 @@
 import { learningSubjectIndex, learningCategories } from "./learning-catalog.js";
 export { GRADE_1_MATHEMATICS_CURRICULUM, getGradeLearningCurriculum, getGradeCurriculumCoverage } from "./grade-curriculum.mjs";
 export { GRADE_1_ENGLISH_CURRICULUM } from "./grade-1-english.mjs";
+export { GRADE_1_EVS_CURRICULUM } from "./grade-1-evs.mjs";
 
 /**
  * Authored curriculum metadata is separate from subject discovery.
