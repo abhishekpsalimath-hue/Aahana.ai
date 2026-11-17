@@ -14,6 +14,7 @@ on:
       - "src/lib/voice/audio-wav.*"
       - "src/lib/voice/locale-detection.*"
       - "src/lib/voice/locale-support.*"
+      - "src/lib/voice/speech-fallback-policy.*"
   push:
     branches:
       - "feat/aahana-voice-runtime-adapters"
@@ -30,6 +31,7 @@ on:
       - "src/lib/voice/audio-wav.*"
       - "src/lib/voice/locale-detection.*"
       - "src/lib/voice/locale-support.*"
+      - "src/lib/voice/speech-fallback-policy.*"
 
 permissions:
   contents: read
@@ -61,6 +63,8 @@ jobs:
         run: node --test ../../src/lib/voice/locale-detection.test.mjs ../../src/lib/voice/locale-support.test.mjs
       - name: Test multilingual chat response policy
         run: node --test ../../src/lib/voice/chat-language-policy.test.mjs
+      - name: Test device speech fallback policy
+        run: node --test ../../src/lib/voice/speech-fallback-policy.test.mjs
       - name: Syntax-check authenticated transcription route
         run: node --check ../../src/app/api/voice/transcribe/route.js
       - name: Syntax-check authenticated speech synthesis route
