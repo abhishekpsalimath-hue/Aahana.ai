@@ -181,27 +181,34 @@ function makeModel(id, ecosystem = {}) {
     return [...faces, ...paths, ...electrons];
   }
   if (id === "cell") {
-    const outer = sphereMesh(.92, 20, 30, "#4f9eaf").map((face) => ({ ...face, color: "#4f9eaf" }));
+    const focus = ecosystem.cellFocus || "all";
+    const outerColor = focus === "all" || focus === "membrane" ? "#4f9eaf" : "#3d4658";
+    const outer = sphereMesh(.92, 20, 30, outerColor).map((face) => ({ ...face, color: outerColor }));
     const organelles = [
-      { p: [0, .08, .08], r: .34, c: "#bd83d7" },
-      { p: [-.48, -.2, .12], r: .13, c: "#e9b66c" },
-      { p: [.46, .28, -.18], r: .16, c: "#e9b66c" },
-      { p: [.22, -.42, .3], r: .11, c: "#77c69e" },
-      { p: [-.2, .48, -.28], r: .1, c: "#77c69e" },
-      { p: [.52, -.2, .18], r: .075, c: "#e6d28a" },
-      { p: [-.48, .28, -.2], r: .075, c: "#e6d28a" },
+      { p: [0, .08, .08], r: .34, c: "#bd83d7", role: "nucleus" },
+      { p: [-.48, -.2, .12], r: .15, c: "#e9b66c", role: "mitochondria" },
+      { p: [.46, .28, -.18], r: .16, c: "#e9b66c", role: "mitochondria" },
+      { p: [.22, -.42, .3], r: .11, c: "#77c69e", role: "endoplasmicReticulum" },
+      { p: [-.2, .48, -.28], r: .1, c: "#77c69e", role: "endoplasmicReticulum" },
+      { p: [.52, -.2, .18], r: .075, c: "#e6d28a", role: "ribosomes" },
+      { p: [-.48, .28, -.2], r: .075, c: "#e6d28a", role: "ribosomes" },
     ];
-    return [...outer, ...organelles.flatMap((item) => sphereMesh(item.r, 9, 14, item.c).map((face) => ({ ...face, offset: item.p })))];
+    return [...outer, ...organelles.flatMap((item) => sphereMesh(item.r, 9, 14, focus === "all" || focus === item.role ? item.c : "#55566a").map((face) => ({ ...face, offset: item.p })))];
   }
   if (id === "plant-cell") {
+    const focus = ecosystem.cellFocus || "all";
+    const wallColor = focus === "all" || focus === "cellWall" ? "#a5d69a" : "#465b4c";
     const box = [[-1,-.72,-.72],[1,-.72,-.72],[1,.72,-.72],[-1,.72,-.72],[-1,-.72,.72],[1,-.72,.72],[1,.72,.72],[-1,.72,.72]];
-    const shell = [[0,1,2,3],[4,5,6,7],[0,1,5,4],[2,3,7,6],[1,2,6,5],[0,3,7,4]].map((face,i)=>({points:face.map(n=>box[n]),color:i%2?"#7ebd83":"#a5d69a",solid:true}));
+    const shell = [[0,1,2,3],[4,5,6,7],[0,1,5,4],[2,3,7,6],[1,2,6,5],[0,3,7,4]].map((face,i)=>({points:face.map(n=>box[n]),color:wallColor,solid:true}));
     const parts = [
-      {p:[0,0,0],r:.42,c:"#76b9d9"}, {p:[-.55,.28,.18],r:.16,c:"#9b75c8"},
-      {p:[.48,.36,-.22],r:.13,c:"#e7c36e"}, {p:[-.48,-.35,-.18],r:.13,c:"#e7c36e"},
-      {p:[.5,-.3,.22],r:.13,c:"#e7c36e"}, {p:[-.05,.52,-.3],r:.1,c:"#9b75c8"},
+      {p:[0,0,0],r:.48,c:"#76b9d9",role:"vacuole"},
+      {p:[-.55,.28,.18],r:.16,c:"#9b75c8",role:"nucleus"},
+      {p:[.48,.36,-.22],r:.13,c:"#77bd79",role:"chloroplasts"},
+      {p:[-.48,-.35,-.18],r:.13,c:"#77bd79",role:"chloroplasts"},
+      {p:[.5,-.3,.22],r:.13,c:"#77bd79",role:"chloroplasts"},
+      {p:[-.05,.52,-.3],r:.1,c:"#e7c36e",role:"mitochondria"},
     ];
-    return [...shell,...parts.flatMap((part)=>sphereMesh(part.r,8,12,part.c).map((face)=>({...face,offset:part.p})))];
+    return [...shell,...parts.flatMap((part)=>sphereMesh(part.r,8,12,focus === "all" || focus === part.role ? part.c : "#55566a").map((face)=>({...face,offset:part.p})))];
   }
   if (id === "heart") {
     const parts = [
@@ -400,7 +407,7 @@ export default function Interactive3DWorld() {
   const [rotation, setRotation] = useState({ yaw: -.55, pitch: -.22 });
   const [zoom, setZoom] = useState(1);
   const [conceptIndex, setConceptIndex] = useState(0);
-  const [ecosystem, setEcosystem] = useState({ rainfall: "regular", waterSource: true, pollution: false, engineCycle: "intake", physicsForce: 3, physicsFriction: 1, chemistryMolecule: "water", chemistryFocus: "all", chemistryShowBonds: true });
+  const [ecosystem, setEcosystem] = useState({ rainfall: "regular", waterSource: true, pollution: false, engineCycle: "intake", physicsForce: 3, physicsFriction: 1, chemistryMolecule: "water", chemistryFocus: "all", chemistryShowBonds: true, cellFocus: "all" });
   const canvasRef = useRef(null);
   const dragRef = useRef(null);
   const model = models.find((item) => item.id === modelId) || models[0];
@@ -443,6 +450,29 @@ export default function Interactive3DWorld() {
         </div>
         <aside className="learning-3d-details">
           <span>NOW EXPLORING</span><h3>{model.label}</h3><small>{model.subject}</small><p>{model.description}</p>
+          {(modelId === "cell" || modelId === "plant-cell") && <div className="learning-3d-experiment" aria-label="Interactive cell biology lab">
+            <span>EXPLORE CELL STRUCTURES</span>
+            <p>Switch between an animal cell and a plant cell. Highlight an organelle to discover its role. The structures are simplified teaching illustrations, not to scale.</p>
+            <div className="learning-3d-experiment-control"><strong>Cell type</strong><div role="group" aria-label="Choose cell type">
+              <button type="button" className={modelId === "cell" ? "active" : ""} aria-pressed={modelId === "cell"} onClick={() => { setModelId("cell"); setConceptIndex(0); }}>Animal cell</button>
+              <button type="button" className={modelId === "plant-cell" ? "active" : ""} aria-pressed={modelId === "plant-cell"} onClick={() => { setModelId("plant-cell"); setConceptIndex(0); }}>Plant cell</button>
+            </div></div>
+            <div className="learning-3d-experiment-control"><strong>Highlight structure</strong><div role="group" aria-label="Highlight cell structure">
+              {[["all", "All"], ["nucleus", "Nucleus"], ["mitochondria", "Mitochondria"], ...(modelId === "plant-cell" ? [["chloroplasts", "Chloroplasts"], ["vacuole", "Vacuole"], ["cellWall", "Cell wall"]] : [["endoplasmicReticulum", "ER"], ["ribosomes", "Ribosomes"], ["membrane", "Membrane"]])].map(([value, label]) => <button type="button" key={value} className={ecosystem.cellFocus === value ? "active" : ""} aria-pressed={ecosystem.cellFocus === value} onClick={() => setEcosystem((current) => ({ ...current, cellFocus: value }))}>{label}</button>)}
+            </div></div>
+            <p className="learning-3d-experiment-observation" aria-live="polite">{({
+              all: modelId === "plant-cell" ? "Plant cells have a cell wall, chloroplasts and a large central vacuole. They also contain a nucleus, mitochondria and other shared cell structures." : "Animal cells have a cell membrane, nucleus, mitochondria and other organelles. They do not have a cell wall or chloroplasts.",
+              nucleus: "The nucleus stores most of the cell's genetic material and helps coordinate cell activities.",
+              mitochondria: "Mitochondria carry out much of the cell's aerobic respiration and help supply usable energy in the form of ATP.",
+              chloroplasts: "Chloroplasts contain chlorophyll and capture light energy for photosynthesis. They are found in plants and many algae, not animal cells.",
+              vacuole: "A plant cell's large central vacuole stores cell sap and helps maintain turgor pressure.",
+              cellWall: "The plant cell wall is a supportive outer layer made mainly of cellulose. It helps the cell maintain shape and resist pressure.",
+              endoplasmicReticulum: "The endoplasmic reticulum is a membrane network involved in protein and lipid production and transport.",
+              ribosomes: "Ribosomes are the structures where cells assemble proteins.",
+              membrane: "The cell membrane forms a selectively permeable boundary that helps regulate what enters and leaves the cell.",
+            })[ecosystem.cellFocus || "all"]}</p>
+            <button type="button" onClick={() => setEcosystem((current) => ({ ...current, cellFocus: "all" }))}>Reset cell explorer</button>
+          </div>}
           {modelId === "molecule" && <div className="learning-3d-experiment" aria-label="Interactive chemistry molecule lab">
             <span>BUILD & EXPLORE MOLECULES</span>
             <p>Choose a molecule, focus on an element, and show or hide its bonds. Rotate the model to inspect its shape. These are simplified educational models, not electron-density or scale-accurate simulations.</p>
