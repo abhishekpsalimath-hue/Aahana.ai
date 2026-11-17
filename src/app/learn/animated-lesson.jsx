@@ -46,6 +46,48 @@ export function readMotionLesson(content) {
   }
 }
 
+const solarSystemFallbackLesson = {
+  title: "Journey Through Our Solar System",
+  scenes: [
+    {
+      caption: "Meet our planetary family",
+      narration: "Our Solar System is made of the Sun and everything held by its gravity, including eight planets. The planets travel around the Sun along their own paths. Explore the model and notice how many different worlds belong to this family.",
+      visual: "3d-solar-system",
+      visualData: { label: "Planetary family", value: "8 planets", unit: "", comparison: "Mercury → Neptune", progress: 25 },
+      support: { visual: "orbit", visualData: { label: "Planetary family", value: "8 planets", unit: "", comparison: "Each planet follows an orbit around the Sun", progress: 25 }, explanation: "The Sun is at the centre of our planetary system. Eight planets travel around it." },
+      action: "Rotate the 3D model and trace a path from the closest planet outward.",
+      challenge: { question: "How many planets are in our Solar System?", options: ["Seven", "Eight", "Nine"], correctIndex: 1, hints: ["Count the recognised planets from Mercury to Neptune.", "There are four inner planets and four outer planets."], hint: "There are four inner planets and four outer planets.", explanation: "There are eight recognised planets orbiting the Sun." },
+    },
+    {
+      caption: "The four rocky inner worlds",
+      narration: "The four planets closest to the Sun are Mercury, Venus, Earth and Mars. They are called terrestrial planets because they have solid, rocky surfaces. Their order from the Sun begins with Mercury and ends with Mars.",
+      visual: "3d-solar-system",
+      visualData: { label: "Inner planets", value: "4 rocky worlds", unit: "", comparison: "Mercury • Venus • Earth • Mars", progress: 50 },
+      support: { visual: "concept-map", visualData: { label: "Inner planets", value: "4 rocky worlds", unit: "", comparison: "They are the first four planets from the Sun", progress: 50 }, explanation: "The inner group contains Mercury, Venus, Earth and Mars. All four have solid surfaces." },
+      action: "Find Earth, then move inward to identify the planet closest to the Sun.",
+      challenge: { question: "Which planet is closest to the Sun?", options: ["Venus", "Earth", "Mercury"], correctIndex: 2, hints: ["It is the first planet when travelling outward from the Sun.", "Its name begins with M."], hint: "Its name begins with M.", explanation: "Mercury is the innermost planet and completes an orbit in about 88 Earth days." },
+    },
+    {
+      caption: "The four giant outer planets",
+      narration: "Beyond the inner rocky worlds are Jupiter, Saturn, Uranus and Neptune. Jupiter and Saturn are gas giants, while Uranus and Neptune are ice giants. Saturn is famous for its bright, extensive ring system.",
+      visual: "3d-solar-system",
+      visualData: { label: "Outer planets", value: "4 giant worlds", unit: "", comparison: "Jupiter • Saturn • Uranus • Neptune", progress: 75 },
+      support: { visual: "concept-map", visualData: { label: "Outer planets", value: "4 giant worlds", unit: "", comparison: "They follow Mars in the planet order", progress: 75 }, explanation: "The outer group starts with Jupiter and continues through Saturn, Uranus and Neptune." },
+      action: "Rotate the model and compare the outer group with the four rocky inner planets.",
+      challenge: { question: "Which planet is especially famous for its broad, bright rings?", options: ["Mars", "Saturn", "Mercury"], correctIndex: 1, hints: ["It is the second planet in the outer group.", "Its name starts with S."], hint: "Its name starts with S.", explanation: "Saturn's spectacular ring system is made mostly of countless pieces of ice and rock." },
+    },
+    {
+      caption: "Why do planets keep moving around the Sun?",
+      narration: "A planet's forward motion and the Sun's gravitational pull work together to create an orbit. An orbit is a curved path through space, not a solid track. Earth takes about 365.25 days to complete one revolution around the Sun; that journey defines an Earth year.",
+      visual: "3d-planet",
+      visualData: { label: "Earth's revolution", value: "365.25 days", unit: "per orbit", comparison: "One trip around the Sun is one Earth year", progress: 100 },
+      support: { visual: "orbit", visualData: { label: "Earth's revolution", value: "1 year", unit: "", comparison: "Earth travels around the Sun once", progress: 100 }, explanation: "Earth moves forward while the Sun's gravity continually changes the direction of its motion. Together these create an orbit." },
+      action: "Rotate the planet model and imagine its path curving around the Sun.",
+      challenge: { question: "What keeps planets in curved paths around the Sun?", options: ["The Sun's gravity", "A solid invisible road", "Light from distant stars"], correctIndex: 0, hints: ["Think of the force that attracts objects with mass.", "It is the same force that makes objects fall toward Earth."], hint: "It is the same force that makes objects fall toward Earth.", explanation: "Gravity attracts the planets toward the Sun while their forward motion carries them along their orbits." },
+    },
+  ],
+};
+
 export function AnimatedVisual({ visual, paused = false }) {
   const cls = paused ? "motion-art paused" : "motion-art";
   const model3d = { "3d-solar-system": "solar-system", "3d-planet": "planet", "3d-molecule": "molecule", "3d-atom": "atom", "3d-dna": "dna", "3d-geometry": "cube", "3d-terrain": "terrain", "3d-plant-cell": "plant-cell", "3d-heart": "heart", "3d-pyramid": "pyramid", "3d-ecosystem": "ecosystem", "3d-engine": "engine" }[visual];
@@ -66,8 +108,9 @@ export function AnimatedVisual({ visual, paused = false }) {
   return <svg className={cls} viewBox="0 0 320 170" role="img" aria-label="A concept map connecting ideas"><g stroke="#9b86c5" strokeWidth="3"><path d="M160 83L75 40M160 83L245 40M160 83L75 130M160 83L245 130"/></g><circle cx="160" cy="83" r="34" fill="#8068aa"/>{[[75,40],[245,40],[75,130],[245,130]].map(([x,y],i)=><circle key={i} cx={x} cy={y} r="20" fill={i%2?"#79b7d7":"#c7a9f5"}/>)}</svg>;
 }
 
-export default function AnimatedLesson({ content, memoryEnabled = false, onSaveJourney, onRetry }) {
-  const lesson = useMemo(() => readMotionLesson(content), [content]);
+export default function AnimatedLesson({ content, topic = "", memoryEnabled = false, onSaveJourney, onRetry }) {
+  const isSolarSystemTopic = /\\b(?:solar system|planets?|sun|mercury|venus|earth|mars|jupiter|saturn|uranus|neptune|planetary orbit)\\b/i.test(topic);
+  const lesson = useMemo(() => readMotionLesson(content) || (isSolarSystemTopic ? solarSystemFallbackLesson : null), [content, isSolarSystemTopic]);
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const [sceneAttempts, setSceneAttempts] = useState({});
