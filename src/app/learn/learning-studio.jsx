@@ -24,10 +24,12 @@ const gradeBands = [
 ];
 
 const subjects = ["Anything / explore", "Mathematics", "Science", "Physics", "Chemistry", "Biology", "History", "Geography", "Civics", "English", "Languages", "Computer science", "Technology & AI", "Economics", "Arts & creativity", "Everyday skills"];
+const curricula = ["Not specified", "CBSE", "ICSE", "Karnataka State Board", "Other Indian State Board", "Cambridge International", "International Baccalaureate (IB)", "England National Curriculum", "US Common Core", "Other / help me choose"];
 
 export default function LearningStudio({ userEmail = "" }) {
   const [gradeBand, setGradeBand] = useState("not-sure");
   const [subject, setSubject] = useState("Anything / explore");
+  const [curriculum, setCurriculum] = useState("Not specified");
   const [language, setLanguage] = useState("Use my language");
   const [learningMode, setLearningMode] = useState("story");
   const [question, setQuestion] = useState("");
@@ -73,6 +75,7 @@ export default function LearningStudio({ userEmail = "" }) {
         if (savedProfile && typeof savedProfile === "object") {
           if (gradeBands.some(([value]) => value === savedProfile.gradeBand)) setGradeBand(savedProfile.gradeBand);
           if (subjects.includes(savedProfile.subject)) setSubject(savedProfile.subject);
+          if (curricula.includes(savedProfile.curriculum)) setCurriculum(savedProfile.curriculum);
           if (typeof savedProfile.language === "string" && savedProfile.language.length <= 35) setLanguage(savedProfile.language);
           if (learningModes.some((item) => item.id === savedProfile.learningMode)) setLearningMode(savedProfile.learningMode);
         }
@@ -92,7 +95,7 @@ export default function LearningStudio({ userEmail = "" }) {
     event.preventDefault();
     const requestText = question.trim();
     if (!requestText || busy) return;
-    const profile = { gradeBand, subject, language, learningMode };
+    const profile = { gradeBand, subject, curriculum, language, learningMode };
     setQuestion("");
     setError("");
     setBusy(true);
@@ -174,6 +177,11 @@ export default function LearningStudio({ userEmail = "" }) {
           <label>What are you exploring?
             <select value={subject} onChange={(event) => setSubject(event.target.value)} disabled={busy}>
               {subjects.map((value) => <option key={value}>{value}</option>)}
+            </select>
+          </label>
+          <label>Curriculum / education board
+            <select value={curriculum} onChange={(event) => setCurriculum(event.target.value)} disabled={busy}>
+              {curricula.map((value) => <option key={value}>{value}</option>)}
             </select>
           </label>
           <label>Learning language
