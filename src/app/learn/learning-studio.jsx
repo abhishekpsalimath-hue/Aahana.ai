@@ -16,17 +16,38 @@ const learningModes = [
 ];
 
 const gradeBands = [
+  ["early-years", "Early years"],
   ["primary", "Primary school"],
   ["middle", "Middle school"],
   ["secondary", "Secondary school"],
   ["higher-secondary", "Higher secondary"],
   ["college", "College / university"],
+  ["postgraduate", "Postgraduate / research"],
+  ["professional", "Professional development"],
   ["adult", "Independent learner"],
   ["not-sure", "Help me choose my level"],
 ];
 
 const subjects = allLearningSubjects;
 const curricula = ["Not specified", "CBSE", "ICSE", "Karnataka State Board", "Other Indian State Board", "Cambridge International", "International Baccalaureate (IB)", "England National Curriculum", "US Common Core", "Other / help me choose"];
+function LearningCategoryExplorer({ onChooseCategory }) {
+  return (
+    <section className="learning-category-explorer" aria-label="Explore learning categories">
+      <div className="learning-section-heading"><div><span>THE LEARNING UNIVERSE</span><h2>Explore every direction</h2></div><span className="space-explorer-tag">{learningCategories.length} LEARNING WORLDS</span></div>
+      <p className="space-explorer-intro">From the first letters and numbers to advanced research, creative practice and everyday skills—choose a world and start anywhere.</p>
+      <div className="learning-category-grid">
+        {learningCategories.map((item) => (
+          <button type="button" className="learning-category-card" key={item.name} onClick={() => onChooseCategory(item.name)}>
+            <strong>{item.name}</strong>
+            <span>{item.subjects.slice(0, 5).join(" · ")}</span>
+            <small>{item.subjects.length} topics <span aria-hidden="true">→</span></small>
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function readQuizPayload(content) {
   if (typeof content !== "string") return null;
   const cleaned = content.trim().replace(/^\s*```(?:json)?\s*/i, "").replace(/\s*```$/, "");
@@ -445,6 +466,13 @@ export default function LearningStudio({ userEmail = "" }) {
         <h1>Curiosity looks good<br /><em>on you.</em></h1>
         <p>Explore ideas, ask anything and learn in a way that makes sense to you. No pressure to know the answer before you begin.</p>
       </section>
+
+      <LearningCategoryExplorer onChooseCategory={(name) => {
+        const selectedCategory = learningCategories.find((item) => item.name === name);
+        setCategory(name);
+        setSubject(selectedCategory?.subjects?.[0] || "Anything / explore");
+        document.querySelector(".learning-profile")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }} />
 
       <SpaceExplorer />
 
