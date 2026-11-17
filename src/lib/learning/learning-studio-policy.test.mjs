@@ -61,7 +61,7 @@ test("Student Mode stays focused on Grades 1–10 and keeps advanced exploration
   assert.match(studio, /Grade \\{value\\}/);
   assert.match(studio, /Your learning conversation/);
   assert.match(studio, /Aahana will choose the best way to explain it/);
-  assert.doesNotMatch(studio, /learning-category-grid/);
+  assert.doesNotMatch(studio, /<LearningCategoryExplorer/);
   assert.doesNotMatch(studio, /<CreatorStudio/);
   assert.doesNotMatch(studio, /<SpaceExplorer/);
 });
