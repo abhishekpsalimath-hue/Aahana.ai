@@ -87,7 +87,7 @@ export async function POST(request) {
   const learningProfile = mode === "learn" ? {
     gradeBand: allowedGradeBands.includes(rawLearningProfile.gradeBand) ? rawLearningProfile.gradeBand : "not-sure",
     subject: allowedLearningSubjects.includes(rawLearningProfile.subject) ? rawLearningProfile.subject : "Anything / explore",
-    language: typeof rawLearningProfile.language === "string" && /^[\\p{L}\\p{M}\\s-]{1,35}$/u.test(rawLearningProfile.language.trim()) ? rawLearningProfile.language.trim() : "Use my language",
+    language: typeof rawLearningProfile.language === "string" && /^[\p{L}\p{M}\s-]{1,35}$/u.test(rawLearningProfile.language.trim()) ? rawLearningProfile.language.trim() : "Use my language",
     learningMode: allowedLearningModes.includes(rawLearningProfile.learningMode) ? rawLearningProfile.learningMode : "talk",
   } : null;
   const learningModeGuidance = {
