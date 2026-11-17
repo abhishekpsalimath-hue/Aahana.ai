@@ -34,14 +34,14 @@ export const allLearningSubjects = [...new Set(learningCategories.flatMap((categ
  */
 const normalizeLearningSearch = (value) => String(value || "")
   .normalize("NFKD")
-  .replace(/[\\u0300-\\u036f]/g, "")
+  .replace(/[\u0300-\u036f]/g, "")
   .toLowerCase()
-  .replace(/[^\\p{L}\\p{N}]+/gu, " ")
+  .replace(/[^\p{L}\p{N}]+/gu, " ")
   .trim();
 
 export const learningSubjectIndex = learningCategories.flatMap((category) =>
   category.subjects.map((subject) => ({
-    id: normalizeLearningSearch(category.name + " " + subject).replace(/\\s+/g, "-"),
+    id: normalizeLearningSearch(category.name + " " + subject).replace(/\s+/g, "-"),
     category: category.name,
     subject,
     searchText: normalizeLearningSearch(category.name + " " + subject),
