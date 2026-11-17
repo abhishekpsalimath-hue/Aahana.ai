@@ -2,12 +2,15 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import { createClient } from "@/lib/supabase/client";
 import { findBestSpeechVoice, getBrowserVoiceCapabilities } from "@/lib/voice/browser-capabilities.mjs";
 import { encodeMonoPcm16Wav } from "@/lib/voice/audio-wav.mjs";
 import { inferSpeechLocale } from "@/lib/voice/locale-detection.mjs";
 import { shouldFallbackToDeviceSpeech } from "@/lib/voice/speech-fallback-policy.mjs";
 import CreatorStudio from "./learn/creator-studio";
+import { CatalogueCoverage, LearningCategoryExplorer, SpaceExplorer, SolarSystemCurriculum } from "./learn/learning-studio";
+const Interactive3DWorld = dynamic(() => import("./learn/interactive-3d-world"), { ssr: false, loading: () => <div role="status">Preparing the interactive 3D world…</div> });
 
 const modes = [
   { id: "solve", label: "Solve", hint: "Work through a problem" },
@@ -143,6 +146,8 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const router = useRouter();
   const [mode, setMode] = useState("solve");
   const [creativeStudioOpen, setCreativeStudioOpen] = useState(false);
+  const [learningWorldsOpen, setLearningWorldsOpen] = useState(false);
+  const [selectedPlanet, setSelectedPlanet] = useState("earth");
   const [prompt, setPrompt] = useState("");
   const [imageFile, setImageFile] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -994,6 +999,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         <button className={selectedProjectId ? "side-item assistant-nav" : "side-item active assistant-nav"} type="button" onClick={() => selectProject(null)}>✳ <span>Assistant</span></button>
         <a className="side-item muted learning-nav" href="/learn" aria-label="Open Student Mode">✧ <span>Student Mode</span></a>
         <button className={creativeStudioOpen ? "side-item active" : "side-item muted"} type="button" onClick={() => setCreativeStudioOpen((value) => !value)}>✦ <span>Creative Studio</span></button>
+        <button className={learningWorldsOpen ? "side-item active" : "side-item muted"} type="button" onClick={() => setLearningWorldsOpen((value) => !value)}>◎ <span>Learning Worlds</span></button>
         <button className={historyOpen ? "side-item active history-toggle" : "side-item muted history-toggle"} type="button" onClick={toggleHistory}>◷ <span>History</span></button>
         {historyOpen && (
           <div className="history-list">
@@ -1106,7 +1112,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       <section className="main-panel">
         <header className="topbar">
           <div className="breadcrumb">Workspace <span>/</span> {selectedProjectId ? (projects.find((item) => item.id === selectedProjectId)?.name || "Project") : "Assistant"}</div>
-          <div className="top-actions"><button className="mobile-history-toggle" type="button" onClick={toggleProjects}>Projects</button><button className="mobile-history-toggle" type="button" onClick={toggleHistory}>History</button><button className="mobile-history-toggle" type="button" onClick={toggleFiles}>Files</button><button className="mobile-history-toggle" type="button" onClick={toggleMemoryPanel}>Memory</button><a className="student-mode-shortcut" href="/learn">✧ Student Mode</a><button className="mobile-history-toggle" type="button" onClick={() => setCreativeStudioOpen((value) => !value)}>Creative Studio</button><span>Private workspace</span></div>
+          <div className="top-actions"><button className="mobile-history-toggle" type="button" onClick={toggleProjects}>Projects</button><button className="mobile-history-toggle" type="button" onClick={toggleHistory}>History</button><button className="mobile-history-toggle" type="button" onClick={toggleFiles}>Files</button><button className="mobile-history-toggle" type="button" onClick={toggleMemoryPanel}>Memory</button><a className="student-mode-shortcut" href="/learn">✧ Student Mode</a><button className="mobile-history-toggle" type="button" onClick={() => setCreativeStudioOpen((value) => !value)}>Creative Studio</button><button className="mobile-history-toggle" type="button" onClick={() => setLearningWorldsOpen((value) => !value)}>Learning Worlds</button><span>Private workspace</span></div>
         </header>
         {projectsOpen && (
           <div className="mobile-project-panel">
@@ -1303,6 +1309,20 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
           )}
         </div>
         {creativeStudioOpen && <section className="assistant-creative-studio" aria-label="Creative Studio"><div className="assistant-creative-studio-heading"><span>AAHANA CREATIVE WORKSPACE</span><button type="button" className="copy-message" onClick={() => setCreativeStudioOpen(false)}>Close</button></div><CreatorStudio /></section>}
+        {learningWorldsOpen && <section className="assistant-creative-studio assistant-learning-worlds" aria-label="Learning Worlds">
+          <div className="assistant-creative-studio-heading"><span>AAHANA LEARNING WORLDS</span><button type="button" className="copy-message" onClick={() => setLearningWorldsOpen(false)}>Close</button></div>
+          <CatalogueCoverage />
+          <LearningCategoryExplorer onChooseCategory={(name, selectedSubject) => {
+            setPrompt(`Teach me ${selectedSubject || name} with a clear explanation and useful examples.`);
+            setLearningWorldsOpen(false);
+          }} />
+          <SpaceExplorer selectedPlanet={selectedPlanet} onSelectPlanet={setSelectedPlanet} />
+          <Interactive3DWorld selectedPlanet={selectedPlanet} onSelectedPlanetChange={setSelectedPlanet} />
+          <SolarSystemCurriculum onStartUnit={(unit) => {
+            setPrompt(`Teach me the unit “${unit.title}” from Our Solar System. Cover these learning goals: ${unit.outcomes.join("; ")}. Explain step by step and check my understanding.`);
+            setLearningWorldsOpen(false);
+          }} />
+        </section>}
         <footer className="footer"><span>Aahana</span><span>Thoughtfully made for what’s next.</span></footer>
       </section>
     </main>
