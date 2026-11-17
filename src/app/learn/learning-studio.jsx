@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import "./learning-studio.css";
 import AnimatedLesson, { AnimatedVisual, readMotionLesson } from "./animated-lesson";
+import { learningCategories, allLearningSubjects } from "@/lib/learning/learning-catalog";
 
 const learningModes = [
   { id: "story", title: "Story Mode", icon: "✦", detail: "Turn a difficult idea into a memorable story.", prompt: "Teach me through a vivid, age-appropriate story. Introduce the concept naturally, then connect each part of the story to the real idea." },
@@ -24,7 +25,7 @@ const gradeBands = [
   ["not-sure", "Help me choose my level"],
 ];
 
-const subjects = ["Anything / explore", "Mathematics", "Science", "Physics", "Chemistry", "Biology", "History", "Geography", "Civics", "English", "Languages", "Computer science", "Technology & AI", "Economics", "Arts & creativity", "Everyday skills"];
+const subjects = allLearningSubjects;
 const curricula = ["Not specified", "CBSE", "ICSE", "Karnataka State Board", "Other Indian State Board", "Cambridge International", "International Baccalaureate (IB)", "England National Curriculum", "US Common Core", "Other / help me choose"];
 function readQuizPayload(content) {
   if (typeof content !== "string") return null;
@@ -180,6 +181,8 @@ function SpaceExplorer() {
 export default function LearningStudio({ userEmail = "" }) {
   const [gradeBand, setGradeBand] = useState("not-sure");
   const [subject, setSubject] = useState("Anything / explore");
+  const [category, setCategory] = useState("Explore anything");
+  const categorySubjects = learningCategories.find((item) => item.name === category)?.subjects || learningCategories[0].subjects;
   const [curriculum, setCurriculum] = useState("Not specified");
   const [language, setLanguage] = useState("Use my language");
   const [learningMode, setLearningMode] = useState("story");
@@ -348,7 +351,10 @@ export default function LearningStudio({ userEmail = "" }) {
         const savedProfile = JSON.parse(window.localStorage.getItem("aahana:learning-profile:" + result.conversation.id) || "null");
         if (savedProfile && typeof savedProfile === "object") {
           if (gradeBands.some(([value]) => value === savedProfile.gradeBand)) setGradeBand(savedProfile.gradeBand);
-          if (subjects.includes(savedProfile.subject)) setSubject(savedProfile.subject);
+          if (subjects.includes(savedProfile.subject)) {
+            setSubject(savedProfile.subject);
+            setCategory(learningCategories.find((item) => item.subjects.includes(savedProfile.subject))?.name || "Explore anything");
+          }
           if (curricula.includes(savedProfile.curriculum)) setCurriculum(savedProfile.curriculum);
           if (typeof savedProfile.language === "string" && savedProfile.language.length <= 35) setLanguage(savedProfile.language);
           if (learningModes.some((item) => item.id === savedProfile.learningMode)) setLearningMode(savedProfile.learningMode);
@@ -450,9 +456,18 @@ export default function LearningStudio({ userEmail = "" }) {
               {gradeBands.map(([value, label]) => <option value={value} key={value}>{label}</option>)}
             </select>
           </label>
-          <label>What are you exploring?
-            <select value={subject} onChange={(event) => setSubject(event.target.value)} disabled={busy}>
-              {subjects.map((value) => <option key={value}>{value}</option>)}
+          <label>Learning category
+            <select value={category} onChange={(event) => {
+              const nextCategory = learningCategories.find((item) => item.name === event.target.value);
+              setCategory(event.target.value);
+              if (nextCategory?.subjects?.length) setSubject(nextCategory.subjects[0]);
+            }} disabled={busy}>
+              {learningCategories.map((item) => <option value={item.name} key={item.name}>{item.name}</option>)}
+            </select>
+          </label>
+          <label>Choose a subject or topic
+            <select value={categorySubjects.includes(subject) ? subject : categorySubjects[0]} onChange={(event) => setSubject(event.target.value)} disabled={busy}>
+              {categorySubjects.map((value) => <option key={value}>{value}</option>)}
             </select>
           </label>
           <label>Curriculum / education board
