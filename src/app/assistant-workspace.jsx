@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
@@ -200,12 +200,47 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [autoSpeak, setAutoSpeak] = useState(true);
   const [listening, setListening] = useState(false);
   const [speakingMessage, setSpeakingMessage] = useState(null);
+  const [voicePreferencesLoaded, setVoicePreferencesLoaded] = useState(false);
   // Recognition and speech use the browser/device language packs. This list covers
   // major Indian regional languages and widely used international locales.
   const voiceLanguages = [
     ["kn-IN","ಕನ್ನಡ (Kannada)"],["hi-IN","हिन्दी (Hindi)"],["ta-IN","தமிழ் (Tamil)"],["te-IN","తెలుగు (Telugu)"],["ml-IN","മലയാളം (Malayalam)"],["mr-IN","मराठी (Marathi)"],["bn-IN","বাংলা (Bengali)"],["gu-IN","ગુજરાતી (Gujarati)"],["pa-IN","ਪੰਜਾਬੀ (Punjabi)"],["ur-IN","اردو (Urdu)"],["or-IN","ଓଡ଼ିଆ (Odia)"],["as-IN","অসমীয়া (Assamese)"],["ne-NP","नेपाली (Nepali)"],["sa-IN","संस्कृत (Sanskrit)"],["ks-IN","Kashmiri"],["sd-IN","Sindhi"],["kok-IN","Konkani"],["doi-IN","Dogri"],["mni-IN","Manipuri"],["brx-IN","Bodo"],
     ["en-IN","English (India)"],["en-US","English (US)"],["en-GB","English (UK)"],["en-AU","English (Australia)"],["en-CA","English (Canada)"],["es-ES","Español (Spanish)"],["es-MX","Spanish (Mexico)"],["fr-FR","Français (French)"],["fr-CA","French (Canada)"],["de-DE","Deutsch (German)"],["pt-BR","Português (Brazil)"],["pt-PT","Portuguese (Portugal)"],["ar-SA","العربية (Arabic)"],["ar-EG","Arabic (Egypt)"],["zh-CN","中文 (Mandarin)"],["zh-TW","Chinese (Traditional)"],["yue-HK","Cantonese"],["ja-JP","日本語 (Japanese)"],["ko-KR","한국어 (Korean)"],["ru-RU","Русский (Russian)"],["it-IT","Italiano (Italian)"],["nl-NL","Nederlands (Dutch)"],["sv-SE","Swedish"],["no-NO","Norwegian"],["da-DK","Danish"],["fi-FI","Finnish"],["is-IS","Icelandic"],["pl-PL","Polish"],["cs-CZ","Czech"],["sk-SK","Slovak"],["hu-HU","Hungarian"],["ro-RO","Romanian"],["bg-BG","Bulgarian"],["el-GR","Greek"],["tr-TR","Türkçe (Turkish)"],["he-IL","עברית (Hebrew)"],["th-TH","ไทย (Thai)"],["vi-VN","Tiếng Việt (Vietnamese)"],["id-ID","Bahasa Indonesia"],["ms-MY","Bahasa Melayu"],["fil-PH","Filipino"],["sw-KE","Swahili"],["af-ZA","Afrikaans"],["uk-UA","Ukrainian"],["hr-HR","Croatian"],["sr-RS","Serbian"],["sl-SI","Slovenian"],["lt-LT","Lithuanian"],["lv-LV","Latvian"],["et-EE","Estonian"],["fa-IR","Persian"],["am-ET","Amharic"]
   ];
+
+  // Keep voice choices on this device. This is a convenience preference only;
+  // it does not imply that the browser has a speech model for the selected locale.
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem("aahana:voice-preferences:v1");
+      if (saved) {
+        const preferences = JSON.parse(saved);
+        if (typeof preferences?.voiceLanguage === "string"
+          && voiceLanguages.some(([code]) => code === preferences.voiceLanguage)) {
+          setVoiceLanguage(preferences.voiceLanguage);
+        }
+        if (typeof preferences?.autoSpeak === "boolean") {
+          setAutoSpeak(preferences.autoSpeak);
+        }
+      }
+    } catch {
+      // Ignore unavailable or malformed local preferences and keep safe defaults.
+    } finally {
+      setVoicePreferencesLoaded(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!voicePreferencesLoaded) return;
+    try {
+      window.localStorage.setItem("aahana:voice-preferences:v1", JSON.stringify({
+        voiceLanguage,
+        autoSpeak,
+      }));
+    } catch {
+      // Voice preferences remain usable for this session if storage is unavailable.
+    }
+  }, [voiceLanguage, autoSpeak, voicePreferencesLoaded]);
 
   function startVoiceInput() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
