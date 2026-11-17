@@ -72,6 +72,10 @@ jobs:
         run: node --test ../../src/lib/voice/speech-fallback-policy.test.mjs
       - name: Test Aahana Learning Studio policy and integration
         run: node --test ../../src/lib/learning/learning-studio-policy.test.mjs
+      - name: Test private learning journey memory
+        run: node --test ../../src/lib/learning/learning-memory.test.mjs
+      - name: Syntax-check authenticated learning journey API
+        run: node --check ../../src/app/api/learning-journey/route.js
       - name: Syntax-check authenticated transcription route
         run: node --check ../../src/app/api/voice/transcribe/route.js
       - name: Syntax-check authenticated speech synthesis route
