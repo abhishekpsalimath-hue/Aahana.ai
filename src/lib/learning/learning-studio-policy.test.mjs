@@ -164,6 +164,22 @@ test("learning memory is opt-in, authenticated, owner-scoped and deletable", () 
   assert.match(animated, /Save to my journey/);
 });
 
+test("learning memory API reports the actual consent setting", () => {
+  assert.match(learningMemoryRoute, /return NextResponse\.json\(\{ enabled, journeys \}\)/);
+  assert.doesNotMatch(learningMemoryRoute, /return NextResponse\.json\(\{ enabled: true, journeys \}\)/);
+});
+
+test("adaptive roadmap is built only from saved learner-selected topics and offers clear next actions", () => {
+  assert.match(studio, /const learningRoadmap = learningMemory\.journeys\.reduce/);
+  assert.match(studio, /scene\.alternateExplanationUsed/);
+  assert.match(studio, /Explore with a fresh explanation/);
+  assert.match(studio, /Continue your curiosity/);
+  assert.match(studio, /Explore again/);
+  assert.match(studio, /Let's explore/);
+  assert.match(studio, /Let's continue exploring/);
+  assert.match(studio, /invitations—not grades or assumptions/);
+});
+
 test("animated lesson renderer validates scene data and provides subject-specific visuals", () => {
   assert.match(animated, /function readMotionLesson\(content\)/);
   assert.match(animated, /value\?\.type !== "aahana_motion_lesson_v1"/);
