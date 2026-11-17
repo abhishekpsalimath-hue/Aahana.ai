@@ -611,3 +611,29 @@ button,input,textarea,select{font-family:var(--font-ui)}
 
 /* Keep chat surfaces calm; reserve expressive glitch motion for the Aahana welcome word only. */
 .main-panel::before{animation:none!important;background-position:0 0;opacity:.06}
+
+
+/* Advanced creation and learning tools live inside the main assistant workspace. */
+.assistant-creative-studio {
+  width: min(100%, 1480px);
+  margin: 36px auto 24px;
+  padding: clamp(16px, 2.4vw, 30px);
+  border: 1px solid var(--border, rgba(255,255,255,.12));
+  border-radius: 22px;
+  background: var(--panel, rgba(255,255,255,.035));
+  overflow: hidden;
+}
+.assistant-creative-studio-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 22px;
+  color: var(--muted, #a8a3b5);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: .16em;
+}
+.assistant-learning-worlds > section {
+  margin-block: 28px;
+}
