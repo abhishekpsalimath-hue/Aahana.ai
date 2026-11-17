@@ -369,22 +369,35 @@ export default function LearningStudio({ userEmail = "" }) {
       if (!response.ok) throw new Error(result.error || "Could not reopen this learning session.");
       if (result.conversation?.mode !== "learn") throw new Error("This conversation is not a Learning Studio session.");
       setConversationId(result.conversation.id);
+      let resumedProfile = { gradeBand, subject, curriculum, language, learningMode };
       try {
         const savedProfile = JSON.parse(window.localStorage.getItem("aahana:learning-profile:" + result.conversation.id) || "null");
         if (savedProfile && typeof savedProfile === "object") {
-          if (gradeBands.some(([value]) => value === savedProfile.gradeBand)) setGradeBand(savedProfile.gradeBand);
-          if (subjects.includes(savedProfile.subject)) {
-            setSubject(savedProfile.subject);
-            setCategory(learningCategories.find((item) => item.subjects.includes(savedProfile.subject))?.name || "Explore anything");
+          resumedProfile = {
+            gradeBand: gradeBands.some(([value]) => value === savedProfile.gradeBand) ? savedProfile.gradeBand : resumedProfile.gradeBand,
+            subject: subjects.includes(savedProfile.subject) ? savedProfile.subject : resumedProfile.subject,
+            curriculum: curricula.includes(savedProfile.curriculum) ? savedProfile.curriculum : resumedProfile.curriculum,
+            language: typeof savedProfile.language === "string" && savedProfile.language.length <= 35 ? savedProfile.language : resumedProfile.language,
+            learningMode: learningModes.some((item) => item.id === savedProfile.learningMode) ? savedProfile.learningMode : resumedProfile.learningMode,
+          };
+          setGradeBand(resumedProfile.gradeBand);
+          if (subjects.includes(resumedProfile.subject)) {
+            setSubject(resumedProfile.subject);
+            setCategory(learningCategories.find((item) => item.subjects.includes(resumedProfile.subject))?.name || "Explore anything");
           }
-          if (curricula.includes(savedProfile.curriculum)) setCurriculum(savedProfile.curriculum);
-          if (typeof savedProfile.language === "string" && savedProfile.language.length <= 35) setLanguage(savedProfile.language);
-          if (learningModes.some((item) => item.id === savedProfile.learningMode)) setLearningMode(savedProfile.learningMode);
+          setCurriculum(resumedProfile.curriculum);
+          setLanguage(resumedProfile.language);
+          setLearningMode(resumedProfile.learningMode);
         }
       } catch {
         // A missing or malformed local profile does not block reopening the conversation.
       }
-      setMessages((result.messages || []).map((item) => ({ role: item.role, content: item.content || "" })));
+      setMessages((result.messages || []).map((item) => ({
+        role: item.role,
+        content: item.content || "",
+        learningMode: resumedProfile.learningMode,
+        profile: resumedProfile,
+      })));
       setQuestion("");
     } catch (err) {
       setError(err.message || "Could not reopen this learning session.");
