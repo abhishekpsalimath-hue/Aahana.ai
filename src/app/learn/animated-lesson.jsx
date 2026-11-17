@@ -15,6 +15,11 @@ export function readMotionLesson(content) {
       typeof scene?.caption === "string" && scene.caption.trim() && scene.caption.length <= 120 &&
       typeof scene?.narration === "string" && scene.narration.trim() && scene.narration.length <= 1200 &&
       visualTypes.has(scene.visual) &&
+      typeof scene?.visualData?.label === "string" && scene.visualData.label.trim() && scene.visualData.label.length <= 90 &&
+      typeof scene.visualData.value === "string" && scene.visualData.value.trim() && scene.visualData.value.length <= 36 &&
+      typeof scene.visualData.unit === "string" && scene.visualData.unit.length <= 24 &&
+      typeof scene.visualData.comparison === "string" && scene.visualData.comparison.length <= 120 &&
+      Number.isInteger(scene.visualData.progress) && scene.visualData.progress >= 0 && scene.visualData.progress <= 100 &&
       typeof scene?.action === "string" && scene.action.trim() && scene.action.length <= 260 &&
       typeof scene?.challenge?.question === "string" && scene.challenge.question.trim() && scene.challenge.question.length <= 240 &&
       Array.isArray(scene.challenge.options) && scene.challenge.options.length === 3 &&
@@ -73,7 +78,15 @@ export default function AnimatedLesson({ content }) {
 
   return <section className="motion-lesson" aria-label="Animated lesson">
     <div className="motion-lesson-head"><div><span>EXPLORE IT IN MOTION</span><h3>{lesson.title}</h3></div><span>SCENE {index + 1} / {lesson.scenes.length}</span></div>
-    <div className="motion-stage"><AnimatedVisual visual={scene.visual} paused={paused}/><div className="motion-caption">{scene.caption}</div></div>
+    <div className="motion-stage">
+      <AnimatedVisual visual={scene.visual} paused={paused}/>
+      <div className="motion-caption">{scene.caption}</div>
+      <div className="motion-data" aria-label={`${scene.visualData.label}: ${scene.visualData.value} ${scene.visualData.unit}`}>
+        <div className="motion-data-copy"><span>{scene.visualData.label}</span><strong>{scene.visualData.value}{scene.visualData.unit ? ` ${scene.visualData.unit}` : ""}</strong></div>
+        <div className="motion-data-track" role="img" aria-label={`Illustrated level ${scene.visualData.progress} percent`}><span style={{ width: `${scene.visualData.progress}%` }}/></div>
+        {scene.visualData.comparison && <p>{scene.visualData.comparison}</p>}
+      </div>
+    </div>
     <p className="motion-narration">{scene.narration}</p>
     <div className="motion-action"><strong>Explore:</strong> {scene.action}</div>
     <div className="motion-prediction" aria-live="polite">
