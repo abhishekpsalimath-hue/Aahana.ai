@@ -168,6 +168,12 @@ test("animated lesson renderer validates scene data and provides subject-specifi
   assert.match(animated, /displayedVisual = showSupport \? scene\.support\.visual/);
   assert.match(animated, /scene\.support\.explanation/);
   assert.match(animated, /challenge\.hints\[1\]/);
+  assert.match(animated, /const \[sceneAttempts, setSceneAttempts\] = useState\(\{\}\)/);
+  assert.match(animated, /const adaptedScenes = Object\.keys\(solvedAttempts\)/);
+  assert.match(animated, /setSolvedAttempts\(\(current\) =>/);
+  assert.match(animated, /motion-learning-reflection/);
+  assert.match(animated, /Explore again/);
+  assert.match(animated, /Trying a new way is a powerful learning skill/);
   assert.match(animated, /motion-data-track/);
   for (const visual of ["fraction", "orbit", "water-cycle", "plant-growth", "number-line", "molecule", "concept-map"]) {
     assert.ok(animated.includes(`"${visual}"`), `Missing visual renderer: ${visual}`);
@@ -195,4 +201,5 @@ test("animated lesson controls and reduced-motion accessibility are present", ()
   assert.match(styles, /\.motion-data-track/);
   assert.match(styles, /\.motion-data-copy/);
   assert.match(styles, /\.motion-support-explanation/);
+  assert.match(styles, /\.motion-learning-reflection/);
 });
