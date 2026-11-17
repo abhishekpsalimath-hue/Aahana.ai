@@ -140,3 +140,5 @@ export function getGradeCurriculumCoverage() {
     boardMapped: false
   };
 }
+
+export { GRADE_1_ENGLISH_CURRICULUM, GRADE_1_EVS_CURRICULUM };
