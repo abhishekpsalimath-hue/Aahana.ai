@@ -9,7 +9,7 @@ import { GRADE_1_EVS_CURRICULUM } from "./grade-1-evs.mjs";
  */
 const lessonDesign = {
   "counting-to-20": {
-    visual: "number-line",
+    visual: "counter-board",
     interaction: "count-and-place",
     visualBrief: "A responsive number line from 0 to 20 with draggable counters, one-to-one object counting and a clear zero state.",
     scenes: [
@@ -21,7 +21,7 @@ const lessonDesign = {
     extension: "Make two different groups that have the same number of objects."
   },
   "addition-within-10": {
-    visual: "number-line",
+    visual: "counter-board",
     interaction: "combine-counters",
     visualBrief: "Two colourful counter groups combine into one total; a number-line jump animation shows addition as moving forward.",
     scenes: [
@@ -33,7 +33,7 @@ const lessonDesign = {
     extension: "Find two different pairs of numbers that make 10."
   },
   "subtraction-within-10": {
-    visual: "number-line",
+    visual: "counter-board",
     interaction: "remove-counters",
     visualBrief: "A group of counters visibly moves away while the remaining objects stay highlighted; a number-line marker jumps backwards.",
     scenes: [
