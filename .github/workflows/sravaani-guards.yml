@@ -59,6 +59,8 @@ jobs:
         run: node --test ../../src/lib/voice/audio-wav.test.mjs
       - name: Test multilingual locale detection and coverage
         run: node --test ../../src/lib/voice/locale-detection.test.mjs ../../src/lib/voice/locale-support.test.mjs
+      - name: Test multilingual chat response policy
+        run: node --test ../../src/lib/voice/chat-language-policy.test.mjs
       - name: Syntax-check authenticated transcription route
         run: node --check ../../src/app/api/voice/transcribe/route.js
       - name: Syntax-check authenticated speech synthesis route
