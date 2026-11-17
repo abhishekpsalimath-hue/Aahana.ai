@@ -14,6 +14,9 @@ test("the interactive counter board is wired into the lesson visual renderer", (
   const styles = readFileSync(new URL("../../app/learn/learning-studio.css", import.meta.url), "utf8");
   assert.match(renderer, /"counter-board"/);
   assert.match(renderer, /InteractiveCounterBoard/);
+  assert.match(renderer, /InteractiveShapeExplorer/);
+  assert.match(renderer, /aria-label="Choose a shape"/);
+  assert.match(styles, /\.shape-explorer-stage/);
   assert.match(renderer, /aria-label="Add one counter"/);
   assert.match(renderer, /aria-label="Remove one counter"/);
   assert.match(styles, /\.counter-board-track/);
@@ -31,6 +34,7 @@ test("Grade 1 Mathematics has a complete six-unit authored core", () => {
     assert.ok(unit.lessonDesign.visual);
     assert.ok(unit.lessonDesign.interaction);
     if (["counting-to-20", "addition-within-10", "subtraction-within-10"].includes(unit.id)) assert.equal(unit.lessonDesign.visual, "counter-board");
+    if (unit.id === "shapes-and-space") assert.equal(unit.lessonDesign.visual, "shape-explorer");
     assert.equal(unit.assessmentDesign.formativeChecks.length, 3);
     assert.ok(unit.assessmentDesign.independentCheck);
     assert.ok(unit.assessmentDesign.feedback);
