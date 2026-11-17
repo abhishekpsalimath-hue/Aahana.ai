@@ -386,3 +386,17 @@
 .motion-art{filter:drop-shadow(0 5px 16px rgba(0,0,0,.22))}
 .learning-3d-viewer canvas,.learning-3d-inline canvas{image-rendering:auto}
 @media(max-width:640px){.motion-art{max-height:280px}.motion-stage{padding:9px}}
+
+
+/* Clear, scene-by-scene progress for interactive lessons. */
+.motion-progress{display:grid;gap:8px;padding:0 2px 4px}
+.motion-progress-label{display:flex;align-items:center;justify-content:space-between;gap:12px;color:#a99bbd;font-size:9px;letter-spacing:1px;font-weight:800}
+.motion-progress-label strong{color:#d9c9ef;font-size:10px;letter-spacing:0;font-weight:650}
+.motion-progress-track{height:6px;overflow:hidden;border-radius:99px;background:#30283b}
+.motion-progress-track>span{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#9b83d0,#d5b9ff);transition:width .45s ease}
+.motion-progress-steps{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:5px}
+.motion-progress-steps span{height:3px;border-radius:99px;background:#393044}
+.motion-progress-steps span.current{background:#9b83d0}
+.motion-progress-steps span.completed{background:#c7adf3}
+.motion-save-error{margin:0;color:#f0b9c3;font-size:11px;line-height:1.5}
+@media(prefers-reduced-motion:reduce){.motion-progress-track>span{transition:none}}
