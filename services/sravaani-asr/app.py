@@ -78,7 +78,10 @@ def _authenticate(authorization: str | None) -> None:
 
 
 def _transcribe_wav(audio_bytes: bytes) -> str:
-    # Decode before writing anything to disk; accept only valid WAV audio.
+    # soundfile can decode formats other than WAV, so enforce the container too.
+    if len(audio_bytes) < 12 or audio_bytes[:4] != b"RIFF" or audio_bytes[8:12] != b"WAVE":
+        raise HTTPException(status_code=415, detail="Only RIFF/WAVE audio is accepted.")
+    # Decode before writing anything to disk.
     try:
         samples, sample_rate = sf.read(io.BytesIO(audio_bytes), dtype="float32", always_2d=True)
     except Exception as exc:
