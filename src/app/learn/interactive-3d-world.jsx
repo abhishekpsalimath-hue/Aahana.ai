@@ -241,7 +241,6 @@ function drawScene(canvas, modelId, yaw, pitch, zoom) {
 export function Mini3DModel({ modelId = "planet" }) {
   const [rotation, setRotation] = useState({ yaw: -.55, pitch: -.22 });
   const [zoom, setZoom] = useState(1);
-  const [conceptIndex, setConceptIndex] = useState(0);
   const canvasRef = useRef(null);
   const dragRef = useRef(null);
   useEffect(() => {
@@ -275,6 +274,7 @@ export default function Interactive3DWorld() {
   const [modelId, setModelId] = useState("planet");
   const [rotation, setRotation] = useState({ yaw: -.55, pitch: -.22 });
   const [zoom, setZoom] = useState(1);
+  const [conceptIndex, setConceptIndex] = useState(0);
   const canvasRef = useRef(null);
   const dragRef = useRef(null);
   const model = models.find((item) => item.id === modelId) || models[0];
