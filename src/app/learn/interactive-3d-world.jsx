@@ -14,6 +14,8 @@ const models = [
   { id: "plant-cell", label: "Plant cell", subject: "Biology · Botany", description: "Explore a simplified plant cell with a cell wall, membrane, large vacuole, nucleus and chloroplasts.", color: "#8dc78a" },
   { id: "heart", label: "Heart model", subject: "Biology · Human body", description: "Inspect a simplified educational heart showing four chamber regions and major vessel pathways. It is not a medical or surgical model.", color: "#df8b9c" },
   { id: "pyramid", label: "Ancient pyramid", subject: "History · Geometry", description: "Rotate a simplified pyramid monument to inspect triangular faces, a square base and its three-dimensional form.", color: "#d7b17c" },
+  { id: "ecosystem", label: "Forest ecosystem", subject: "Ecology · Environmental science", description: "Explore a simplified forest habitat with trees, plants, water and terrain. Organisms and relationships are illustrative, not a measured ecosystem.", color: "#77b982" },
+  { id: "engine", label: "Mechanical engine", subject: "Engineering · Physics", description: "Inspect a simplified mechanical assembly with a crankshaft, connecting rods and piston-like cylinders. It is a conceptual model, not a working engine simulation.", color: "#91a8c7" },
 ];
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
@@ -110,6 +112,18 @@ function makeModel(id) {
       {points:[base[3],base[0],tip],color:"#b99060",solid:true},
       {points:base,color:"#9e815f",solid:true},
     ];
+  }
+  if (id === "ecosystem") {
+    const ground = [], n = 10;
+    for (let z=0;z<n;z++) for(let x=0;x<n;x++){const x0=(x/n-.5)*2.8,x1=((x+1)/n-.5)*2.8,z0=(z/n-.5)*2.2,z1=((z+1)/n-.5)*2.2,y=-.62+.06*Math.sin(x0*3)*Math.cos(z0*2);ground.push({points:[[x0,y,z0],[x1,y,z0],[x1,y,z1],[x0,y,z1]],color:(x+z)%2?"#537e57":"#638d5d",solid:true});}
+    const trees=[[-.9,.1,-.45],[-.35,.12,-.65],[.48,.08,-.55],[.95,.08,.1],[-.7,.08,.55],[.25,.1,.58]];
+    const forest=trees.flatMap(([x,y,z],i)=>[{points:[[x,y-.05,z],[x,y+.58,z]],rod:true,color:"#896448"},...sphereMesh(.34,9,13,i%2?"#4f9d68":"#68b879").map(face=>({...face,offset:[x,y+.82,z]})),...sphereMesh(.22,8,12,"#83c98a").map(face=>({...face,offset:[x+.16,y+1.03,z+.05]}))]);
+    return [...ground,{points:[[-1.3,-.55,.2],[-.5,-.53,.1]],rod:true,color:"#62b8d5"},{points:[[-.5,-.53,.1],[.4,-.54,.2]],rod:true,color:"#62b8d5"},...forest];
+  }
+  if (id === "engine") {
+    const pistons=[-.62,0,.62].flatMap((x,i)=>[{points:[[x,-.4,-.18],[x,.55,-.18]],rod:true,color:i===1?"#d7b46e":"#8fa9c5"},...sphereMesh(.2,9,13,i===1?"#d7b46e":"#91a9c2").map(face=>({...face,offset:[x,.55,-.18]})),{points:[[x,-.4,-.18],[x,-.72,.2]],rod:true,color:"#c4cbd8"}]);
+    const crank=[{points:[[-.85,-.72,.2],[.85,-.72,.2]],rod:true,color:"#d4a95f"},{points:[[-.85,-.72,.2],[-.85,-.45,.2]],rod:true,color:"#d4a95f"},{points:[[.85,-.72,.2],[.85,-.45,.2]],rod:true,color:"#d4a95f"}];
+    return [...pistons,...crank,...[-.85,.85].flatMap(x=>sphereMesh(.27,10,16,"#718eae").map(face=>({...face,offset:[x,-.95,.2]})))];
   }
   if (id === "solar-system") {
     const planets = [
