@@ -288,3 +288,20 @@ test("Solar System explorer includes an eight-planet mission, accessible progres
     assert.ok(studio.includes('name: "' + planet + '"'), "Missing mission world: " + planet);
   }
 });
+
+test("Learning Studio exposes a broad category-based catalogue and validates every catalogue subject on the server", async () => {
+  const catalogPath = fileURLToPath(new URL("./learning-catalog.js", import.meta.url));
+  const catalog = await import(new URL("./learning-catalog.js", import.meta.url));
+  assert.ok(catalog.learningCategories.length >= 18);
+  for (const category of ["Mathematics", "Natural sciences", "Engineering", "Computing & technology", "Languages & communication", "Humanities & social sciences", "Business & commerce", "Health & wellbeing education", "Agriculture & food systems", "Arts, design & creativity", "Competitive exams", "Vocational & professional skills", "Practical life skills", "Sports & games"]) {
+    assert.ok(catalog.learningCategories.some((item) => item.name === category), "Missing category: " + category);
+  }
+  assert.ok(catalog.allLearningSubjects.includes("Physics"));
+  assert.ok(catalog.allLearningSubjects.includes("Kannada"));
+  assert.ok(catalog.allLearningSubjects.includes("Artificial intelligence"));
+  assert.ok(catalog.allLearningSubjects.includes("UPSC foundation"));
+  assert.ok(studio.includes("Learning category"));
+  assert.ok(studio.includes("Choose a subject or topic"));
+  assert.match(route, /const allowedLearningSubjects = allLearningSubjects/);
+  assert.ok(catalogPath.endsWith("learning-catalog.js"));
+});
