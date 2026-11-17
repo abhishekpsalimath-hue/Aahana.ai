@@ -12,12 +12,19 @@ const sample = {
   attempts: 7,
   adaptedScenes: 1,
   exploredScenes: 4,
+  scenes: [
+    { caption: "Evaporation", alternateExplanationUsed: false },
+    { caption: "Condensation", alternateExplanationUsed: true },
+    { caption: "Precipitation", alternateExplanationUsed: false },
+    { caption: "Collection", alternateExplanationUsed: false },
+  ],
 };
 
 test("validates and bounds a completed learning journey", () => {
   const result = validateLearningJourney(sample);
   assert.equal(result.title, sample.title);
   assert.equal(result.exploredScenes, 4);
+  assert.equal(result.scenes[1].alternateExplanationUsed, true);
   assert.equal(typeof result.completedAt, "string");
 });
 
@@ -26,6 +33,7 @@ test("rejects incomplete, unbounded and impossible journey data", () => {
   assert.equal(validateLearningJourney({ ...sample, sceneCount: 1 }), null);
   assert.equal(validateLearningJourney({ ...sample, attempts: 0 }), null);
   assert.equal(validateLearningJourney({ ...sample, exploredScenes: 3 }), null);
+  assert.equal(validateLearningJourney({ ...sample, scenes: [{ caption: "Only one", alternateExplanationUsed: false }] }), null);
   assert.equal(validateLearningJourney({ ...sample, title: "" }), null);
 });
 
