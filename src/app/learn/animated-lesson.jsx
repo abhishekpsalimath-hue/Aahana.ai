@@ -117,6 +117,10 @@ export default function AnimatedLesson({ content, memoryEnabled = false, onSaveJ
       attempts: attemptsUsed,
       adaptedScenes,
       exploredScenes,
+      scenes: lesson.scenes.map((item, sceneIndex) => ({
+        caption: item.caption,
+        alternateExplanationUsed: (solvedAttempts[sceneIndex] || 0) >= 2,
+      })),
     });
     if (saved) setJourneySaved(true);
     setJourneySaving(false);
