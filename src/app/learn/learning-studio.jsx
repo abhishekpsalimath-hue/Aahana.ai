@@ -68,6 +68,17 @@ export default function LearningStudio({ userEmail = "" }) {
       if (!response.ok) throw new Error(result.error || "Could not reopen this learning session.");
       if (result.conversation?.mode !== "learn") throw new Error("This conversation is not a Learning Studio session.");
       setConversationId(result.conversation.id);
+      try {
+        const savedProfile = JSON.parse(window.localStorage.getItem("aahana:learning-profile:" + result.conversation.id) || "null");
+        if (savedProfile && typeof savedProfile === "object") {
+          if (gradeBands.some(([value]) => value === savedProfile.gradeBand)) setGradeBand(savedProfile.gradeBand);
+          if (subjects.includes(savedProfile.subject)) setSubject(savedProfile.subject);
+          if (typeof savedProfile.language === "string" && savedProfile.language.length <= 35) setLanguage(savedProfile.language);
+          if (learningModes.some((item) => item.id === savedProfile.learningMode)) setLearningMode(savedProfile.learningMode);
+        }
+      } catch {
+        // A missing or malformed local profile does not block reopening the conversation.
+      }
       setMessages((result.messages || []).map((item) => ({ role: item.role, content: item.content || "" })));
       setQuestion("");
     } catch (err) {
@@ -102,7 +113,14 @@ export default function LearningStudio({ userEmail = "" }) {
         throw new Error(result.error || "Aahana could not start this learning session.");
       }
       const nextId = response.headers.get("X-Conversation-Id");
-      if (nextId) setConversationId(nextId);
+      if (nextId) {
+        setConversationId(nextId);
+        try {
+          window.localStorage.setItem("aahana:learning-profile:" + nextId, JSON.stringify(profile));
+        } catch {
+          // The conversation still works if this device cannot store preferences.
+        }
+      }
       if (!response.body) throw new Error("The learning response was unavailable.");
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
