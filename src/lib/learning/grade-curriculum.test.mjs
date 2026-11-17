@@ -24,7 +24,8 @@ test("Grade 1 Mathematics has a complete six-unit authored core", () => {
 
 test("grade curriculum is available independently and never gates another subject", () => {
   assert.equal(getGradeLearningCurriculum(1, "Mathematics").grade, 1);
-  assert.equal(getGradeLearningCurriculum(1, "English"), null);
+  assert.equal(getGradeLearningCurriculum(1, "English").grade, 1);
+  assert.equal(getGradeLearningCurriculum(1, "English").units.length, 6);
   assert.equal(getGradeLearningCurriculum(2, "Mathematics"), null);
 });
 
@@ -37,9 +38,10 @@ test("board alignment is not claimed without a board-specific mapping", () => {
 
 test("coverage distinguishes authored lessons from board mapping", () => {
   const coverage = getGradeCurriculumCoverage();
-  assert.equal(coverage.authored, 6);
-  assert.equal(coverage.total, 6);
-  assert.equal(coverage.lessonDesigns, 6);
-  assert.equal(coverage.assessmentDesigns, 6);
+  assert.equal(coverage.authored, 12);
+  assert.equal(coverage.subjects, 2);
+  assert.deepEqual(coverage.units, { mathematics: 6, english: 6 });
+  assert.equal(coverage.lessonDesigns, 12);
+  assert.equal(coverage.assessmentDesigns, 12);
   assert.equal(coverage.boardMapped, false);
 });
