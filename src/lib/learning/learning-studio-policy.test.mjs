@@ -7,6 +7,8 @@ const routePath = fileURLToPath(new URL("../../app/api/chat/route.js", import.me
 const studioPath = fileURLToPath(new URL("../../app/learn/learning-studio.jsx", import.meta.url));
 const route = readFileSync(routePath, "utf8");
 const studio = readFileSync(studioPath, "utf8");
+const stylesPath = fileURLToPath(new URL("../../app/learn/learning-studio.css", import.meta.url));
+const styles = readFileSync(stylesPath, "utf8");
 
 test("chat API accepts the dedicated learn mode and validates learner profile fields", () => {
   assert.match(route, /"improve",\s*"learn"/);
