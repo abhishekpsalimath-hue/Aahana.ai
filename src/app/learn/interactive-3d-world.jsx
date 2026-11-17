@@ -3,34 +3,74 @@
 import { useEffect, useRef, useState } from "react";
 
 import * as THREE from "three";
+import worldTopology from "world-atlas/countries-110m.json";
+import { feature } from "topojson-client";
 
 const threeScenes = new WeakMap();
 
 function makeEarthTexture() {
+  // Natural Earth 1:110m country boundaries provide real global geography,
+  // rather than hand-drawn continent approximations.
   const canvas = document.createElement("canvas");
-  canvas.width = 1024; canvas.height = 512;
+  canvas.width = 2048; canvas.height = 1024;
   const ctx = canvas.getContext("2d");
-  const ocean = ctx.createLinearGradient(0, 0, 0, 512);
-  ocean.addColorStop(0, "#173c68"); ocean.addColorStop(.48, "#1676a0"); ocean.addColorStop(1, "#092a52");
-  ctx.fillStyle = ocean; ctx.fillRect(0, 0, 1024, 512);
-  const land = (points, color = "#668d57") => {
-    ctx.beginPath(); points.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y)); ctx.closePath();
-    ctx.fillStyle=color; ctx.fill(); ctx.strokeStyle="#a1b77c"; ctx.lineWidth=3; ctx.stroke();
-  };
-  land([[75,95],[130,55],[205,70],[245,115],[225,155],[260,190],[215,225],[185,285],[145,300],[115,255],[82,215],[55,160]]);
-  land([[220,300],[260,315],[280,370],[260,430],[230,470],[205,410],[190,355]]);
-  land([[430,105],[470,75],[535,82],[570,120],[620,118],[650,160],[620,195],[570,188],[540,230],[490,205],[455,160]]);
-  land([[490,225],[545,230],[565,290],[545,360],[515,430],[485,370],[470,300]]);
-  land([[630,105],[700,80],[790,100],[845,145],[820,190],[760,205],[720,175],[680,190],[645,155]]);
-  land([[755,245],[805,225],[850,255],[865,310],[830,355],[790,340],[770,295]]);
-  land([[0,20],[100,0],[240,8],[340,0],[450,15],[600,0],[800,12],[1024,0],[1024,45],[850,38],[700,50],[500,42],[300,55],[120,40]],"#d8e3d5");
-  land([[0,480],[160,465],[340,485],[520,470],[720,485],[900,465],[1024,480],[1024,512],[0,512]],"#d8e3d5");
-  ctx.globalAlpha=.18; ctx.strokeStyle="#d6edf2"; ctx.lineWidth=5;
-  for(let i=0;i<18;i++){ctx.beginPath();ctx.ellipse((i*173)%1024,(i*67)%512,80+(i%4)*24,8+(i%3)*4,(i%5)*.2,0,Math.PI*2);ctx.stroke();}
-  ctx.globalAlpha=1;
-  const texture=new THREE.CanvasTexture(canvas); texture.colorSpace=THREE.SRGBColorSpace; texture.anisotropy=4; return texture;
-}
+  const ocean = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  ocean.addColorStop(0, "#071b3a");
+  ocean.addColorStop(.48, "#07547b");
+  ocean.addColorStop(1, "#061b38");
+  ctx.fillStyle = ocean;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+  const project = ([longitude, latitude]) => [
+    ((longitude + 180) / 360) * canvas.width,
+    ((90 - latitude) / 180) * canvas.height,
+  ];
+  const drawRing = (ring) => {
+    if (!ring?.length) return;
+    ctx.beginPath();
+    ring.forEach((coordinate, index) => {
+      const [x, y] = project(coordinate);
+      if (index === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+  };
+  const drawGeometry = (geometry) => {
+    if (!geometry) return;
+    const polygons = geometry.type === "Polygon"
+      ? [geometry.coordinates]
+      : geometry.type === "MultiPolygon" ? geometry.coordinates : [];
+    polygons.forEach((polygon) => {
+      polygon.forEach((ring, ringIndex) => {
+        ctx.fillStyle = ringIndex === 0 ? "#648b62" : ocean;
+        ctx.strokeStyle = "#a9bd91";
+        ctx.lineWidth = ringIndex === 0 ? 1.25 : .6;
+        drawRing(ring);
+      });
+    });
+  };
+
+  const countries = feature(worldTopology, worldTopology.objects.countries);
+  countries.features.forEach(({ geometry }) => drawGeometry(geometry));
+
+  // Polar ice is shown as a latitude band, not as invented continent shapes.
+  const ice = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  ice.addColorStop(0, "rgba(226,239,239,.94)");
+  ice.addColorStop(.09, "rgba(226,239,239,.72)");
+  ice.addColorStop(.13, "rgba(226,239,239,0)");
+  ice.addColorStop(.87, "rgba(226,239,239,0)");
+  ice.addColorStop(.91, "rgba(226,239,239,.72)");
+  ice.addColorStop(1, "rgba(226,239,239,.94)");
+  ctx.fillStyle = ice;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 8;
+  return texture;
+}
 function addStars(scene) {
   const positions=new Float32Array(1500*3);
   for(let i=0;i<1500;i++){const r=18+Math.random()*24,a=Math.random()*Math.PI*2,z=Math.random()*2-1,s=Math.sqrt(1-z*z);positions[i*3]=r*s*Math.cos(a);positions[i*3+1]=r*z;positions[i*3+2]=r*s*Math.sin(a);}
@@ -71,19 +111,49 @@ function makeSceneModel(group,id) {
     const saturn=new THREE.Mesh(new THREE.TorusGeometry(.43,.075,12,64),new THREE.MeshStandardMaterial({color:0xd9c49c,roughness:.7}));saturn.rotation.x=1.25;saturn.position.set(2.85,0,0);group.add(saturn);return;
   }
   if(id==="molecule"){
-    const atoms=[{p:[0,.1,0],r:.34,c:0xe45e68},{p:[-.67,-.42,.08],r:.23,c:0xe9eff7},{p:[.67,-.42,.08],r:.23,c:0xe9eff7}];
-    rod(group,atoms[0].p,atoms[1].p,0xd6e2f0,.055);rod(group,atoms[0].p,atoms[2].p,0xd6e2f0,.055);
-    atoms.forEach(a=>sphere(group,a.p,a.r,a.c,{roughness:.22,metalness:.08}));return;
+    // Water geometry: O-H bond length 0.9572 Å and H-O-H angle 104.5°.
+    // Radii are deliberately enlarged for visibility; bond geometry is preserved.
+    const halfAngle=THREE.MathUtils.degToRad(104.5/2);
+    const bondLength=.9572;
+    const oxygen=[0,0,0];
+    const hydrogenA=[-Math.sin(halfAngle)*bondLength,-Math.cos(halfAngle)*bondLength,0];
+    const hydrogenB=[Math.sin(halfAngle)*bondLength,-Math.cos(halfAngle)*bondLength,0];
+    rod(group,oxygen,hydrogenA,0xd6e2f0,.035);
+    rod(group,oxygen,hydrogenB,0xd6e2f0,.035);
+    sphere(group,oxygen,.42,0xe45e68,{roughness:.2,metalness:.04});
+    sphere(group,hydrogenA,.33,0xf3f6fb,{roughness:.2,metalness:.02});
+    sphere(group,hydrogenB,.33,0xf3f6fb,{roughness:.2,metalness:.02});
+    return;
   }
   if(id==="atom"){
     [[-.14,0,0],[.12,.12,.04],[.12,-.12,-.06],[0,.08,.15],[0,-.12,.12]].forEach((p,i)=>sphere(group,p,.18,i%2?0xe88c79:0xb88be5));
     for(let i=0;i<3;i++){const orbit=new THREE.Mesh(new THREE.TorusGeometry(1.12,.009,8,100),new THREE.MeshBasicMaterial({color:0x8bcdf5,transparent:true,opacity:.7}));orbit.rotation.set(i*.9,i*1.1,i*.7);group.add(orbit);const e=sphere(group,[Math.cos(i*2.1)*1.12,Math.sin(i*2.1)*.6,Math.sin(i*2.1)*.4],.055,0xc5efff);e.material.emissive.set(0x64bfff);e.material.emissiveIntensity=.8;}return;
   }
   if(id==="dna"){
+    // B-DNA teaching geometry: about 10 base pairs per turn and 3.4 Å
+    // axial rise per base pair. Dimensions are uniformly enlarged for viewing.
     const left=[],right=[];
-    for(let i=0;i<=100;i++){const t=i/100*Math.PI*5,y=(i/100-.5)*3;left.push([Math.cos(t)*.48,y,Math.sin(t)*.48]);right.push([Math.cos(t+Math.PI)*.48,y,Math.sin(t+Math.PI)*.48]);}
-    tube(group,left,0x69d6b1,.035);tube(group,right,0x9e8be9,.035);
-    for(let i=2;i<100;i+=5){const t=i/100*Math.PI*5,y=(i/100-.5)*3;rod(group,[Math.cos(t)*.48,y,Math.sin(t)*.48],[Math.cos(t+Math.PI)*.48,y,Math.sin(t+Math.PI)*.48],i%2?0xf0c66d:0x8dc8ee,.018);}return;
+    const basePairs=20;
+    const radius=.48;
+    const heightPerTurn=1.7;
+    const totalHeight=heightPerTurn*(basePairs/10);
+    for(let i=0;i<=200;i++){
+      const fraction=i/200;
+      const t=fraction*Math.PI*4;
+      const y=(fraction-.5)*totalHeight;
+      left.push([Math.cos(t)*radius,y,Math.sin(t)*radius]);
+      right.push([Math.cos(t+Math.PI)*radius,y,Math.sin(t+Math.PI)*radius]);
+    }
+    tube(group,left,0x69d6b1,.035);
+    tube(group,right,0x9e8be9,.035);
+    for(let i=0;i<basePairs;i++){
+      const t=(i/basePairs)*Math.PI*4;
+      const y=(i/(basePairs-1)-.5)*totalHeight;
+      const a=[Math.cos(t)*radius,y,Math.sin(t)*radius];
+      const b=[Math.cos(t+Math.PI)*radius,y,Math.sin(t+Math.PI)*radius];
+      rod(group,a,b,i%2?0xf0c66d:0x8dc8ee,.018);
+    }
+    return;
   }
   if(id==="cell"||id==="plant-cell"){
     const plant=id==="plant-cell";
