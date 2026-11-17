@@ -43,8 +43,14 @@ function sphereMesh(radius = 1, latitudes = 18, longitudes = 28, color = "#4da9d
 
 function makeModel(id) {
   if (id === "planet") {
-    const faces = sphereMesh(1, 22, 34, "#328cc4");
-    return [...faces, ...sphereMesh(1.006, 22, 34, "#328cc4").filter((_, i) => i % 9 === 0).map((face) => ({ ...face, color: "#5eaa78", land: true }))];
+    return sphereMesh(1, 22, 34, "#328cc4").map((face) => {
+      const center = face.points.reduce((acc, point) => [acc[0] + point[0] / 3, acc[1] + point[1] / 3, acc[2] + point[2] / 3], [0, 0, 0]);
+      const [x, y, z] = center;
+      const continentA = ((x + .28) ** 2 / .2 + (y - .24) ** 2 / .28 < 1) || ((x - .38) ** 2 / .12 + (y + .12) ** 2 / .3 < 1);
+      const continentB = ((x + .42) ** 2 / .16 + (y + .38) ** 2 / .3 < 1) || ((x - .08) ** 2 / .11 + (y - .62) ** 2 / .09 < 1);
+      const continentC = ((z > .48 && x > -.1 && y < .3) || (z < -.65 && x < .25 && y > -.1));
+      return { ...face, color: continentA || continentB || continentC ? "#65ad78" : "#328cc4" };
+    });
   }
   if (id === "molecule") {
     const atoms = [{ p: [0, 0, 0], r: .34, c: "#e9edf7" }, { p: [-.72, -.48, .12], r: .22, c: "#e66b78" }, { p: [.72, -.48, .12], r: .22, c: "#e66b78" }];
