@@ -19,6 +19,8 @@ test("the interactive counter board is wired into the lesson visual renderer", (
   assert.match(renderer, /aria-label="Choose the next item"/);
   assert.match(renderer, /aria-label="Choose a shape"/);
   assert.match(styles, /\.shape-explorer-stage/);
+  assert.match(styles, /\.pattern-builder-sequence/);
+  assert.match(styles, /\.pattern-builder-check:disabled/);
   assert.match(renderer, /aria-label="Add one counter"/);
   assert.match(renderer, /aria-label="Remove one counter"/);
   assert.match(styles, /\.counter-board-track/);
