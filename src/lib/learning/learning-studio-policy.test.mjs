@@ -59,7 +59,9 @@ test("student studio exposes all six agreed learning experiences", () => {
     "Story Mode", "Visual Explainer", "Play & Solve",
     "Adventure Mode", "Talk & Learn", "Create & Experiment",
   ]) assert.ok(studio.includes(phrase), `Missing learning experience: ${phrase}`);
-  assert.match(studio, /School grade \\(optional\\)/);\n  assert.match(studio, /schoolGrade/);\n  assert.match(studio, /Learning level/);
+  assert.match(studio, /School grade \\(optional\\)/);
+  assert.match(studio, /schoolGrade/);
+  assert.match(studio, /Learning level/);
   assert.match(studio, /Learning language/);
   assert.match(studio, /Curriculum \/ education board/);
   assert.match(studio, /curriculum, language, learningMode/);
