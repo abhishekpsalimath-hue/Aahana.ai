@@ -480,3 +480,55 @@ button:focus-visible,a:focus-visible{outline-color:#c4a7ff}
 .teacher-pointer{position:absolute;z-index:3;right:-5px;top:49%;width:55px;height:4px;border-radius:4px;background:#d9b779;transform:rotate(-35deg);transform-origin:left center;box-shadow:0 0 8px #d9b77966}
 @media(max-width:640px){.aahana-founder-arrival{min-height:240px;gap:8px;margin:10px auto 18px}.founder-arrival-copy{max-width:52%;gap:7px}.founder-arrival-copy>span{font-size:8px;letter-spacing:.12em}.founder-arrival-copy small{font-size:10px}.founder-astronaut{width:125px;height:190px}.astronaut-helmet{border-width:6px}.aahana-teacher-companion{padding:12px 14px 0;min-height:190px;gap:6px}.teacher-character{width:118px;height:175px;margin-right:-6px}.teacher-companion-copy p{font-size:11px}.teacher-companion-copy>span{font-size:8px;letter-spacing:.1em}.teacher-companion-copy small{font-size:8px}}
 @media(prefers-reduced-motion:reduce){.aahana-founder-arrival,.founder-astronaut,.founder-arrival-copy,.astronaut-thruster,.founder-brand-flight{animation:none!important}.aahana-founder-arrival{opacity:1;transform:none}.founder-brand-flight{display:none}}
+
+
+/* Character likeness protection: preserve the supplied portrait without face overlays or aggressive crops. */
+.founder-astronaut{
+  width:clamp(170px,23vw,245px);
+  height:auto;
+  aspect-ratio:865 / 1536;
+  filter:drop-shadow(0 18px 38px #9e7bff44);
+  overflow:visible;
+}
+.founder-astronaut img{
+  position:relative;display:block;width:100%;height:100%;
+  object-fit:contain;object-position:center;
+  border:0;border-radius:0;background:transparent;
+}
+.astronaut-helmet{display:none}
+.astronaut-suit{
+  left:7%;width:86%;height:30%;bottom:0;
+  border:2px solid #f5f7ff;border-radius:28% 28% 8% 8%;
+  background:linear-gradient(115deg,#f4f7ffef,#aabbd8ed 52%,#eef3ffef);
+  box-shadow:inset 0 0 0 2px #8799c4;
+  clip-path:polygon(9% 0,34% 10%,50% 25%,66% 10%,91% 0,100% 100%,0 100%);
+}
+.astronaut-suit:before{content:"✦";left:46%;top:18%;font-size:20px}
+.astronaut-thruster{right:-8%;bottom:8%}
+.aahana-founder-arrival{min-height:330px}
+.teacher-character{
+  width:clamp(150px,19vw,205px);
+  height:auto;aspect-ratio:865 / 1536;
+  filter:drop-shadow(0 12px 25px #a98bff28);
+  overflow:visible;
+}
+.teacher-character img{
+  position:relative;display:block;width:100%;height:100%;
+  object-fit:contain;object-position:center;
+  border-radius:0;background:transparent;
+}
+.teacher-cap{display:none}
+.teacher-coat{
+  bottom:0;left:5%;width:90%;height:31%;
+  background:linear-gradient(100deg,#f8f6ffed,#d0c7e7f0 50%,#f8f6ffed);
+  clip-path:polygon(10% 0,35% 10%,50% 26%,65% 10%,90% 0,100% 100%,0 100%);
+}
+.teacher-pointer{right:-13%;top:67%;width:48px;opacity:.8}
+@media(max-width:640px){
+  .aahana-founder-arrival{min-height:280px}
+  .founder-astronaut{width:clamp(135px,39vw,175px);height:auto}
+  .teacher-character{width:clamp(120px,34vw,150px);height:auto}
+}
+@media(prefers-reduced-motion:reduce){
+  .founder-astronaut,.teacher-character{animation:none!important}
+}
