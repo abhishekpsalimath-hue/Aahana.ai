@@ -5,7 +5,6 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import "./learning-studio.css";
 import CreatorStudio from "./creator-studio";
-import SchoolJourney from "./school-journey";
 import AnimatedLesson, { AnimatedVisual, readMotionLesson } from "./animated-lesson";
 const Interactive3DWorld = dynamic(() => import("./interactive-3d-world"), {
   ssr: false,
@@ -588,7 +587,6 @@ export default function LearningStudio({ userEmail = "" }) {
         <p>Explore ideas, ask anything and learn in a way that makes sense to you. No pressure to know the answer before you begin.</p>
       </section>
 
-      <SchoolJourney />
 
       <LearningCategoryExplorer onChooseCategory={(name, selectedSubject) => {
         const selectedCategory = learningCategories.find((item) => item.name === name);
