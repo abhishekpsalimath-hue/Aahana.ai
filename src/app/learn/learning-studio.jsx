@@ -366,7 +366,7 @@ export default function LearningStudio({ userEmail = "" }) {
         {learningMemory.journeys.length > 0 && <div className="learning-journey-list">
           {learningMemory.journeys.map((item) => <article className="learning-journey-item" key={item.id}>
             <div><strong>{item.journey.title}</strong><span>{item.journey.subject} · {item.journey.gradeBand} · {item.journey.language}</span>
-              <small>{new Date(item.createdAt).toLocaleDateString()} · {item.journey.exploredScenes} scenes explored · {item.journey.attempts} attempts · {item.journey.adaptedScenes} alternate explanations</small></div>
+              <small>{new Date(item.createdAt).toLocaleDateString()} · {item.journey.exploredScenes} scenes explored · {item.journey.attempts} attempts · {item.journey.adaptedScenes} alternate explanations</small>{item.journey.scenes?.some((scene) => scene.alternateExplanationUsed) && <small>Explore again: {item.journey.scenes.filter((scene) => scene.alternateExplanationUsed).map((scene) => scene.caption).join(", ")}</small>}</div>
             <button type="button" onClick={() => deleteLearningJourney(item.id)} disabled={memoryBusy}>Delete</button>
           </article>)}
         </div>}
