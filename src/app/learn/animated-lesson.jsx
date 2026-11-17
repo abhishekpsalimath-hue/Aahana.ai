@@ -118,6 +118,7 @@ export default function AnimatedLesson({ content, topic = "", memoryEnabled = fa
   const [solved, setSolved] = useState(false);
   const [journeySaving, setJourneySaving] = useState(false);
   const [journeySaved, setJourneySaved] = useState(false);
+  const [journeySaveError, setJourneySaveError] = useState("");
   const attempts = sceneAttempts[index] || 0;
   const adaptedScenes = Object.keys(solvedAttempts).filter((sceneIndex) => solvedAttempts[sceneIndex] >= 2).length;
   const exploredScenes = Object.keys(solvedAttempts).length;
@@ -129,6 +130,7 @@ export default function AnimatedLesson({ content, topic = "", memoryEnabled = fa
     setSolvedAttempts({});
     setSolved(false);
     setJourneySaved(false);
+    setJourneySaveError("");
   }, [content]);
 
   useEffect(() => {
@@ -167,24 +169,40 @@ export default function AnimatedLesson({ content, topic = "", memoryEnabled = fa
   async function saveJourney() {
     if (!memoryEnabled || !onSaveJourney || journeySaving || journeySaved) return;
     setJourneySaving(true);
-    const attemptsUsed = Object.values(solvedAttempts).reduce((total, count) => total + count, 0);
-    const saved = await onSaveJourney({
-      title: lesson.title,
-      sceneCount: lesson.scenes.length,
-      attempts: attemptsUsed,
-      adaptedScenes,
-      exploredScenes,
-      scenes: lesson.scenes.map((item, sceneIndex) => ({
-        caption: item.caption,
-        alternateExplanationUsed: (solvedAttempts[sceneIndex] || 0) >= 2,
-      })),
-    });
-    if (saved) setJourneySaved(true);
-    setJourneySaving(false);
+    setJourneySaveError("");
+    try {
+      const attemptsUsed = Object.values(solvedAttempts).reduce((total, count) => total + count, 0);
+      const saved = await onSaveJourney({
+        title: lesson.title,
+        sceneCount: lesson.scenes.length,
+        attempts: attemptsUsed,
+        adaptedScenes,
+        exploredScenes,
+        scenes: lesson.scenes.map((item, sceneIndex) => ({
+          caption: item.caption,
+          alternateExplanationUsed: (solvedAttempts[sceneIndex] || 0) >= 2,
+        })),
+      });
+      if (saved) setJourneySaved(true);
+      else setJourneySaveError("This journey could not be saved just now. Please try again.");
+    } catch {
+      setJourneySaveError("We couldn't save your journey just now. Your lesson progress is still here—please try again.");
+    } finally {
+      setJourneySaving(false);
+    }
   }
 
   return <section className="motion-lesson" aria-label="Animated lesson">
     <div className="motion-lesson-head"><div><span>EXPLORE IT IN MOTION</span><h3>{lesson.title}</h3></div><span>SCENE {index + 1} / {lesson.scenes.length}</span></div>
+    <div className="motion-progress" role="group" aria-label="Lesson progress">
+      <div className="motion-progress-label"><span>YOUR EXPLORATION</span><strong>{exploredScenes} of {lesson.scenes.length} scenes completed</strong></div>
+      <div className="motion-progress-track" role="progressbar" aria-label="Completed lesson scenes" aria-valuemin={0} aria-valuemax={lesson.scenes.length} aria-valuenow={exploredScenes}>
+        <span style={{ width: `${(exploredScenes / lesson.scenes.length) * 100}%` }} />
+      </div>
+      <div className="motion-progress-steps" aria-hidden="true">
+        {lesson.scenes.map((item, sceneIndex) => <span key={sceneIndex} className={solvedAttempts[sceneIndex] ? "completed" : sceneIndex === index ? "current" : ""} />)}
+      </div>
+    </div>
     <div className={solved ? "motion-stage is-celebrating" : "motion-stage"}>
       <div className="motion-stardust" aria-hidden="true"><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/><i/></div>
       <AnimatedVisual visual={displayedVisual} paused={paused}/>
@@ -235,6 +253,7 @@ export default function AnimatedLesson({ content, topic = "", memoryEnabled = fa
         : "You worked through every idea in this lesson. Curiosity and careful thinking helped you get here."}</p>
       <span>{exploredScenes} of {lesson.scenes.length} scenes explored · {adaptedScenes} alternate explanation{adaptedScenes === 1 ? "" : "s"} used</span>
       <button type="button" onClick={restartLesson}>Explore again</button>
+      {journeySaveError && <p className="motion-save-error" role="alert">{journeySaveError}</p>}
       {memoryEnabled
         ? <button type="button" onClick={saveJourney} disabled={journeySaving || journeySaved}>{journeySaved ? "Saved to your journey" : journeySaving ? "Saving…" : "Save to my journey"}</button>
         : <p>Turn on private learning memory above if you would like to save this journey.</p>}
