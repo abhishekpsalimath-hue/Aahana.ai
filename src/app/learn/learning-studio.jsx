@@ -11,7 +11,7 @@ const Interactive3DWorld = dynamic(() => import("./interactive-3d-world"), {
   loading: () => <div className="learning-3d-loading" role="status">Preparing the interactive 3D environment…</div>,
 });
 import { learningCategories, allLearningSubjects, findLearningSubjects } from "@/lib/learning/learning-catalog";
-import { getLearningCurriculum, getLearningReadiness } from "@/lib/learning/curriculum-engine";
+import { getLearningCurriculum, getLearningReadiness, getCatalogueCoverageSummary } from "@/lib/learning/curriculum-engine";
 
 const learningModes = [
   { id: "story", title: "Story Mode", icon: "✦", detail: "Turn a difficult idea into a memorable story.", prompt: "Teach me through a vivid, age-appropriate story. Introduce the concept naturally, then connect each part of the story to the real idea." },
@@ -37,6 +37,31 @@ const gradeBands = [
 
 const subjects = allLearningSubjects;
 const curricula = ["Not specified", "CBSE", "ICSE", "Karnataka State Board", "Other Indian State Board", "Cambridge International", "International Baccalaureate (IB)", "England National Curriculum", "US Common Core", "Other / help me choose"];
+
+function CatalogueCoverage() {
+  const coverage = getCatalogueCoverageSummary();
+  return (
+    <section className="catalogue-coverage" aria-label="Learning catalogue curriculum coverage">
+      <div className="learning-section-heading">
+        <div><span>CURRICULUM BUILD PROGRESS</span><h2>Every learning world, built properly</h2></div>
+        <span className="space-explorer-tag">{coverage.categoriesAtTarget}/{coverage.categoryCount} AT 50%</span>
+      </div>
+      <p className="space-explorer-intro">{coverage.authoredCount} of {coverage.subjectCount} subjects have authored curriculum structures. The milestone is at least half of each category, not just half overall.</p>
+      <div className="catalogue-coverage-grid">
+        {coverage.categories.map((item) => (
+          <div className="catalogue-coverage-item" key={item.category}>
+            <div><strong>{item.category}</strong><span>{item.authored}/{item.total} · target {item.required}</span></div>
+            <div className="catalogue-coverage-track" role="progressbar" aria-label={item.category + " authored curriculum coverage"} aria-valuemin={0} aria-valuemax={100} aria-valuenow={item.percentage}>
+              <span style={{ width: item.percentage + "%" }} />
+            </div>
+          </div>
+        ))}
+      </div>
+      <p className="catalogue-coverage-note">Authored curriculum is not the same as a fully reviewed, published lesson. Review and visual production remain separate checks.</p>
+    </section>
+  );
+}
+
 function LearningCategoryExplorer({ onChooseCategory }) {
   const [query, setQuery] = useState("");
   const matches = findLearningSubjects(query, 12);
@@ -569,6 +594,7 @@ export default function LearningStudio({ userEmail = "" }) {
         document.querySelector(".learning-profile")?.scrollIntoView({ behavior: "smooth", block: "start" });
       }} />
 
+      <CatalogueCoverage />
       <SpaceExplorer selectedPlanet={selectedPlanet} onSelectPlanet={setSelectedPlanet} />
       <Interactive3DWorld selectedPlanet={selectedPlanet} onSelectedPlanetChange={setSelectedPlanet} />
       <CreatorStudio />
