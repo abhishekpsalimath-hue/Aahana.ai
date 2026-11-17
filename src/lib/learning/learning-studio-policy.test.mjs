@@ -569,3 +569,13 @@ test("home image generation route checks private Cloudflare configuration and va
   assert.match(imageGenerationRoute, /imageDataUrl/);
   assert.match(imageGenerationRoute, /Please sign in to generate an image/);
 });
+
+
+test("learning universe supports cross-category subject discovery and direct subject selection", () => {
+  assert.match(studio, /Find a subject across the learning universe/);
+  assert.match(studio, /Search all learning subjects/);
+  assert.match(studio, /item\.subjects\.filter\(\(subjectName\)/);
+  assert.match(studio, /onChooseCategory\(item\.category, item\.subject\)/);
+  assert.match(studio, /setSubject\(selectedSubject \|\| selectedCategory\?\.subjects\?\.\[0\]/);
+  assert.match(styles, /\.learning-topic-results/);
+});
