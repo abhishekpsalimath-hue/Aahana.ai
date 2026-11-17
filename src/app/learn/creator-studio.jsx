@@ -10,6 +10,7 @@ import {
 import "./creator-studio.css";
 import NativeImageStudio from "./native-image-studio";
 import NativeMotionStudio from "./native-motion-studio";
+import Native3DStudio from "./native-3d-studio";
 
 const visualLabels = {
   diagram: "2D diagram",
@@ -114,6 +115,7 @@ export default function CreatorStudio() {
     <>
     <NativeImageStudio />
     <NativeMotionStudio />
+    <Native3DStudio />
     <section className="creator-studio" aria-label="Aahana Creator Studio">
       <div className="creator-studio-heading">
         <div><span>MAKE SOMETHING WORTH DISCOVERING</span><h2>Creator Studio</h2><p>Build a lesson as a sequence of ideas, visuals and learner moments.</p></div>
