@@ -468,10 +468,6 @@ export default function LearningStudio({ userEmail = "" }) {
         <div className="learning-kicker">Aahana Learning Studio</div>
         <h1>Curiosity looks good<br /><em>on you.</em></h1>
         <p>Explore ideas, ask anything and learn in a way that makes sense to you. No pressure to know the answer before you begin.</p>
-        <aside className="aahana-teacher-companion" aria-label="Your Aahana AI learning companion">
-          <div className="teacher-companion-copy"><span>MEET YOUR LEARNING COMPANION</span><strong>Hey, curious mind!</strong><p>I’m here to make big ideas feel exciting. Ask, explore, experiment — let’s learn together.</p><small>YOUR FRIENDLY GUIDE · AAHANA AI</small></div>
-          <div className="teacher-character"><img src="/aahana-founder.webp" alt="Aahana AI's friendly cartoon learning companion" /><span className="teacher-cap">✦</span><span className="teacher-coat" /><span className="teacher-pointer" /></div>
-        </aside>
       </section>
 
       <LearningCategoryExplorer onChooseCategory={(name) => {
