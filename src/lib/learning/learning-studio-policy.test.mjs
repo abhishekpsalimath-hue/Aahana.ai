@@ -355,6 +355,18 @@ test("student mode includes an interactive 3D model lab rather than image-only l
   assert.match(world, /engineCycle/);
   for (const stage of ["intake", "compression", "power", "exhaust"]) assert.ok(world.includes(stage), `Missing engine cycle stage: ${stage}`);
   assert.match(world, /Restart cycle/);
+  assert.match(world, /BUILD & EXPLORE MOLECULES/);
+  assert.match(world, /chemistryMolecule/);
+  assert.match(world, /chemistryFocus/);
+  assert.match(world, /chemistryShowBonds/);
+  assert.match(world, /carbonDioxide/);
+  assert.match(world, /methane/);
+  assert.match(world, /Water · H₂O/);
+  assert.match(world, /Carbon dioxide · CO₂/);
+  assert.match(world, /Methane · CH₄/);
+  assert.match(world, /104\.5°/);
+  assert.match(world, /109\.5°/);
+  assert.match(world, /simplified educational models, not electron-density or scale-accurate simulations/);
   assert.match(world, /conceptual teaching model, not a timed or mechanically accurate engine simulation/);
   assert.match(world, /Force & motion cart/);
   assert.match(world, /TRY A FORCE & FRICTION EXPERIMENT/);
