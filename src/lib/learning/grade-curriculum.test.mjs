@@ -2,6 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   GRADE_1_MATHEMATICS_CURRICULUM,
+  GRADE_1_ENGLISH_CURRICULUM,
+  GRADE_1_EVS_CURRICULUM,
   getGradeLearningCurriculum,
   getGradeCurriculumCoverage
 } from "./grade-curriculum.mjs";
@@ -29,6 +31,29 @@ test("grade curriculum is available independently and never gates another subjec
   assert.equal(getGradeLearningCurriculum(1, "EVS").units.length, 6);
   assert.equal(getGradeLearningCurriculum(1, "Environmental Studies").grade, 1);
   assert.equal(getGradeLearningCurriculum(2, "Mathematics"), null);
+});
+
+test("Grade 1 English and EVS units contain teachable content and three formative checks", () => {
+  for (const curriculum of [GRADE_1_ENGLISH_CURRICULUM, GRADE_1_EVS_CURRICULUM]) {
+    assert.equal(curriculum.units.length, 6);
+    for (const unit of curriculum.units) {
+      assert.ok(unit.title);
+      assert.ok(unit.objective);
+      assert.ok(Array.isArray(unit.teach) && unit.teach.length >= 3);
+      assert.ok(unit.example);
+      assert.ok(unit.practice);
+      assert.ok(unit.lessonDesign.visual);
+      assert.ok(unit.lessonDesign.interaction);
+      const checks = unit.checks || unit.assessmentDesign.formativeChecks;
+      assert.equal(checks.length, 3);
+      for (const check of checks) {
+        assert.ok(check.question);
+        assert.equal(check.options.length, 3);
+        assert.ok(check.answer >= 0 && check.answer < check.options.length);
+        assert.ok(check.explanation);
+      }
+    }
+  }
 });
 
 test("board alignment is not claimed without a board-specific mapping", () => {
