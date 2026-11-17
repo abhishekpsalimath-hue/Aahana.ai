@@ -265,7 +265,9 @@ export default function LearningStudio({ userEmail = "" }) {
             <small>{item.role === "user" ? "YOU" : "AAHANA"}</small>
             {item.content ? (learningMode === "play" && item.role === "assistant" && readQuizPayload(item.content)
               ? <InteractiveQuiz quiz={readQuizPayload(item.content)} />
-              : <p>{item.content}</p>) : <div className="learning-thinking"><i /><i /><i /> Preparing your lesson</div>}
+              : learningMode === "play" && item.role === "assistant" && busy && index === messages.length - 1
+                ? <div className="learning-thinking"><i /><i /><i /> Building your quiz</div>
+                : <p>{item.content}</p>) : <div className="learning-thinking"><i /><i /><i /> Preparing your lesson</div>}
           </article>)}
         </div>}
         <form className="learning-composer" onSubmit={startLearning}>
