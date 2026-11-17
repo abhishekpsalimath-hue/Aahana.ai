@@ -581,7 +581,8 @@ test("learning universe supports cross-category subject discovery and direct sub
   assert.match(studio, /Search all learning subjects/);
   assert.match(studio, /findLearningSubjects\(query, 12\)/);
   assert.match(studio, /onChooseCategory\(item\.category, item\.subject\)/);
-  assert.match(studio, /setSubject\(selectedSubject \|\| selectedCategory\?\.subjects\?\.\[0\]/);
+  assert.match(studio, /export function LearningCategoryExplorer\(/);
+  assert.doesNotMatch(studio, /<LearningCategoryExplorer(?:\s|>)/);
   assert.match(styles, /\.learning-topic-results/);
 });
 
