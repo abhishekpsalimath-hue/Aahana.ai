@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
 const SHAPES = {
   sphere: () => new THREE.SphereGeometry(1, 64, 48),
@@ -32,6 +33,12 @@ export default function Native3DStudio() {
     camera.position.set(3.2, 2.4, 4.8);
     camera.lookAt(0, 0, 0);
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, preserveDrawingBuffer: true });
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = .065;
+    controls.minDistance = 2.4;
+    controls.maxDistance = 9;
+    controls.target.set(0, 0, 0);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -65,6 +72,7 @@ export default function Native3DStudio() {
     const draw = () => {
       if (!active) return;
       frame = window.requestAnimationFrame(draw);
+      controls.update();
       if (meshRef.current && autoRotateRef.current) {
         meshRef.current.rotation.y += .006;
         meshRef.current.rotation.x += .0015;
@@ -80,6 +88,7 @@ export default function Native3DStudio() {
       mesh.material.dispose();
       floor.geometry.dispose();
       floor.material.dispose();
+      controls.dispose();
       renderer.dispose();
       if (renderer.domElement.parentNode === mount) mount.removeChild(renderer.domElement);
       sceneRef.current = null; meshRef.current = null; rendererRef.current = null;
@@ -138,7 +147,7 @@ export default function Native3DStudio() {
           <label>Material colour<input type="color" value={color} onChange={(event) => setColor(event.target.value)} /></label>
           <label className="native-3d-check"><input type="checkbox" checked={wireframe} onChange={(event) => setWireframe(event.target.checked)} /> Wireframe view</label>
           <label className="native-3d-check"><input type="checkbox" checked={autoRotate} onChange={(event) => setAutoRotate(event.target.checked)} /> Auto rotate</label>
-          <p>Drag is not enabled in this first viewport; camera orbit controls are a planned next pass.</p>
+          <p>Drag to orbit · pinch or scroll to zoom · two-finger drag to pan.</p>
           <button type="button" onClick={() => { if (meshRef.current) { meshRef.current.rotation.set(0, 0, 0); setStatus("Object rotation reset."); } }}>Reset rotation</button>
         </div>
       </div>
