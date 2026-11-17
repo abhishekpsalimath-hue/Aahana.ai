@@ -54,18 +54,16 @@ test("learning instructions are included in the actual model system prompt", () 
   ]) assert.ok(systemPrompt.includes(phrase), `Missing learning policy: ${phrase}`);
 });
 
-test("student studio exposes all six agreed learning experiences", () => {
-  for (const phrase of [
-    "Story Mode", "Visual Explainer", "Play & Solve",
-    "Adventure Mode", "Talk & Learn", "Create & Experiment",
-  ]) assert.ok(studio.includes(phrase), `Missing learning experience: ${phrase}`);
-  assert.ok(studio.includes("School grade (optional)"));
-  assert.match(studio, /schoolGrade/);
-  assert.match(studio, /Learning level/);
-  assert.match(studio, /Learning language/);
-  assert.match(studio, /Curriculum \/ education board/);
-  assert.match(studio, /curriculum, language, learningMode/);
-  assert.match(studio, /Choose a subject or topic/);
+test("Student Mode stays focused on Grades 1–10 and keeps advanced exploration in Assistant", () => {
+  assert.match(studio, /Choose your school grade/);
+  assert.match(studio, /Which grade are you in\\?/);
+  assert.match(studio, /Array\\.from\\(\\{ length: 10 \\}/);
+  assert.match(studio, /Grade \\{value\\}/);
+  assert.match(studio, /Your learning conversation/);
+  assert.match(studio, /Aahana will choose the best way to explain it/);
+  assert.doesNotMatch(studio, /learning-category-grid/);
+  assert.doesNotMatch(studio, /<CreatorStudio/);
+  assert.doesNotMatch(studio, /<SpaceExplorer/);
 });
 
 test("learning sessions use the authenticated chat endpoint and persist under learn mode", () => {
