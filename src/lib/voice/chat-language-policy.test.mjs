@@ -2,7 +2,6 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import path from "node:path";
 
 const routePath = fileURLToPath(new URL("../../app/api/chat/route.js", import.meta.url));
 const routeSource = readFileSync(routePath, "utf8");
