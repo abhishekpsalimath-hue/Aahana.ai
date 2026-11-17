@@ -6,9 +6,11 @@ import { fileURLToPath } from "node:url";
 const routePath = fileURLToPath(new URL("../../app/api/chat/route.js", import.meta.url));
 const studioPath = fileURLToPath(new URL("../../app/learn/learning-studio.jsx", import.meta.url));
 const animatedPath = fileURLToPath(new URL("../../app/learn/animated-lesson.jsx", import.meta.url));
+const learningMemoryPath = fileURLToPath(new URL("../../app/api/learning-journey/route.js", import.meta.url));
 const route = readFileSync(routePath, "utf8");
 const studio = readFileSync(studioPath, "utf8");
 const animated = readFileSync(animatedPath, "utf8");
+const learningMemoryRoute = readFileSync(learningMemoryPath, "utf8");
 const stylesPath = fileURLToPath(new URL("../../app/learn/learning-studio.css", import.meta.url));
 const styles = readFileSync(stylesPath, "utf8");
 
@@ -143,7 +145,22 @@ test("non-quiz learning modes request a validated structured animated lesson", (
   assert.match(route, /hints array of exactly 2 progressively helpful hints/);
   assert.match(route, /fraction, orbit, water-cycle, plant-growth, number-line, molecule, concept-map/);
   assert.match(studio, /readMotionLesson\(item\.content\)/);
-  assert.match(studio, /<AnimatedLesson content=\{item\.content\} \/>/);
+  assert.match(studio, /<AnimatedLesson content=\{item\.content\} memoryEnabled=\{learningMemory\.enabled\} onSaveJourney=\{saveLearningJourney\} \/>/);
+});
+
+
+test("learning memory is opt-in, authenticated, owner-scoped and deletable", () => {
+  assert.match(learningMemoryRoute, /supabase\.auth\.getUser\(\)/);
+  assert.match(learningMemoryRoute, /memoryIsEnabled\(supabase, user\.id\)/);
+  assert.match(learningMemoryRoute, /\.eq\("user_id", user\.id\)/);
+  assert.match(learningMemoryRoute, /\.eq\("source", "conversation"\)/);
+  assert.match(learningMemoryRoute, /\.like\("content", "learning_journey:%"\)/);
+  assert.match(learningMemoryRoute, /Enable private memory before saving/);
+  assert.match(learningMemoryRoute, /export async function DELETE/);
+  assert.match(studio, /Turn memory on/);
+  assert.match(studio, /deleteLearningJourney\(item\.id\)/);
+  assert.match(animated, /onSaveJourney\(\{/);
+  assert.match(animated, /Save to my journey/);
 });
 
 test("animated lesson renderer validates scene data and provides subject-specific visuals", () => {
