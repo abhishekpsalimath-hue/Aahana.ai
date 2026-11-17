@@ -8,6 +8,8 @@ on:
       - "src/lib/voice/sravaani-asr-provider.*"
       - "src/lib/voice/README.md"
       - "src/app/api/voice/transcribe/route.js"
+      - "src/app/assistant-workspace.jsx"
+      - "src/lib/voice/audio-wav.*"
   push:
     branches:
       - "feat/aahana-voice-runtime-adapters"
@@ -16,6 +18,9 @@ on:
       - ".github/workflows/sravaani-guards.yml"
       - "src/lib/voice/sravaani-asr-provider.*"
       - "src/lib/voice/README.md"
+      - "src/app/assistant-workspace.jsx"
+      - "src/app/api/voice/transcribe/route.js"
+      - "src/lib/voice/audio-wav.*"
 
 permissions:
   contents: read
@@ -41,5 +46,7 @@ jobs:
           node-version: "22"
       - name: Run SraVaani provider adapter tests
         run: node --test ../../src/lib/voice/sravaani-asr-provider.test.mjs
+      - name: Test browser WAV encoder
+        run: node --test ../../src/lib/voice/audio-wav.test.mjs
       - name: Syntax-check authenticated transcription route
         run: node --check ../../src/app/api/voice/transcribe/route.js
