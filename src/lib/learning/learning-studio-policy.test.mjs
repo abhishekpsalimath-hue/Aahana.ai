@@ -351,7 +351,7 @@ test("student mode includes an interactive 3D model lab rather than image-only l
   const worldPath = fileURLToPath(new URL("../../app/learn/interactive-3d-world.jsx", import.meta.url));
   const world = readFileSync(worldPath, "utf8");
   assert.match(studio, /import Interactive3DWorld from ".\/interactive-3d-world"/);
-  assert.match(studio, /<Interactive3DWorld \/>/);
+  assert.match(studio, /<Interactive3DWorld selectedPlanet=\{selectedPlanet\} onSelectedPlanetChange=\{setSelectedPlanet\} \/>/);
   for (const model of ["planet", "molecule", "atom", "dna", "cube", "terrain", "cell", "solar-system", "plant-cell", "heart", "pyramid", "ecosystem", "engine", "cart"]) assert.ok(world.includes(`id: "${model}"`), `Missing 3D model: ${model}`);
   assert.match(world, /getContext\("2d"\)/);
   assert.match(world, /rotatePoint/);
