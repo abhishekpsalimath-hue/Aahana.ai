@@ -188,7 +188,382 @@ const authoredCurricula = authoredSubjectSeeds.map(([category, subject, title, l
   };
 });
 
-\nconst allAuthoredCurricula = [...learningCurricula, ...authoredCurricula];\nconst curriculumBySubjectId = new Map(allAuthoredCurricula.map((item) => [item.subjectId, item]));
+\nconst allAuthoredCurricula = [...learningCurricula, ...authoredCurricula];
+const additionalAuthoredCurricula = [
+  {
+    "subjectId": "agriculture-food-systems-soil-science",
+    "version": 1,
+    "title": "Soil science: formation, texture and fertility",
+    "suggestedLevels": [
+      "middle",
+      "secondary",
+      "college",
+      "adult"
+    ],
+    "prerequisites": [],
+    "learningOutcomes": [
+      "Explain key factors involved in soil formation",
+      "Compare sand, silt and clay by drainage and water retention",
+      "Describe how organic matter and conservation practices support soil health"
+    ],
+    "units": [
+      {
+        "id": "agriculture-food-systems-soil-science-unit-1",
+        "title": "How soil forms",
+        "outcomes": [
+          "Identify weathering, parent material and organisms as soil-forming influences",
+          "Recognise horizons in a simple soil profile"
+        ],
+        "concepts": [
+          "weathering",
+          "parent material",
+          "horizon"
+        ]
+      },
+      {
+        "id": "agriculture-food-systems-soil-science-unit-2",
+        "title": "Texture and water",
+        "outcomes": [
+          "Compare particle sizes of sand, silt and clay",
+          "Predict drainage and water retention from texture"
+        ],
+        "concepts": [
+          "sand",
+          "silt",
+          "clay",
+          "permeability"
+        ]
+      },
+      {
+        "id": "agriculture-food-systems-soil-science-unit-3",
+        "title": "Fertility and stewardship",
+        "outcomes": [
+          "Explain roles of organic matter and plant nutrients",
+          "Choose a soil-conservation practice for a given site"
+        ],
+        "concepts": [
+          "fertility",
+          "organic matter",
+          "erosion",
+          "conservation"
+        ]
+      }
+    ],
+    "assessment": {
+      "methods": [
+        "soil-profile labelling",
+        "texture comparison",
+        "conservation case analysis"
+      ],
+      "masteryRule": "Check outcomes independently through explanation, application to a new example and correction of misunderstandings."
+    },
+    "visualRequirements": [
+      "Use labelled visuals or worked examples where they clarify the concept.",
+      "Identify simplifications and distinguish evidence from interpretation."
+    ],
+    "curriculumStatus": "authored",
+    "lessonStatus": "content-authored-review-required"
+  },
+  {
+    "subjectId": "arts-design-creativity-drawing",
+    "version": 1,
+    "title": "Drawing foundations: observation, proportion and value",
+    "suggestedLevels": [
+      "middle",
+      "secondary",
+      "college",
+      "adult"
+    ],
+    "prerequisites": [],
+    "learningOutcomes": [
+      "Break a complex subject into basic observable shapes",
+      "Use proportion and negative space to check relationships",
+      "Use a value range to communicate form and light"
+    ],
+    "units": [
+      {
+        "id": "arts-design-creativity-drawing-unit-1",
+        "title": "Observe and simplify",
+        "outcomes": [
+          "Identify major shapes and directional lines",
+          "Draw from observation rather than relying only on symbols"
+        ],
+        "concepts": [
+          "observation",
+          "gesture",
+          "shape",
+          "contour"
+        ]
+      },
+      {
+        "id": "arts-design-creativity-drawing-unit-2",
+        "title": "Proportion and space",
+        "outcomes": [
+          "Compare relative heights, widths and angles",
+          "Use negative space to check alignment"
+        ],
+        "concepts": [
+          "proportion",
+          "alignment",
+          "negative space"
+        ]
+      },
+      {
+        "id": "arts-design-creativity-drawing-unit-3",
+        "title": "Light and form",
+        "outcomes": [
+          "Build a value scale from light to dark",
+          "Use highlights and shadows to suggest volume"
+        ],
+        "concepts": [
+          "value",
+          "light source",
+          "cast shadow",
+          "form"
+        ]
+      }
+    ],
+    "assessment": {
+      "methods": [
+        "shape-blocking exercise",
+        "proportion check",
+        "value-study critique"
+      ],
+      "masteryRule": "Check outcomes independently through explanation, application to a new example and correction of misunderstandings."
+    },
+    "visualRequirements": [
+      "Use labelled visuals or worked examples where they clarify the concept.",
+      "Identify simplifications and distinguish evidence from interpretation."
+    ],
+    "curriculumStatus": "authored",
+    "lessonStatus": "content-authored-review-required"
+  },
+  {
+    "subjectId": "literature-media-poetry",
+    "version": 1,
+    "title": "Poetry: imagery, sound and interpretation",
+    "suggestedLevels": [
+      "middle",
+      "secondary",
+      "college",
+      "adult"
+    ],
+    "prerequisites": [],
+    "learningOutcomes": [
+      "Identify a poem's speaker, situation and tone",
+      "Explain how imagery and sound shape meaning",
+      "Support an interpretation with specific textual evidence"
+    ],
+    "units": [
+      {
+        "id": "literature-media-poetry-unit-1",
+        "title": "Voice and situation",
+        "outcomes": [
+          "Identify speaker, setting and situation",
+          "Distinguish speaker from author"
+        ],
+        "concepts": [
+          "speaker",
+          "tone",
+          "situation",
+          "context"
+        ]
+      },
+      {
+        "id": "literature-media-poetry-unit-2",
+        "title": "Imagery and sound",
+        "outcomes": [
+          "Interpret metaphor and simile in context",
+          "Describe how rhythm, repetition or sound affects a line"
+        ],
+        "concepts": [
+          "imagery",
+          "metaphor",
+          "simile",
+          "rhythm"
+        ]
+      },
+      {
+        "id": "literature-media-poetry-unit-3",
+        "title": "Interpret with evidence",
+        "outcomes": [
+          "Develop a reading supported by precise textual details",
+          "Compare plausible interpretations respectfully"
+        ],
+        "concepts": [
+          "close reading",
+          "evidence",
+          "ambiguity"
+        ]
+      }
+    ],
+    "assessment": {
+      "methods": [
+        "speaker-and-tone annotation",
+        "imagery analysis",
+        "evidence-supported interpretation"
+      ],
+      "masteryRule": "Check outcomes independently through explanation, application to a new example and correction of misunderstandings."
+    },
+    "visualRequirements": [
+      "Use labelled visuals or worked examples where they clarify the concept.",
+      "Identify simplifications and distinguish evidence from interpretation."
+    ],
+    "curriculumStatus": "authored",
+    "lessonStatus": "content-authored-review-required"
+  },
+  {
+    "subjectId": "earth-systems-sustainability-climate-change",
+    "version": 1,
+    "title": "Climate change: evidence, impacts and responses",
+    "suggestedLevels": [
+      "middle",
+      "secondary",
+      "college",
+      "adult"
+    ],
+    "prerequisites": [],
+    "learningOutcomes": [
+      "Distinguish daily weather from long-term climate patterns",
+      "Explain the enhanced greenhouse effect through energy flow",
+      "Compare mitigation and adaptation responses"
+    ],
+    "units": [
+      {
+        "id": "earth-systems-sustainability-climate-change-unit-1",
+        "title": "Weather and climate",
+        "outcomes": [
+          "Explain the difference between weather and climate statistics",
+          "Interpret a trend while recognising natural variability"
+        ],
+        "concepts": [
+          "weather",
+          "climate",
+          "trend",
+          "baseline"
+        ]
+      },
+      {
+        "id": "earth-systems-sustainability-climate-change-unit-2",
+        "title": "Greenhouse effect",
+        "outcomes": [
+          "Describe how greenhouse gases interact with infrared energy",
+          "Distinguish the natural effect from its human-driven enhancement"
+        ],
+        "concepts": [
+          "infrared",
+          "greenhouse gas",
+          "energy balance",
+          "emissions"
+        ]
+      },
+      {
+        "id": "earth-systems-sustainability-climate-change-unit-3",
+        "title": "Responses and trade-offs",
+        "outcomes": [
+          "Classify actions as mitigation, adaptation or both",
+          "Compare responses by effectiveness, equity and feasibility"
+        ],
+        "concepts": [
+          "mitigation",
+          "adaptation",
+          "resilience",
+          "equity"
+        ]
+      }
+    ],
+    "assessment": {
+      "methods": [
+        "weather-climate classification",
+        "energy-flow explanation",
+        "response trade-off analysis"
+      ],
+      "masteryRule": "Check outcomes independently through explanation, application to a new example and correction of misunderstandings."
+    },
+    "visualRequirements": [
+      "Use labelled visuals or worked examples where they clarify the concept.",
+      "Identify simplifications and distinguish evidence from interpretation."
+    ],
+    "curriculumStatus": "authored",
+    "lessonStatus": "content-authored-review-required"
+  },
+  {
+    "subjectId": "research-advanced-learning-scientific-method",
+    "version": 1,
+    "title": "Scientific method: questions, variables and evidence",
+    "suggestedLevels": [
+      "middle",
+      "secondary",
+      "college",
+      "adult"
+    ],
+    "prerequisites": [],
+    "learningOutcomes": [
+      "Turn an observation into a focused, testable question",
+      "Identify variables and design a fair comparison",
+      "Interpret results without overstating what the data show"
+    ],
+    "units": [
+      {
+        "id": "research-advanced-learning-scientific-method-unit-1",
+        "title": "Ask a testable question",
+        "outcomes": [
+          "Define the system or population being studied",
+          "Write a question answerable with observable evidence"
+        ],
+        "concepts": [
+          "observation",
+          "research question",
+          "scope",
+          "testability"
+        ]
+      },
+      {
+        "id": "research-advanced-learning-scientific-method-unit-2",
+        "title": "Design a fair test",
+        "outcomes": [
+          "Identify independent, dependent and controlled variables",
+          "Choose measurements and repeats that reduce avoidable error"
+        ],
+        "concepts": [
+          "variable",
+          "control",
+          "measurement",
+          "replication"
+        ]
+      },
+      {
+        "id": "research-advanced-learning-scientific-method-unit-3",
+        "title": "Interpret and communicate",
+        "outcomes": [
+          "Describe patterns without automatically claiming causation",
+          "State limitations and a conclusion proportionate to the data"
+        ],
+        "concepts": [
+          "result",
+          "uncertainty",
+          "limitation",
+          "conclusion"
+        ]
+      }
+    ],
+    "assessment": {
+      "methods": [
+        "question-quality review",
+        "variable-design exercise",
+        "data-interpretation critique"
+      ],
+      "masteryRule": "Check outcomes independently through explanation, application to a new example and correction of misunderstandings."
+    },
+    "visualRequirements": [
+      "Use labelled visuals or worked examples where they clarify the concept.",
+      "Identify simplifications and distinguish evidence from interpretation."
+    ],
+    "curriculumStatus": "authored",
+    "lessonStatus": "content-authored-review-required"
+  }
+];
+const completeAuthoredCurricula = [...allAuthoredCurricula, ...additionalAuthoredCurricula];\nconst curriculumBySubjectId = new Map(completeAuthoredCurricula.map((item) => [item.subjectId, item]));
 
 export function getLearningCurriculum(subjectId) {
   return curriculumBySubjectId.get(subjectId) || null;
