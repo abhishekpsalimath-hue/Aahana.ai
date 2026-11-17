@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { inferSpeechLocale } from "./locale-detection.mjs";
+import { detectSpeechLanguage, inferSpeechLocale } from "./locale-detection.mjs";
 
 test("detects major Indian regional scripts", () => {
   assert.equal(inferSpeechLocale("ನಮಸ್ಕಾರ"), "kn-IN");
@@ -34,4 +34,31 @@ test("recognizes additional international writing systems", () => {
 test("keeps the preferred locale for Latin text and empty text", () => {
   assert.equal(inferSpeechLocale("Hello there", "en-GB"), "en-GB");
   assert.equal(inferSpeechLocale("", "fr-FR"), "fr-FR");
+});
+
+test("profiles mixed Kannada-English text and selects its dominant script", () => {
+  const result = detectSpeechLanguage("ನಮಸ್ಕಾರ, how are you? ಚೆನ್ನಾಗಿದ್ದೀರಾ", "en-IN");
+  assert.equal(result.locale, "kn-IN");
+  assert.equal(result.isMixed, true);
+  assert.equal(result.script, "kannada");
+  assert.ok(result.confidence > 0 && result.confidence <= 1);
+  assert.equal(result.reason, "dominant-script-in-mixed-text");
+  assert.ok(result.scriptCounts.latin > 0);
+  assert.ok(result.scriptCounts.kannada > 0);
+});
+
+test("keeps selected language for Latin-only mixed-language text", () => {
+  const result = detectSpeechLanguage("Hello, namaskara, hegiddira?", "kn-IN");
+  assert.equal(result.locale, "kn-IN");
+  assert.equal(result.script, "latin");
+  assert.equal(result.isMixed, false);
+  assert.equal(result.reason, "latin-script-preserves-preference");
+});
+
+test("reports ties between different writing systems instead of claiming certainty", () => {
+  const result = detectSpeechLanguage("ಕನ್ನಡ English", "kn-IN");
+  assert.equal(result.locale, "kn-IN");
+  assert.equal(result.isMixed, true);
+  assert.equal(result.reason, "mixed-script-tie");
+  assert.ok(result.confidence < 0.6);
 });
