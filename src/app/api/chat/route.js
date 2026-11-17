@@ -95,7 +95,7 @@ export async function POST(request) {
   const learningModeGuidance = {
     story: "Use a memorable, age-appropriate story and explicitly connect its events to the real concept.",
     visual: "Use accurate text diagrams, labelled steps, spatial descriptions and comparisons. Do not claim to have generated an image or animation unless an actual tool result is available.",
-    play: "Run one challenge at a time. Let the learner answer before revealing the solution, then explain the reasoning and adapt difficulty.",
+    play: "Create a short interactive multiple-choice quiz. Let the learner answer each question before revealing its explanation, then show their score and encourage another attempt.",
     adventure: "Build a short mission-based journey with stages, choices and meaningful knowledge checks. Keep facts accurate and game mechanics secondary to learning.",
     talk: "Act as a patient conversational tutor. Follow curiosity, ask one useful question at a time and check understanding without overwhelming the learner.",
     experiment: "Teach through a safe experiment, making activity or thought experiment. Include materials, steps, observations, explanation and proportionate safety notes.",
