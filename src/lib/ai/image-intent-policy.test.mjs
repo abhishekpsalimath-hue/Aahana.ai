@@ -102,6 +102,8 @@ test("recognizes natural-language image editing requests when an image is attach
     "Replace the sky with a sunset",
     "Remove the text from this image",
     "Turn it into a watercolour painting",
+    "Make the background transparent",
+    "Make it blue",
     "Background hatao",
     "Background remove maadi",
     "Colour blue maadi",
@@ -116,5 +118,6 @@ test("does not mistake unrelated chat for image editing", () => {
     "Add these numbers",
     "What is the background of this story?",
     "Make it more understandable",
+    "Make it shorter",
   ]) assert.equal(isImageEditRequest(prompt), false, prompt);
 });
