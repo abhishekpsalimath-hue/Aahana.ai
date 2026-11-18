@@ -15,6 +15,6 @@ test("image generation uses a bounded Groq prompt compiler with original-prompt 
   assert.match(route, /AbortSignal.timeout\(3500\)/);
   assert.match(route, /selectCompiledImagePrompt\(candidate, originalPrompt\)/);
   assert.match(route, /return \{ prompt: originalPrompt, refined: false \}/);
-  assert.match(route, /prompt: finalPrompt, steps: 4/);
+  assert.match(route, /prompt: finalPrompt, steps: 8/);
   assert.match(route, /promptRefined: refined/);
 });
