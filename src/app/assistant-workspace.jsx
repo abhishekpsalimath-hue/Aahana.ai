@@ -586,43 +586,71 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   }
 
   async function uploadFile(event) {
-    const file = event.target.files?.[0];
+    const selected = Array.from(event.target.files || []);
     event.target.value = "";
-    if (!file || fileBusy) return;
+    if (!selected.length || fileBusy) return;
     setFileBusy(true);
     setFilesError("");
+    const uploadedPaths = [];
     try {
       const allowed = ["application/pdf", "text/plain", "text/markdown", "text/csv", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "image/png", "image/jpeg", "image/webp"];
-      const extension = file.name.toLowerCase().split(".").pop();
       const codeExtensions = new Set(["html", "htm", "css", "js", "jsx", "ts", "tsx", "mjs", "cjs", "json", "xml", "yaml", "yml", "toml", "sql", "py", "sh", "md", "txt"]);
-      const isCodeFile = codeExtensions.has(extension);
-      if (!allowed.includes(file.type) && !isCodeFile) throw new Error("This file type is not supported.");
-      if (file.size < 1 || file.size > 10 * 1024 * 1024) throw new Error("Files must be between 1 byte and 10 MB.");
-      const upload = isCodeFile && !["text/plain", "text/markdown"].includes(file.type)
-        ? new File([await file.text()], file.name, { type: "text/plain" })
-        : file;
+      const isFolderBatch = selected.length > 1 || Boolean(selected[0]?.webkitRelativePath);
+      if (selected.length > 100) throw new Error("A project folder can contain up to 100 files per upload.");
       const supabase = createClient();
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError || !user) throw new Error("Please sign in again.");
-      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-100) || "upload";
       const folder = selectedProjectId || "personal";
-      const objectPath = `${user.id}/${folder}/${crypto.randomUUID()}-${safeName}`;
-      const { error: storageError } = await supabase.storage.from("aahana-private").upload(objectPath, upload, { contentType: upload.type, upsert: false });
-      if (storageError) throw new Error("Upload failed. Please try again.");
-      const response = await fetch("/api/files", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ objectPath, originalFilename: file.name, mimeType: upload.type, sizeBytes: upload.size, projectId: selectedProjectId }),
-      });
-      const result = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        await supabase.storage.from("aahana-private").remove([objectPath]);
-        throw new Error(result.error || "Could not save file details.");
+      let batchBytes = 0;
+      const saved = [];
+      for (const file of selected) {
+        const relativeName = file.webkitRelativePath || file.name;
+        const normalized = relativeName.replace(/\\/g, "/");
+        const segments = normalized.split("/");
+        if (!normalized || normalized.startsWith("/") || segments.some((part) => !part || part === "." || part === ".." || /[\\u0000-\\u001f\\u007f\\u202a-\\u202e\\u2066-\\u2069]/.test(part))) {
+          throw new Error("The folder contains an unsafe file path.");
+        }
+        const extension = file.name.toLowerCase().split(".").pop();
+        const isCodeFile = codeExtensions.has(extension);
+        if (!allowed.includes(file.type) && !isCodeFile) throw new Error("Unsupported file type: " + file.name);
+        if (file.size < 1 || file.size > (selectedProjectId ? 1024 * 1024 : 10 * 1024 * 1024)) {
+          throw new Error(selectedProjectId ? "Project source files must be 1 MB or smaller." : "Files must be between 1 byte and 10 MB.");
+        }
+        batchBytes += file.size;
+        if (selectedProjectId && batchBytes > 3 * 1024 * 1024) throw new Error("A project folder upload is limited to 3 MB total.");
+        const upload = isCodeFile && !["text/plain", "text/markdown"].includes(file.type)
+          ? new File([await file.text()], file.name, { type: "text/plain" })
+          : file;
+        const safeStorageName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-100) || "upload";
+        const objectPath = user.id + "/" + folder + "/" + crypto.randomUUID() + "-" + safeStorageName;
+        const { error: storageError } = await supabase.storage.from("aahana-private").upload(objectPath, upload, { contentType: upload.type, upsert: false });
+        if (storageError) throw new Error("Upload failed for " + file.name + ".");
+        uploadedPaths.push(objectPath);
+        const response = await fetch("/api/files", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ objectPath, originalFilename: normalized, mimeType: upload.type, sizeBytes: upload.size, projectId: selectedProjectId }),
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.error || "Could not save " + file.name + ".");
+        saved.push(result.file);
       }
-      setFiles((items) => [result.file, ...items]);
+      setFiles((items) => [...saved.reverse(), ...items]);
+      setFilesError(isFolderBatch ? "Project folder uploaded with relative paths preserved." : "File uploaded.");
     } catch (err) {
+      if (uploadedPaths.length) await supabaseRemoveUploadedFiles(uploadedPaths);
       setFilesError(err.message || "Upload failed.");
     } finally {
       setFileBusy(false);
+    }
+
+    async function supabaseRemoveUploadedFiles(paths) {
+      try {
+        const supabase = createClient();
+        await supabase.storage.from("aahana-private").remove(paths);
+        await fetch("/api/files/cleanup", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ objectPaths: paths }) });
+      } catch {
+        // Storage cleanup is best-effort; failed records remain private and are not executed automatically.
+      }
     }
   }
 
@@ -1032,6 +1060,10 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                 </div>
               </div>
             ))}
+            <label className="project-add">
+              {fileBusy ? "Uploading…" : "＋ Upload project folder"}
+              <input type="file" hidden multiple webkitdirectory="" directory="" disabled={fileBusy || !selectedProjectId} onChange={uploadFile} accept=".txt,.md,.html,.htm,.css,.js,.jsx,.ts,.tsx,.mjs,.cjs,.json,.yaml,.yml,.toml,.sql,.py" />
+            </label>
             <label className="project-add">
               {fileBusy ? "Uploading…" : "＋ Upload file"}
               <input type="file" hidden disabled={fileBusy} onChange={uploadFile} accept=".pdf,.txt,.md,.csv,.docx,.xlsx,.png,.jpg,.jpeg,.webp,.html,.htm,.css,.js,.jsx,.ts,.tsx,.mjs,.cjs,.json,.xml,.yaml,.yml,.toml,.sql,.py,.sh" />
