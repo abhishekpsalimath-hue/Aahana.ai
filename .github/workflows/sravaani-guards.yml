@@ -38,6 +38,8 @@ on:
       - "src/app/api/voice/speech/route.js"
       - "src/app/api/voice/capabilities/route.js"
       - "src/app/api/chat/route.js"
+      - "src/app/api/images/generate/route.js"
+      - "src/lib/ai/image-intent-policy.*"
       - "src/app/api/build/**"
       - "src/app/api/files/**"
       - "src/app/learn/**"
