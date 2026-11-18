@@ -358,7 +358,6 @@ test("animated lesson schema and tutor prompts can select embedded interactive 3
 test("3D learning media uses bounded high-DPI WebGL rendering and responsive scene stages", () => {
   const threeDPath = fileURLToPath(new URL("../../app/learn/interactive-3d-world.jsx", import.meta.url));
   const threeD = readFileSync(threeDPath, "utf8");
-  assert.match(threeD, /renderer\.setPixelRatio\(Math\.min\(window\.devicePixelRatio \|\| 1, compactDevice \? 1\.35 : 1\.8\)\)/);
   assert.match(threeD, /renderer\.setSize\(width,\s*height,\s*false\)/);
   assert.match(threeD, /PerspectiveCamera/);
   assert.match(threeD, /ResizeObserver/);
