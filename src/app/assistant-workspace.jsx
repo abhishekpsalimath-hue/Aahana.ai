@@ -686,6 +686,38 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     if (selectedProjectId === id) selectProject(null);
   }
 
+  async function runProjectCheck(operation) {
+    if (!selectedProjectId || buildBusy || busy || !buildEnabled) return;
+    const label = operation === "test" ? "Run isolated project tests" : "Run isolated project build";
+    setBuildBusy(true);
+    setError("");
+    setMessages((current) => [...current,
+      { role: "user", content: label },
+      { role: "assistant", content: "Preparing your project for an isolated check…" },
+    ]);
+    try {
+      const response = await fetch("/api/build/project", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ projectId: selectedProjectId, operation }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "The isolated project check could not start.");
+      const output = [
+        result.status === "passed" ? "Isolated check passed." : "Isolated check failed.",
+        "Operation: " + result.operation,
+        "Source files: " + result.sourceFileCount,
+        result.exitCode !== undefined ? "Exit code: " + result.exitCode : "",
+        result.stdout ? "Output: " + result.stdout : "",
+        result.stderr ? "Diagnostics: " + result.stderr : "",
+        "This ran in a temporary isolated sandbox. Saved project files were not changed, and nothing was deployed.",
+      ].filter(Boolean).join("\n\n");
+      setMessages((current) => current.map((item, index) => index === current.length - 1 ? { ...item, content: output } : item));
+    } catch (err) {
+      setMessages((current) => current.map((item, index) => index === current.length - 1 ? { ...item, content: err.message || "The isolated project check failed." } : item));
+    } finally {
+      setBuildBusy(false);
+    }
+  }
   async function copyCodeBlock(code) {
     try {
       await navigator.clipboard.writeText(code);
@@ -1132,6 +1164,33 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
             </div>
           )}
 
+          {mode === "build" && (
+            <section className="build-tools" aria-label="Project build tools">
+              <div className="build-tools-heading">
+                <div>
+                  <strong>Project checks</strong>
+                  <p>Run your uploaded website or app source in a temporary, isolated environment.</p>
+                </div>
+                <div className="build-tools-actions">
+                  <button type="button" disabled={!selectedProjectId || !buildEnabled || buildBusy || busy} onClick={() => runProjectCheck("build")}>
+                    {buildBusy ? "Running…" : "Run build"}
+                  </button>
+                  <button type="button" disabled={!selectedProjectId || !buildEnabled || buildBusy || busy} onClick={() => runProjectCheck("test")}>
+                    Run tests
+                  </button>
+                </div>
+              </div>
+              <p className="build-tools-note">
+                {!selectedProjectId
+                  ? "Select a project, then upload package.json and its source files in Files."
+                  : buildStatusLoading
+                    ? "Checking secure build availability…"
+                    : buildEnabled
+                      ? "Ready. Build and test commands run in a disposable sandbox; nothing is deployed."
+                      : "Secure build execution is not activated in this environment yet. Code generation and editing guidance remain available."}
+              </p>
+            </section>
+          )}
           <form className="composer" onSubmit={submitPrompt}>
             <label className="sr-only" htmlFor="image-upload">Attach an image for Aahana to identify or analyse</label>
             {generatedImage && (
