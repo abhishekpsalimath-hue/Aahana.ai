@@ -31,3 +31,10 @@ test("research citations are restricted to retrieved HTTPS source URLs", () => {
 test("Student Mode remains excluded from the Core Assistant knowledge instructions", () => {
   assert.match(route, /mode === "learn" \? \[\] : \[CORE_KNOWLEDGE_INSTRUCTIONS\]/);
 });
+
+
+test("Student Mode keeps its existing search-only path and never enters Core Assistant crawling", () => {
+  assert.match(route, /if \(mode === "learn"\) \{/);
+  assert.match(route, /if \(mode === "learn"\)[\s\S]*?const searchResponse = await fetch\("https:\/\/api\.tavily\.com\/search"/);
+  assert.match(route, /if \(mode === "learn"\)[\s\S]*?\.slice\(0, 5\)[\s\S]*?\} else \{[\s\S]*?tavilyRequest\("crawl"/);
+});
