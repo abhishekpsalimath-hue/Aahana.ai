@@ -309,12 +309,13 @@ test("Student Mode removes retired curriculum and mission dashboard sections", (
   assert.equal(studio.includes("export function SolarSystemCurriculum("), false);
 });
 
-test("Student Mode keeps interactive 3D learning and adds a playable 3D space quiz below it", () => {
+test("Student Mode offers topic discovery and a multi-subject interactive 3D model lab", () => {
   assert.match(studio, /<Interactive3DWorld selectedPlanet=/);
-  assert.match(studio, /<SpaceFunQuiz \/>/);
-  assert.match(studio, /Launch your planet challenge/);
-  assert.match(studio, /Mini3DModel modelId="solar-system"/);
-  assert.match(studio, /You scored \{score\} out of/);
+  assert.match(studio, /className="learning-discovery"/);
+  assert.doesNotMatch(studio, /<SpaceFunQuiz \/>/);
+  assert.match(world, /Choose a 3D model/);
+  assert.match(world, /label: "Animal cell"/);
+  assert.match(world, /label: "Force & motion cart"/);
 });
 
 test("the interactive 3D model lab remains available as a separately implemented component", () => {
@@ -440,8 +441,8 @@ test("research results reject unsafe URLs and deduplicate tracking variants by c
 });
 
 
-test("solar system opens by default and all eight planets can be selected from the scene or accessible controls", () => {
-  assert.match(world, /useState\("solar-system"\)/);
+test("the 3D explorer opens on biology while keeping all eight planets available as an optional model", () => {
+  assert.match(world, /useState\("cell"\)/);
   assert.match(world, /function pickSolarSystemPlanet\(/);
   assert.match(world, /new THREE\.Raycaster\(\)/);
   assert.match(world, /onSelectedPlanetChange\(planetId\)/);
