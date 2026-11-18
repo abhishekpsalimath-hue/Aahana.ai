@@ -1,0 +1,102 @@
+import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import { validateChangeProposal } from "@/lib/build/change-proposal-policy.mjs";
+
+export const runtime = "nodejs";
+
+const MAX_REQUEST_BYTES = 4 * 1024 * 1024;
+const MAX_SOURCE_FILES = 100;
+const MAX_SOURCE_BYTES = 3 * 1024 * 1024;
+const SOURCE_MIME_TYPES = new Set([
+  "text/plain", "text/markdown", "text/csv", "text/x-python", "application/json",
+]);
+const SOURCE_EXTENSIONS = /^(?:js|jsx|ts|tsx|mjs|cjs|css|html|htm|json|md|txt|py|toml|yaml|yml|sql|sh|xml|svg)$/i;
+
+function toWorkspacePath(filename) {
+  if (typeof filename !== "string") return null;
+  const path = filename.replace(/\\/g, "/").replace(/^\/+/, "");
+  if (!path || path.length > 240 || path.split("/").some((part) => !part || part === "." || part === "..")) return null;
+  const extension = path.split("/").at(-1).split(".").at(-1);
+  return SOURCE_EXTENSIONS.test(extension) ? path : null;
+}
+
+export async function POST(request) {
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) {
+    return NextResponse.json({ error: "Please sign in to review a project change proposal." }, { status: 401 });
+  }
+
+  const contentLength = Number(request.headers.get("content-length") || 0);
+  if (contentLength > MAX_REQUEST_BYTES) {
+    return NextResponse.json({ error: "Proposal requests must be 4 MB or smaller." }, { status: 413 });
+  }
+
+  let body;
+  try { body = await request.json(); } catch {
+    return NextResponse.json({ error: "Invalid proposal request." }, { status: 400 });
+  }
+
+  const projectId = typeof body?.projectId === "string" ? body.projectId : "";
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(projectId)) {
+    return NextResponse.json({ error: "Select a valid project first." }, { status: 400 });
+  }
+  if (!Array.isArray(body?.changes) || body.changes.length < 1 || body.changes.length > 50) {
+    return NextResponse.json({ error: "Provide 1–50 proposed file changes to review." }, { status: 400 });
+  }
+
+  const { data: project, error: projectError } = await supabase.from("projects")
+    .select("id").eq("id", projectId).eq("user_id", user.id).neq("status", "archived").maybeSingle();
+  if (projectError || !project) {
+    return NextResponse.json({ error: "Project not found." }, { status: 404 });
+  }
+
+  const { data: rows, error: filesError } = await supabase.from("user_files")
+    .select("bucket_id, object_path, original_filename, mime_type, size_bytes")
+    .eq("user_id", user.id).eq("project_id", projectId)
+    .order("created_at", { ascending: false }).limit(MAX_SOURCE_FILES);
+  if (filesError) {
+    return NextResponse.json({ error: "Could not load the current project snapshot." }, { status: 500 });
+  }
+
+  const currentFiles = [];
+  const usedPaths = new Set();
+  let totalBytes = 0;
+  for (const file of rows || []) {
+    const path = toWorkspacePath(file.original_filename);
+    if (!path || !SOURCE_MIME_TYPES.has(file.mime_type) && !SOURCE_EXTENSIONS.test(path.split(".").at(-1))) continue;
+    if (file.bucket_id !== "aahana-private" ||
+        typeof file.object_path !== "string" ||
+        !file.object_path.startsWith(user.id + "/" + projectId + "/") ||
+        !Number.isInteger(file.size_bytes) || file.size_bytes < 1 ||
+        file.size_bytes > 1024 * 1024) {
+      return NextResponse.json({ error: "A project source file failed ownership or size validation. Refresh the project files and try again." }, { status: 409 });
+    }
+    if (usedPaths.has(path)) {
+      return NextResponse.json({ error: "The project contains duplicate source paths. Resolve the duplicate filenames before proposing edits." }, { status: 409 });
+    }
+    const { data: blob, error: downloadError } = await supabase.storage.from("aahana-private").download(file.object_path);
+    if (downloadError || !blob || blob.size !== file.size_bytes || blob.size > 1024 * 1024 ||
+        totalBytes + blob.size > MAX_SOURCE_BYTES) {
+      return NextResponse.json({ error: "The current project snapshot could not be loaded within the safe size limits." }, { status: 409 });
+    }
+    const source = await blob.text();
+    if (!source.trim()) continue;
+    totalBytes += blob.size;
+    currentFiles.push({ path, content: source });
+    usedPaths.add(path);
+  }
+
+  try {
+    const proposal = validateChangeProposal({ currentFiles, changes: body.changes });
+    return NextResponse.json({
+      ...proposal,
+      projectId,
+      snapshotFileCount: currentFiles.length,
+      snapshotBytes: totalBytes,
+      message: "Proposal validated against the current project snapshot. No project files were changed.",
+    }, { headers: { "Cache-Control": "private, no-store" } });
+  } catch (error) {
+    return NextResponse.json({ error: error?.message || "This change proposal could not be validated." }, { status: 400 });
+  }
+}
