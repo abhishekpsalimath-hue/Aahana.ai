@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { findBestSpeechVoice } from "@/lib/voice/browser-capabilities.mjs";
 import { inferSpeechLocale } from "@/lib/voice/locale-detection.mjs";
 import { shouldFallbackToDeviceSpeech } from "@/lib/voice/speech-fallback-policy.mjs";
-import { detectImageEditStyleFromPrompt, isImageEditRequest } from "@/lib/studio/image-edit.mjs";
+import { detectImageEditStyleFromPrompt, isImageEditRequest, prepareImageForEditing } from "@/lib/studio/image-edit.mjs";
 
 const modes = [
   { id: "solve", label: "Solve", hint: "Work through a problem" },
@@ -790,16 +790,11 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         { role: "assistant", content: "Transforming your actual photo while preserving the same person and composition…" },
       ]);
       try {
-        const imageDataUrl = await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => typeof reader.result === "string" ? resolve(reader.result) : reject(new Error("Could not read the selected photo."));
-          reader.onerror = () => reject(new Error("Could not read the selected photo."));
-          reader.readAsDataURL(sourceFile);
-        });
+        const prepared = await prepareImageForEditing(sourceFile);
         const response = await fetch("/api/images/edit", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ imageDataUrl, style, strength: 0.38 }),
+          body: JSON.stringify({ ...prepared, style }),
         });
         const result = await response.json().catch(() => ({}));
         if (!response.ok || typeof result.imageDataUrl !== "string" || !result.imageDataUrl.startsWith("data:image/png;base64,")) {
