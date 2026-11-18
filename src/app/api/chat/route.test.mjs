@@ -38,3 +38,11 @@ test("Student Mode keeps its existing search-only path and never enters Core Ass
   assert.match(route, /if \(mode === "learn"\)[\s\S]*?const searchResponse = await fetch\("https:\/\/api\.tavily\.com\/search"/);
   assert.match(route, /if \(mode === "learn"\)[\s\S]*?\.slice\(0, 5\)[\s\S]*?\} else \{[\s\S]*?tavilyRequest\("crawl"/);
 });
+
+
+test("Student Mode retains its original web-search trigger while Core Assistant adds website discovery", () => {
+  const legacyMatcher = route.slice(route.indexOf("function shouldSearchWeb"), route.indexOf("function shouldSearchCoreWeb"));
+  assert.doesNotMatch(legacyMatcher, /website|web site|site audit|site map/i);
+  assert.match(route, /function shouldSearchCoreWeb/);
+  assert.match(route, /const requiresLiveResearch = mode === "learn" \? shouldSearchWeb\(prompt, image\) : shouldSearchCoreWeb\(prompt, image\)/);
+});
