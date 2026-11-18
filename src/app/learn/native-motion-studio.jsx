@@ -22,14 +22,19 @@ export default function NativeMotionStudio() {
   const [time, setTime] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [status, setStatus] = useState("");
+  const [textLayer, setTextLayer] = useState("Your story starts here");
+  const [textLayerEnabled, setTextLayerEnabled] = useState(false);
   const [exporting, setExporting] = useState(false);
   const exportCanvasRef = useRef(null);
   const sampled = useMemo(() => sampleMotionTimeline(timeline, time), [timeline, time]);
-  const animatedValue = (property, fallback) => sampled.find((item) => item.property === property)?.value ?? fallback;
+  const animatedValue = (property, fallback, layerIndex = 0) => sampled.find((item) => item.property === property && item.layerIndex === layerIndex)?.value ?? fallback;
   const x = animatedValue("cx", 180);
   const y = animatedValue("cy", 180);
   const radius = animatedValue("radius", 64);
   const opacity = animatedValue("opacity", 1);
+  const textX = animatedValue("x", 500, 1);
+  const textY = animatedValue("y", 190, 1);
+  const textOpacity = Math.max(0, Math.min(1, animatedValue("opacity", 1, 1)));
 
   useEffect(() => {
     if (!playing) return undefined;
@@ -75,6 +80,18 @@ export default function NativeMotionStudio() {
     ] };
     setTimeline((current) => ({ ...current, tracks: [...current.tracks, track] }));
     setStatus(`Added animated ${property} track.`);
+  }
+
+  function addTextLayer() {
+    if (textLayerEnabled) return;
+    const tracks = [
+      { id: "text-layer-x", layerIndex: 1, property: "x", keyframes: [{ time: 0, value: 500, easing: "ease-in-out" }, { time: timeline.duration, value: 500, easing: "linear" }] },
+      { id: "text-layer-y", layerIndex: 1, property: "y", keyframes: [{ time: 0, value: 230, easing: "ease-out" }, { time: Math.round(timeline.duration * .35), value: 175, easing: "ease-in-out" }, { time: timeline.duration, value: 175, easing: "linear" }] },
+      { id: "text-layer-opacity", layerIndex: 1, property: "opacity", keyframes: [{ time: 0, value: 0, easing: "ease-out" }, { time: Math.round(timeline.duration * .25), value: 1, easing: "ease-in-out" }, { time: timeline.duration, value: 1, easing: "linear" }] },
+    ];
+    setTimeline((current) => ({ ...current, tracks: [...current.tracks, ...tracks] }));
+    setTextLayerEnabled(true);
+    setStatus("Text layer added with animated position and fade-in tracks.");
   }
 
   function removeTrack(trackIndex) {
@@ -207,13 +224,13 @@ export default function NativeMotionStudio() {
   return (
     <section className="native-motion-studio" aria-label="Aahana native motion studio">
       <div className="native-motion-heading"><div><span>AAHANA-NATIVE MOTION ENGINE</span><h3>Motion & Animation Studio</h3><p>Build keyframed movement and preview it live, locally in your browser.</p></div><div className="native-motion-export-actions"><button type="button" onClick={exportWebM} disabled={exporting}>{exporting ? "Rendering video…" : "Export WebM video"}</button><button type="button" onClick={exportTimeline}>Export timeline</button></div></div>
-      <canvas ref={exportCanvasRef} width="1280" height="720" hidden aria-hidden="true" />\n      <div className="native-motion-stage">
+      <canvas ref={exportCanvasRef} width="1280" height="720" hidden aria-hidden="true" />\n      <div className="native-motion-layer-editor"><div className="native-motion-track-title"><strong>Visual layers</strong><button type="button" onClick={addTextLayer} disabled={textLayerEnabled}>+ Add text layer</button></div>{textLayerEnabled && <div className="native-motion-keyframe"><label>Text content<input type="text" maxLength="80" value={textLayer} onChange={(event) => setTextLayer(event.target.value)} /></label><span>Layer 2 · position and opacity animated</span><button type="button" onClick={() => { setTimeline((current) => ({ ...current, tracks: current.tracks.filter((track) => track.layerIndex !== 1) })); setTextLayerEnabled(false); setStatus("Text layer removed."); }}>Remove text layer</button></div>}</div>\n      <div className="native-motion-stage">
         <svg viewBox="0 0 1000 360" role="img" aria-label="Animated preview of a lavender sphere moving across a stage">
           <defs><linearGradient id="aahana-motion-bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#282038"/><stop offset="1" stopColor="#171421"/></linearGradient><radialGradient id="aahana-motion-ball"><stop offset="0" stopColor="#f4eafa"/><stop offset=".45" stopColor="#c7a8ed"/><stop offset="1" stopColor="#8064ae"/></radialGradient></defs>
           <rect width="1000" height="360" rx="16" fill="url(#aahana-motion-bg)"/>
           <path d="M70 285H930" stroke="#79678f" strokeWidth="2" strokeDasharray="5 9"/>
           <circle cx={x} cy={y} r={radius} fill="url(#aahana-motion-ball)" opacity={opacity}/>
-          <circle cx={x - radius * .31} cy={y - radius * .36} r={Math.max(4, radius * .18)} fill="#fff" opacity={opacity * .28}/>
+          <circle cx={x - radius * .31} cy={y - radius * .36} r={Math.max(4, radius * .18)} fill="#fff" opacity={opacity * .28}/>\n          {textLayerEnabled && <text x={textX} y={textY} textAnchor="middle" fill="#fff" opacity={textOpacity} fontSize="30" fontWeight="600" fontFamily="system-ui">{textLayer}</text> }
           <text x="70" y="65" fill="#eee5fa" fontSize="20" fontFamily="system-ui">Aahana Motion Preview</text>
           <text x="70" y="95" fill="#b8a9c9" fontSize="12" fontFamily="system-ui">Keyframed position · smooth interpolation</text>
         </svg>
@@ -241,7 +258,7 @@ export default function NativeMotionStudio() {
         ))}
       </div>
       {status && <p className="native-motion-status" role="status">{status}</p>}
-      <small className="native-motion-disclosure">Current capabilities: browser-based keyframe authoring, live vector preview and local WebM recording. This is a rendered preview, not provider-generated cinematic footage.</small>
+      <small className="native-motion-disclosure">Current capabilities: multi-property keyframes, an independently animated text layer, live vector preview and local WebM recording. This is a rendered preview, not provider-generated cinematic footage.</small>
     </section>
   );
 }
