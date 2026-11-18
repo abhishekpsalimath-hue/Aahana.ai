@@ -350,12 +350,12 @@ test("learning universe presents every catalogue category as a selectable destin
 test("the interactive 3D model lab remains available as a separately implemented component", () => {
   const worldPath = fileURLToPath(new URL("../../app/learn/interactive-3d-world.jsx", import.meta.url));
   const world = readFileSync(worldPath, "utf8");
-  assert.match(world, /import \\* as THREE from "three"/);
-  assert.match(world, /new THREE\\.WebGLRenderer/);
-  assert.match(world, /function disposeThreeScene\\(canvas\\)/);
-  assert.match(world, /renderer\\.dispose\\(\\)/);
-  assert.match(world, /function animateScene\\(canvas, render\\)/);
-  assert.match(world, /window\\.requestAnimationFrame\\(tick\\)/);
+  assert.ok(world.includes('import * as THREE from "three"'));
+  assert.ok(world.includes("new THREE.WebGLRenderer"));
+  assert.ok(world.includes("function disposeThreeScene(canvas)"));
+  assert.ok(world.includes("renderer.dispose()"));
+  assert.ok(world.includes("function animateScene(canvas, render)"));
+  assert.ok(world.includes("window.requestAnimationFrame(tick)"));
 });
 
 test("animated lesson schema and tutor prompts can select embedded interactive 3D scenes", () => {
