@@ -179,12 +179,14 @@ test("maps imported bindings to target exports and flags missing named exports",
 
 test("reports route handler exports and avoids inventing bindings for absent source files", () => {
   const result = analyzeProjectContracts([
-    { path: "src/app/api/items/route.js", content: 'export async function GET() {}\nexport async function POST() {}' },
+    { path: "src/app/api/items/route.js", content: 'export async function GET(request) { const q = request.nextUrl.searchParams; return Response.json(q); }\nexport async function POST(request) { const body = await request.json(); return NextResponse.json(body); }' },
     { path: "src/client.js", content: 'import { GET } from "./app/api/items/route.js";' },
   ]);
   const route = result.modules.find((module) => module.path.endsWith("/route.js"));
   assert.ok(route.exports.some((item) => item.name === "GET"));
   assert.ok(route.exports.some((item) => item.name === "POST"));
+  assert.ok(route.apiHandlers.some((item) => item.method === "GET" && item.readsSearchParams && item.returnsJson));
+  assert.ok(route.apiHandlers.some((item) => item.method === "POST" && item.readsJsonBody && item.usesNextResponse));
   assert.ok(result.bindingRelationships.some((edge) => edge.imported === "GET" && edge.status === "matched"));
 });
 
