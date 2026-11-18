@@ -37,15 +37,17 @@ test("question fingerprints ignore harmless punctuation, case and option orderin
 
 test("invalid and out-of-range packs cannot enter deduplication", () => {
   assert.equal(createQuizPackFingerprint([]), null);
-  assert.equal(createQuizPackFingerprint(Array.from({ length: 11 }, (_, i) => ({ question: `Q${i}` }))), null);
+  assert.equal(createQuizPackFingerprint(Array.from({ length: 9 }, (_, i) => ({ question: `Q${i}` }))), null);
+  assert.equal(createQuizPackFingerprint(Array.from({ length: 21 }, (_, i) => ({ question: `Q${i}` }))), null);
   assert.equal(createQuizPackFingerprint([{ options: ["A"] }]), null);
-  assert.deepEqual(removeDuplicateQuizPacks([{ questions: [] }, { questions: [{ question: "valid question" }] }]), [
-    { questions: [{ question: "valid question" }], fingerprint: createQuizPackFingerprint([{ question: "valid question" }]) },
+  const validQuestions = Array.from({ length: 10 }, (_, i) => ({ question: `Valid question ${i + 1}`, options: ["A", "B", "C", "D"] }));
+  assert.deepEqual(removeDuplicateQuizPacks([{ questions: [] }, { questions: validQuestions }]), [
+    { questions: validQuestions, fingerprint: createQuizPackFingerprint(validQuestions) },
   ]);
 });
 
 test("duplicate packs are removed against stored fingerprints and within a batch", () => {
-  const pack = { title: "Cells", questions: [{ question: "What is a cell?", options: ["Unit", "Planet"] }] };
+  const pack = { title: "Cells", questions: Array.from({ length: 10 }, (_, index) => ({ question: `What is cell concept ${index + 1}?`, options: ["Unit", "Planet", "Star", "Atom"] })) };
   const fingerprint = createQuizPackFingerprint(pack.questions);
   assert.deepEqual(removeDuplicateQuizPacks([pack, pack], [fingerprint]), []);
   const result = removeDuplicateQuizPacks([pack, pack]);
@@ -57,7 +59,7 @@ test("policy version is explicit for future catalogue migrations", () => {
   assert.equal(quizBankPolicyVersion, 1);
 });
 
-function validPack(count = 5) {
+function validPack(count = 10) {
   return {
     type: "aahana_quiz_v1",
     title: "Forces and motion",
@@ -72,9 +74,9 @@ function validPack(count = 5) {
   };
 }
 
-test("quiz validator accepts a complete 5-question pack and attaches a fingerprint", () => {
+test("quiz validator accepts a complete 10-question pack and attaches a fingerprint", () => {
   const result = validateQuizPack(validPack());
-  assert.equal(result?.questions.length, 5);
+  assert.equal(result?.questions.length, 10);
   assert.match(result?.fingerprint || "", /^[a-f0-9]{16}$/);
 });
 
@@ -95,8 +97,9 @@ test("quiz validator preserves full teaching explanations and rejects oversized 
 });
 
 test("quiz validator rejects too few or too many questions", () => {
-  assert.equal(validateQuizPack(validPack(4)), null);
-  assert.equal(validateQuizPack(validPack(11)), null);
+  assert.equal(validateQuizPack(validPack(9)), null);
+  assert.equal(validateQuizPack(validPack(21)), null);
+  assert.equal(validateQuizPack(validPack(20))?.questions.length, 20);
 });
 
 test("quiz validator rejects duplicate stems even when phrasing case differs", () => {
