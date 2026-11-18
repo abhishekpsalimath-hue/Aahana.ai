@@ -870,15 +870,48 @@ function drawScene(canvas, modelId, yaw, pitch, zoom, ecosystem = {}, time = 0, 
 function animateScene(canvas, render) {
   let frame = 0;
   let active = true;
+  let pageVisible = document.visibilityState !== "hidden";
+  const motionQuery = window.matchMedia?.("(prefers-reduced-motion: reduce)");
+  let reducedMotion = Boolean(motionQuery?.matches);
+
+  const cancelFrame = () => {
+    if (frame) window.cancelAnimationFrame(frame);
+    frame = 0;
+  };
+  const drawOnce = () => {
+    if (active && pageVisible) render(performance.now());
+  };
   const tick = (time) => {
-    if (!active) return;
+    frame = 0;
+    if (!active || !pageVisible || reducedMotion) return;
     render(time);
     frame = window.requestAnimationFrame(tick);
   };
-  frame = window.requestAnimationFrame(tick);
+  const start = () => {
+    if (!active || !pageVisible) return;
+    cancelFrame();
+    if (reducedMotion) drawOnce();
+    else frame = window.requestAnimationFrame(tick);
+  };
+  const onVisibilityChange = () => {
+    pageVisible = document.visibilityState !== "hidden";
+    if (pageVisible) start();
+    else cancelFrame();
+  };
+  const onMotionChange = (event) => {
+    reducedMotion = event.matches;
+    start();
+  };
+
+  document.addEventListener("visibilitychange", onVisibilityChange);
+  motionQuery?.addEventListener?.("change", onMotionChange);
+  start();
+
   return () => {
     active = false;
-    if (frame) window.cancelAnimationFrame(frame);
+    cancelFrame();
+    document.removeEventListener("visibilitychange", onVisibilityChange);
+    motionQuery?.removeEventListener?.("change", onMotionChange);
   };
 }
 
