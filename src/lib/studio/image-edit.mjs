@@ -16,7 +16,7 @@ const STYLE_DIRECTIONS = Object.freeze({
 
 function cleanEditInstruction(value) {
   return typeof value === "string"
-    ? value.replace(/[\\u0000-\\u001f\\u007f]/g, " ").replace(/\\s+/g, " ").trim().slice(0, 400)
+    ? value.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, 400)
     : "";
 }
 
