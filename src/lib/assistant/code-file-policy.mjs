@@ -1,5 +1,5 @@
 export function getSafeCodeFilePath(label) {
-  const parts = String(label || "").trim().split(/\\s+/);
+  const parts = String(label || "").trim().split(/\s+/);
   const filePath = parts.slice(1).join(" ");
   if (
     !filePath ||
@@ -11,6 +11,6 @@ export function getSafeCodeFilePath(label) {
 }
 
 export function getCodeDownloadName(filePath) {
-  const safePath = getSafeCodeFilePath(`code ${String(filePath || "")}`);
-  return safePath ? safePath.replace(/\\//g, "__") : null;
+  const safePath = getSafeCodeFilePath(\`code \${String(filePath || "")}\`);
+  return safePath ? safePath.replace(/\//g, "__") : null;
 }
