@@ -350,7 +350,6 @@ test("learning universe presents every catalogue category as a selectable destin
 test("the interactive 3D model lab remains available as a separately implemented component", () => {
   const worldPath = fileURLToPath(new URL("../../app/learn/interactive-3d-world.jsx", import.meta.url));
   const world = readFileSync(worldPath, "utf8");
-  assert.ok(existsSync(worldPath));
   assert.match(world, /import \\* as THREE from "three"/);
   assert.match(world, /new THREE\\.WebGLRenderer/);
   assert.match(world, /function disposeThreeScene\\(canvas\\)/);
