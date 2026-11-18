@@ -115,7 +115,7 @@ test("heart biology lab guides learners through the body-lungs-body circulation 
   assert.match(world, /From body/);
   assert.match(world, /To lungs/);
   assert.match(world, /From lungs/);
-  assert.match(world, /oxygen-poor blood returns from the body/);
+  assert.match(world, /Oxygen-poor blood returns from the body/);
   assert.match(world, /oxygen-rich blood back to the left side/);
   assert.match(world, /Restart circulation journey/);
 });
