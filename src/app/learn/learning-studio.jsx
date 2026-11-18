@@ -421,40 +421,55 @@ export default function LearningStudio({ userEmail = "" }) {
       </section>
 
 
-        <section className="learning-discovery" aria-label="Choose a learning topic and mode">
-          <div className="learning-discovery-heading"><span>CHOOSE YOUR PATH</span><h3>How would you like to explore?</h3><p>Pick a learning adventure. Follow a story, step into an animated world, solve a challenge, talk it through or try an experiment.</p></div>
-          <div className="learning-discovery-selects">
-            <label>Subject area
-              <select value={category} onChange={(event) => {
-                const nextCategory = event.target.value;
-                const nextSubjects = learningCategories.find((item) => item.name === nextCategory)?.subjects || [];
-                setCategory(nextCategory);
-                if (nextSubjects.length) setSubject(nextSubjects[0]);
-              }}>
-                {learningCategories.map((item) => <option key={item.name} value={item.name}>{item.name}</option>)}
-              </select>
-            </label>
-            <label>Topic
-              <select value={categorySubjects.includes(subject) ? subject : categorySubjects[0]} onChange={(event) => setSubject(event.target.value)}>
-                {categorySubjects.map((item) => <option key={item} value={item}>{item}</option>)}
-              </select>
-            </label>
-          </div>
-          <div className="learning-mode-picker" role="group" aria-label="Choose how to learn">
-            {learningModes.map((mode) => <button type="button" key={mode.id} className={learningMode === mode.id ? "active" : ""} aria-pressed={learningMode === mode.id} onClick={() => setLearningMode(mode.id)}>
-              <span aria-hidden="true">{mode.icon}</span><strong>{mode.title}</strong><small>{mode.detail}</small>
-            </button>)}
-          </div>
-          <div className="learning-topic-actions">
-            <button type="button" disabled={busy} onClick={() => startLearning(null, learningMode === "play"
-              ? "Create a fresh 10-question Play & Solve journey about " + subject + ". Ask one challenge at a time, include a relevant visual, adapt gently to my answers, and explain each idea after I solve it."
-              : "Take me on a " + learningModes.find((mode) => mode.id === learningMode)?.title + " learning journey about " + subject + ". Make it joyful, visual and interactive, with small discoveries and one meaningful learner action at a time.", true, { gradeBand, schoolGrade, subject, curriculum, language, learningMode })}>
-              {learningMode === "play" ? "Start a 10-question challenge" : "Begin my " + (learningModes.find((mode) => mode.id === learningMode)?.title || "adventure")}
-            </button>
-          </div>
-        </section>
 
-      <Interactive3DWorld selectedPlanet={selectedPlanet} onSelectedPlanetChange={setSelectedPlanet} />
+      {/* The existing welcome title card above stays exactly as it is. */}
+      <section className="student-display-screen" aria-label="Interactive learning display">
+        <Interactive3DWorld selectedPlanet={selectedPlanet} onSelectedPlanetChange={setSelectedPlanet} />
+      </section>
+
+      <section className="student-search-section" aria-label="Search and ask Aahana">
+        <form className="learning-composer" onSubmit={startLearning}>
+          <label htmlFor="learning-question">Search or ask Aahana about any topic</label>
+          <textarea id="learning-question" value={question} onChange={(event) => setQuestion(event.target.value)} rows={2} maxLength={8000} disabled={busy} placeholder="What would you like to discover today?" />
+          <div><span>Aahana will choose the best way to explain it.</span><button type="submit" disabled={!question.trim() || busy}>{busy ? "Learning…" : "Search / Start learning"}</button></div>
+        </form>
+        {error && <p className="learning-error" role="alert">{error}</p>}
+        <div className="learning-discovery-selects student-topic-selects">
+          <label>Subject area
+            <select value={category} onChange={(event) => {
+              const nextCategory = event.target.value;
+              const nextSubjects = learningCategories.find((item) => item.name === nextCategory)?.subjects || [];
+              setCategory(nextCategory);
+              if (nextSubjects.length) setSubject(nextSubjects[0]);
+            }}>
+              {learningCategories.map((item) => <option key={item.name} value={item.name}>{item.name}</option>)}
+            </select>
+          </label>
+          <label>Topic
+            <select value={categorySubjects.includes(subject) ? subject : categorySubjects[0]} onChange={(event) => setSubject(event.target.value)}>
+              {categorySubjects.map((item) => <option key={item} value={item}>{item}</option>)}
+            </select>
+          </label>
+        </div>
+      </section>
+
+      <section className="learning-discovery student-mode-section" aria-label="Choose one of the six learning modes">
+        <div className="learning-discovery-heading"><span>YOUR SIX LEARNING MODES</span><h3>Choose how you want to learn</h3><p>Six different ways to explore the same world of knowledge.</p></div>
+        <div className="learning-mode-picker" role="group" aria-label="Choose how to learn">
+          {learningModes.map((mode) => <button type="button" key={mode.id} className={learningMode === mode.id ? "active" : ""} aria-pressed={learningMode === mode.id} onClick={() => setLearningMode(mode.id)}>
+            <span aria-hidden="true">{mode.icon}</span><strong>{mode.title}</strong><small>{mode.detail}</small>
+          </button>)}
+        </div>
+        <div className="learning-topic-actions">
+          <button type="button" disabled={busy} onClick={() => startLearning(null, learningMode === "play"
+            ? "Create a fresh 10-question Play & Solve journey about " + subject + ". Ask one challenge at a time, include a relevant visual, adapt gently to my answers, and explain each idea after I solve it."
+            : "Take me on a " + learningModes.find((mode) => mode.id === learningMode)?.title + " learning journey about " + subject + ". Make it joyful, visual and interactive, with small discoveries and one meaningful learner action at a time.", true, { gradeBand, schoolGrade, subject, curriculum, language, learningMode })}>
+            {learningMode === "play" ? "Start a 10-question challenge" : "Begin my " + (learningModes.find((mode) => mode.id === learningMode)?.title || "adventure")}
+          </button>
+        </div>
+      </section>
+
+
 
 
 
@@ -499,12 +514,6 @@ export default function LearningStudio({ userEmail = "" }) {
           })}
         </div>}
 
-        <form className="learning-composer" onSubmit={startLearning}>
-          <label htmlFor="learning-question">Search or ask Aahana about any topic</label>
-          <textarea id="learning-question" value={question} onChange={(event) => setQuestion(event.target.value)} rows={3} maxLength={8000} disabled={busy} placeholder="Search any topic or ask a question… Why does the Moon change shape? How do birds fly? How does AI work?" />
-          <div><span>Aahana will choose the best way to explain it.</span><button type="submit" disabled={!question.trim() || busy}>{busy ? "Learning…" : "Start learning"}</button></div>
-        </form>
-        {error && <p className="learning-error" role="alert">{error}</p>}
         <p className="learning-note">Explore beyond a fixed subject list: school subjects, advanced ideas, science, technology, history, arts, cultures and everyday questions. Aahana adapts the explanation to your level.</p>
       </section>
       <section className="learning-memory-panel" aria-labelledby="learning-memory-title">
