@@ -92,7 +92,7 @@ export function validateWorkspaceFiles(files) {
   return Object.freeze(validated);
 }
 
-export function validateSandboxCommand({ command, args = [], timeout = MAX_TIMEOUT_MS })
+export function validateSandboxCommand({ command, args = [], timeout = MAX_TIMEOUT_MS }) {
   if (typeof command !== "string" || !ALLOWED_EXECUTABLES.has(command)) {
     throw new Error("This executable is not allowed in Aahana's build workspace.");
   }
