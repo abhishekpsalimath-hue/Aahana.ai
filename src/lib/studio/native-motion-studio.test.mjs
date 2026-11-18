@@ -24,3 +24,12 @@ test("motion studio keeps timeline JSON export available", () => {
   assert.match(source, /aahana-motion-timeline\.json/);
   assert.match(source, /validateMotionTimeline\(timeline\)/);
 });
+
+test("motion studio supports an independently animated text visual layer", () => {
+  assert.match(source, /function addTextLayer\(\)/);
+  assert.match(source, /layerIndex: 1, property: "x"/);
+  assert.match(source, /layerIndex: 1, property: "y"/);
+  assert.match(source, /layerIndex: 1, property: "opacity"/);
+  assert.match(source, /textLayerEnabled && <text/);
+  assert.match(source, /textLayer\.slice\(0, 80\)/);
+});
