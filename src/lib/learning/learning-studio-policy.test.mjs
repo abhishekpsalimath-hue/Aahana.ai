@@ -66,6 +66,8 @@ test("Student Mode starts with a child-led question instead of a compulsory grad
   assert.equal(studio.includes("Array.from({ length: 10"), false);
   assert.equal(studio.includes("<LearningCategoryExplorer"), false);
   assert.equal(studio.includes("<SpaceExplorer"), false);
+  assert.match(studio, /<Interactive3DWorld selectedPlanet=/);
+  assert.match(studio, /<SpaceFunQuiz \/>/);
 });test("learning sessions use the authenticated chat endpoint and persist under learn mode", () => {
   assert.match(studio, /fetch\("\/api\/chat"/);
   assert.match(studio, /mode: "learn"/);
@@ -299,56 +301,21 @@ test("interactive Solar System explorer offers eight selectable worlds, facts, o
 });
 
 
-test("Solar System explorer includes an eight-planet mission, accessible progress, and supportive retry challenges", () => {
-  assert.match(studio, /const \[visited, setVisited\] = useState\(\["earth"\]\)/);
-  assert.match(studio, /const \[solved, setSolved\] = useState\(\[\]\)/);
-  assert.match(studio, /SPACE EXPLORER MISSION/);
-  assert.match(studio, /role="progressbar" aria-label="Planet discoveries completed"/);
-  assert.match(studio, /stars earned/);
-  assert.match(studio, /PLANET SIZE LAB/);
-  assert.match(studio, /Compare its equatorial diameter with Earth/);
-  assert.match(studio, /world\.sizeFactor/);
-  assert.match(studio, /world\.diameter/);
-  assert.match(studio, /DISCOVERY CHALLENGE/);
-  assert.match(studio, /Good exploring—try another answer/);
-  assert.match(studio, /Brilliant discovery! You earned a star/);
-  assert.match(styles, /\.space-mission-progress/);
-  assert.match(styles, /\.space-size-lab/);
-  assert.match(styles, /\.space-mission-challenge/);
-  for (const planet of ["Mercury", "Venus", "Earth", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune"]) {
-    assert.ok(studio.includes('name: "' + planet + '"'), "Missing mission world: " + planet);
-  }
+test("Student Mode removes retired curriculum and mission dashboard sections", () => {
+  for (const label of ["CURRICULUM BUILD PROGRESS", "THE LEARNING UNIVERSE", "PLANET SIZE LAB", "DISCOVERY CHALLENGE", "SPACE EXPLORER MISSION"]) assert.equal(studio.includes(label), false);
+  assert.equal(studio.includes("export function CatalogueCoverage("), false);
+  assert.equal(studio.includes("export function LearningCategoryExplorer("), false);
+  assert.equal(studio.includes("export function SpaceExplorer("), false);
+  assert.equal(studio.includes("export function SolarSystemCurriculum("), false);
 });
 
-test("Learning Studio exposes a broad category-based catalogue and validates every catalogue subject on the server", async () => {
-  const catalogPath = fileURLToPath(new URL("./learning-catalog.js", import.meta.url));
-  const catalog = await import(new URL("./learning-catalog.js", import.meta.url));
-  assert.ok(catalog.learningCategories.length >= 18);
-  for (const category of ["Mathematics", "Natural sciences", "Engineering", "Computing & technology", "Languages & communication", "Humanities & social sciences", "Business & commerce", "Health & wellbeing education", "Agriculture & food systems", "Arts, design & creativity", "Competitive exams", "Vocational & professional skills", "Practical life skills", "Sports & games"]) {
-    assert.ok(catalog.learningCategories.some((item) => item.name === category), "Missing category: " + category);
-  }
-  assert.ok(catalog.allLearningSubjects.includes("Physics"));
-  assert.ok(catalog.allLearningSubjects.includes("Kannada"));
-  assert.ok(catalog.allLearningSubjects.includes("Artificial intelligence"));
-  assert.ok(catalog.allLearningSubjects.includes("UPSC foundation"));
-  assert.ok(studio.includes("export function LearningCategoryExplorer("));
-  assert.equal(studio.includes("<LearningCategoryExplorer"), false);
-  assert.ok(studio.includes("findLearningSubjects(query, 12)"));
-  assert.match(route, /const allowedLearningSubjects = allLearningSubjects/);
-  assert.ok(catalogPath.endsWith("learning-catalog.js"));
+test("Student Mode keeps interactive 3D learning and adds a playable 3D space quiz below it", () => {
+  assert.match(studio, /<Interactive3DWorld selectedPlanet=/);
+  assert.match(studio, /<SpaceFunQuiz \/>/);
+  assert.match(studio, /Launch your planet challenge/);
+  assert.match(studio, /Mini3DModel modelId="solar-system"/);
+  assert.match(studio, /You scored \{score\} out of/);
 });
-
-test("learning universe presents every catalogue category as a selectable destination and supports expanded learner stages", () => {
-  assert.match(studio, /function LearningCategoryExplorer/);
-  assert.match(studio, /Explore every direction/);
-  assert.match(studio, /onChooseCategory/);
-  assert.match(studio, /learning-category-grid/);
-  assert.match(studio, /early-years/);
-  assert.match(studio, /postgraduate/);
-  assert.match(studio, /professional/);
-  assert.match(route, /"early-years", "primary", "middle", "secondary", "higher-secondary", "college", "postgraduate", "professional", "adult", "not-sure"/);
-});
-
 
 test("the interactive 3D model lab remains available as a separately implemented component", () => {
   const worldPath = fileURLToPath(new URL("../../app/learn/interactive-3d-world.jsx", import.meta.url));
@@ -503,16 +470,17 @@ test("home image generation route checks private Cloudflare configuration and va
 });
 
 
-test("learning universe supports cross-category subject discovery and direct subject selection", () => {
-  assert.match(studio, /Find a subject across the learning universe/);
-  assert.match(studio, /Search all learning subjects/);
-  assert.ok(studio.includes("findLearningSubjects(query, 12)"));
-  assert.match(studio, /onChooseCategory\(item\.category, item\.subject\)/);
-  assert.ok(studio.includes("export function LearningCategoryExplorer("));
-  assert.equal(studio.includes("<LearningCategoryExplorer"), false);
-  assert.match(styles, /\.learning-topic-results/);
+test("Assistant home links to a dedicated Creator Studio route instead of embedding it", () => {
+  const workspacePath = fileURLToPath(new URL("../../app/assistant-workspace.jsx", import.meta.url));
+  const workspace = readFileSync(workspacePath, "utf8");
+  assert.match(workspace, /href="\/creator-studio"/);
+  assert.equal(workspace.includes("<CreatorStudio"), false);
+  assert.equal(workspace.includes("learningWorldsOpen"), false);
+  const creatorPagePath = fileURLToPath(new URL("../../app/creator-studio/page.jsx", import.meta.url));
+  const creatorPage = readFileSync(creatorPagePath, "utf8");
+  assert.match(creatorPage, /<CreatorStudio \/>/);
+  assert.match(creatorPage, /supabase\.auth\.getUser/);
 });
-
 
 test("learning catalogue exposes stable, searchable subject records without overstating lesson readiness", async () => {
   const catalog = await import(new URL("./learning-catalog.js", import.meta.url));
