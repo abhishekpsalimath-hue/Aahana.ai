@@ -1,5 +1,6 @@
 import { validateWorkspaceFiles } from "./sandbox-policy.mjs";
 import { validateProposalContracts } from "./proposal-generation-policy.mjs";
+import { createWorkspaceCheckPlan } from "./workspace-check-plan-policy.mjs";
 
 /**
  * Materializes a validated proposal into an in-memory, bounded workspace copy.
@@ -22,11 +23,13 @@ export function prepareIsolatedProposalWorkspace({ currentFiles, proposal } = {}
     proposalChanges: proposal.changes,
   });
   const totalBytes = files.reduce((sum, file) => sum + file.bytes, 0);
+  const checkPlan = createWorkspaceCheckPlan(files);
   return Object.freeze({
     files,
     fileCount: files.length,
     totalBytes,
     contractCheck,
+    checkPlan,
     writesPerformed: false,
     sandboxStarted: false,
   });
