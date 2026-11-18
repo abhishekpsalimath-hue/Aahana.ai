@@ -29,7 +29,7 @@ test("rejects malformed profiles, unbounded outcomes and invalid quiz sizes", ()
   assert.equal(validateLearningQuizProgress({ ...sample, subject: "" }), null);
   assert.equal(validateLearningQuizProgress({ ...sample, outcomes: [] }), null);
   assert.equal(validateLearningQuizProgress({ ...sample, outcomes: Array.from({ length: 101 }, () => sample.outcomes[0]) }), null);
-  assert.equal(validateLearningQuizProgress({ ...sample, outcomes: Array.from({ length: 6 }, (_, i) => ({ conceptId: "q-" + i, correct: true })) }), null);
+  assert.equal(validateLearningQuizProgress({ ...sample, outcomes: Array.from({ length: 11 }, (_, i) => ({ conceptId: "q-" + i, correct: true })) }), null);
 });
 
 test("round-trips only marked and valid quiz progress records", () => {
