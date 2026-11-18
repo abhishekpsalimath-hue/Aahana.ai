@@ -55,18 +55,17 @@ test("permits a new file without exposing an unrelated existing file", () => {
 
 test("rejects a proposal that removes an export still imported by another file", () => {
   const currentFiles = [
-    { path: "src/components/card.ts", content: "export function Card() {}\\nexport function Badge() {}" },
+    { path: "src/components/card.ts", content: "export function Card() {}\nexport function Badge() {}" },
     { path: "src/page.ts", content: 'import { Card, Badge } from "./components/card";' },
   ];
-  const result = validateProposalContracts({
+  assert.throws(() => validateProposalContracts({
     currentFiles,
     proposalChanges: [{
       path: "src/components/card.ts",
       action: "update",
       after: "export function Card() {}",
     }],
-  });
-  assert.fail("Expected contract validation to reject the removed export: " + JSON.stringify(result));
+  }), /broken module export contract/);
 });
 
 test("rejects a newly introduced missing named export and missing local source file", () => {
@@ -87,7 +86,7 @@ test("rejects a newly introduced missing named export and missing local source f
     proposalChanges: [{
       path: "src/page.ts",
       action: "update",
-      after: 'import { ready } from "./lib/utils";\\nimport "./missing-module";',
+      after: 'import { ready } from "./lib/utils";\nimport "./missing-module";',
     }],
   }), /unresolved local source imports/);
 });
