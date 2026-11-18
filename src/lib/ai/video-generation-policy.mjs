@@ -17,13 +17,14 @@ export function isVideoGenerationRequest(value) {
   return false;
 }
 
-export function validateVideoGenerationInput({ prompt, duration = 5, resolution = "hd", generateAudio = true } = {}) {
+export function validateVideoGenerationInput({ prompt, duration = 5, resolution = "hd", aspectRatio = "16:9", generateAudio = true } = {}) {
   const cleanPrompt = typeof prompt === "string" ? prompt.normalize("NFKC").trim() : "";
   if (!cleanPrompt || cleanPrompt.length > 4000) throw new Error("Describe the video in 1–4,000 characters.");
   if (!Number.isInteger(duration) || duration < 5 || duration > 20) throw new Error("Video duration must be between 5 and 20 seconds.");
   if (!["hd", "fhd"].includes(resolution)) throw new Error("Choose HD or Full HD video.");
+  if (!["16:9", "9:16", "1:1"].includes(aspectRatio)) throw new Error("Choose landscape, portrait or square video.");
   if (typeof generateAudio !== "boolean") throw new Error("Audio setting must be true or false.");
-  return Object.freeze({ prompt: cleanPrompt, duration, resolution, generateAudio });
+  return Object.freeze({ prompt: cleanPrompt, duration, resolution, aspectRatio, generateAudio });
 }
 
 export function isTrustedGeneratedVideoUrl(value) {
