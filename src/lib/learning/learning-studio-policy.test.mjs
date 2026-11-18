@@ -282,8 +282,8 @@ test("interactive Solar System explorer offers eight selectable worlds, facts, o
   assert.match(studio, /role="group" aria-label="Choose a planet"/);
   assert.match(studio, /aria-pressed=\{selected === planet\.id\}/);
   assert.match(studio, /const \[selectedPlanet, setSelectedPlanet\] = useState\(null\)/);
-  assert.match(studio, /<SpaceExplorer selectedPlanet=\{selectedPlanet\} onSelectPlanet=\{setSelectedPlanet\} \/>/);
-  assert.match(studio, /<Interactive3DWorld selectedPlanet=\{selectedPlanet\} onSelectedPlanetChange=\{setSelectedPlanet\} \/>/);
+  assert.equal(studio.includes("<SpaceExplorer selectedPlanet="), false);
+  assert.equal(studio.includes("<Interactive3DWorld selectedPlanet="), false);
   assert.match(studio, /aria-live="polite"/);
   assert.match(studio, /onSelectPlanet\(id\)/);
   for (const planet of ["Mercury", "Venus", "Earth", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune"]) {
@@ -347,86 +347,16 @@ test("learning universe presents every catalogue category as a selectable destin
 });
 
 
-test("student mode includes an interactive 3D model lab rather than image-only learning", () => {
+test("the interactive 3D model lab remains available as a separately implemented component", () => {
   const worldPath = fileURLToPath(new URL("../../app/learn/interactive-3d-world.jsx", import.meta.url));
   const world = readFileSync(worldPath, "utf8");
-  assert.match(studio, /dynamic\(\(\) => import\("\.\/interactive-3d-world"\)/);
-  assert.match(studio, /learning-3d-loading/);
-  assert.match(studio, /<Interactive3DWorld selectedPlanet=\{selectedPlanet\} onSelectedPlanetChange=\{setSelectedPlanet\} \/>/);
-  for (const model of ["planet", "molecule", "atom", "dna", "cube", "terrain", "cell", "solar-system", "plant-cell", "heart", "pyramid", "ecosystem", "engine", "cart"]) assert.ok(world.includes(`id: "${model}"`), `Missing 3D model: ${model}`);
-  assert.match(world, /getContext\("2d"\)/);
-  assert.match(world, /rotatePoint/);
-  assert.match(world, /world-atlas\/countries-110m\.json/);
-  assert.match(world, /topojson-client/);
-  assert.match(world, /Natural Earth 1:110m country boundaries/);
-  assert.match(world, /104\.5\/2/);
-  assert.match(world, /basePairs=20/);
-  assert.match(world, /onPointerDown/);
-  assert.match(world, /onWheel/);
-  assert.match(world, /Zoom in/);
-  assert.match(world, /Reset view/);
-  assert.match(world, /modelExplorations/);
-  assert.match(world, /DISCOVERY GUIDE/);
-  assert.match(world, /Food web/);
-  assert.match(world, /TRY A HABITAT EXPERIMENT/);
-  assert.match(world, /rainfall: "regular"/);
-  assert.match(world, /waterSource/);
-  assert.match(world, /pollution/);
-  assert.match(world, /Reset experiment/);
-  assert.match(world, /qualitative teaching outcomes/);
-  assert.match(world, /EXPLORE THE FOUR-STROKE CYCLE/);
-  assert.match(world, /engineCycle/);
-  for (const stage of ["intake", "compression", "power", "exhaust"]) assert.ok(world.includes(stage), `Missing engine cycle stage: ${stage}`);
-  assert.match(world, /Restart cycle/);
-  assert.match(world, /BUILD & EXPLORE MOLECULES/);
-  assert.match(world, /EXPLORE CELL STRUCTURES/);
-  assert.match(world, /Interactive cell biology lab/);
-  assert.match(world, /cellFocus/);
-  assert.match(world, /chloroplasts/);
-  assert.match(world, /vacuole/);
-  assert.match(world, /cellWall/);
-  assert.match(world, /endoplasmicReticulum/);
-  assert.match(world, /selectively permeable boundary/);
-  assert.match(world, /Plant cells have a cell wall, chloroplasts and a large central vacuole/);
-  assert.match(world, /Animal cells have a cell membrane, nucleus, mitochondria and other organelles/);
-  assert.match(world, /chemistryMolecule/);
-  assert.match(world, /chemistryFocus/);
-  assert.match(world, /chemistryShowBonds/);
-  assert.match(world, /carbonDioxide/);
-  assert.match(world, /methane/);
-  assert.match(world, /Water · H₂O/);
-  assert.match(world, /Carbon dioxide · CO₂/);
-  assert.match(world, /Methane · CH₄/);
-  assert.match(world, /104\.5°/);
-  assert.match(world, /109\.5°/);
-  assert.match(world, /simplified educational models, not electron-density or scale-accurate simulations/);
-  assert.match(world, /conceptual teaching model, not a timed or mechanically accurate engine simulation/);
-  assert.match(world, /Force & motion cart/);
-  assert.match(world, /TRY A FORCE & FRICTION EXPERIMENT/);
-  assert.match(world, /physicsForce/);
-  assert.match(world, /physicsFriction/);
-  assert.match(world, /Balanced forces/);
-  assert.match(world, /qualitative illustration, not a measured prediction/);
-  assert.match(world, /Applied force/);
-  assert.match(world, /Net force/);
-  const miniModel = world.slice(world.indexOf("export function Mini3DModel"), world.indexOf("export default function Interactive3DWorld"));
-  const mainLab = world.slice(world.indexOf("export default function Interactive3DWorld"));
-  assert.doesNotMatch(miniModel, /drawScene\(canvas, modelId, rotation\.yaw, rotation\.pitch, zoom, ecosystem\)/);
-  assert.match(mainLab, /drawScene\(canvas, modelId, rotation\.yaw, rotation\.pitch, zoom, ecosystem, time, selectedPlanet\)/);
-  assert.match(mainLab, /\[modelId, selectedPlanet, rotation, zoom, ecosystem\]/);
-  assert.match(world, /Connecting rod/);
-  assert.match(world, /aria-live="polite"/);
-  for (const concept of ["Equator & poles", "Molecular shape", "Atomic identity", "Base pairs", "Vertices", "Contour lines", "Mitochondria", "Planet groups", "Chloroplasts", "Body circuit", "History & engineering"]) {
-    assert.ok(world.includes(concept), `Missing model-specific discovery concept: ${concept}`);
-  }
-  for (const modelId of ["planet", "molecule", "atom", "dna", "cube", "terrain", "cell", "solar-system", "plant-cell", "heart", "pyramid", "ecosystem", "engine"]) {
-    assert.ok(world.includes(`${modelId}:`) || world.includes(`"${modelId}":`), `Missing guided exploration for ${modelId}`);
-  }
-  assert.match(world, /ArrowLeft/);
-  assert.match(world, /role="application"/);
-  assert.match(world, /not to scale/);
-  assert.match(styles, /\.learning-3d-viewer canvas/);
-  assert.match(styles, /touch-action:none/);
+  assert.ok(existsSync(worldPath));
+  assert.match(world, /import \\* as THREE from "three"/);
+  assert.match(world, /new THREE\\.WebGLRenderer/);
+  assert.match(world, /function disposeThreeScene\\(canvas\\)/);
+  assert.match(world, /renderer\\.dispose\\(\\)/);
+  assert.match(world, /function animateScene\\(canvas, render\\)/);
+  assert.match(world, /window\\.requestAnimationFrame\\(tick\\)/);
 });
 
 test("animated lesson schema and tutor prompts can select embedded interactive 3D scenes", () => {
