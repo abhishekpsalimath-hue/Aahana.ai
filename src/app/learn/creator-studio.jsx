@@ -13,6 +13,8 @@ import NativeImageStudio from "./native-image-studio";
 import NativeMotionStudio from "./native-motion-studio";
 import Native3DStudio from "./native-3d-studio";
 import CreatorCloudAssets from "./creator-cloud-assets";
+import { addStudioAsset, createStudioProject, validateStudioProject } from "@/lib/studio/project-engine.mjs";
+import { createCreatorWorkspaceDocument, readCreatorWorkspaceDocument } from "@/lib/learning/creator-workspace-model.mjs";
 
 const visualLabels = {
   diagram: "2D diagram",
@@ -28,6 +30,7 @@ export default function CreatorStudio() {
   const [preview, setPreview] = useState(false);
   const [userId, setUserId] = useState(null);
   const [cloudProjectId, setCloudProjectId] = useState(null);
+  const [studioProject, setStudioProject] = useState(null);
   const [cloudReady, setCloudReady] = useState(false);
   const [syncStatus, setSyncStatus] = useState("Connecting to your private workspace…");
 
@@ -51,11 +54,12 @@ export default function CreatorStudio() {
         if (error) throw error;
 
         if (data) {
-          const restored = validateCreatorDraft(data.document);
-          if (restored) {
-            setDraft(restored);
+          const workspace = readCreatorWorkspaceDocument(data.document);
+          if (workspace) {
+            setDraft(workspace.draft);
+            setStudioProject(workspace.project || null);
             setCloudProjectId(data.project_id);
-            window.localStorage.setItem(CREATOR_DRAFT_STORAGE_KEY, JSON.stringify(restored));
+            window.localStorage.setItem(CREATOR_DRAFT_STORAGE_KEY, JSON.stringify(workspace.draft));
             setSyncStatus("Cloud project restored on this device.");
           } else {
             setSyncStatus("A cloud draft needs recovery. Your local backup is still available.");
@@ -108,12 +112,13 @@ export default function CreatorStudio() {
         setSyncStatus(projectError.message || "Cloud autosave failed. Export a backup before leaving.");
         return;
       }
+      const workspace = createCreatorWorkspaceDocument(valid, cloudProjectId, studioProject);
       const { error } = await supabase
         .from("creator_workspace_documents")
         .upsert({
           project_id: cloudProjectId,
           user_id: userId,
-          document: valid,
+          document: workspace,
           schema_version: 1,
           updated_at: updatedAt,
         }, { onConflict: "project_id" });
@@ -125,7 +130,7 @@ export default function CreatorStudio() {
       setSyncStatus("All changes saved to your private cloud workspace.");
     }, 1200);
     return () => window.clearTimeout(timer);
-  }, [draft, cloudProjectId, cloudReady, userId]);
+  }, [draft, cloudProjectId, cloudReady, userId, studioProject]);
 
   const sceneCount = draft.scenes.length;
   const activeSummary = useMemo(() => draft.scenes.map((scene, index) => `${index + 1}. ${scene.title}`).join(" · "), [draft.scenes]);
@@ -197,12 +202,13 @@ export default function CreatorStudio() {
         if (projectError) throw projectError;
       }
 
+      const workspace = createCreatorWorkspaceDocument(valid, projectId, studioProject);
       const { error } = await supabase
         .from("creator_workspace_documents")
         .upsert({
           project_id: projectId,
           user_id: user.id,
-          document: valid,
+          document: workspace,
           schema_version: 1,
           updated_at: new Date().toISOString(),
         }, { onConflict: "project_id" });
@@ -210,6 +216,7 @@ export default function CreatorStudio() {
 
       setUserId(user.id);
       setCloudProjectId(projectId);
+      setStudioProject(workspace.project);
       setDraft(valid);
       window.localStorage.setItem(CREATOR_DRAFT_STORAGE_KEY, JSON.stringify(valid));
       setSaved(true);
@@ -237,9 +244,45 @@ export default function CreatorStudio() {
     }
   }
 
+  function handleAssetUploaded(asset) {
+    if (!cloudProjectId) return;
+    const mime = String(asset.mime_type || "").toLowerCase();
+    const filename = String(asset.original_filename || "").toLowerCase();
+    const kind = mime.startsWith("image/") ? "image"
+      : mime.startsWith("audio/") ? "audio"
+        : mime.startsWith("video/") ? "video"
+          : mime.startsWith("font/") ? "font"
+            : (mime.includes("gltf") || filename.endsWith(".glb") || filename.endsWith(".gltf")) ? "model-3d" : "other";
+    setStudioProject((current) => {
+      const base = validateStudioProject(current) || createStudioProject({ id: cloudProjectId, title: draft.title });
+      return addStudioAsset(base, {
+        id: asset.id,
+        kind,
+        name: asset.original_filename,
+        mimeType: asset.mime_type || "application/octet-stream",
+        size: Number(asset.size_bytes) || 0,
+        storageKey: `${asset.bucket_id}/${asset.object_path}`,
+        createdAt: asset.created_at || new Date().toISOString(),
+      }) || base;
+    });
+  }
+
+  function handleAssetDeleted(asset) {
+    if (!cloudProjectId || !asset?.id) return;
+    setStudioProject((current) => {
+      if (!current) return current;
+      return validateStudioProject({
+        ...current,
+        assets: current.assets.filter((item) => item.id !== asset.id),
+        updatedAt: new Date().toISOString(),
+      }) || current;
+    });
+  }
+
   function startFresh() {
     setDraft(createCreatorDraft());
     setCloudProjectId(null);
+    setStudioProject(null);
     setSaved(false);
     setPreview(false);
     setSyncStatus("New draft. Save it to create a separate cloud project.");
@@ -251,7 +294,7 @@ export default function CreatorStudio() {
       <NativeImageStudio />
       <NativeMotionStudio />
       <Native3DStudio />
-      <CreatorCloudAssets />
+      <CreatorCloudAssets projectId={cloudProjectId} onAssetUploaded={handleAssetUploaded} onAssetDeleted={handleAssetDeleted} />
       <section className="creator-studio" aria-label="Aahana Creator Studio">
         <div className="creator-studio-heading">
           <div><span>MAKE SOMETHING WORTH DISCOVERING</span><h2>Creator Studio</h2><p>Build a lesson as a sequence of ideas, visuals and learner moments.</p><p className="creator-sync-status" role="status">{syncStatus}</p></div>
