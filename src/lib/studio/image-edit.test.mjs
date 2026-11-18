@@ -14,8 +14,8 @@ test("offers explicit image-to-image styles and user edit constraints", () => {
   assert.deepEqual(IMAGE_EDIT_STYLES.map((style) => style.id), ["cartoon", "anime", "comic", "3d-animation", "watercolor"]);
   const prompt = buildImageEditPrompt("cartoon", { change: "make the background a watercolor landscape", preserve: "keep the same jacket" });
   assert.match(prompt, /retain every original person/);
-  assert.match(prompt, /full-frame image transformation/);
-  assert.match(prompt, /not a sticker/);
+  assert.match(prompt, /complete content and composition/);
+  assert.match(prompt, /create a sticker/);
   assert.match(prompt, /input_image_0/);
   assert.match(prompt, /USER-REQUESTED CHANGE: make the background a watercolor landscape/);
   assert.match(prompt, /USER-REQUESTED PRESERVATION: keep the same jacket/);
@@ -30,7 +30,7 @@ test("all photo styles demand a cohesive full-frame edit instead of a replacemen
     assert.match(prompt, /complete source photograph/);
     assert.match(prompt, /entire image, edge to edge/);
     assert.match(prompt, /same overall photograph/);
-    assert.match(prompt, /Do not: create a sticker/);
+    assert.match(prompt, /DO NOT: create a sticker/);
     assert.match(prompt, /preserve the source content and composition/);
   }
   assert.match(buildImageEditPrompt("cartoon"), /Cartoonise the people, objects and background together/);
