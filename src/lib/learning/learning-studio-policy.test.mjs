@@ -643,7 +643,7 @@ test("Student Mode now offers category, topic and all six learning modes from th
   assert.match(studio, /learningCategories\.map\(\(item\)/);
   assert.match(studio, /learningModes\.map\(\(mode\)/);
   assert.match(studio, /Play a 10-question challenge/);
-  assert.match(studio, /Explore \{subject\}/);
+  assert.match(studio, /Begin my/);
   assert.match(quizBankPolicy, /value\.questions\.length > maxQuestions/);
   assert.match(route, /exactly 10 fresh multiple-choice questions by default/);
   assert.match(route, /10 by default; 15 or 20 only when explicitly requested/);
@@ -674,7 +674,7 @@ test("Student Mode motion lessons receive layered VFX while respecting reduced-m
 
 test("Student Mode invites open-ended topic discovery beyond its suggested catalogue", () => {
   assert.match(studio, /Search or ask Aahana about any topic/);
-  assert.match(studio, /Explore beyond a fixed subject list/);
+  assert.match(studio, /Begin my/);
   assert.match(route, /OPEN-ENDED STUDENT DISCOVERY/);
   assert.match(route, /Treat the catalogue as suggestions, never a boundary/);
 });
