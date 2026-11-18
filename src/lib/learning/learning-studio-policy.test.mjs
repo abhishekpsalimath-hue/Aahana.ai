@@ -168,7 +168,7 @@ test("non-quiz learning modes request a validated structured animated lesson", (
   assert.match(animated, /Try the interactive lesson again/);
   assert.match(studio, /Building your interactive lesson/);
   assert.ok(studio.includes("startLearning(null, previousQuestion, false, item.profile"));
-  assert.match(route, /visual \(exactly one of fraction, orbit, water-cycle, plant-growth, number-line, molecule, concept-map, timeline, bar-chart, anatomy, circuit, code-flow, sound-wave, map, 3d-solar-system, 3d-planet, 3d-molecule, 3d-atom, 3d-dna, 3d-geometry, 3d-terrain, 3d-plant-cell, 3d-heart, 3d-pyramid, 3d-ecosystem, 3d-engine\)/);
+  assert.match(route, /visual \(exactly one of fraction, orbit, water-cycle, plant-growth, number-line, molecule, concept-map, timeline, bar-chart, anatomy, circuit, code-flow, sound-wave, map, 3d-solar-system, 3d-planet, 3d-molecule, 3d-atom, 3d-dna, 3d-geometry, 3d-terrain, 3d-plant-cell, 3d-heart, 3d-pyramid, 3d-ecosystem, 3d-engine, 3d-cart, 3d-bridge\)/);
   assert.match(route, /3 to 5 scenes/);
   assert.match(route, /Each challenge must contain question, exactly 3 unique options/);
   assert.match(route, /visualData with label/);
