@@ -556,7 +556,7 @@ test("Build Mode loads only owner-scoped text files from the selected private pr
   assert.match(sourceLoader, /mode === "build" && projectId/);
   assert.match(sourceLoader, /\.eq\("user_id", user\.id\)/);
   assert.match(sourceLoader, /\.eq\("project_id", projectId\)/);
-  assert.match(sourceLoader, /\.in\("mime_type", \["text\/plain", "text\/markdown", "text\/csv"\]\)/);
+  assert.ok(sourceLoader.includes('["text/plain", "text/markdown", "text/csv"].includes(file.mime_type)'));
   assert.match(sourceLoader, /file\.bucket_id !== "aahana-private"/);
   assert.match(sourceLoader, /file\.object_path\.startsWith\(\x60\$\{user\.id\}\/\$\{projectId\}\/\x60\)/);
   assert.match(sourceLoader, /\.limit\(8\)/);
