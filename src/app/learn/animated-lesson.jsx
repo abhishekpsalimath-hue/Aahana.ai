@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Mini3DModel } from "./interactive-3d-world";
 
-const visualTypes = new Set(["counter-board", "shape-explorer", "pattern-builder", "fraction", "orbit", "water-cycle", "plant-growth", "number-line", "molecule", "concept-map", "timeline", "bar-chart", "anatomy", "circuit", "code-flow", "sound-wave", "map", "3d-solar-system", "3d-planet", "3d-molecule", "3d-atom", "3d-dna", "3d-geometry", "3d-terrain", "3d-plant-cell", "3d-heart", "3d-pyramid", "3d-ecosystem", "3d-engine", "3d-cart"]);
+const visualTypes = new Set(["counter-board", "shape-explorer", "pattern-builder", "fraction", "orbit", "water-cycle", "plant-growth", "number-line", "molecule", "concept-map", "timeline", "bar-chart", "anatomy", "circuit", "code-flow", "sound-wave", "map", "3d-solar-system", "3d-planet", "3d-molecule", "3d-atom", "3d-dna", "3d-geometry", "3d-terrain", "3d-plant-cell", "3d-heart", "3d-pyramid", "3d-ecosystem", "3d-engine", "3d-cart", "3d-bridge"]);
 
 function validVisualData(data) {
   return typeof data?.label === "string" && data.label.trim() && data.label.length <= 90 &&
@@ -161,7 +161,7 @@ export function AnimatedVisual({ visual, paused = false }) {
   if (visual === "shape-explorer") return <InteractiveShapeExplorer paused={paused} />;
   if (visual === "pattern-builder") return <InteractivePatternBuilder />;
   const cls = paused ? "motion-art paused" : "motion-art";
-  const model3d = { "3d-solar-system": "solar-system", "3d-planet": "planet", "3d-molecule": "molecule", "3d-atom": "atom", "3d-dna": "dna", "3d-geometry": "cube", "3d-terrain": "terrain", "3d-plant-cell": "plant-cell", "3d-heart": "heart", "3d-pyramid": "pyramid", "3d-ecosystem": "ecosystem", "3d-engine": "engine", "3d-cart": "cart" }[visual];
+  const model3d = { "3d-solar-system": "solar-system", "3d-planet": "planet", "3d-molecule": "molecule", "3d-atom": "atom", "3d-dna": "dna", "3d-geometry": "cube", "3d-terrain": "terrain", "3d-plant-cell": "plant-cell", "3d-heart": "heart", "3d-pyramid": "pyramid", "3d-ecosystem": "ecosystem", "3d-engine": "engine", "3d-cart": "cart", "3d-bridge": "bridge" }[visual];
   if (model3d) return <Mini3DModel modelId={model3d} />;
   if (visual === "fraction") return <svg className={cls} viewBox="0 0 320 170" role="img" aria-label="A circle divided into equal fraction parts"><circle cx="160" cy="82" r="58" fill="#211b2d" stroke="#bda4f3" strokeWidth="3"/><path d="M160 24 A58 58 0 0 1 218 82 L160 82Z" fill="#c7a9f5" className="motion-piece"/><path d="M218 82 A58 58 0 0 1 160 140 L160 82Z" fill="#8e75c2"/><path d="M160 140 A58 58 0 0 1 102 82 L160 82Z" fill="#5f4b83"/><path d="M102 82 A58 58 0 0 1 160 24 L160 82Z" fill="#3e3157"/><path d="M160 24V140M102 82H218" stroke="#eee5ff" strokeWidth="2"/><text x="160" y="160" textAnchor="middle" fill="#e8ddfa" fontSize="11">4 equal parts</text></svg>;
   if (visual === "orbit") return <svg className={cls} viewBox="0 0 320 170" role="img" aria-label="A planet moving around a star"><ellipse cx="160" cy="84" rx="112" ry="48" fill="none" stroke="#9b86c5" strokeDasharray="5 5" strokeWidth="2"/><circle cx="160" cy="84" r="22" fill="#f3c76b" className="motion-sun"/><circle cx="272" cy="84" r="9" fill="#83c8ed" className="motion-orbit"/><circle cx="272" cy="84" r="3" fill="#d8f3ff"/><text x="160" y="130" textAnchor="middle" fill="#e8ddfa" fontSize="11">Gravity keeps the orbit curved</text></svg>;
