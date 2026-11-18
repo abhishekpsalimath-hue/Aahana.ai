@@ -54,7 +54,7 @@ export default function NativeImageStudio() {
   }
   function chooseReferenceImage(file) {
     if (!file) { setReferenceImage(null); return; }
-    if (!/^image\\/(png|jpeg|webp)$/.test(file.type) || file.size > 8 * 1024 * 1024) {
+    if (!/^image\/(png|jpeg|webp)$/.test(file.type) || file.size > 8 * 1024 * 1024) {
       setStatus("Choose a PNG, JPEG or WebP image smaller than 8 MB.");
       return;
     }
