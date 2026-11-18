@@ -268,11 +268,10 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [memoryLoading, setMemoryLoading] = useState(false);
   const [memoryBusy, setMemoryBusy] = useState(false);
   const [memoryError, setMemoryError] = useState("");
-  const [voiceLanguage, setVoiceLanguage] = useState("en-IN");
-  const [autoSpeak, setAutoSpeak] = useState(true);
+  const [voiceLanguage] = useState("en-IN");
+  const [autoSpeak] = useState(false);
   const [listening, setListening] = useState(false);
   const [speakingMessage, setSpeakingMessage] = useState(null);
-  const [voicePreferencesLoaded, setVoicePreferencesLoaded] = useState(false);
   const [speechVoices, setSpeechVoices] = useState([]);
   const [speechInputAvailable, setSpeechInputAvailable] = useState(false);
   const [voiceProviderCapabilities, setVoiceProviderCapabilities] = useState(null);
@@ -319,40 +318,6 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     window.speechSynthesis?.addEventListener?.("voiceschanged", refreshCapabilities);
     return () => window.speechSynthesis?.removeEventListener?.("voiceschanged", refreshCapabilities);
   }, []);
-
-  // Keep voice choices on this device. This is a convenience preference only;
-  // it does not imply that the browser has a speech model for the selected locale.
-  useEffect(() => {
-    try {
-      const saved = window.localStorage.getItem("aahana:voice-preferences:v1");
-      if (saved) {
-        const preferences = JSON.parse(saved);
-        if (typeof preferences?.voiceLanguage === "string"
-          && voiceLanguages.some(([code]) => code === preferences.voiceLanguage)) {
-          setVoiceLanguage(preferences.voiceLanguage);
-        }
-        if (typeof preferences?.autoSpeak === "boolean") {
-          setAutoSpeak(preferences.autoSpeak);
-        }
-      }
-    } catch {
-      // Ignore unavailable or malformed local preferences and keep safe defaults.
-    } finally {
-      setVoicePreferencesLoaded(true);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!voicePreferencesLoaded) return;
-    try {
-      window.localStorage.setItem("aahana:voice-preferences:v1", JSON.stringify({
-        voiceLanguage,
-        autoSpeak,
-      }));
-    } catch {
-      // Voice preferences remain usable for this session if storage is unavailable.
-    }
-  }, [voiceLanguage, autoSpeak, voicePreferencesLoaded]);
 
   function startVoiceInput() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -1320,34 +1285,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
               </div>
             )}
             <div className="image-attach-row">
-              <select aria-label="Voice input language" value={voiceLanguage} onChange={(event) => setVoiceLanguage(event.target.value)} className="copy-message">{voiceLanguages.map(([code, label]) => {
-                const privateRecognition = voiceProviderCapabilities?.recognition?.enabled && voiceProviderCapabilities.recognition.supportedLocales.some((locale) => locale.toLowerCase() === code.toLowerCase());
-                const privateSynthesis = voiceProviderCapabilities?.synthesis?.enabled && voiceProviderCapabilities.synthesis.supportedLocales.some((locale) => locale.toLowerCase() === code.toLowerCase());
-                const deviceVoice = findBestSpeechVoice(speechVoices, code);
-                const suffix = privateRecognition && privateSynthesis ? " · Private two-way"
-                  : privateRecognition ? " · Private input"
-                  : privateSynthesis ? " · Private speech"
-                  : deviceVoice ? " · Device speech"
-                  : "";
-                return <option key={code} value={code}>{label}{suffix}</option>;
-              })}</select>
               <button className="copy-message" type="button" onClick={startVoiceInput} disabled={listening || busy}>{listening ? "Listening…" : "Speak"}</button>
-              <button className="copy-message" type="button" onClick={providerRecording ? stopProviderRecording : startProviderRecording} disabled={busy || providerTranscribing || listening}>
-                {providerRecording ? `Stop recording · ${providerSeconds}s / 60s` : providerTranscribing ? "Transcribing…" : "Private voice"}
-              </button>
-              <label className="copy-message" style={{display:"inline-flex",alignItems:"center",gap:6}}>
-                <input type="checkbox" checked={voiceConsent} onChange={(event) => setVoiceConsent(event.target.checked)} disabled={providerRecording || providerTranscribing} />
-                Allow this recording to be sent to Aahana's configured private speech service
-              </label>
-              <span className="voice-capability-note" role="status">
-                Private input: {voiceProviderCapabilities?.recognition?.enabled ? (voiceProviderCapabilities.recognition.supportedLocales.some((locale) => locale.toLowerCase() === voiceLanguage.toLowerCase()) ? "available for selected language" : "not enabled for selected language") : "not configured"} ·
-                Private speech: {voiceProviderCapabilities?.synthesis?.enabled ? (voiceProviderCapabilities.synthesis.supportedLocales.some((locale) => locale.toLowerCase() === voiceLanguage.toLowerCase()) ? "available for selected language" : "not enabled for selected language") : "not configured"} ·
-                Device speech: {findBestSpeechVoice(speechVoices, voiceLanguage) ? "voice installed" : speechInputAvailable ? "language coverage unknown" : "unavailable"}
-              </span>
-              <label className="copy-message" style={{display:"inline-flex",alignItems:"center",gap:6}}>
-                <input type="checkbox" checked={autoSpeak} onChange={(event) => setAutoSpeak(event.target.checked)} />
-                Auto-read replies (text stays visible)
-              </label>
               <label className="image-attach">
                 + Add image
                 <input id="image-upload" type="file" accept="image/png,image/jpeg,image/webp" disabled={busy}
