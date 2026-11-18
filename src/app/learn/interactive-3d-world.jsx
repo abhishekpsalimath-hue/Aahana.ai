@@ -455,7 +455,8 @@ function createThreeScene(canvas,id,selectedPlanet=null,heartFlow="body",labStat
   const group = new THREE.Group();
   scene.add(group);
   makeSceneModel(group, id, selectedPlanet, heartFlow, labState);
-  const labModelKey = id === "molecule" ? JSON.stringify([labState.chemistryMolecule, labState.chemistryFocus, labState.chemistryShowBonds]) : (id === "cell" || id === "plant-cell") ? String(labState.cellFocus || "all") : id === "heart" ? String(heartFlow) : "";\n  const state = { renderer, scene, camera, group, id, selectedPlanet, heartFlow, labModelKey, stars, width: 0, height: 0 };
+  const labModelKey = id === "molecule" ? JSON.stringify([labState.chemistryMolecule, labState.chemistryFocus, labState.chemistryShowBonds]) : (id === "cell" || id === "plant-cell") ? String(labState.cellFocus || "all") : id === "heart" ? String(heartFlow) : "";
+  const state = { renderer, scene, camera, group, id, selectedPlanet, heartFlow, labModelKey, stars, width: 0, height: 0 };
   threeScenes.set(canvas,state);return state;
 }
 function clearSceneGroup(group) {
@@ -489,7 +490,8 @@ function renderThreeScene(canvas, id, yaw, pitch, zoom, time = 0, selectedPlanet
     state.id = id;
     state.selectedPlanet = selectedPlanet;
     state.heartFlow = heartFlow;
-    makeSceneModel(state.group, id, selectedPlanet, heartFlow);
+    state.labModelKey = labModelKey;
+    makeSceneModel(state.group, id, selectedPlanet, heartFlow, labState);
   }
 
   const rect = canvas.getBoundingClientRect();
