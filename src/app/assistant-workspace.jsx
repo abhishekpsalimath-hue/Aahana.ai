@@ -178,6 +178,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [memoryBusy, setMemoryBusy] = useState(false);
   const [memoryError, setMemoryError] = useState("");
   const [voiceLanguage, setVoiceLanguage] = useState("en-IN");
+  const [speechRate, setSpeechRate] = useState(1);
   const [autoSpeak, setAutoSpeak] = useState(true);
   const [listening, setListening] = useState(false);
   const [speakingMessage, setSpeakingMessage] = useState(null);
@@ -240,6 +241,9 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
           && voiceLanguages.some(([code]) => code === preferences.voiceLanguage)) {
           setVoiceLanguage(preferences.voiceLanguage);
         }
+        if ([0.8, 1, 1.2, 1.5].includes(preferences?.speechRate)) {
+          setSpeechRate(preferences.speechRate);
+        }
         if (typeof preferences?.autoSpeak === "boolean") {
           setAutoSpeak(preferences.autoSpeak);
         }
@@ -256,12 +260,17 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     try {
       window.localStorage.setItem("aahana:voice-preferences:v1", JSON.stringify({
         voiceLanguage,
+        speechRate,
         autoSpeak,
       }));
     } catch {
       // Voice preferences remain usable for this session if storage is unavailable.
     }
-  }, [voiceLanguage, autoSpeak, voicePreferencesLoaded]);
+  }, [voiceLanguage, speechRate, autoSpeak, voicePreferencesLoaded]);
+
+  useEffect(() => {
+    if (audioPlaybackRef.current) audioPlaybackRef.current.playbackRate = speechRate;
+  }, [speechRate]);
 
   function startVoiceInput() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -421,6 +430,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         const objectUrl = URL.createObjectURL(audioBlob);
         audioObjectUrlRef.current = objectUrl;
         const audio = new Audio(objectUrl);
+        audio.playbackRate = speechRate;
         audioPlaybackRef.current = audio;
         audio.onended = () => {
           if (audioObjectUrlRef.current === objectUrl) {
@@ -473,6 +483,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     const utterance = new SpeechSynthesisUtterance(spokenText);
     utterance.lang = speechLanguage;
     utterance.voice = matchingVoice;
+    utterance.rate = speechRate;
     utterance.onend = () => setSpeakingMessage(null);
     utterance.onerror = () => setSpeakingMessage(null);
     window.speechSynthesis.speak(utterance);
@@ -1222,7 +1233,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
               </div>
             )}
             <div className="image-attach-row">
-              <select aria-label="Voice input language" value={voiceLanguage} onChange={(event) => setVoiceLanguage(event.target.value)} className="copy-message">{voiceLanguages.map(([code, label]) => {
+              <select aria-label="Voice language" value={voiceLanguage} onChange={(event) => setVoiceLanguage(event.target.value)} className="copy-message">{voiceLanguages.map(([code, label]) => {
                 const privateRecognition = voiceProviderCapabilities?.recognition?.enabled && voiceProviderCapabilities.recognition.supportedLocales.some((locale) => locale.toLowerCase() === code.toLowerCase());
                 const privateSynthesis = voiceProviderCapabilities?.synthesis?.enabled && voiceProviderCapabilities.synthesis.supportedLocales.some((locale) => locale.toLowerCase() === code.toLowerCase());
                 const deviceVoice = findBestSpeechVoice(speechVoices, code);
@@ -1233,6 +1244,9 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                   : "";
                 return <option key={code} value={code}>{label}{suffix}</option>;
               })}</select>
+              <select aria-label="Voice playback speed" value={String(speechRate)} onChange={(event) => setSpeechRate(Number(event.target.value))} className="copy-message">
+                <option value="0.8">0.8× speed</option><option value="1">1× speed</option><option value="1.2">1.2× speed</option><option value="1.5">1.5× speed</option>
+              </select>
               <button className="copy-message" type="button" onClick={startVoiceInput} disabled={listening || busy}>{listening ? "Listening…" : "Speak"}</button>
               <button className="copy-message" type="button" onClick={providerRecording ? stopProviderRecording : startProviderRecording} disabled={busy || providerTranscribing || listening}>
                 {providerRecording ? `Stop recording · ${providerSeconds}s / 60s` : providerTranscribing ? "Transcribing…" : "Private voice"}
