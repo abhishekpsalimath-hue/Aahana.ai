@@ -5,6 +5,21 @@ const MAX_CHANGES = 50;
 const MAX_FILE_BYTES = 1 * 1024 * 1024;
 const MAX_TOTAL_BYTES = 3 * 1024 * 1024;
 const MAX_DIFF_CHARS = 12_000;
+const ALLOWED_EXTENSIONS = new Set([
+  "js", "jsx", "ts", "tsx", "mjs", "cjs", "css", "html", "htm",
+  "json", "md", "txt", "py", "toml", "yaml", "yml", "sql", "sh", "xml", "svg",
+]);
+const SENSITIVE_FILE_NAME = /(?:^|[._-])(?:credentials?|secrets?|service[-_.]?account|id_rsa|id_ed25519|private[-_.]?key)(?:[._-]|$)|\\.(?:pem|key|p12|pfx|crt|cer)$/i;
+
+function validateProposalPath(input) {
+  const path = validateWorkspacePath(input);
+  const filename = path.split("/").at(-1);
+  const extension = filename.includes(".") ? filename.split(".").at(-1).toLowerCase() : "";
+  if (!ALLOWED_EXTENSIONS.has(extension) || SENSITIVE_FILE_NAME.test(filename)) {
+    throw new Error("Only supported source and configuration files may be included in a proposal.");
+  }
+  return path;
+}
 
 function sha256(value) {
   return createHash("sha256").update(value, "utf8").digest("hex");
@@ -61,7 +76,7 @@ export function validateChangeProposal({ currentFiles, changes } = {}) {
 
   const current = new Map();
   for (const file of currentFiles) {
-    const path = validateWorkspacePath(file?.path);
+    const path = validateProposalPath(file?.path);
     if (current.has(path)) throw new Error("The project snapshot contains duplicate paths.");
     const bytes = validateSourceText(file?.content, "Current file content");
     current.set(path, { content: file.content, sha256: sha256(file.content), bytes });
@@ -70,7 +85,7 @@ export function validateChangeProposal({ currentFiles, changes } = {}) {
   const seen = new Set();
   let totalBytes = 0;
   const validated = changes.map((change) => {
-    const path = validateWorkspacePath(change?.path);
+    const path = validateProposalPath(change?.path);
     if (seen.has(path)) throw new Error("A proposal cannot change the same path more than once.");
     seen.add(path);
 
