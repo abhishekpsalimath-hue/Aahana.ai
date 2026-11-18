@@ -128,17 +128,18 @@ test("all learning modes receive animation-first visual teaching and non-shaming
   assert.match(route, /give one gentle clue or a simpler visual example/);
 });
 
-test("quiz mistakes invite a gentle clue and another attempt without negative labels", () => {
+test("quiz answers reveal a left-side visual for both correct and incorrect selections", () => {
   assert.match(route, /hint \(string\)/);
   assert.match(studio, /typeof item\.hint === "string" && item\.hint\.trim\(\)/);
-  assert.match(studio, /item\.visual/);
+  assert.match(studio, /supportedQuizVisuals\.includes\(item\.visual\)/);
+  assert.match(studio, /selectedOptions/);
+  assert.match(studio, /className="learning-quiz-visual-box"/);
+  assert.match(studio, /Your visual appears here/);
   assert.match(studio, /<AnimatedVisual visual=\{item\.visual\} \/>/);
-  assert.match(studio, /Good exploring!/);
-  assert.match(studio, /Here's a little clue:/);
-  assert.match(studio, /I'll try again/);
+  assert.match(studio, /Try another answer/);
+  assert.match(studio, /Not quite—and that’s okay/);
   assert.match(studio, /You figured it out!/);
-  assert.doesNotMatch(studio, /Not quite\./);
-  assert.doesNotMatch(studio, /className=.*incorrect/);
+  assert.match(studio, /className="learning-quiz-question-layout"/);
 });
 
 test("learning motion respects reduced-motion accessibility preferences", () => {
@@ -593,4 +594,23 @@ test("Build Mode ranks relevant project filenames before recent unrelated files 
   assert.ok(selected.some((file) => file.id === "tests"));
   assert.equal(selectRelevantProjectFiles("unmatched prompt", files, 8)[0].id, "recent");
   assert.equal(selectRelevantProjectFiles("checkout", files, 100).length, 8);
+});
+
+
+test("Student Mode quiz generation scales across open-ended topics with 3D-first visuals where useful", () => {
+  assert.match(route, /1,000\+ quiz sets/);
+  assert.match(route, /open-ended subjects/);
+  assert.match(route, /create new questions and vary the concepts/);
+  assert.match(route, /Prefer a relevant 3D visual/);
+  assert.match(studio, /3d-plant-cell/);
+  assert.match(studio, /3d-heart/);
+  assert.match(studio, /3d-ecosystem/);
+});
+
+test("Student Mode motion lessons receive layered VFX while respecting reduced-motion settings", () => {
+  assert.match(styles, /motion-light-sweep/);
+  assert.match(styles, /motion-stage-arrive/);
+  assert.match(styles, /motion-art-arrive/);
+  assert.match(styles, /quiz-visual-aura/);
+  assert.match(styles, /prefers-reduced-motion:reduce/);
 });
