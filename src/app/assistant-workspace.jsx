@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { findBestSpeechVoice } from "@/lib/voice/browser-capabilities.mjs";
 import { inferSpeechLocale } from "@/lib/voice/locale-detection.mjs";
 import { shouldFallbackToDeviceSpeech } from "@/lib/voice/speech-fallback-policy.mjs";
-import { isImageGenerationRequest } from "@/lib/ai/image-intent-policy.mjs";
+import { isImageEditRequest, isImageGenerationRequest } from "@/lib/ai/image-intent-policy.mjs";
 
 const modes = [
   { id: "solve", label: "Solve", hint: "Work through a problem" },
@@ -872,20 +872,31 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     const text = prompt.trim();
     if ((!text && !imageFile) || busy || imageGenerating) return;
 
-    if (isImageGenerationRequest(text)) {
+    const imageEditRequest = Boolean(imageFile && isImageEditRequest(text));
+    const imageCreateRequest = !imageFile && isImageGenerationRequest(text);
+    if (imageEditRequest || imageCreateRequest) {
       setPrompt("");
       setError("");
       setGeneratedImage(null);
       setImageGenerating(true);
       setMessages((current) => [...current,
-        { role: "user", content: text },
-        { role: "assistant", content: "Creating your image…" },
+        { role: "user", content: imageEditRequest ? `${text} [Image attached: ${imageFile.name}]` : text },
+        { role: "assistant", content: imageEditRequest ? "Editing your image…" : "Creating your image…" },
       ]);
       try {
+        let inputImage = null;
+        if (imageEditRequest) {
+          inputImage = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => typeof reader.result === "string" ? resolve(reader.result) : reject(new Error("Could not read the attached image."));
+            reader.onerror = () => reject(new Error("Could not read the attached image."));
+            reader.readAsDataURL(imageFile);
+          });
+        }
         const response = await fetch("/api/images/generate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt: text }),
+          body: JSON.stringify({ prompt: text, ...(inputImage ? { inputImage } : {}) }),
         });
         const result = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(result.error || "Could not generate the image.");
@@ -895,11 +906,12 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         setMessages((current) => current.map((item, index) =>
           index === current.length - 1 ? {
             ...item,
-            content: "Your image is ready.",
+            content: imageEditRequest ? "Your edited image is ready." : "Your image is ready.",
             imageDataUrl: result.imageDataUrl,
             imagePrompt: text,
           } : item
         ));
+        if (imageEditRequest) setImageFile(null);
       } catch (err) {
         setMessages((current) => current.map((item, index) =>
           index === current.length - 1 ? { ...item, content: err.message || "I couldn't generate that image." } : item
