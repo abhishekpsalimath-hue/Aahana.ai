@@ -13,7 +13,7 @@ test("accepts ordinary relative project paths", () => {
 });
 
 test("rejects traversal, absolute paths and Windows separators", () => {
-  for (const path of ["../.env", "src/../../secret", "/etc/passwd", "C:\\secret", "src\\file.js"]) {
+  for (const path of ["../.env", "src/../../secret", "/etc/passwd", "C:\\secret", "src\\file.js", "src/\u0000file.js", "src/\u001b[31mfile.js", "src/\u202efile.js"]) {
     assert.throws(() => validateWorkspacePath(path));
   }
 });
