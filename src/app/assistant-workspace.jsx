@@ -29,34 +29,53 @@ const starters = [
 
 function renderAssistantContent(content) {
   const nodes = [];
+  const source = String(content || "");
+  const codeBlock = /\`\`\`([^\n]*)\n([\s\S]*?)\`\`\`/g;
   const citationLink = /\[([^\]]+)\]\((https:\/\/[^\s)]+)\)/g;
   let lastIndex = 0;
   let match;
   let key = 0;
 
-  while ((match = citationLink.exec(String(content || ""))) !== null) {
-    if (match.index > lastIndex) nodes.push(String(content).slice(lastIndex, match.index));
-    try {
-      const url = new URL(match[2]);
-      if (url.protocol === "https:") {
-        nodes.push(
-          <a key={key++} href={url.toString()} target="_blank" rel="noopener noreferrer">
-            {match[1]}
-          </a>
-        );
-      } else {
-        nodes.push(match[0]);
+  function appendProse(value) {
+    let proseIndex = 0;
+    let citation;
+    while ((citation = citationLink.exec(value)) !== null) {
+      if (citation.index > proseIndex) nodes.push(value.slice(proseIndex, citation.index));
+      try {
+        const url = new URL(citation[2]);
+        if (url.protocol === "https:") {
+          nodes.push(<a key={key++} href={url.toString()} target="_blank" rel="noopener noreferrer">{citation[1]}</a>);
+        } else {
+          nodes.push(citation[0]);
+        }
+      } catch {
+        nodes.push(citation[0]);
       }
-    } catch {
-      nodes.push(match[0]);
+      proseIndex = citationLink.lastIndex;
     }
-    lastIndex = citationLink.lastIndex;
+    citationLink.lastIndex = 0;
+    if (proseIndex < value.length) nodes.push(value.slice(proseIndex));
   }
 
-  if (lastIndex < String(content || "").length) nodes.push(String(content).slice(lastIndex));
+  while ((match = codeBlock.exec(source)) !== null) {
+    if (match.index > lastIndex) appendProse(source.slice(lastIndex, match.index));
+    const code = match[2].replace(/\n$/, "");
+    const label = match[1].trim() || "Code";
+    nodes.push(
+      <section className="assistant-code-block" key={key++}>
+        <div className="assistant-code-heading">
+          <span>{label}</span>
+          <button type="button" onClick={() => navigator.clipboard?.writeText(code).catch(() => {})}>Copy code</button>
+        </div>
+        <pre><code>{code}</code></pre>
+      </section>
+    );
+    lastIndex = codeBlock.lastIndex;
+  }
+
+  if (lastIndex < source.length) appendProse(source.slice(lastIndex));
   return nodes;
 }
-
 function isImageGenerationRequest(value) {
   const text = String(value || "").trim();
   if (!text) return false;
@@ -1218,7 +1237,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                       </div>
                     )}
                   </div>
-                  {item.content ? <p>{renderAssistantContent(item.content)}</p> : busy && item.role === "assistant" ? <div className="thinking-indicator" role="status" aria-label="Aahana is thinking"><span /><span /><span /><small>Aahana is thinking</small></div> : null}
+                  {item.content ? <div className="assistant-message-content">{renderAssistantContent(item.content)}</div> : busy && item.role === "assistant" ? <div className="thinking-indicator" role="status" aria-label="Aahana is thinking"><span /><span /><span /><small>Aahana is thinking</small></div> : null}
                 </article>
               ))}
             </div>
