@@ -130,3 +130,22 @@ test("requires an explicit build or test script", async () => {
   }));
   assert.equal(fake.calls.length, 0);
 });
+
+
+test("keeps the sandbox disposable and closes it after a failed project command", async () => {
+  const fake = createFakeSandbox({ taskExitCode: 1 });
+  const result = await executeBuildTask({
+    files: [{ path: "src/main.js", content: "throw new Error('expected failure')" }],
+    operation: "run",
+    entrypoint: "src/main.js",
+    projectId: "prj_12345678",
+    sandboxName: "aahana-build-test-222",
+    SandboxClient: fake.SandboxClient,
+  });
+
+  assert.equal(result.status, "failed");
+  assert.equal(result.exitCode, 1);
+  assert.equal(fake.calls.filter((call) => call.type === "stop").length, 1);
+  assert.equal(fake.calls.at(-1).type, "stop");
+  assert.equal(fake.calls.filter((call) => call.type === "update").at(-1).options.networkPolicy, "deny-all");
+});
