@@ -7,6 +7,7 @@ import {
   IMAGE_EDIT_STYLES,
   isImageEditRequest,
   parseImageEditInput,
+  parseImageEditOutput,
 } from "./image-edit.mjs";
 
 test("offers explicit image-to-image styles and user edit constraints", () => {
@@ -31,6 +32,24 @@ test("validates data URL MIME type and image size before provider upload", () =>
   assert.equal(parseImageEditInput("data:image/png;base64,Y"), null);
   assert.equal(parseImageEditInput("data:image/png;base64,YQ==", 0), null);
   assert.equal(parseImageEditInput(`data:image/jpeg;base64,${"A".repeat(5_600_000)}`), null);
+});
+
+test("accepts only bounded base64 PNG output with a valid IHDR header", () => {
+  const pngHeader = Buffer.alloc(33);
+  Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]).copy(pngHeader, 0);
+  pngHeader.writeUInt32BE(13, 8);
+  pngHeader.write("IHDR", 12, "ascii");
+  pngHeader.writeUInt32BE(1, 16);
+  pngHeader.writeUInt32BE(1, 20);
+  pngHeader[24] = 8;
+  pngHeader[25] = 6;
+  const validPng = pngHeader.toString("base64");
+  assert.deepEqual(parseImageEditOutput(validPng), { base64: validPng, estimatedBytes: 33 });
+  assert.equal(parseImageEditOutput("PGh0bWw+"), null);
+  assert.equal(parseImageEditOutput("%%%"), null);
+  assert.equal(parseImageEditOutput(validPng, 24), null);
+  assert.equal(parseImageEditOutput(validPng.slice(0, -2)), null);
+  assert.equal(parseImageEditOutput(null), null);
 });
 
 test("image edit API uses authenticated FLUX.2 Klein multipart photo input and edit constraints", async () => {
