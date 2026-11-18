@@ -73,3 +73,15 @@ test("3D learning animation pauses for hidden tabs and respects reduced-motion p
   assert.match(world, /cancelAnimationFrame\(frame\)/);
   assert.match(world, /removeEventListener\("visibilitychange", onVisibilityChange\)/);
 });
+
+test("physics cart experiment connects force, opposing force and mass through Newton's second law", () => {
+  const world = readFileSync(new URL("../../app/learn/interactive-3d-world.jsx", import.meta.url), "utf8");
+  assert.match(world, /const netForce = force - friction/);
+  assert.match(world, /const acceleration = netForce \/ mass/);
+  assert.match(world, /physics-mass/);
+  assert.match(world, /Cart mass:/);
+  assert.match(world, /Net force =/);
+  assert.match(world, /Acceleration =/);
+  assert.match(world, /a = Fnet ÷ m/);
+  assert.match(world, /not a time-based motion prediction/);
+});
