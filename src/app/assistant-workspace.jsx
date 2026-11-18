@@ -273,6 +273,13 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [prompt, setPrompt] = useState("");
   const [imageFile, setImageFile] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [showLoginWelcome, setShowLoginWelcome] = useState(true);
+  const [dissolvingLoginWelcome, setDissolvingLoginWelcome] = useState(false);
+  useEffect(() => {
+    const dissolveTimer = window.setTimeout(() => setDissolvingLoginWelcome(true), 3000);
+    const removeTimer = window.setTimeout(() => setShowLoginWelcome(false), 3900);
+    return () => { window.clearTimeout(dissolveTimer); window.clearTimeout(removeTimer); };
+  }, []);
   useEffect(() => {
     if (messages.length) conversationEndRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
   }, [messages]);
@@ -1108,8 +1115,8 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         )}
 
         <div className="welcome">
-          {!messages.length && (
-            <div className="founder-welcome-note" aria-label="I'm happy to welcome you on this journey, Abhishekayya Salimath.">
+          {showLoginWelcome && !messages.length && (
+            <div className={dissolvingLoginWelcome ? "founder-welcome-note is-dissolving" : "founder-welcome-note"} role="status" aria-live="polite" aria-label="I'm happy to welcome you on this journey, Abhishekayya Salimath.">
               <p>
                 <span className="welcome-line welcome-line-one">I'm happy to welcome you</span>
                 <span className="welcome-line welcome-line-two">on this journey,</span>
@@ -1155,7 +1162,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
           </div>
           <div className="eyebrow"><span /> YOUR THINKING SPACE</div>
           {!messages.length && <>
-            <h1>Welcome to Aahana<br /><em>your space.</em></h1>
+            <h1>Good ideas<br /><em>start somewhere.</em></h1>
             <p>Think freely. Explore ideas. Build something real.</p>
           </>}
 
