@@ -273,9 +273,12 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [speechVoices, setSpeechVoices] = useState([]);
   const audioPlaybackRef = useRef(null);
   const audioObjectUrlRef = useRef(null);
-  const voiceLanguages = [
-    ["en-IN","English (India)"],["kn-IN","ಕನ್ನಡ (Kannada)"],["hi-IN","हिन्दी (Hindi)"],["ta-IN","தமிழ் (Tamil)"],["te-IN","తెలుగు (Telugu)"],["ml-IN","മലയാളം (Malayalam)"],
-  ];
+  useEffect(() => {
+    const refreshVoices = () => setSpeechVoices(window.speechSynthesis?.getVoices?.() || []);
+    refreshVoices();
+    window.speechSynthesis?.addEventListener?.("voiceschanged", refreshVoices);
+    return () => window.speechSynthesis?.removeEventListener?.("voiceschanged", refreshVoices);
+  }, []);
 
   function startVoiceInput() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
