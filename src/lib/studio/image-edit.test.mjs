@@ -137,7 +137,7 @@ test("Image Studio offers a local original-photo colour-grade export without an 
   const source = await readFile(new URL("../../app/learn/native-image-studio.jsx", import.meta.url), "utf8");
   assert.match(source, /exportOriginalPhotoWithLocalGrade/);
   assert.match(source, /Export edited photo \(free\)/);
-  assert.match(source, /Original photo exported with the selected local colour grade\. No AI service was used\./);
+  assert.match(source, /Photo exported with local rotation, flip and colour grade\. No AI service was used\./);
   const localExport = source.slice(source.indexOf("async function exportOriginalPhotoWithLocalGrade"), source.indexOf("function exportSvg"));
   assert.match(localExport, /URL\.createObjectURL\(referenceImage\)/);
   assert.match(localExport, /applyCubeLutToImageData/);
