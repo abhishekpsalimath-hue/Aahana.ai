@@ -69,7 +69,7 @@ test("Student Mode starts with a child-led question instead of a compulsory grad
   assert.equal(studio.includes("<LearningCategoryExplorer"), false);
   assert.equal(studio.includes("<SpaceExplorer"), false);
   assert.match(studio, /<Interactive3DWorld selectedPlanet=/);
-  assert.match(studio, /className="learning-discovery"/);
+  assert.match(studio, /className="learning-discovery student-mode-section"/);
 });test("learning sessions use the authenticated chat endpoint and persist under learn mode", () => {
   assert.match(studio, /fetch\("\/api\/chat"/);
   assert.match(studio, /mode: "learn"/);
@@ -322,7 +322,7 @@ test("Student Mode removes retired curriculum and mission dashboard sections", (
 
 test("Student Mode offers topic discovery and a multi-subject interactive 3D model lab", () => {
   assert.match(studio, /<Interactive3DWorld selectedPlanet=/);
-  assert.match(studio, /className="learning-discovery"/);
+  assert.match(studio, /className="learning-discovery student-mode-section"/);
   assert.doesNotMatch(studio, /<SpaceFunQuiz \/>/);
   assert.match(world, /Choose a 3D model/);
   assert.match(world, /label: "Animal cell"/);
@@ -641,7 +641,7 @@ test("Student Mode quiz generation scales across open-ended topics with 3D-first
 });
 
 test("Student Mode now offers category, topic and all six learning modes from the discovery panel", () => {
-  assert.match(studio, /className="learning-discovery"/);
+  assert.match(studio, /className="learning-discovery student-mode-section"/);
   assert.match(studio, /learningCategories\.map\(\(item\)/);
   assert.match(studio, /learningModes\.map\(\(mode\)/);
   assert.match(studio, /Start a 10-question challenge/);
