@@ -36,7 +36,7 @@ const spaceStars = [
 
 function renderInlineMarkdown(value, prefix) {
   const nodes = [];
-  const pattern = /(\`[^\`\n]+\`|\*\*[^*\n]+\*\*|\*[^*\n]+\*|\[([^\]]+)\]\((https:\/\/[^\s)]+)\))/g;
+  const pattern = /([\x60][^\x60\n]+[\x60]|\*\*[^*\n]+\*\*|\*[^*\n]+\*|\[([^\]]+)\]\((https:\/\/[^\s)]+)\))/g;
   let lastIndex = 0;
   let match;
   let key = 0;
