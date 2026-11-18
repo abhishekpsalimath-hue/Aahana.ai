@@ -132,3 +132,13 @@ test("cell and chemistry controls rebuild the actual Three.js learning models", 
   assert.match(world, /state\.labModelKey !== labModelKey/);
   assert.match(world, /ecosystem\.heartFlow \?\? "body", ecosystem/);
 });
+
+test("3D chemistry and cell updates preserve selected lab state across renderer creation and rebuilds", () => {
+  const world = readFileSync(new URL("../../app/learn/interactive-3d-world.jsx", import.meta.url), "utf8");
+  assert.match(world, /const state = \{ renderer, scene, camera, group, id, selectedPlanet, heartFlow, labModelKey, stars/);
+  assert.match(world, /state\.labModelKey = labModelKey;/);
+  assert.match(world, /makeSceneModel\(state\.group, id, selectedPlanet, heartFlow, labState\)/);
+  assert.match(world, /carbonDioxide:[\s\S]*?bonds:\[\[0,1,2\],\[1,2,2\]\]/);
+  assert.match(world, /offsets=\[-\.055,\.055\]/);
+  assert.match(world, /p:\[\.72,\.72,\.72\]/);
+});
