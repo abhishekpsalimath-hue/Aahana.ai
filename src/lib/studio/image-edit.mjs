@@ -45,6 +45,21 @@ export function parseImageEditInput(dataUrl, maxBytes = 4 * 1024 * 1024) {
   return { mimeType: match[1], base64: match[2], estimatedBytes };
 }
 
+export function parseImageEditOutput(value, maxBytes = 12 * 1024 * 1024) {
+  if (typeof value !== "string" || !Number.isFinite(maxBytes) || maxBytes < 24) return null;
+  if (value.length % 4 !== 0 || !/^[A-Za-z0-9+/]+={0,2}$/.test(value)) return null;
+  const estimatedBytes = Math.floor(value.length * 3 / 4) - (value.endsWith("==") ? 2 : value.endsWith("=") ? 1 : 0);
+  if (estimatedBytes < 24 || estimatedBytes > maxBytes) return null;
+
+  const header = Buffer.from(value.slice(0, 32), "base64");
+  const pngSignature = [137, 80, 78, 71, 13, 10, 26, 10];
+  if (!pngSignature.every((byte, index) => header[index] === byte)) return null;
+  if (header.readUInt32BE(8) !== 13 || header.toString("ascii", 12, 16) !== "IHDR") return null;
+  if (header.readUInt32BE(16) < 1 || header.readUInt32BE(20) < 1) return null;
+
+  return { base64: value, estimatedBytes };
+}
+
 export function detectImageEditStyleFromPrompt(value) {
   const text = String(value || "").toLowerCase();
   if (/\b(?:anime|manga)\b/.test(text)) return "anime";
