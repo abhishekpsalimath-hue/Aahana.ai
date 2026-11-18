@@ -26,7 +26,7 @@ test("image generation requires prompt and generated-image safety checks", () =>
   assert.match(route, /safetyChecked: true/);
 });
 
-test("image generation uses the documented Cloudflare model and input envelope", () => {
-  assert.ok(route.includes("/ai/run`"));
-  assert.ok(route.includes("JSON.stringify({ model: MODEL, input: { prompt: finalPrompt, steps: 8 } })"));
+test("image generation uses the built-in Workers AI model endpoint", () => {
+  assert.ok(route.includes("/ai/run/${MODEL}"));
+  assert.ok(route.includes("body: JSON.stringify({ prompt: finalPrompt, steps: 8 })"));
 });
