@@ -117,6 +117,9 @@ export function validateChangeProposal({ currentFiles, changes } = {}) {
     totalBytes += bytes;
     if (totalBytes > MAX_TOTAL_BYTES) throw new Error("A proposal cannot exceed 3 MB of changed file content.");
     const proposedSha256 = sha256(change.content);
+    if (action === "update" && proposedSha256 === existing.sha256) {
+      throw new Error("An update must change the file content: " + path);
+    }
     return Object.freeze({
       path, action, baseSha256: existing?.sha256 ?? null, proposedSha256,
       before: existing?.content ?? null, after: change.content,
