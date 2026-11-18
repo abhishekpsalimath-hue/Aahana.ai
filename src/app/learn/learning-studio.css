@@ -706,3 +706,18 @@
 @keyframes motion-light-sweep{0%,100%{background-position:0 0,-130% 0}50%{background-position:0 0,130% 0}}
 @keyframes motion-art-arrive{from{opacity:.5;transform:scale(.96) translateY(5px)}to{opacity:1;transform:scale(1) translateY(0)}}
 @media(prefers-reduced-motion:reduce){.motion-stage,.motion-stage:before,.motion-art{animation:none!important}}
+
+
+/* Consent-controlled learning memory and quiz save controls. */
+.learning-memory-panel{max-width:1120px;margin:32px auto;padding:24px;border:1px solid #b99be933;border-radius:22px;background:linear-gradient(145deg,#171426,#100f1a);color:#f4efff}
+.learning-memory-panel>p{max-width:760px;color:#bdb5d0;line-height:1.65}
+.learning-memory-panel .learning-section-heading{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.learning-memory-panel button,.learning-quiz-finish button{border:1px solid #b99be966;border-radius:999px;padding:10px 16px;background:#b99be91a;color:inherit;font:inherit;cursor:pointer}
+.learning-memory-panel button:disabled,.learning-quiz-finish button:disabled{opacity:.55;cursor:not-allowed}
+.learning-memory-list{display:grid;gap:8px;margin-top:16px}
+.learning-memory-list>div{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border:1px solid #b99be922;border-radius:12px}
+.learning-memory-list span{overflow-wrap:anywhere;color:#e4dcf4}
+.learning-memory-list button{padding:7px 12px;font-size:.88rem}
+.learning-quiz-finish{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+.learning-quiz-finish>span:not(.learning-celebration){color:#c9bfdc;font-size:.9rem}
+@media(max-width:760px){.learning-memory-panel{margin:22px 14px;padding:18px}.learning-memory-panel .learning-section-heading{align-items:flex-start;flex-direction:column}.learning-memory-list>div{align-items:flex-start}}
