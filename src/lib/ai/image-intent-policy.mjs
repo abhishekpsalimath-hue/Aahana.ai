@@ -12,6 +12,7 @@ const MULTILINGUAL_IMAGE_REQUEST = /(?:\b(?:tasveer|tasvir|chitra|chitram|billi|
 export function isImageGenerationRequest(value) {
   const text = String(value || "").normalize("NFKC").trim();
   if (!text || text.length > 8000) return false;
+  if (/\b(?:upload|attach|send|share)\b/i.test(text)) return false;
 
   if (IMAGE_NOUN.test(text) && VISUAL_ACTION.test(text)) return true;
   if (MULTILINGUAL_IMAGE_REQUEST.test(text)) return true;
