@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { PRIVATE_AUTOMATION_TEMPLATES } from "@/lib/operations/automation-policy.mjs";
 
 const ROLES = [
   { id: "ceo", name: "CEO", scope: "Strategy, priorities and coordination" },
@@ -41,6 +42,7 @@ export default function OperationsPage() {
   const [briefHistory, setBriefHistory] = useState([]);
   const [selectedBriefId, setSelectedBriefId] = useState("");
   const [briefTaskBusy, setBriefTaskBusy] = useState(false);
+  const [automationBusyId, setAutomationBusyId] = useState("");
 
   const load = useCallback(async () => {
     setError("");
@@ -143,6 +145,34 @@ export default function OperationsPage() {
       else setTasks((current) => [payload.task, ...current]);
     } catch { setError("Could not connect to the task queue. Please retry."); }
     finally { setBriefTaskBusy(false); }
+  }
+
+  async function proposeAutomation(template) {
+    if (!template || automationBusyId) return;
+    setAutomationBusyId(template.id); setError("");
+    try {
+      const response = await fetch("/api/operations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: "Design private automation: " + template.name,
+          description: [
+            template.description,
+            "Trigger: " + template.trigger + " (" + template.cadence + ").",
+            "Prepare a technical design, required data sources, privacy boundaries, failure handling and approval checkpoints.",
+            "This is a proposal only. Do not enable schedules, connect external services, send messages, publish, spend money or change accounts.",
+          ].join("\n"),
+          assignedRole: "coo",
+          priority: "normal",
+          source: "self_ops",
+        }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) setError(payload.error || "Could not propose this automation.");
+      else setTasks((current) => [payload.task, ...current]);
+    } catch {
+      setError("Could not connect to the private automation queue.");
+    } finally { setAutomationBusyId(""); }
   }
 
   const counts = useMemo(() => ({
@@ -294,6 +324,19 @@ export default function OperationsPage() {
           <div className="ops-section-heading"><div><div className="ops-eyebrow">WORK QUEUE</div><h2>Executive tasks</h2></div><button className="ops-quiet" onClick={load}>Refresh</button></div>
           {error && <div className="ops-error" role="alert">{error}</div>}
           {tasks.length === 0 ? <div className="ops-empty">No tasks yet. Add the first item for the executive team.</div> : <div className="ops-task-list">{tasks.map((task) => <article className="ops-task" key={task.id}><div className="ops-task-main"><div className="ops-task-top"><span className={"ops-status status-" + task.status}>{label(task.status)}</span><span className="ops-muted">{label(task.priority)} priority · {label(task.assigned_role)} AI</span></div><h3>{task.title}</h3>{task.description && <p>{task.description}</p>}<small>{new Date(task.created_at).toLocaleString()}</small></div><div className="ops-task-actions">{task.status === "proposed" && <button disabled={busy || !!runningTaskId} onClick={() => taskAction(task.id, "approve")}>Approve</button>}{task.status === "approved" && <button className="ops-primary" disabled={busy || !!runningTaskId} onClick={() => runApprovedTask(task.id)}>{runningTaskId === task.id ? "Running…" : "Run internal analysis"}</button>}{["proposed","approved","blocked"].includes(task.status) && <button className="ops-danger" disabled={busy || !!runningTaskId} onClick={() => taskAction(task.id, "cancel")}>Cancel</button>}{(task.status === "cancelled" || (task.status === "blocked" && (task.execution_attempts || 0) < 3)) && <button disabled={busy || !!runningTaskId} onClick={() => taskAction(task.id, "reopen")}>Reopen</button>}</div>{task.execution_error && <div className="ops-execution-error">{task.execution_error}</div>}{task.execution_result?.output && <details className="ops-execution-result" open><summary>Internal deliverable · {label(task.execution_result.role)} AI</summary><pre>{task.execution_result.output}</pre><small>Generated {task.execution_result.generated_at ? new Date(task.execution_result.generated_at).toLocaleString() : "recently"} · No external actions performed</small></details>}</article>)}</div>}
+        </section>
+
+        <section className="ops-section">
+          <div className="ops-section-heading"><div><div className="ops-eyebrow">PRIVATE AUTOMATION / DRAFT BLUEPRINTS</div><h2>Automation for your work</h2></div><span className="ops-muted">Founder-only</span></div>
+          <p className="ops-muted">These are private automation ideas for your own operations—not public Aahana AI features. Proposing one creates a review task only. Nothing is scheduled or connected until its design, data access and permissions are approved.</p>
+          <div className="ops-role-grid">
+            {PRIVATE_AUTOMATION_TEMPLATES.map((item) => <article className="ops-panel" key={item.id}>
+              <div className="ops-eyebrow">{item.trigger} · {item.cadence}</div>
+              <h3>{item.name}</h3>
+              <p className="ops-muted">{item.description}</p>
+              <button className="ops-primary" type="button" disabled={!!automationBusyId} onClick={() => proposeAutomation(item)}>{automationBusyId === item.id ? "Adding proposal…" : "Propose setup"}</button>
+            </article>)}
+          </div>
         </section>
 
         <section className="ops-section">
