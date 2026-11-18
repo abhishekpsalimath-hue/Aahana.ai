@@ -1,0 +1,38 @@
+name: Aahana media generation guards
+
+on:
+  push:
+    branches:
+      - "fix/aahana-media-generation-live"
+    paths:
+      - "src/app/assistant-workspace.jsx"
+      - "src/app/api/images/generate/route.js"
+      - "src/app/api/videos/generate/route.js"
+      - "src/lib/ai/video-generation-policy.*"
+      - ".github/workflows/media-generation-guards.yml"
+  pull_request:
+    paths:
+      - "src/app/assistant-workspace.jsx"
+      - "src/app/api/images/generate/route.js"
+      - "src/app/api/videos/generate/route.js"
+      - "src/lib/ai/video-generation-policy.*"
+      - ".github/workflows/media-generation-guards.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  media-guards:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Test video request validation and URL policy
+        run: node --test src/lib/ai/video-generation-policy.test.mjs
+      - name: Syntax-check media API routes
+        run: node --check src/app/api/images/generate/route.js && node --check src/app/api/videos/generate/route.js
