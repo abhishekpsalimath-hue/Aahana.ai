@@ -5,7 +5,7 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 const GENERATION_MODEL = "@cf/black-forest-labs/flux-1-schnell";
-const EDIT_MODEL = "@cf/black-forest-labs/flux-1-kontext-pro";
+const EDIT_MODEL = "black-forest-labs/flux-1-kontext-pro";
 const MAX_INPUT_IMAGE_BYTES = 2 * 1024 * 1024;
 const MAX_PROMPT_LENGTH = 2048;
 
@@ -77,7 +77,12 @@ export async function POST(request) {
       if (providerStatus === 401) message = "Cloudflare rejected the image-generation API token. Check the CLOUDFLARE_API_TOKEN setting in Vercel.";
       else if (providerStatus === 403) message = "The Cloudflare token does not have permission to use Workers AI. Update its Workers AI permissions.";
       else if (providerStatus === 429) message = "The image-generation service has reached its current usage limit. Please try again after it resets.";
-      else if (providerStatus === 400) message = "The image service could not accept this prompt. Try a shorter or clearer description.";
+      else if (providerStatus === 400) {
+        const providerMessage = String(result?.errors?.[0]?.message || "").toLowerCase();
+        message = /nsfw|safety|moderation|content policy|unsafe content/.test(providerMessage)
+          ? "The image provider blocked this prompt with its content-safety filter. Try rephrasing the scene or removing the element it flagged."
+          : "The image service could not accept this prompt. Try a shorter or clearer description.";
+      }
       return NextResponse.json({ error: message }, { status });
     }
 
