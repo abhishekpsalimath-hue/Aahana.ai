@@ -617,6 +617,12 @@ test("Student Mode quiz generation scales across open-ended topics with 3D-first
   assert.match(quizBankPolicy, /3d-plant-cell/);
   assert.match(quizBankPolicy, /3d-heart/);
   assert.match(quizBankPolicy, /3d-ecosystem/);
+  assert.match(quizBankPolicy, /3d-bridge/);
+  assert.match(route, /3d-bridge/);
+  assert.match(animated, /"3d-bridge": "bridge"/);
+  assert.match(world, /id: "bridge", label: "Truss bridge"/);
+  assert.match(world, /id==="bridge"/);
+  assert.match(world, /Triangular trusses/);
 });
 
 test("Student Mode now offers category, topic and all six learning modes from the discovery panel", () => {
