@@ -5,7 +5,7 @@ import { buildImageEditPrompt, parseImageEditInput } from "@/lib/studio/image-ed
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-const MODEL = "@cf/runwayml/stable-diffusion-v1-5-img2img";
+const MODEL = "@cf/black-forest-labs/flux-2-klein-9b";
 const STYLES = new Set(["cartoon", "anime", "comic", "3d-animation", "watercolor"]);
 
 export async function POST(request) {
@@ -38,7 +38,7 @@ export async function POST(request) {
   const strength = Number.isFinite(requestedStrength)
     ? Math.max(0.2, Math.min(0.65, requestedStrength))
     : 0.38;
-  const prompt = buildImageEditPrompt(style);
+  const prompt = buildImageEditPrompt(style);\n  const outputWidth = Number.isInteger(body?.width) ? Math.max(256, Math.min(1920, body.width)) : 1024;\n  const outputHeight = Number.isInteger(body?.height) ? Math.max(256, Math.min(1920, body.height)) : 768;
 
   try {
     const response = await fetch(
@@ -80,7 +80,7 @@ export async function POST(request) {
     }
 
     return NextResponse.json(
-      { imageDataUrl: `data:image/png;base64,${outputImage}`, model: MODEL, style, strength },
+      { imageDataUrl: `data:image/png;base64,${outputImage}`, model: MODEL, style, strength, width: outputWidth, height: outputHeight },
       { headers: { "Cache-Control": "no-store" } }
     );
   } catch (error) {
