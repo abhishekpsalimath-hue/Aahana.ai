@@ -827,10 +827,14 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       { role: "assistant", content: "Reviewing the project snapshot and preparing a safe change proposal…" },
     ]);
     try {
+      const conversationContext = messages
+        .filter((item) => ["user", "assistant"].includes(item.role) && typeof item.content === "string")
+        .slice(-6)
+        .map((item) => ({ role: item.role, content: item.content.slice(0, 700) }));
       const response = await fetch("/api/build/draft", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectId: selectedProjectId, prompt: requestText }),
+        body: JSON.stringify({ projectId: selectedProjectId, prompt: requestText, conversationContext }),
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || "Aahana could not draft these project changes.");
