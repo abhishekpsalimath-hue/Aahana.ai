@@ -54,9 +54,13 @@ export async function POST(request) {
   const { data: rows, error: filesError } = await supabase.from("user_files")
     .select("bucket_id, object_path, original_filename, mime_type, size_bytes")
     .eq("user_id", user.id).eq("project_id", projectId)
-    .order("created_at", { ascending: false }).limit(MAX_SOURCE_FILES);
+    .order("created_at", { ascending: false }).limit(MAX_SOURCE_FILES + 1);
   if (filesError) {
     return NextResponse.json({ error: "Could not load the current project snapshot." }, { status: 500 });
+  }
+
+  if ((rows || []).length > MAX_SOURCE_FILES) {
+    return NextResponse.json({ error: "This project has more than 100 stored files. Narrow the project before creating a proposal." }, { status: 413 });
   }
 
   const currentFiles = [];
@@ -75,16 +79,15 @@ export async function POST(request) {
     if (usedPaths.has(path)) {
       return NextResponse.json({ error: "The project contains duplicate source paths. Resolve the duplicate filenames before proposing edits." }, { status: 409 });
     }
+    usedPaths.add(path);
     const { data: blob, error: downloadError } = await supabase.storage.from("aahana-private").download(file.object_path);
     if (downloadError || !blob || blob.size !== file.size_bytes || blob.size > 1024 * 1024 ||
         totalBytes + blob.size > MAX_SOURCE_BYTES) {
       return NextResponse.json({ error: "The current project snapshot could not be loaded within the safe size limits." }, { status: 409 });
     }
-    const source = await blob.text();
-    if (!source.trim()) continue;
     totalBytes += blob.size;
+    const source = await blob.text();
     currentFiles.push({ path, content: source });
-    usedPaths.add(path);
   }
 
   try {
