@@ -4,7 +4,9 @@ import { createClient } from "@/lib/supabase/server";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-const MODEL = "@cf/black-forest-labs/flux-1-schnell";
+const GENERATION_MODEL = "@cf/black-forest-labs/flux-1-schnell";
+const EDIT_MODEL = "@cf/black-forest-labs/flux-1-kontext-pro";
+const MAX_INPUT_IMAGE_BYTES = 2 * 1024 * 1024;
 const MAX_PROMPT_LENGTH = 2048;
 
 export async function POST(request) {
@@ -27,28 +29,47 @@ export async function POST(request) {
     return NextResponse.json({ error: "Invalid request." }, { status: 400 });
   }
   const prompt = typeof body?.prompt === "string" ? body.prompt.trim() : "";
+  const inputImage = typeof body?.inputImage === "string" ? body.inputImage : null;
+  const imageMatch = inputImage?.match(/^data:(image\\/(?:png|jpeg|webp));base64,([A-Za-z0-9+/=]+)$/);
   if (!prompt || prompt.length > MAX_PROMPT_LENGTH) {
     return NextResponse.json({ error: "Describe the image in 1–2,048 characters." }, { status: 400 });
   }
 
+  if (inputImage && (!imageMatch || Math.floor(imageMatch[2].length * 3 / 4) > MAX_INPUT_IMAGE_BYTES)) {
+    return NextResponse.json({ error: "Attach a PNG, JPEG or WebP image up to 2 MB to edit it." }, { status: 400 });
+  }
+
+  const model = imageMatch ? EDIT_MODEL : GENERATION_MODEL;
   try {
     const response = await fetch(
-      `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/ai/run/${MODEL}`,
+      `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/ai/run/${model}`,
       {
         method: "POST",
         headers: {
           Authorization: `Bearer ${apiToken}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ prompt, steps: 4 }),
+        body: JSON.stringify(imageMatch
+          ? { prompt, input_image: imageMatch[2], output_format: "jpeg" }
+          : { prompt, steps: 4 }),
         cache: "no-store",
         signal: AbortSignal.timeout(55000),
       }
     );
 
     const result = await response.json().catch(() => null);
-    const image = result?.result?.image;
-    if (!response.ok || !image) {
+    let image = result?.result?.image;
+    if (typeof image === "string" && /^https:\\/\\//i.test(image)) {
+      try {
+        const imageResponse = await fetch(image, { cache: "no-store", signal: AbortSignal.timeout(15000) });
+        const contentType = imageResponse.headers.get("content-type") || "";
+        const bytes = await imageResponse.arrayBuffer();
+        if (imageResponse.ok && /^image\\/(?:jpeg|png|webp)$/i.test(contentType) && bytes.byteLength <= 10 * 1024 * 1024) {
+          image = Buffer.from(bytes).toString("base64");
+        } else image = null;
+      } catch { image = null; }
+    }
+    if (!response.ok || typeof image !== "string" || !/^[A-Za-z0-9+/=]+$/.test(image)) {
       const providerStatus = response.status;
       const status = providerStatus === 429 ? 429 : providerStatus >= 500 ? 503 : 502;
       console.error("Aahana image provider request failed:", { status: providerStatus, providerError: result?.errors?.[0]?.message || "No image returned" });
@@ -61,7 +82,7 @@ export async function POST(request) {
     }
 
     return NextResponse.json(
-      { imageDataUrl: `data:image/jpeg;base64,${image}`, model: MODEL },
+      { imageDataUrl: `data:image/jpeg;base64,${image}`, model, edited: Boolean(imageMatch) },
       { headers: { "Cache-Control": "no-store" } }
     );
   } catch (error) {
