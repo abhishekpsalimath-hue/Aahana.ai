@@ -8,6 +8,45 @@ import { inferSpeechLocale } from "@/lib/voice/locale-detection.mjs";
 import { shouldFallbackToDeviceSpeech } from "@/lib/voice/speech-fallback-policy.mjs";
 import { isImageEditRequest, isImageGenerationRequest, isWebsiteBuildRequest } from "@/lib/ai/image-intent-policy.mjs";
 
+async function prepareImageForEditing(dataUrl) {
+  if (typeof dataUrl !== "string" || !dataUrl.startsWith("data:image/")) {
+    throw new Error("The active image could not be prepared for editing. Please upload it again.");
+  }
+  const base64 = dataUrl.slice(dataUrl.indexOf(",") + 1);
+  if (Math.floor(base64.length * 3 / 4) <= 1.85 * 1024 * 1024) return dataUrl;
+  if (typeof createImageBitmap !== "function") {
+    throw new Error("This image is too large for editing in this browser. Download it, reduce its size, and attach it again.");
+  }
+  let bitmap;
+  try {
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+    bitmap = await createImageBitmap(new Blob([bytes], { type: dataUrl.slice(5, dataUrl.indexOf(";")) }));
+    const scale = Math.min(1, 1536 / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+    canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("Image compression is unavailable in this browser.");
+    context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    for (const quality of [0.86, 0.78, 0.7, 0.62, 0.54]) {
+      const compressed = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", quality));
+      if (compressed && compressed.size <= 1.85 * 1024 * 1024) {
+        return await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => typeof reader.result === "string" ? resolve(reader.result) : reject(new Error("Could not prepare the image."));
+          reader.onerror = () => reject(new Error("Could not prepare the image."));
+          reader.readAsDataURL(compressed);
+        });
+      }
+    }
+    throw new Error("This image is still too large after compression. Please choose a smaller image.");
+  } finally {
+    bitmap?.close?.();
+  }
+}
+
 const modes = [
   { id: "solve", label: "Solve", hint: "Work through a problem" },
   { id: "create", label: "Create", hint: "Make something new" },
@@ -905,10 +944,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
               })
             : generatedImage?.dataUrl;
           if (!inputImage) throw new Error("Attach an image or create one first, then describe the edit.");
-          const payloadLength = inputImage.slice(inputImage.indexOf(",") + 1).length;
-          if (Math.floor(payloadLength * 3 / 4) > 2 * 1024 * 1024) {
-            throw new Error("This image is larger than the 2 MB editing limit. Download it, reduce its size, and attach it again.");
-          }
+          inputImage = await prepareImageForEditing(inputImage);
         }
         const response = await fetch("/api/images/generate", {
           method: "POST",
