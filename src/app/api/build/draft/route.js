@@ -8,7 +8,7 @@ import { selectRelevantProjectFiles } from "@/lib/learning/project-source-policy
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-const MAX_REQUEST_BYTES = 16 * 1024;
+const MAX_REQUEST_BYTES = 64 * 1024;
 const MAX_PROMPT_LENGTH = 8000;
 const MAX_SOURCE_FILES = 100;
 const MAX_FILE_BYTES = 1024 * 1024;
@@ -51,7 +51,7 @@ async function readJsonBody(request) {
     bytesRead += value.byteLength;
     if (bytesRead > MAX_REQUEST_BYTES) {
       await reader.cancel().catch(() => {});
-      const error = new Error("Proposal generation requests must be 16 KB or smaller.");
+      const error = new Error("Proposal generation requests must be 64 KB or smaller.");
       error.status = 413;
       throw error;
     }
