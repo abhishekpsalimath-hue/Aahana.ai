@@ -6,6 +6,7 @@ import {
   validateSandboxCommand,
   validateWorkspaceFiles,
   validateWorkspacePath,
+  validatePackageManifest,
 } from "./sandbox-policy.mjs";
 
 test("accepts ordinary relative project paths", () => {
