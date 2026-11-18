@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
@@ -19,33 +19,140 @@ const starters = [
   "Help me design an app or website",
 ];
 
-function renderAssistantContent(content) {
+const spaceStars = [
+  { startX: "-26px", startY: "-18px", endX: "-48vw", endY: "-35vh", delay: "-1s", size: "2px" },
+  { startX: "34px", startY: "-42px", endX: "52vw", endY: "-38vh", delay: "-5s", size: "2px" },
+  { startX: "-18px", startY: "36px", endX: "-55vw", endY: "42vh", delay: "-8s", size: "3px" },
+  { startX: "22px", startY: "18px", endX: "54vw", endY: "44vh", delay: "-3s", size: "2px" },
+  { startX: "-64px", startY: "-12px", endX: "-58vw", endY: "-8vh", delay: "-10s", size: "2px" },
+  { startX: "58px", startY: "8px", endX: "59vw", endY: "12vh", delay: "-6s", size: "3px" },
+  { startX: "-12px", startY: "-62px", endX: "-12vw", endY: "-48vh", delay: "-4s", size: "2px" },
+  { startX: "14px", startY: "60px", endX: "15vw", endY: "49vh", delay: "-9s", size: "2px" },
+  { startX: "-44px", startY: "54px", endX: "-42vw", endY: "50vh", delay: "-7s", size: "2px" },
+  { startX: "48px", startY: "-56px", endX: "43vw", endY: "-50vh", delay: "-2s", size: "2px" },
+  { startX: "-76px", startY: "22px", endX: "-61vw", endY: "23vh", delay: "-11s", size: "2px" },
+  { startX: "74px", startY: "-24px", endX: "62vw", endY: "-20vh", delay: "-12s", size: "3px" },
+];
+
+function renderInlineMarkdown(value, prefix) {
   const nodes = [];
-  const citationLink = /\[([^\]]+)\]\((https:\/\/[^\s)]+)\)/g;
+  const pattern = /(\`[^\`\n]+\`|\*\*[^*\n]+\*\*|\*[^*\n]+\*|\[([^\]]+)\]\((https:\/\/[^\s)]+)\))/g;
   let lastIndex = 0;
   let match;
   let key = 0;
 
-  while ((match = citationLink.exec(String(content || ""))) !== null) {
-    if (match.index > lastIndex) nodes.push(String(content).slice(lastIndex, match.index));
-    try {
-      const url = new URL(match[2]);
-      if (url.protocol === "https:") {
-        nodes.push(
-          <a key={key++} href={url.toString()} target="_blank" rel="noopener noreferrer">
-            {match[1]}
-          </a>
-        );
+  while ((match = pattern.exec(value)) !== null) {
+    if (match.index > lastIndex) nodes.push(value.slice(lastIndex, match.index));
+    const token = match[0];
+    if (token.startsWith("\`")) {
+      nodes.push(<code className="inline-code" key={prefix + "-inline-" + key++}>{token.slice(1, -1)}</code>);
+    } else if (token.startsWith("**")) {
+      nodes.push(<strong key={prefix + "-strong-" + key++}>{token.slice(2, -2)}</strong>);
+    } else if (token.startsWith("*")) {
+      nodes.push(<em key={prefix + "-em-" + key++}>{token.slice(1, -1)}</em>);
+    } else {
+      const link = token.match(/^\[([^\]]+)\]\((https:\/\/[^\s)]+)\)$/);
+      if (link) {
+        nodes.push(<a key={prefix + "-link-" + key++} href={link[2]} target="_blank" rel="noopener noreferrer">{link[1]}</a>);
       } else {
-        nodes.push(match[0]);
+        nodes.push(token);
       }
-    } catch {
-      nodes.push(match[0]);
     }
-    lastIndex = citationLink.lastIndex;
+    lastIndex = pattern.lastIndex;
   }
 
-  if (lastIndex < String(content || "").length) nodes.push(String(content).slice(lastIndex));
+  if (lastIndex < value.length) nodes.push(value.slice(lastIndex));
+  return nodes;
+}
+
+function renderMarkdownText(value, prefix) {
+  const lines = value.replace(/\r\n/g, "\n").split("\n");
+  const nodes = [];
+  let paragraph = [];
+  let listItems = [];
+  let listKind = null;
+
+  const flushParagraph = () => {
+    if (!paragraph.length) return;
+    nodes.push(<p key={prefix + "-p-" + nodes.length}>{renderInlineMarkdown(paragraph.join("\n"), prefix + "-p-" + nodes.length)}</p>);
+    paragraph = [];
+  };
+  const flushList = () => {
+    if (!listItems.length) return;
+    const List = listKind === "ol" ? "ol" : "ul";
+    nodes.push(<List key={prefix + "-list-" + nodes.length}>{listItems.map((item, index) => <li key={index}>{renderInlineMarkdown(item, prefix + "-li-" + index)}</li>)}</List>);
+    listItems = [];
+    listKind = null;
+  };
+
+  for (const line of lines) {
+    if (!line.trim()) {
+      flushParagraph();
+      flushList();
+      continue;
+    }
+    const heading = line.match(/^(#{1,3})\s+(.+)$/);
+    if (heading) {
+      flushParagraph();
+      flushList();
+      const Heading = heading[1].length === 1 ? "h2" : heading[1].length === 2 ? "h3" : "h4";
+      nodes.push(<Heading key={prefix + "-heading-" + nodes.length}>{renderInlineMarkdown(heading[2], prefix + "-heading-" + nodes.length)}</Heading>);
+      continue;
+    }
+    const unordered = line.match(/^\s*[-*]\s+(.+)$/);
+    const ordered = line.match(/^\s*\d+[.)]\s+(.+)$/);
+    if (unordered || ordered) {
+      flushParagraph();
+      const nextKind = ordered ? "ol" : "ul";
+      if (listKind && listKind !== nextKind) flushList();
+      listKind = nextKind;
+      listItems.push((unordered || ordered)[1]);
+      continue;
+    }
+    const quote = line.match(/^\s*>\s?(.*)$/);
+    if (quote) {
+      flushParagraph();
+      flushList();
+      nodes.push(<blockquote key={prefix + "-quote-" + nodes.length}>{renderInlineMarkdown(quote[1], prefix + "-quote-" + nodes.length)}</blockquote>);
+      continue;
+    }
+    flushList();
+    paragraph.push(line);
+  }
+  flushParagraph();
+  flushList();
+  return nodes;
+}
+
+function renderAssistantContent(content, onCopyCode) {
+  const source = String(content || "");
+  const nodes = [];
+  const fence = /\`\`\`([a-zA-Z0-9_+.-]*)[ \t]*\n([\s\S]*?)\`\`\`/g;
+  let lastIndex = 0;
+  let match;
+  let key = 0;
+
+  while ((match = fence.exec(source)) !== null) {
+    if (match.index > lastIndex) {
+      nodes.push(...renderMarkdownText(source.slice(lastIndex, match.index), "text-" + key++));
+    }
+    const language = match[1] || "code";
+    const code = match[2].replace(/\n$/, "");
+    nodes.push(
+      <div className="code-block" key={"code-" + key++}>
+        <div className="code-toolbar">
+          <span>{language}</span>
+          <button type="button" onClick={() => onCopyCode?.(code)} aria-label="Copy code">Copy code</button>
+        </div>
+        <pre><code>{code}</code></pre>
+      </div>
+    );
+    lastIndex = fence.lastIndex;
+  }
+
+  if (lastIndex < source.length) {
+    nodes.push(...renderMarkdownText(source.slice(lastIndex), "text-" + key++));
+  }
   return nodes;
 }
 
@@ -136,6 +243,10 @@ function evaluateArithmetic(input) {
 
 export default function Home({ userEmail = "", aiEnabled = false }) {
   const router = useRouter();
+  const conversationEndRef = useRef(null);
+  useEffect(() => {
+    if (messages.length) conversationEndRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
+  }, [messages]);
   const [mode, setMode] = useState("solve");
   const [prompt, setPrompt] = useState("");
   const [imageFile, setImageFile] = useState(null);
@@ -558,6 +669,14 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     if (selectedProjectId === id) selectProject(null);
   }
 
+  async function copyCodeBlock(code) {
+    try {
+      await navigator.clipboard.writeText(code);
+    } catch {
+      setError("Could not copy this code. Please select it and copy manually.");
+    }
+  }
+
   function printAnswerAsPdf(answer) {
     const printWindow = window.open("", "_blank");
     if (!printWindow) {
@@ -841,6 +960,22 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       </aside>
 
       <section className="main-panel">
+        <div className="space-background" aria-hidden="true">
+          {spaceStars.map((star, index) => (
+            <span
+              className="space-star"
+              key={index}
+              style={{
+                "--start-x": star.startX,
+                "--start-y": star.startY,
+                "--end-x": star.endX,
+                "--end-y": star.endY,
+                "--delay": star.delay,
+                "--size": star.size,
+              }}
+            />
+          ))}
+        </div>
         <header className="topbar">
           <div className="breadcrumb">Workspace <span>/</span> {selectedProjectId ? (projects.find((item) => item.id === selectedProjectId)?.name || "Project") : "Assistant"}</div>
           <div className="top-actions"><button className="mobile-history-toggle" type="button" onClick={toggleProjects}>Projects</button><button className="mobile-history-toggle" type="button" onClick={toggleHistory}>History</button><button className="mobile-history-toggle" type="button" onClick={toggleFiles}>Files</button><button className="mobile-history-toggle" type="button" onClick={toggleMemoryPanel}>Memory</button><span>Private workspace</span></div>
@@ -900,6 +1035,35 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         )}
 
         <div className="welcome">
+          {!messages.length && (
+            <div className="astronaut-float" aria-hidden="true">
+              <svg viewBox="0 0 180 180" role="presentation">
+                <defs>
+                  <linearGradient id="astronautSuit" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#fffaff" /><stop offset="1" stopColor="#b9a6d8" /></linearGradient>
+                  <linearGradient id="astronautGlass" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#51466f" /><stop offset="1" stopColor="#171426" /></linearGradient>
+                </defs>
+                <ellipse cx="91" cy="151" rx="42" ry="8" fill="#b89bfa" opacity=".14" />
+                <g transform="rotate(-22 90 88)">
+                  <path d="M56 83 38 96 29 116 39 121 57 105" fill="url(#astronautSuit)" stroke="#a994c7" strokeWidth="3" strokeLinejoin="round" />
+                  <path d="M119 84 139 93 151 111 142 118 121 104" fill="url(#astronautSuit)" stroke="#a994c7" strokeWidth="3" strokeLinejoin="round" />
+                  <rect x="117" y="75" width="23" height="48" rx="9" fill="#a58cc9" stroke="#e9ddff" strokeWidth="2" />
+                  <path d="M67 111 61 137 76 141 91 119" fill="url(#astronautSuit)" stroke="#a994c7" strokeWidth="3" strokeLinejoin="round" />
+                  <path d="M98 116 107 140 124 137 119 108" fill="url(#astronautSuit)" stroke="#a994c7" strokeWidth="3" strokeLinejoin="round" />
+                  <path d="M60 77 Q58 62 70 54 L111 54 Q124 64 121 83 L117 116 Q90 130 63 113Z" fill="url(#astronautSuit)" stroke="#a994c7" strokeWidth="3" />
+                  <rect x="70" y="86" width="39" height="17" rx="8" fill="#8e72bb" opacity=".9" />
+                  <circle cx="90" cy="58" r="35" fill="url(#astronautSuit)" stroke="#f4ecff" strokeWidth="4" />
+                  <circle cx="90" cy="58" r="27" fill="url(#astronautGlass)" stroke="#8f7bb4" strokeWidth="3" />
+                  <path d="M73 47 Q83 31 104 39" fill="none" stroke="#d8caff" strokeWidth="4" strokeLinecap="round" opacity=".75" />
+                  <circle cx="108" cy="68" r="3" fill="#c7b2ff" opacity=".85" />
+                  <path d="M31 117 42 120 38 129 27 126Z M141 116 151 111 157 121 147 128Z" fill="#d7c9ec" stroke="#9c86bd" strokeWidth="2" />
+                  <path d="M72 141 81 143 80 149 67 149Z M108 140 120 137 127 145 112 149Z" fill="#d9c9ef" stroke="#9c86bd" strokeWidth="2" />
+                  <circle cx="72" cy="90" r="3" fill="#c7aaff" /><circle cx="105" cy="90" r="3" fill="#c7aaff" />
+                </g>
+                <path d="M25 55l3 7 7 3-7 3-3 7-3-7-7-3 7-3Z M148 42l2 5 5 2-5 2-2 5-2-5-5-2 5-2Z" fill="#d8c5ff" />
+                <circle cx="143" cy="142" r="3" fill="#c7aaff" /><circle cx="38" cy="39" r="2" fill="#fff" />
+              </svg>
+            </div>
+          )}
           <div className="welcome-signal" aria-hidden="true">
             <span className="signal-orbit signal-orbit-one" />
             <span className="signal-orbit signal-orbit-two" />
@@ -909,8 +1073,8 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
           </div>
           <div className="eyebrow"><span /> YOUR THINKING SPACE</div>
           {!messages.length && <>
-            <h1>Good ideas start<br /><em>somewhere.</em></h1>
-            <p>Bring a question, a challenge, or an idea.<br className="desktop-break" /> We’ll shape the next step together.</p>
+            <h1>Welcome to Aahana<br /><em>your space.</em></h1>
+            <p>Think freely. Explore ideas. Build something real.</p>
           </>}
 
           <div className="mode-row" role="tablist" aria-label="Choose a mode">
@@ -944,9 +1108,10 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                       </div>
                     )}
                   </div>
-                  {item.content ? <p>{renderAssistantContent(item.content)}</p> : busy && item.role === "assistant" ? <div className="thinking-indicator" role="status" aria-label="Aahana is thinking"><span /><span /><span /><small>Aahana is thinking</small></div> : null}
+                  {item.content ? item.role === "assistant" ? <div className="message-content">{renderAssistantContent(item.content, copyCodeBlock)}</div> : <p>{item.content}</p> : busy && item.role === "assistant" ? <div className="thinking-indicator" role="status" aria-label="Aahana is thinking"><span /><span /><span /><small>Aahana is thinking</small></div> : null}
                 </article>
               ))}
+              <div ref={conversationEndRef} aria-hidden="true" />
             </div>
           )}
 
