@@ -445,6 +445,21 @@ export async function POST(request) {
   const decoder = new TextDecoder();
   const reader = upstream.body.getReader();
   let fullReply = "";
+  let replyPersistence = null;
+  const persistReply = () => {
+    if (!fullReply.trim()) return Promise.resolve();
+    if (!replyPersistence) {
+      replyPersistence = (async () => {
+        const { error: saveError } = await supabase.rpc("save_ai_reply", {
+          p_conversation_id: conversationId,
+          p_content: fullReply.slice(0, 16000),
+        });
+        await supabase.from("conversations").update({ updated_at: new Date().toISOString() }).eq("id", conversationId);
+        if (saveError) console.error("Aahana reply persistence failed:", saveError.message);
+      })();
+    }
+    return replyPersistence;
+  };
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -480,14 +495,7 @@ export async function POST(request) {
         if (buffer) handleLine(buffer.replace(/\r$/, ""));
         finished = true;
 
-        if (fullReply.trim()) {
-          const { error: saveError } = await supabase.rpc("save_ai_reply", {
-            p_conversation_id: conversationId,
-            p_content: fullReply.slice(0, 16000),
-          });
-          await supabase.from("conversations").update({ updated_at: new Date().toISOString() }).eq("id", conversationId);
-          if (saveError) console.error("Aahana reply persistence failed:", saveError.message);
-        }
+        await persistReply();
         controller.close();
       } catch (error) {
         console.error("Aahana stream failed:", error?.message || "unknown error");
@@ -498,6 +506,7 @@ export async function POST(request) {
     },
     async cancel() {
       await reader.cancel().catch(() => {});
+      await persistReply();
     },
   });
 
