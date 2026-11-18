@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { buildImageEditPrompt, parseImageEditInput } from "@/lib/studio/image-edit.mjs";
+import { buildImageEditPrompt, parseImageEditInput, parseImageEditOutput } from "@/lib/studio/image-edit.mjs";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -60,8 +60,9 @@ export async function POST(request) {
     );
 
     const result = await response.json().catch(() => null);
-    const outputImage = result?.result?.image || result?.result?.images?.[0];
-    if (!response.ok || typeof outputImage !== "string" || !outputImage) {
+    const outputCandidate = result?.result?.image || result?.result?.images?.[0];
+    const outputImage = parseImageEditOutput(outputCandidate);
+    if (!response.ok || !outputImage) {
       const providerStatus = response.status;
       const status = providerStatus === 429 ? 429 : providerStatus >= 500 ? 503 : 502;
       console.error("Aahana image-edit provider failed:", {
@@ -77,7 +78,7 @@ export async function POST(request) {
     }
 
     return NextResponse.json(
-      { imageDataUrl: `data:image/png;base64,${outputImage}`, model: MODEL, style, width: outputWidth, height: outputHeight },
+      { imageDataUrl: `data:image/png;base64,${outputImage.base64}`, model: MODEL, style, width: outputWidth, height: outputHeight },
       { headers: { "Cache-Control": "no-store" } }
     );
   } catch (error) {
