@@ -41,3 +41,10 @@ test("motion text layer exposes script, editorial and size controls", () => {
   assert.match(source, /setTextSize/);
   assert.match(source, /fontFamily=\{textFont\}/);
 });
+
+test("motion preview and WebM export share the selected colour grade", () => {
+  assert.match(source, /COLOR_GRADES\.map/);
+  assert.match(source, /getColorGradeFilter\(colorGrade\)/);
+  assert.match(source, /context\.filter = gradeFilter/);
+  assert.match(source, /style=\{\{ filter: gradeFilter \}\}/);
+});
