@@ -331,3 +331,38 @@ button:focus-visible,a:focus-visible{outline-color:#c4a7ff}
 @media(max-width:520px){.build-tools-run{align-items:stretch}.build-tools-run label{width:100%}.build-tools-run input{min-width:100%}.build-tools-run button{width:100%}}
 
 .image-prompt-status{display:block;margin:8px 2px 0;color:#a99fb7;font-size:11px;line-height:1.5}
+
+/* Founder welcome: appears on entry, then gently dissolves after three seconds. */
+.founder-welcome-note{
+  position:relative;z-index:3;display:grid;justify-items:center;gap:10px;
+  width:min(92%,680px);margin:10px auto 20px;padding:0 12px;text-align:center;
+  pointer-events:none;animation:founder-welcome-arrive 1s cubic-bezier(.16,1,.3,1) both;
+}
+.founder-welcome-note p{
+  display:grid;justify-items:center;gap:3px;margin:0;color:#eee9fa;
+  font-family:Manrope,sans-serif;font-size:clamp(15px,2vw,21px);
+  font-weight:600;line-height:1.45;letter-spacing:-.035em;text-wrap:balance;
+}
+.founder-welcome-note strong{
+  color:#cbb8ff;font-family:Manrope,sans-serif;font-size:clamp(11px,1.4vw,14px);
+  font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+  text-shadow:0 0 22px #b99aff33;
+}
+.founder-welcome-note.is-dissolving{
+  animation:founder-welcome-dissolve .9s cubic-bezier(.4,0,.8,.2) forwards;
+}
+@keyframes founder-welcome-arrive{
+  from{opacity:0;filter:blur(8px);transform:translate3d(0,12px,0)}
+  to{opacity:1;filter:blur(0);transform:translate3d(0,0,0)}
+}
+@keyframes founder-welcome-dissolve{
+  to{opacity:0;filter:blur(12px);transform:translate3d(0,-8px,0) scale(.985)}
+}
+@media(max-width:760px){
+  .founder-welcome-note{width:min(94%,520px);margin:8px auto 16px;gap:8px}
+  .founder-welcome-note p{font-size:clamp(14px,4vw,18px);line-height:1.45}
+  .founder-welcome-note strong{font-size:clamp(10px,2.8vw,13px);letter-spacing:.07em}
+}
+@media(prefers-reduced-motion:reduce){
+  .founder-welcome-note,.founder-welcome-note.is-dissolving{animation:none;opacity:1;filter:none;transform:none}
+}
