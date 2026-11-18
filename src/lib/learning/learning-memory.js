@@ -1,7 +1,7 @@
 export const LEARNING_MEMORY_PREFIX = "learning_journey:";
 
 const MAX_TITLE = 100;
-const MAX_SUBJECT = 60;
+const MAX_SUBJECT = 80;
 const MAX_LABEL = 80;
 
 export function validateLearningJourney(input) {
