@@ -451,7 +451,7 @@ export default function LearningStudio({ userEmail = "" }) {
           </div>
           <div className="learning-topic-actions">
             <button type="button" disabled={busy} onClick={() => startLearning(null, "Teach me " + subject + " with an engaging, level-appropriate lesson. Start with the foundations and build toward a useful real-world example.", true, { gradeBand, schoolGrade, subject, curriculum, language, learningMode: learningMode === "play" ? "talk" : learningMode })}>Explore {subject}</button>
-            <button type="button" disabled={busy} onClick={() => startLearning(null, "Create a fresh 10-question Play & Solve quiz about " + subject + ". Vary the concepts and difficulty for my level, use accurate explanations and relevant visuals, and do not repeat questions from earlier in this conversation.", true, { gradeBand, schoolGrade, subject, curriculum, language, learningMode: "play" })}>Start a 10-question quiz</button>
+            <button type="button" disabled={busy} onClick={() => startLearning(null, "Create a fresh 20-question Play & Solve quiz about " + subject + ". Vary the concepts and difficulty for my level, use accurate explanations and relevant visuals, and do not repeat questions from earlier in this conversation.", true, { gradeBand, schoolGrade, subject, curriculum, language, learningMode: "play" })}>Start a 20-question quiz</button>
           </div>
         </section>
         <form className="learning-composer" onSubmit={startLearning}>
