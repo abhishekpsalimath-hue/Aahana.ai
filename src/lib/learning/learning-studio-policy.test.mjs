@@ -393,7 +393,9 @@ test("student 3D scenes use a real Three.js WebGL renderer with subject-specific
   assert.match(threeD, /new THREE\.BufferGeometry/);
   assert.match(threeD, /function disposeThreeScene\(canvas\)/);
   assert.match(threeD, /renderer\.dispose\(\)/);
-  assert.match(threeD, /devicePixelRatio \|\| 1, constrainedDevice \? 1\.5 : 2/);\n  assert.match(threeD, /powerPreference: "high-performance"/);\n  assert.match(threeD, /PCFSoftShadowMap/);
+  assert.match(threeD, /devicePixelRatio \|\| 1, constrainedDevice \? 1\.5 : 2/);
+  assert.match(threeD, /powerPreference: "high-performance"/);
+  assert.match(threeD, /PCFSoftShadowMap/);
   assert.match(threeD, /function animateScene\(canvas, render\)/);
   assert.match(threeD, /window\.requestAnimationFrame\(tick\)/);
   assert.match(threeD, /setPointerCapture/);
