@@ -1,3 +1,5 @@
+import { selectRelevantProjectFiles } from "../learning/project-source-policy.mjs";
+
 const SOURCE_EXTENSIONS = [".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs", ".json"];
 const SOURCE_SUFFIXES = ["", ...SOURCE_EXTENSIONS, ...SOURCE_EXTENSIONS.map((extension) => "/index" + extension)];
 
@@ -109,7 +111,7 @@ export function selectProjectFilesWithDependencies(prompt, files, limit = 8, see
   const graph = analyzeProjectDependencies(records);
   const safeLimit = Math.max(0, Math.min(8, Number.isInteger(limit) ? limit : 8));
   const safeSeedLimit = Math.max(0, Math.min(safeLimit, Number.isInteger(seedLimit) ? seedLimit : 4));
-  const seeds = selectRelevant(prompt, records, safeSeedLimit);
+  const seeds = selectRelevantProjectFiles(prompt, records, safeSeedLimit);
   const selected = new Set(seeds.map((file) => normalizePath(file?.path || file?.original_filename)).filter(Boolean));
   const distance = new Map([...selected].map((path) => [path, 0]));
   const queue = [...selected];
@@ -149,20 +151,3 @@ export function selectProjectFilesWithDependencies(prompt, files, limit = 8, see
   });
 }
 
-function selectRelevant(prompt, files, limit) {
-  // Kept local to avoid coupling the dependency graph to the ranking module's internals.
-  const words = new Set(String(prompt || "").normalize("NFKC").toLowerCase().match(/[\p{L}\p{N}]{2,}/gu) || []);
-  const ranked = files.map((file, index) => {
-    const path = String(file?.path || file?.original_filename || "");
-    const content = String(file?.content || "").slice(0, 40000).toLowerCase();
-    const pathText = path.toLowerCase();
-    let score = pathText.endsWith("package.json") ? 100 : 0;
-    for (const word of words) {
-      if (pathText.includes(word)) score += 30;
-      else if (content.includes(word)) score += 1;
-    }
-    return { file, index, score };
-  });
-  ranked.sort((a, b) => b.score - a.score || a.index - b.index);
-  return ranked.slice(0, limit).map(({ file }) => file);
-}
