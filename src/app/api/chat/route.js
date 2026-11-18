@@ -282,13 +282,15 @@ export async function POST(request) {
           if (downloaded.size !== file.size_bytes ||
               downloaded.size > 1 * 1024 * 1024 ||
               totalBytes + downloaded.size > 3 * 1024 * 1024) continue;
+          // Count every verified download, including empty text files, against the
+          // aggregate cap so empty files cannot bypass the real I/O budget.
+          totalBytes += downloaded.size;
           const remaining = 60000 - totalCharacters;
           const sourceText = (await downloaded.text()).slice(0, Math.min(20000, remaining));
           if (!sourceText.trim()) continue;
           const filename = String(file.original_filename || "source.txt").replace(/[\\r\\n`]/g, "_").slice(0, 180);
           sourceParts.push({ filename, mimeType: file.mime_type, sizeBytes: downloaded.size, content: sourceText });
           totalCharacters += sourceText.length;
-          totalBytes += downloaded.size;
         }
         if (sourceParts.length) {
           const manifest = [
