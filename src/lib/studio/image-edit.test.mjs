@@ -144,3 +144,16 @@ test("Image Studio offers a local original-photo colour-grade export without an 
   assert.match(localExport, /setTimeout\(\(\) => URL\.revokeObjectURL\(downloadUrl\), 1000\)/);
   assert.doesNotMatch(localExport, /fetch\(/);
 });
+
+test("Image Studio supports local rotate and flip controls in the original-photo export", async () => {
+  const source = await readFile(new URL("../../app/learn/native-image-studio.jsx", import.meta.url), "utf8");
+  assert.match(source, /Rotate left/);
+  assert.match(source, /Rotate right/);
+  assert.match(source, /Flip horizontal/);
+  assert.match(source, /setPhotoRotation\(\(value\) => \(value \+ 90\) % 360\)/);
+  assert.match(source, /context\.rotate\(\(photoRotation \* Math\.PI\) \/ 180\)/);
+  assert.match(source, /context\.scale\(photoFlipX \? -1 : 1, 1\)/);
+  assert.match(source, /const sideways = Math\.abs\(photoRotation % 180\) === 90/);
+  const localExport = source.slice(source.indexOf("async function exportOriginalPhotoWithLocalGrade"), source.indexOf("function exportSvg"));
+  assert.doesNotMatch(localExport, /fetch\(/);
+});
