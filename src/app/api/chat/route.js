@@ -85,13 +85,13 @@ export async function POST(request) {
   const mode = ["solve", "create", "write", "build", "improve", "learn"].includes(body?.mode) ? body.mode : "solve";
   const allowedGradeBands = ["early-years", "primary", "middle", "secondary", "higher-secondary", "college", "postgraduate", "professional", "adult", "not-sure"];
   const allowedLearningModes = ["story", "visual", "play", "adventure", "talk", "experiment"];
-  const allowedLearningSubjects = allLearningSubjects;
+  // Learning subjects are intentionally open-ended; the UI catalogue is only a suggestion list.
   const allowedCurricula = ["Not specified", "CBSE", "ICSE", "Karnataka State Board", "Other Indian State Board", "Cambridge International", "International Baccalaureate (IB)", "England National Curriculum", "US Common Core", "Other / help me choose"];
   const rawLearningProfile = body?.learningProfile && typeof body.learningProfile === "object" ? body.learningProfile : {};
   const learningProfile = mode === "learn" ? {
     gradeBand: allowedGradeBands.includes(rawLearningProfile.gradeBand) ? rawLearningProfile.gradeBand : "not-sure",
     schoolGrade: ["1","2","3","4","5","6","7","8","9","10"].includes(String(rawLearningProfile.schoolGrade)) ? Number(rawLearningProfile.schoolGrade) : null,
-    subject: allowedLearningSubjects.includes(rawLearningProfile.subject) ? rawLearningProfile.subject : "Anything / explore",
+    subject: typeof rawLearningProfile.subject === "string" && rawLearningProfile.subject.trim().length > 0 && rawLearningProfile.subject.trim().length <= 80 ? rawLearningProfile.subject.trim() : "Anything / explore",
     curriculum: allowedCurricula.includes(rawLearningProfile.curriculum) ? rawLearningProfile.curriculum : "Not specified",
     language: typeof rawLearningProfile.language === "string" && /^[\p{L}\p{M}\s-]{1,35}$/u.test(rawLearningProfile.language.trim()) ? rawLearningProfile.language.trim() : "Use my language",
     learningMode: allowedLearningModes.includes(rawLearningProfile.learningMode) ? rawLearningProfile.learningMode : "talk",
