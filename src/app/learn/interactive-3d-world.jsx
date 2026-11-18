@@ -218,7 +218,7 @@ function rod(group,a,b,color=0xb9c8e2,radius=.035) {
   const mesh=new THREE.Mesh(new THREE.CylinderGeometry(radius,radius,delta.length(),20),new THREE.MeshStandardMaterial({color,metalness:.45,roughness:.28}));
   mesh.position.copy(start).add(end).multiplyScalar(.5);mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),delta.normalize());group.add(mesh);return mesh;
 }
-function makeSceneModel(group,id,selectedPlanet=null,heartFlow="body") {
+function makeSceneModel(group,id,selectedPlanet=null,heartFlow="body",labState={}) {
   if(id==="planet"){
     const earth=sphere(group,[0,0,0],1,"#ffffff",{material:new THREE.MeshStandardMaterial({map:makeEarthTexture(),roughness:.86})});
     const clouds=sphere(group,[0,0,0],1.008,"#ffffff",{material:new THREE.MeshStandardMaterial({color:0xffffff,transparent:true,opacity:.13,roughness:1,wireframe:true})});
@@ -278,18 +278,17 @@ function makeSceneModel(group,id,selectedPlanet=null,heartFlow="body") {
     return;
   }
   if(id==="molecule"){
-    // Water geometry: O-H bond length 0.9572 Å and H-O-H angle 104.5°.
-    // Radii are deliberately enlarged for visibility; bond geometry is preserved.
-    const halfAngle=THREE.MathUtils.degToRad(104.5/2);
-    const bondLength=.9572;
-    const oxygen=[0,0,0];
-    const hydrogenA=[-Math.sin(halfAngle)*bondLength,-Math.cos(halfAngle)*bondLength,0];
-    const hydrogenB=[Math.sin(halfAngle)*bondLength,-Math.cos(halfAngle)*bondLength,0];
-    rod(group,oxygen,hydrogenA,0xd6e2f0,.035);
-    rod(group,oxygen,hydrogenB,0xd6e2f0,.035);
-    sphere(group,oxygen,.42,0xe45e68,{roughness:.2,metalness:.04});
-    sphere(group,hydrogenA,.33,0xf3f6fb,{roughness:.2,metalness:.02});
-    sphere(group,hydrogenB,.33,0xf3f6fb,{roughness:.2,metalness:.02});
+    const kind=labState.chemistryMolecule||"water";
+    const focus=labState.chemistryFocus||"all";
+    const definitions={
+      water:{atoms:[{p:[0,.08,0],r:.36,c:0xe66b78,role:"oxygen"},{p:[-.68,-.43,.12],r:.23,c:0xe9edf7,role:"hydrogen"},{p:[.68,-.43,.12],r:.23,c:0xe9edf7,role:"hydrogen"}],bonds:[[0,1],[0,2]]},
+      carbonDioxide:{atoms:[{p:[-.9,0,0],r:.27,c:0xe66b78,role:"oxygen"},{p:[0,0,0],r:.31,c:0x737b8d,role:"carbon"},{p:[.9,0,0],r:.27,c:0xe66b78,role:"oxygen"}],bonds:[[0,1],[1,2]]},
+      methane:{atoms:[{p:[0,0,0],r:.32,c:0x737b8d,role:"carbon"},{p:[.72,.55,.55],r:.2,c:0xe9edf7,role:"hydrogen"},{p:[-.72,.55,-.55],r:.2,c:0xe9edf7,role:"hydrogen"},{p:[.55,-.65,-.55],r:.2,c:0xe9edf7,role:"hydrogen"},{p:[-.55,-.65,.55],r:.2,c:0xe9edf7,role:"hydrogen"}],bonds:[[0,1],[0,2],[0,3],[0,4]]},
+      ammonia:{atoms:[{p:[0,.12,0],r:.34,c:0x7298dc,role:"nitrogen"},{p:[.72,-.38,.18],r:.2,c:0xe9edf7,role:"hydrogen"},{p:[-.66,-.42,.22],r:.2,c:0xe9edf7,role:"hydrogen"},{p:[0,-.48,-.72],r:.2,c:0xe9edf7,role:"hydrogen"}],bonds:[[0,1],[0,2],[0,3]]},
+    };
+    const molecule=definitions[kind]||definitions.water;
+    if(labState.chemistryShowBonds!==false) molecule.bonds.forEach(([a,b])=>rod(group,molecule.atoms[a].p,molecule.atoms[b].p,0xb9c8e2,.035));
+    molecule.atoms.forEach(atom=>sphere(group,atom.p,atom.r,focus==="all"||focus===atom.role?atom.c:0x4a5060,{roughness:.24,metalness:.03}));
     return;
   }
   if(id==="atom"){
@@ -324,11 +323,26 @@ function makeSceneModel(group,id,selectedPlanet=null,heartFlow="body") {
   }
   if(id==="cell"||id==="plant-cell"){
     const plant=id==="plant-cell";
-    const membrane=sphere(group,[0,0,0],1,plant?0x5c9b59:0x62aeb0,{material:new THREE.MeshPhysicalMaterial({color:plant?0x80c66f:0x67c5c0,transparent:true,opacity:.23,roughness:.2,metalness:0,transmission:.22,thickness:.4})});
-    if(plant){const wall=new THREE.Mesh(new THREE.BoxGeometry(2.05,1.45,1.45),new THREE.MeshStandardMaterial({color:0x75a95d,wireframe:true,transparent:true,opacity:.65}));group.add(wall);}
-    sphere(group,[0,.08,.05],.34,0x9c72c6);
-    for(let i=0;i<7;i++){const a=i*Math.PI*2/7;sphere(group,[Math.cos(a)*.58,Math.sin(a)*.48,Math.sin(a*2)*.24],.12,i%2?0xe9b66c:0x69b78e);}
-    if(plant){sphere(group,[0,0,0],.48,0x9ad7ef,{material:new THREE.MeshPhysicalMaterial({color:0x83cfe8,transparent:true,opacity:.38,roughness:.2})});for(let i=0;i<8;i++){const a=i*Math.PI/4;sphere(group,[Math.cos(a)*.72,Math.sin(a)*.48,.18],.09,0x6cba66);}}return;
+    const focus=labState.cellFocus||"all";
+    const active=(role)=>focus==="all"||focus===role;
+    const muted=0x4c5260;
+    if(plant){
+      const wall=new THREE.Mesh(new THREE.BoxGeometry(2.05,1.45,1.45),new THREE.MeshStandardMaterial({color:active("cellWall")?0x9dcc88:muted,wireframe:true,transparent:true,opacity:.82}));
+      group.add(wall);
+      sphere(group,[0,0,0],.88,0x76b9d9,{material:new THREE.MeshPhysicalMaterial({color:0x76b9d9,transparent:true,opacity:active("vacuole")?.35:.12,roughness:.2,transmission:.18,thickness:.3})});
+      sphere(group,[-.55,.28,.18],.16,active("nucleus")?0x9b75c8:muted);
+      [[.48,.36,-.22],[-.48,-.35,-.18],[.5,-.3,.22]].forEach(p=>sphere(group,p,.14,active("chloroplasts")?0x77bd79:muted));
+      sphere(group,[-.05,.52,-.3],.1,active("mitochondria")?0xe7c36e:muted);
+    } else {
+      sphere(group,[0,0,0],.98,0x62b8c1,{material:new THREE.MeshPhysicalMaterial({color:active("membrane")?0x67c5c0:muted,transparent:true,opacity:.18,roughness:.2,transmission:.2,thickness:.35,side:THREE.DoubleSide})});
+      sphere(group,[0,.08,.08],.34,active("nucleus")?0xbd83d7:muted);
+      [[-.48,-.2,.12],[.46,.28,-.18]].forEach(p=>sphere(group,p,.15,active("mitochondria")?0xe9b66c:muted));
+      const erColor=active("endoplasmicReticulum")?0x77c69e:muted;
+      tube(group,[[-.36,-.48,.22],[-.05,-.55,.3],[.22,-.42,.3],[.35,-.2,.25]],erColor,.035);
+      tube(group,[[-.36,.4,-.22],[-.1,.5,-.28],[.18,.43,-.25]],erColor,.03);
+      [[.52,-.2,.18],[-.48,.28,-.2],[.32,.52,.1],[-.58,-.35,-.12]].forEach(p=>sphere(group,p,.055,active("ribosomes")?0xe6d28a:muted));
+    }
+    return;
   }
   if(id==="heart"){
     const stageColors = {
