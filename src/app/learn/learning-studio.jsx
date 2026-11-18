@@ -6,6 +6,7 @@ import Link from "next/link";
 import "./learning-studio.css";
 import AnimatedLesson, { AnimatedVisual, readMotionLesson } from "./animated-lesson";
 import { learningCategories, allLearningSubjects } from "@/lib/learning/learning-catalog";
+import { normalizeLearningSubject } from "@/lib/learning/subject-policy.mjs";
 const Interactive3DWorld = dynamic(() => import("./interactive-3d-world"), { ssr: false, loading: () => <div role="status">Preparing interactive 3D learning…</div> });
 const Mini3DModel = dynamic(() => import("./interactive-3d-world").then((module) => module.Mini3DModel), { ssr: false });
 
@@ -304,14 +305,16 @@ export default function LearningStudio({ userEmail = "" }) {
           resumedProfile = {
             gradeBand: gradeBands.some(([value]) => value === savedProfile.gradeBand) ? savedProfile.gradeBand : resumedProfile.gradeBand,
             schoolGrade: ["1","2","3","4","5","6","7","8","9","10"].includes(String(savedProfile.schoolGrade)) ? String(savedProfile.schoolGrade) : resumedProfile.schoolGrade,
-            subject: subjects.includes(savedProfile.subject) ? savedProfile.subject : resumedProfile.subject,
+            subject: typeof savedProfile.subject === "string" && savedProfile.subject.trim().length <= 80
+              ? normalizeLearningSubject(savedProfile.subject)
+              : resumedProfile.subject,
             curriculum: curricula.includes(savedProfile.curriculum) ? savedProfile.curriculum : resumedProfile.curriculum,
             language: typeof savedProfile.language === "string" && savedProfile.language.length <= 35 ? savedProfile.language : resumedProfile.language,
             learningMode: learningModes.some((item) => item.id === savedProfile.learningMode) ? savedProfile.learningMode : resumedProfile.learningMode,
           };
           setGradeBand(resumedProfile.gradeBand);
           setSchoolGrade(resumedProfile.schoolGrade);
-          if (subjects.includes(resumedProfile.subject)) {
+          if (resumedProfile.subject) {
             setSubject(resumedProfile.subject);
             setCategory(learningCategories.find((item) => item.subjects.includes(resumedProfile.subject))?.name || "Explore anything");
           }
