@@ -8,7 +8,6 @@ export const runtime = "nodejs";
 export const maxDuration = 180;
 
 const MAX_REQUEST_BYTES = 4 * 1024 * 1024;
-const activeBuildUsers = new Set();
 
 export async function POST(request) {
   const supabase = await createClient();
@@ -53,10 +52,6 @@ export async function POST(request) {
     return NextResponse.json({ error: error.message || "Invalid workspace files." }, { status: 400 });
   }
 
-  if (activeBuildUsers.has(user.id)) {
-    return NextResponse.json({ error: "A build is already running for this account. Please wait for it to finish." }, { status: 409 });
-  }
-
   const { data: project, error: projectError } = await supabase
     .from("projects")
     .select("id")
@@ -68,7 +63,21 @@ export async function POST(request) {
     return NextResponse.json({ error: "Project not found." }, { status: 404 });
   }
 
-  activeBuildUsers.add(user.id);
+  // A database-backed lock prevents duplicate builds across serverless instances.
+  // If the migration/RPC is unavailable, fail closed instead of running unlocked.
+  const lockToken = randomUUID();
+  const { data: lockAcquired, error: lockError } = await supabase.rpc("acquire_aahana_build_lock", {
+    p_project_id: projectId,
+    p_lock_token: lockToken,
+  });
+  if (lockError) {
+    console.error("Aahana build lock could not be acquired:", lockError.message);
+    return NextResponse.json({ error: "Build protection is not ready. Please try again later." }, { status: 503 });
+  }
+  if (lockAcquired !== true) {
+    return NextResponse.json({ error: "A build is already running for this account. Please wait for it to finish." }, { status: 409 });
+  }
+
   try {
     const result = await executeBuildTask({
       files,
@@ -84,6 +93,9 @@ export async function POST(request) {
       error: "Aahana could not complete this isolated build. No production files were changed.",
     }, { status: 502 });
   } finally {
-    activeBuildUsers.delete(user.id);
+    const { error: releaseError } = await supabase.rpc("release_aahana_build_lock", {
+      p_lock_token: lockToken,
+    });
+    if (releaseError) console.error("Aahana build lock release failed:", releaseError.message);
   }
 }
