@@ -80,7 +80,7 @@ export function validateChangeProposal({ currentFiles, changes } = {}) {
     const path = validateProposalPath(file?.path);
     const foldedPath = path.toLowerCase();
     if (current.has(path) || currentCaseFolded.has(foldedPath)) {
-      throw new Error("The project snapshot contains duplicate or case-colliding paths.");
+      throw new Error("The project snapshot contains duplicate paths or case-colliding paths.");
     }
     const bytes = validateSourceText(file?.content, "Current file content");
     current.set(path, { content: file.content, sha256: sha256(file.content), bytes });
