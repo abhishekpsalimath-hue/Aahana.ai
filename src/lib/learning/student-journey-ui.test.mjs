@@ -193,3 +193,10 @@ test("lesson pause control freezes the actual embedded WebGL model and resumes i
   assert.match(world, /const stopAnimation = paused \? \(render\(0\), \(\) => \{\}\) : animateScene\(canvas, render\)/);
   assert.match(world, /\[modelId, rotation, zoom, paused\]/);
 });
+
+
+test("3D New Exploring details appear beneath the full-width display, never beside it", () => {
+  assert.match(styles, /Keep the 3D display full-width; place its New Exploring panel beneath it/);
+  assert.match(styles, /\.learning-3d-layout\s*\{\s*grid-template-columns:\s*minmax\(0, 1fr\)/);
+  assert.match(styles, /\.learning-3d-details\s*\{\s*width:\s*100%/);
+});
