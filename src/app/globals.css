@@ -311,3 +311,13 @@ button:focus-visible,a:focus-visible{outline-color:#c4a7ff}
   .space-star,.astronaut-float{animation:none!important}
   .space-star{opacity:.18;transform:none}
 }
+
+.build-tools{width:min(100%,900px);margin:10px auto 14px;padding:14px 16px;border:1px solid #3a3049;border-radius:13px;background:rgba(19,16,27,.84);backdrop-filter:blur(14px)}
+.build-tools-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.build-tools-heading strong{display:block;color:#eee6fa;font-size:13px;font-weight:650}
+.build-tools-heading p{margin:4px 0 0;color:#a99fb7;font-size:11px;line-height:1.5}
+.build-tools-actions{display:flex;gap:7px;flex-wrap:wrap}
+.build-tools-actions button{border:1px solid #5a4a70;border-radius:8px;background:#251d32;color:#e8dcff;padding:8px 11px;font-size:11px;font-weight:600;cursor:pointer}
+.build-tools-actions button:disabled{opacity:.42;cursor:not-allowed}
+.build-tools-note{margin:10px 0 0;color:#a99fb7;font-size:10px;line-height:1.5}
+@media(max-width:760px){.build-tools{padding:12px}.build-tools-heading{align-items:flex-start}.build-tools-actions{width:100%}.build-tools-actions button{flex:1}}
