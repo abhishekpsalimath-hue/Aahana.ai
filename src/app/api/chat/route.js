@@ -343,8 +343,8 @@ export async function POST(request) {
               allow_external: false,
               extract_depth: "basic",
               format: "markdown",
-              timeout: 40,
-            }, 44000);
+              timeout: 20,
+            }, 22000);
             retrievedPages = (Array.isArray(crawlData.results) ? crawlData.results : [])
               .filter((item) => typeof item?.url === "string" && typeof item?.raw_content === "string" && item.raw_content.trim())
               .map((item) => ({ url: item.url, title: item.title || item.url, content: item.raw_content }))
@@ -357,7 +357,7 @@ export async function POST(request) {
               include_answer: false,
               include_raw_content: false,
               topic: /\b(?:news|breaking|today|yesterday|this week|this month|developments|announcements|breakthroughs|release|launched|November|December|October|September|August|July|June|May|April|March|February|January)\b/i.test(prompt) ? "news" : "general",
-            }, 12000);
+            }, 8000);
             const rankedResults = (Array.isArray(searchData.results) ? searchData.results : [])
               .filter((item) => {
                 if (typeof item?.url !== "string" || typeof item?.content !== "string" || !item.content.trim()) return false;
@@ -377,7 +377,7 @@ export async function POST(request) {
                   extract_depth: "basic",
                   format: "markdown",
                   chunks_per_source: 3,
-                }, 18000);
+                }, 12000);
                 const extractedByUrl = new Map((Array.isArray(extractData.results) ? extractData.results : [])
                   .filter((item) => typeof item?.url === "string" && typeof item?.raw_content === "string" && item.raw_content.trim())
                   .map((item) => [item.url, item.raw_content]));
@@ -467,7 +467,7 @@ export async function POST(request) {
           ...context,
         ],
       }),
-      signal: AbortSignal.timeout(45000),
+      signal: AbortSignal.timeout(requiresLiveResearch ? 32000 : 45000),
     });
   } catch {
     return NextResponse.json({ error: "Aahana could not connect to the AI service. Please try again." }, { status: 502 });
