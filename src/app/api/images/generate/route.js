@@ -164,7 +164,8 @@ export async function POST(request) {
       { headers: { "Cache-Control": "no-store" } }
     );
   } catch (error) {
-    console.error("Aahana image generation request failed:", error?.name || "unknown error");
-    return NextResponse.json({ error: "Image generation timed out or the provider is unavailable. Please try again." }, { status: 503 });
+    const status = Number.isInteger(error?.status) ? error.status : 503;
+    if (status >= 500) console.error("Aahana image generation request failed:", error?.name || "unknown error");
+    return NextResponse.json({ error: error?.message || "Image generation timed out or the provider is unavailable. Please try again." }, { status });
   }
 }
