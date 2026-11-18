@@ -4,9 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "npm test && next build",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "node --test"
   },
   "dependencies": {
     "@supabase/ssr": "^0.7.0",
@@ -19,7 +20,8 @@
     "exceljs": "^4.4.0",
     "three": "^0.180.0",
     "topojson-client": "^3.1.0",
-    "world-atlas": "^2.0.2"
+    "world-atlas": "^2.0.2",
+    "@vercel/sandbox": "4.0.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
