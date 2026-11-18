@@ -59,3 +59,14 @@ test("accepts only HTTPS Pinterest reference links", async () => {
   assert.equal(sanitizePinterestReferenceUrl("https://evil.example/pinterest.com"), "");
   assert.equal(sanitizePinterestReferenceUrl("javascript:alert(1)"), "");
 });
+
+test("exports cinematic colour grading presets in vector SVG output", async () => {
+  const { COLOR_GRADES, getColorGradeFilter } = await import("./color-grading.mjs");
+  assert.equal(COLOR_GRADES.length, 33);
+  for (const id of ["teal-orange", "cross-processed", "desaturated", "technicolor", "duotone", "bleach-bypass", "colour-negative", "kodachrome", "day-for-night", "infrared", "neo-noir", "night-vision", "thermal"]) {
+    assert.notEqual(getColorGradeFilter(id), "none");
+  }
+  assert.equal(getColorGradeFilter("not-a-grade"), "none");
+  const svg = renderImageSceneSvg(createImageScene(), "teal-orange");
+  assert.match(svg, /filter:saturate\(1\.35\)/);
+});
