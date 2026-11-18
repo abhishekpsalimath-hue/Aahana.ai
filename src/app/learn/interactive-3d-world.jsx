@@ -992,6 +992,7 @@ export default function Interactive3DWorld({ selectedPlanet, onSelectedPlanetCha
   const [conceptIndex, setConceptIndex] = useState(0);
   const [labCheckAnswer, setLabCheckAnswer] = useState(null);
   const [cellCheckAnswer, setCellCheckAnswer] = useState(null);
+  useEffect(() => { setCellCheckAnswer(null); }, [modelId]);
   const [ecosystem, setEcosystem] = useState({ rainfall: 70, waterSource: true, pollution: 15, engineCycle: "intake", physicsForce: 6, physicsFriction: 2, physicsMass: 2, chemistryMolecule: "water", chemistryFocus: "all", chemistryShowBonds: true, orbitSpeed: 1, cellFocus: "all", bridgeLoad: "center" });
   const canvasRef = useRef(null);
   const dragRef = useRef(null);
