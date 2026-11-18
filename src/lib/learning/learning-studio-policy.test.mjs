@@ -657,3 +657,10 @@ test("Student Mode invites open-ended topic discovery beyond its suggested catal
   assert.match(route, /OPEN-ENDED STUDENT DISCOVERY/);
   assert.match(route, /Treat the catalogue as suggestions, never a boundary/);
 });
+
+
+test("Student Mode keeps the fixed Solar System explorer out of unrelated learning topics", () => {
+  assert.match(studio, /const showSpaceLearning = \/\\b\(\?:solar system\|space science\|astronomy\|planets\?\|planetary\|moon\|lunar\|sun\|orbit\(\?:al\)\?\)\\b\/i/);
+  assert.match(studio, /\{showSpaceLearning && <>[\s\S]*?<Interactive3DWorld selectedPlanet=/);
+  assert.match(studio, /<SpaceFunQuiz \/>[\s\S]*?<\/>/);
+});
