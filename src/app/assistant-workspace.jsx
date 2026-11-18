@@ -875,6 +875,11 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         result.exitCode !== undefined ? `Exit code: ${result.exitCode}` : "",
         result.stdout ? `\nOutput:\n${result.stdout}` : "",
         result.stderr ? `\nDiagnostics:\n${result.stderr}` : "",
+        Array.isArray(result.diagnostics) && result.diagnostics.length
+          ? "\nStructured findings:\n" + result.diagnostics.map((item) =>
+              "- " + (item.severity || "error") + ": " + (item.file || "project") + (item.line ? ":" + item.line + (item.column ? ":" + item.column : "") : "") + (item.code ? " [" + item.code + "]" : "") + " " + item.message
+            ).join("\n")
+          : "",
         "\nNo project files were changed and nothing was deployed.",
       ].filter(Boolean).join("\n");
       setMessages((current) => current.map((item, index) =>
