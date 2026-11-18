@@ -34,7 +34,7 @@ export default function NativeImageStudio() {
     if (!referenceImage) { setReferencePreview(""); return; }
     const url = URL.createObjectURL(referenceImage);
     setReferencePreview(url);
-    return () => setTimeout(() => URL.revokeObjectURL(url), 1000);
+    return () => URL.revokeObjectURL(url);
   }, [referenceImage]);
 
   function updateLayer(index, patch) {
