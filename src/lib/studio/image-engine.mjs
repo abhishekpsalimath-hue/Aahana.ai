@@ -72,3 +72,12 @@ export function buildPinterestInspiredPrompt({ title = "Original creative", note
     "Use the reference only as high-level inspiration for mood, colour relationships, visual hierarchy and general design sensibility. Make the layout, details and artwork distinct and original. No watermarks, no copied branding, no fake text; leave clean space for typography where appropriate."
   ].join("\n");
 }
+
+
+export function sanitizePinterestReferenceUrl(value = "") {
+  try {
+    const url = new URL(String(value).trim());
+    if (url.protocol !== "https:" || !["pinterest.com", "www.pinterest.com", "pin.it"].includes(url.hostname)) return "";
+    return url.href;
+  } catch { return ""; }
+}
