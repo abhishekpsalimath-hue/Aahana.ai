@@ -50,6 +50,10 @@ test("recognizes natural-language image editing requests when an image is attach
     "Replace the sky with a sunset",
     "Remove the text from this image",
     "Turn it into a watercolour painting",
+    "Background hatao",
+    "Background remove maadi",
+    "Colour blue maadi",
+    "Sky change karo",
   ]) assert.equal(isImageEditRequest(prompt), true, prompt);
 });
 
