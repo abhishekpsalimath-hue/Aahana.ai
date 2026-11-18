@@ -34,3 +34,21 @@ export function parseImageEditInput(dataUrl, maxBytes = 4 * 1024 * 1024) {
   if (estimatedBytes < 1 || estimatedBytes > maxBytes) return null;
   return { mimeType: match[1], base64: match[2], estimatedBytes };
 }
+
+export function detectImageEditStyleFromPrompt(value) {
+  const text = String(value || "").toLowerCase();
+  if (/\b(?:anime|manga)\b/.test(text)) return "anime";
+  if (/\b(?:comic|comic[- ]book)\b/.test(text)) return "comic";
+  if (/\b(?:3d|three[- ]dimensional|animated[- ]film|pixar[- ]like)\b/.test(text)) return "3d-animation";
+  if (/\b(?:watercolou?r|watercolou?r painting)\b/.test(text)) return "watercolor";
+  return "cartoon";
+}
+
+export function isImageEditRequest(value, hasImage = false) {
+  if (!hasImage) return false;
+  const text = String(value || "").trim();
+  if (!text) return false;
+  const transformation = /\b(?:convert|transform|turn|make|change|cartooni[sz]e|stylize|style|redraw|illustrate|paint)\b/i.test(text);
+  const targetStyle = /\b(?:cartoon|cartoonish|anime|manga|comic|illustration|illustrated|painting|watercolou?r|sketch|drawing|3d animated|animated film|art style)\b/i.test(text);
+  return transformation && targetStyle;
+}
