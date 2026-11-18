@@ -325,6 +325,12 @@ button:focus-visible,a:focus-visible{outline-color:#c4a7ff}
 
 /* Founder welcome — preserve the reference preview's display typography. */
 .welcome{isolation:isolate}
+.founder-welcome-note.is-dissolving{
+  animation:founder-welcome-dissolve .9s cubic-bezier(.4,0,.8,.2) forwards;
+}
+@keyframes founder-welcome-dissolve{
+  to{opacity:0;filter:blur(14px);transform:translate3d(0,-10px,0) scale(.985)}
+}
 .founder-welcome-note{
   position:relative;z-index:3;display:grid;justify-items:center;gap:11px;
   width:min(92%,680px);margin:12px auto 22px;padding:0 12px;text-align:center;
