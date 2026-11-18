@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { buildResearchQuery, rankAndDedupeResearchResults } from "../research/research-policy.mjs";
 import { selectRelevantProjectFiles } from "./project-source-policy.mjs";
+import { normalizeLearningSubject } from "./subject-policy.mjs";
 import "./learning-memory.test.mjs";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -27,12 +28,21 @@ test("chat API accepts the dedicated learn mode and validates learner profile fi
   assert.match(route, /"improve",\s*"learn"/);
   assert.match(route, /allowedGradeBands/);
   assert.match(route, /allowedLearningModes/);
-  assert.match(route, /allowedLearningSubjects/);
+  assert.match(route, /normalizeLearningSubject\(rawLearningProfile\.subject\)/);
   assert.match(route, /allowedCurricula/);
   assert.match(route, /curriculum: allowedCurricula/);
   assert.match(route, /\\p\{L\}/);
   assert.match(route, /mode === "learn" \?/);
   assert.match(route, /learningProfile\.language/);
+});
+
+
+test("Student Mode accepts open-ended subjects instead of requiring a fixed catalogue", () => {
+  assert.equal(normalizeLearningSubject("Marine robotics"), "Marine robotics");
+  assert.equal(normalizeLearningSubject("Kannada literature"), "Kannada literature");
+  assert.equal(normalizeLearningSubject("  AI safety  "), "AI safety");
+  assert.equal(normalizeLearningSubject(""), "Anything / explore");
+  assert.equal(normalizeLearningSubject("x".repeat(81)), "Anything / explore");
 });
 
 test("reopening a learning session restores its original mode and learner profile", () => {
