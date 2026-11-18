@@ -13,7 +13,7 @@ import {
 test("offers explicit image-to-image styles and user edit constraints", () => {
   assert.deepEqual(IMAGE_EDIT_STYLES.map((style) => style.id), ["cartoon", "anime", "comic", "3d-animation", "watercolor"]);
   const prompt = buildImageEditPrompt("cartoon", { change: "make the background a watercolor landscape", preserve: "keep the same jacket" });
-  assert.match(prompt, /exact same person or people/);
+  assert.match(prompt, /retain every original person/);
   assert.match(prompt, /full-frame image transformation/);
   assert.match(prompt, /not a sticker/);
   assert.match(prompt, /input_image_0/);
