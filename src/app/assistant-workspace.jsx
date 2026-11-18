@@ -719,14 +719,15 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   }
 
   async function generateVideo(videoPrompt = prompt.trim()) {
-    if (!videoPrompt || videoGenerating || imageGenerating || busy || imageFile) return;
+    if (!videoPrompt || videoGenerating || busy || imageFile) return;
+    const mediaRequestId = `video-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     setVideoGenerating(true);
     setError("");
     setGeneratedVideo(null);
     setPrompt("");
     setMessages((current) => [...current,
       { role: "user", content: videoPrompt },
-      { role: "assistant", content: "Creating your video…" },
+      { role: "assistant", content: "Creating your video…", mediaRequestId },
     ]);
     try {
       const response = await fetch("/api/videos/generate", {
@@ -741,12 +742,12 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       }
       const video = { url: result.videoUrl, prompt: videoPrompt, duration: result.duration || 5 };
       setGeneratedVideo(video);
-      setMessages((current) => current.map((item, index) =>
-        index === current.length - 1 ? { ...item, content: "Your video is ready.", videoUrl: video.url, videoPrompt } : item
+      setMessages((current) => current.map((item) =>
+        item.mediaRequestId === mediaRequestId ? { ...item, content: "Your video is ready.", videoUrl: video.url, videoPrompt } : item
       ));
     } catch (err) {
-      setMessages((current) => current.map((item, index) =>
-        index === current.length - 1 ? { ...item, content: err.message || "I couldn't generate that video." } : item
+      setMessages((current) => current.map((item) =>
+        item.mediaRequestId === mediaRequestId ? { ...item, content: err.message || "I couldn't generate that video." } : item
       ));
       setError(err.message || "Video generation failed.");
     } finally {
@@ -1005,9 +1006,10 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   async function submitPrompt(event) {
     event.preventDefault();
     const text = prompt.trim();
-    if ((!text && !imageFile) || busy || imageGenerating || videoGenerating) return;
+    if ((!text && !imageFile) || busy) return;
 
     if (!imageFile && isVideoGenerationRequest(text)) {
+      if (videoGenerating) return;
       await generateVideo(text);
       return;
     }
@@ -1015,13 +1017,15 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     const imageEditRequest = Boolean(isImageEditRequest(text) && (imageFile || generatedImage?.dataUrl));
     const imageCreateRequest = !imageFile && !imageEditRequest && isImageGenerationRequest(text);
     if (imageEditRequest || imageCreateRequest) {
+      if (imageGenerating) return;
+      const mediaRequestId = `image-${Date.now()}-${Math.random().toString(36).slice(2)}`;
       setPrompt("");
       setError("");
       if (imageCreateRequest || imageFile) setGeneratedImage(null);
       setImageGenerating(true);
       setMessages((current) => [...current,
         { role: "user", content: imageEditRequest ? `${text} [Image attached: ${imageFile.name}]` : text },
-        { role: "assistant", content: imageEditRequest ? "Editing your image…" : "Creating your image…" },
+        { role: "assistant", content: imageEditRequest ? "Editing your image…" : "Creating your image…", mediaRequestId },
       ]);
       try {
         let inputImage = null;
@@ -1047,8 +1051,8 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         if (typeof result.imageDataUrl !== "string" || !result.imageDataUrl.startsWith("data:image/jpeg;base64,")) {
           throw new Error("The image provider returned an invalid image.");
         }
-        setMessages((current) => current.map((item, index) =>
-          index === current.length - 1 ? {
+        setMessages((current) => current.map((item) =>
+          item.mediaRequestId === mediaRequestId ? {
             ...item,
             content: imageEditRequest ? "Your edited image is ready." : "Your image is ready.",
             imageDataUrl: result.imageDataUrl,
@@ -1058,8 +1062,8 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         setGeneratedImage({ dataUrl: result.imageDataUrl, prompt: text });
         if (imageEditRequest) setImageFile(null);
       } catch (err) {
-        setMessages((current) => current.map((item, index) =>
-          index === current.length - 1 ? { ...item, content: err.message || "I couldn't generate that image." } : item
+        setMessages((current) => current.map((item) =>
+          item.mediaRequestId === mediaRequestId ? { ...item, content: err.message || "I couldn't generate that image." } : item
         ));
         setError(err.message || "Image generation failed.");
       } finally {
@@ -1067,6 +1071,10 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       }
       return;
     }
+
+    // Keep ordinary chat and build requests single-flight, while allowing one
+    // image task and one video task to finish independently.
+    if (imageGenerating || videoGenerating) return;
 
     if (aiEnabled && isWebsiteBuildRequest(text) && selectedProjectId) {
       setMode("build");
@@ -1498,11 +1506,11 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
               <button className="copy-message" type="button" onClick={startVoiceInput} disabled={listening || busy}>{listening ? "Listening…" : "Speak"}</button>
               {imageFile && <span className="image-attach-name">{imageFile.name} <button type="button" onClick={() => setImageFile(null)}>Remove</button></span>}
               <button className="copy-message" type="button" onClick={generateImage}
-                disabled={!prompt.trim() || imageGenerating || videoGenerating || busy || Boolean(imageFile)}>
+                disabled={!prompt.trim() || imageGenerating || busy || Boolean(imageFile)}>
                 {imageGenerating ? "Creating image…" : "Generate image"}
               </button>
               <button className="copy-message" type="button" onClick={() => generateVideo()}
-                disabled={!prompt.trim() || videoGenerating || imageGenerating || busy || Boolean(imageFile)}>
+                disabled={!prompt.trim() || videoGenerating || busy || Boolean(imageFile)}>
                 {videoGenerating ? "Creating video…" : "Generate video"}
               </button>
             </div>
