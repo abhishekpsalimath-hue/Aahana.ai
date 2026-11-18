@@ -1,10 +1,4 @@
 const STOP_WORDS = new Set(["about","after","again","also","and","are","build","can","create","file","for","from","help","how","into","make","need","please","project","that","the","this","with","you","your"]);
-const CORE_PROJECT_FILES = new Set([
-  "package.json", "readme.md", "tsconfig.json", "jsconfig.json", "index.html",
-  "next.config.js", "next.config.mjs", "next.config.ts",
-  "vite.config.js", "vite.config.ts", "vite.config.mjs",
-  "astro.config.mjs", "astro.config.ts", "svelte.config.js",
-]);
 
 function tokens(value) {
   return new Set(
