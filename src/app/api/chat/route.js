@@ -261,13 +261,14 @@ export async function POST(request) {
         const selectedTextFiles = selectRelevantProjectFiles(prompt, textFiles, 8);
         const sourceParts = [];
         let totalCharacters = 0;
+        let totalBytes = 0;
         for (const file of selectedTextFiles) {
-          if (totalCharacters >= 60000) break;
+          if (totalCharacters >= 60000 || totalBytes >= 3 * 1024 * 1024) break;
           if (file.bucket_id !== "aahana-private" ||
               typeof file.object_path !== "string" ||
               !file.object_path.startsWith(`${user.id}/${projectId}/`) ||
               !Number.isInteger(file.size_bytes) || file.size_bytes < 1 ||
-              file.size_bytes > 10 * 1024 * 1024) continue;
+              file.size_bytes > 1 * 1024 * 1024) continue;
 
           const { data: downloaded, error: downloadError } = await supabase.storage
             .from(file.bucket_id)
@@ -276,12 +277,18 @@ export async function POST(request) {
             console.error("Aahana project source download failed:", downloadError?.message || "file unavailable");
             continue;
           }
+          // Enforce the uploader's real per-file and project limits against the
+          // downloaded Blob too; database metadata alone is not a size guarantee.
+          if (downloaded.size !== file.size_bytes ||
+              downloaded.size > 1 * 1024 * 1024 ||
+              totalBytes + downloaded.size > 3 * 1024 * 1024) continue;
           const remaining = 60000 - totalCharacters;
           const sourceText = (await downloaded.text()).slice(0, Math.min(20000, remaining));
           if (!sourceText.trim()) continue;
-          const filename = String(file.original_filename || "source.txt").replace(/[\r\n`]/g, "_").slice(0, 180);
-          sourceParts.push({ filename, mimeType: file.mime_type, sizeBytes: file.size_bytes, content: sourceText });
+          const filename = String(file.original_filename || "source.txt").replace(/[\\r\\n`]/g, "_").slice(0, 180);
+          sourceParts.push({ filename, mimeType: file.mime_type, sizeBytes: downloaded.size, content: sourceText });
           totalCharacters += sourceText.length;
+          totalBytes += downloaded.size;
         }
         if (sourceParts.length) {
           const manifest = [
