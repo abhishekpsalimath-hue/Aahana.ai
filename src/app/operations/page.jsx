@@ -349,7 +349,7 @@ export default function OperationsPage() {
         <section className="ops-section">
           <div className="ops-section-heading"><div><div className="ops-eyebrow">PRIVATE AUTOMATION / DRAFT BLUEPRINTS</div><h2>Automation for your work</h2></div><span className="ops-muted">Founder-only</span></div>
           <p className="ops-muted">These are private automation ideas for your own operations—not public Aahana AI features. Proposing one creates a review task only. Nothing is scheduled or connected until its design, data access and permissions are approved.</p>
-          <div className="ops-panel">
+          <div className="ops-panel ops-form">
             <label htmlFor="automation-local-time">Daily / weekly preview time (India)</label>
             <input id="automation-local-time" type="time" value={automationTime} onChange={(event) => { setAutomationTime(event.target.value); setAutomationPreviews({}); }} />
             <p className="ops-muted">Weekly previews default to Monday. Time zone: Asia/Kolkata.</p>
@@ -360,7 +360,7 @@ export default function OperationsPage() {
               <h3>{item.name}</h3>
               <p className="ops-muted">{item.description}</p>
               {["daily", "weekly"].includes(item.cadence) && <>
-                <button className="ops-secondary" type="button" disabled={!!automationPreviewBusyId} onClick={() => previewAutomationSchedule(item)}>{automationPreviewBusyId === item.id ? "Checking…" : "Preview next run"}</button>
+                <button className="ops-quiet" type="button" disabled={!!automationPreviewBusyId} onClick={() => previewAutomationSchedule(item)}>{automationPreviewBusyId === item.id ? "Checking…" : "Preview next run"}</button>
                 {automationPreviews[item.id] && <p className="ops-muted">Next preview: {new Date(automationPreviews[item.id].nextRunAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}. Not scheduled.</p>}
               </>}
               <button className="ops-primary" type="button" disabled={!!automationBusyId} onClick={() => proposeAutomation(item)}>{automationBusyId === item.id ? "Adding proposal…" : "Propose setup"}</button>
