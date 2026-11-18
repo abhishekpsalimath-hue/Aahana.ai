@@ -990,6 +990,7 @@ export default function Interactive3DWorld({ selectedPlanet, onSelectedPlanetCha
   const [rotation, setRotation] = useState({ yaw: -.55, pitch: -.22 });
   const [zoom, setZoom] = useState(1);
   const [conceptIndex, setConceptIndex] = useState(0);
+  const [labCheckAnswer, setLabCheckAnswer] = useState(null);
   const [ecosystem, setEcosystem] = useState({ rainfall: 70, waterSource: true, pollution: 15, engineCycle: "intake", physicsForce: 6, physicsFriction: 2, physicsMass: 2, chemistryMolecule: "water", chemistryFocus: "all", chemistryShowBonds: true, orbitSpeed: 1, cellFocus: "all", bridgeLoad: "center" });
   const canvasRef = useRef(null);
   const dragRef = useRef(null);
@@ -997,6 +998,37 @@ export default function Interactive3DWorld({ selectedPlanet, onSelectedPlanetCha
   const selectedPlanetInfo = solarPlanets.find((item) => item.id === selectedPlanet) || null;
   const displayedTitle = selectedPlanetInfo ? selectedPlanetInfo.label : model.label;
   const displayedDescription = selectedPlanetInfo ? selectedPlanetInfo.description : model.description;
+  const chemistryChecks = {
+    water: {
+      question: "Which atom sits at the centre of a water molecule?",
+      options: ["Oxygen", "Hydrogen", "Carbon"],
+      correct: 0,
+      hint: "Look for the larger red atom connected to both smaller hydrogen atoms.",
+      explanation: "Correct. Oxygen is the central atom in H₂O, bonded to two hydrogen atoms.",
+    },
+    carbonDioxide: {
+      question: "What is the molecular shape of carbon dioxide?",
+      options: ["Bent", "Linear", "Tetrahedral"],
+      correct: 1,
+      hint: "The carbon atom sits between two oxygen atoms on opposite sides.",
+      explanation: "Correct. CO₂ is linear, with a bond angle of 180°.",
+    },
+    methane: {
+      question: "What shape do the four bonds around carbon form in methane?",
+      options: ["Tetrahedral", "Linear", "Trigonal pyramidal"],
+      correct: 0,
+      hint: "Think of four directions spreading out evenly in three dimensions.",
+      explanation: "Correct. CH₄ has a tetrahedral molecular geometry, with bond angles near 109.5°.",
+    },
+    ammonia: {
+      question: "What is the molecular shape of ammonia?",
+      options: ["Trigonal planar", "Bent", "Trigonal pyramidal"],
+      correct: 2,
+      hint: "Nitrogen has three N–H bonds and one lone pair that affects the shape.",
+      explanation: "Correct. NH₃ is trigonal pyramidal because the lone pair influences its three bonded hydrogen atoms.",
+    },
+  };
+  const activeChemistryCheck = chemistryChecks[ecosystem.chemistryMolecule] || chemistryChecks.water;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -1102,7 +1134,7 @@ export default function Interactive3DWorld({ selectedPlanet, onSelectedPlanetCha
             <span>BUILD & EXPLORE MOLECULES</span>
             <p>Choose a molecule, focus on an element, and show or hide its bonds. Rotate the model to inspect its shape. These are simplified educational models, not electron-density or scale-accurate simulations.</p>
             <div className="learning-3d-experiment-control"><label htmlFor="chemistry-molecule">Molecule</label>
-              <select id="chemistry-molecule" value={ecosystem.chemistryMolecule} onChange={(event) => setEcosystem((current) => ({ ...current, chemistryMolecule: event.target.value, chemistryFocus: "all" }))}>
+              <select id="chemistry-molecule" value={ecosystem.chemistryMolecule} onChange={(event) => { setEcosystem((current) => ({ ...current, chemistryMolecule: event.target.value, chemistryFocus: "all" })); setLabCheckAnswer(null); }}>
                 <option value="water">Water · H₂O</option>
                 <option value="carbonDioxide">Carbon dioxide · CO₂</option>
                 <option value="methane">Methane · CH₄</option>
@@ -1121,7 +1153,15 @@ export default function Interactive3DWorld({ selectedPlanet, onSelectedPlanetCha
               methane: "Methane (CH₄): one carbon atom forms four single covalent bonds to hydrogen atoms. The molecule has a tetrahedral shape, with bond angles of about 109.5°.",
               ammonia: "Ammonia (NH₃): one nitrogen atom forms three single covalent bonds to hydrogen atoms. Its molecular shape is trigonal pyramidal; the lone electron pair on nitrogen influences the shape.",
             })[ecosystem.chemistryMolecule]}</p>
-            <button type="button" onClick={() => setEcosystem((current) => ({ ...current, chemistryMolecule: "water", chemistryFocus: "all", chemistryShowBonds: true }))}>Reset molecule lab</button>
+            <div className="learning-3d-experiment-control">
+              <strong>Quick knowledge check</strong>
+              <p>{activeChemistryCheck.question}</p>
+              <div role="group" aria-label="Molecule knowledge check">
+                {activeChemistryCheck.options.map((option, optionIndex) => <button type="button" key={option} className={labCheckAnswer === optionIndex ? "active" : ""} aria-pressed={labCheckAnswer === optionIndex} onClick={() => setLabCheckAnswer(optionIndex)}>{option}</button>)}
+              </div>
+              {labCheckAnswer !== null && <p className="learning-3d-experiment-observation" role="status">{labCheckAnswer === activeChemistryCheck.correct ? activeChemistryCheck.explanation : activeChemistryCheck.hint}</p>}
+            </div>
+            <button type="button" onClick={() => { setEcosystem((current) => ({ ...current, chemistryMolecule: "water", chemistryFocus: "all", chemistryShowBonds: true })); setLabCheckAnswer(null); }}>Reset molecule lab</button>
           </div>}
           {modelId === "cart" && <div className="learning-3d-experiment" aria-label="Force and acceleration experiment">
             <span>INVESTIGATE NEWTON'S SECOND LAW</span>
