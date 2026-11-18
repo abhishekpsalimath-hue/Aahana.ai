@@ -167,7 +167,7 @@ export default function NativeMotionStudio() {
     };
     const drawFrame = (frameTime) => {
       const values = sampleMotionTimeline(valid, frameTime);
-      const value = (property, fallback) => values.find((item) => item.property === property)?.value ?? fallback;
+      const value = (property, fallback, layerIndex = 0) => values.find((item) => item.property === property && item.layerIndex === layerIndex)?.value ?? fallback;
       const x = value("cx", 180) / 1000 * canvas.width;
       const y = value("cy", 180) / 360 * canvas.height;
       const orbRadius = value("radius", 64) / 360 * canvas.height;
