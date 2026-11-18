@@ -28,7 +28,7 @@ No production merge or public preview announcement is implied by this document. 
 
 ## Live website discovery and research
 
-- Search requests retrieve ranked web results; the assistant then extracts up to five selected pages when extraction is available, so answers can use page content rather than snippets alone.
+- Student Mode retains its pre-existing search-only behavior; website crawling and page extraction are Core Assistant features only.\n- Search requests retrieve ranked web results; the assistant then extracts up to five selected pages when extraction is available, so answers can use page content rather than snippets alone.
 - Requests that include an HTTPS URL and ask to inspect, explore, audit, or deep-dive a website use bounded same-site crawling. Current limits are depth 3, breadth 10, and up to 30 returned pages. External domains are excluded.
 - Retrieved material is passed to the model as untrusted evidence. The assistant must not follow instructions found in webpages, must not invent citations, and must not claim that every page on a large site was inspected when only a bounded sample was returned.
 - Citation links are restricted to HTTPS URLs retrieved for that specific request. If live retrieval fails or the provider key is missing, the route fails closed instead of presenting stale model knowledge as verified research.
