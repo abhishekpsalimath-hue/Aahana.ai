@@ -220,12 +220,12 @@ function collectExportedSymbols(source) {
 function collectImportedBindings(source) {
   const text = stripComments(source);
   const imports = [];
-  const pattern = /\bimport\s+(?!\()([^;\n]+?)\s+from\s*["']([^"']+)["']/g;
+  const pattern = /\bimport\s+(?!\()([\s\S]{1,500}?)\s+from\s*["']([^"']+)["']/g;
   for (const match of text.matchAll(pattern)) {
-    const clause = match[1].trim();
+    const clause = match[1].trim().replace(/^type\s+/, "");
     const bindings = [];
     const defaultMatch = clause.match(/^([A-Za-z_$][\w$]*)/);
-    if (defaultMatch && defaultMatch[1] !== "type") bindings.push({ imported: "default", local: defaultMatch[1] });
+    if (defaultMatch) bindings.push({ imported: "default", local: defaultMatch[1] });
     const namedMatch = clause.match(/\{([^}]+)\}/);
     if (namedMatch) {
       for (const item of namedMatch[1].split(",")) {
@@ -250,7 +250,6 @@ function collectImportedBindings(source) {
  */
 export function analyzeProjectContracts(files) {
   const records = Array.isArray(files) ? files : [];
-  const graph = analyzeProjectDependencies(records);
   const byPath = new Map(records.map((file) => [normalizePath(file?.path || file?.original_filename), file]));
   const modules = [];
   const bindingRelationships = [];
