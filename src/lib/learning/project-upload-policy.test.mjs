@@ -19,7 +19,7 @@ test("accepts common frontend, backend and configuration source files", () => {
 test("keeps supported document and image uploads available", () => {
   assert.equal(getProjectUploadKind("brief.pdf", "application/pdf"), "document");
   assert.equal(getProjectUploadKind("notes.md", "text/markdown"), "code");
-  assert.equal(getProjectUploadKind("data.csv", "text/csv"), "code");
+  assert.equal(getProjectUploadKind("data.csv", "text/csv"), "document");
   assert.equal(getProjectUploadKind("photo.webp", "image/webp"), "document");
 });
 
