@@ -419,3 +419,17 @@ button:focus-visible,a:focus-visible{outline-color:#c4a7ff}
   .brand-ai{opacity:1;transform:none;filter:none}
   .welcome-headline .headline-line{opacity:1;transform:none;filter:none}
 }
+
+
+/* Match the approved /share reference: Manrope + DM Sans + DM Mono. */
+:root{--bg:#09090d;--panel:#101016;--panel-2:#15151e;--line:#252431;--text:#f3f0f8;--muted:#a49daf;--lilac:#c4a7ff;--lilac-2:#a987f2}
+html,body{font-family:'DM Sans',sans-serif}
+.brand,.brand-word,.brand-ai{font-family:'Manrope',sans-serif}
+.brand{gap:8px;letter-spacing:-1px}
+.brand-ai{min-width:23px;height:17px;padding:0 5px;border:1px solid #9e80d8;border-radius:5px;background:linear-gradient(135deg,#292039,#17131f);color:#d6c1ff;font:800 8px/1 'Manrope',sans-serif;letter-spacing:1px;box-shadow:0 0 15px #b995ff22;text-transform:lowercase}
+.welcome h1,.welcome h1 em{font-family:'Manrope',sans-serif;font-weight:700;letter-spacing:-.075em;line-height:1.02}
+.welcome h1{font-size:clamp(48px,8vw,88px)}
+.welcome>p{font-family:'DM Sans',sans-serif;color:#b6afc1;font-size:clamp(15px,1.7vw,18px);line-height:1.85}
+.eyebrow,.side-label,.headerNote{font-family:'DM Mono',monospace}
+.astronaut-float{display:none!important}
+@media(max-width:760px){.welcome h1,.welcome h1 em{font-size:clamp(43px,12vw,62px);letter-spacing:-.07em}}
