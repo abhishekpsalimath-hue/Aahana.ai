@@ -637,3 +637,12 @@ button,input,textarea,select{font-family:var(--font-ui)}
 .assistant-learning-worlds > section {
   margin-block: 28px;
 }
+
+/* Assistant code responses: readable, scrollable and individually copyable. */
+.assistant-message-content{color:#e7e2ee;font-size:13px;line-height:1.75;white-space:pre-wrap;overflow-wrap:anywhere}
+.assistant-message-content a{color:#c8b4ff;text-decoration:underline;text-underline-offset:3px;overflow-wrap:anywhere}
+.assistant-code-block{margin:14px 0;border:1px solid #393343;border-radius:12px;background:#09090e;overflow:hidden;white-space:normal}
+.assistant-code-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 12px;border-bottom:1px solid #302b39;background:#15131b;color:#bfb5cc;font-size:11px}
+.assistant-code-heading button{border:1px solid #4a4258;border-radius:7px;padding:5px 9px;background:#211c2b;color:#eee8f7;font:inherit;cursor:pointer}
+.assistant-code-block pre{margin:0;padding:14px;max-height:560px;overflow:auto;color:#e9e4f0;font:12px/1.65 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre}
+.assistant-code-block code{font:inherit}
