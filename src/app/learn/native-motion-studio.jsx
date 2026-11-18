@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createMotionTimeline, sampleMotionTimeline, validateMotionTimeline } from "@/lib/studio/motion-engine.mjs";
+import { COLOR_GRADES, getColorGradeFilter } from "@/lib/studio/color-grading.mjs";
 
 const STARTER = {
   ...createMotionTimeline(5000, 30),
@@ -26,6 +27,8 @@ export default function NativeMotionStudio() {
   const [textFont, setTextFont] = useState("system-ui");
   const [textSize, setTextSize] = useState(30);
   const [textLayerEnabled, setTextLayerEnabled] = useState(false);
+  const [colorGrade, setColorGrade] = useState("none");
+  const gradeFilter = getColorGradeFilter(colorGrade);
   const [exporting, setExporting] = useState(false);
   const exportCanvasRef = useRef(null);
   const sampled = useMemo(() => sampleMotionTimeline(timeline, time), [timeline, time]);
@@ -163,7 +166,7 @@ export default function NativeMotionStudio() {
         anchor.download = "aahana-motion-preview.webm";
         anchor.click();
         window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-        setStatus("WebM video exported locally. No paid generation provider was used.");
+        setStatus(`WebM video exported locally with ${COLOR_GRADES.find((grade) => grade.id === colorGrade)?.label || "Original"} grade. No paid generation provider was used.`);
       } else setStatus("The browser returned an empty video. Try again or export the timeline JSON.");
       setExporting(false);
     };
@@ -174,6 +177,7 @@ export default function NativeMotionStudio() {
       const y = value("cy", 180) / 360 * canvas.height;
       const orbRadius = value("radius", 64) / 360 * canvas.height;
       const orbOpacity = Math.max(0, Math.min(1, value("opacity", 1)));
+      context.filter = gradeFilter;
       const background = context.createLinearGradient(0, 0, canvas.width, canvas.height);
       background.addColorStop(0, "#282038");
       background.addColorStop(1, "#171421");
@@ -201,6 +205,7 @@ export default function NativeMotionStudio() {
       }
       context.fillStyle = "#eee5fa"; context.font = "bold 26px system-ui"; context.fillText("Aahana Motion Preview", 70, 75);
       context.fillStyle = "#b8a9c9"; context.font = "16px system-ui"; context.fillText("Original keyframed animation", 70, 108);
+      context.filter = "none";
     };
     try {
       drawFrame(0);
@@ -237,9 +242,9 @@ export default function NativeMotionStudio() {
     <section className="native-motion-studio" aria-label="Aahana native motion studio">
       <div className="native-motion-heading"><div><span>AAHANA-NATIVE MOTION ENGINE</span><h3>Motion & Animation Studio</h3><p>Build keyframed movement and preview it live, locally in your browser.</p></div><div className="native-motion-export-actions"><button type="button" onClick={exportWebM} disabled={exporting}>{exporting ? "Rendering video…" : "Export WebM video"}</button><button type="button" onClick={exportTimeline}>Export timeline</button></div></div>
       <canvas ref={exportCanvasRef} width="1280" height="720" hidden aria-hidden="true" />
-      <div className="native-motion-layer-editor"><div className="native-motion-track-title"><strong>Visual layers</strong><button type="button" onClick={addTextLayer} disabled={textLayerEnabled}>+ Add text layer</button></div>{textLayerEnabled && <div className="native-motion-keyframe"><label>Text content<input type="text" maxLength="80" value={textLayer} onChange={(event) => setTextLayer(event.target.value)} /></label><label>Typeface<select value={textFont} onChange={(event) => setTextFont(event.target.value)}><option value="system-ui">Modern sans</option><option value="Caveat, cursive">Script · Caveat</option><option value="Georgia, serif">Editorial serif</option><option value="monospace">Technical mono</option></select></label><label>Text size<input type="range" min="16" max="48" value={textSize} onChange={(event) => setTextSize(Number(event.target.value))} /></label><span>Layer 2 · animated position, fade, typeface and size</span><button type="button" onClick={() => { setTimeline((current) => ({ ...current, tracks: current.tracks.filter((track) => track.layerIndex !== 1) })); setTextLayerEnabled(false); setStatus("Text layer removed."); }}>Remove text layer</button></div>}</div>
+      <div className="native-motion-layer-editor"><div className="native-motion-track-title"><strong>Visual layers</strong><button type="button" onClick={addTextLayer} disabled={textLayerEnabled}>+ Add text layer</button></div><label className="native-motion-grade-label">Colour grade<select value={colorGrade} onChange={(event) => setColorGrade(event.target.value)}>{COLOR_GRADES.map((grade) => <option key={grade.id} value={grade.id}>{grade.label}</option>)}</select></label>{textLayerEnabled && <div className="native-motion-keyframe"><label>Text content<input type="text" maxLength="80" value={textLayer} onChange={(event) => setTextLayer(event.target.value)} /></label><label>Typeface<select value={textFont} onChange={(event) => setTextFont(event.target.value)}><option value="system-ui">Modern sans</option><option value="Caveat, cursive">Script · Caveat</option><option value="Georgia, serif">Editorial serif</option><option value="monospace">Technical mono</option></select></label><label>Text size<input type="range" min="16" max="48" value={textSize} onChange={(event) => setTextSize(Number(event.target.value))} /></label><span>Layer 2 · animated position, fade, typeface and size</span><button type="button" onClick={() => { setTimeline((current) => ({ ...current, tracks: current.tracks.filter((track) => track.layerIndex !== 1) })); setTextLayerEnabled(false); setStatus("Text layer removed."); }}>Remove text layer</button></div>}</div>
       <div className="native-motion-stage">
-        <svg viewBox="0 0 1000 360" role="img" aria-label="Animated preview of a lavender sphere moving across a stage">
+        <svg viewBox="0 0 1000 360" style={{ filter: gradeFilter }} role="img" aria-label="Animated preview of a lavender sphere moving across a stage">
           <defs><linearGradient id="aahana-motion-bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#282038"/><stop offset="1" stopColor="#171421"/></linearGradient><radialGradient id="aahana-motion-ball"><stop offset="0" stopColor="#f4eafa"/><stop offset=".45" stopColor="#c7a8ed"/><stop offset="1" stopColor="#8064ae"/></radialGradient></defs>
           <rect width="1000" height="360" rx="16" fill="url(#aahana-motion-bg)"/>
           <path d="M70 285H930" stroke="#79678f" strokeWidth="2" strokeDasharray="5 9"/>
@@ -273,7 +278,7 @@ export default function NativeMotionStudio() {
         ))}
       </div>
       {status && <p className="native-motion-status" role="status">{status}</p>}
-      <small className="native-motion-disclosure">Current capabilities: multi-property keyframes, an independently animated text layer, live vector preview and local WebM recording. This is a rendered preview, not provider-generated cinematic footage.</small>
+      <small className="native-motion-disclosure">Current capabilities: multi-property keyframes, animated text typography, 32 reusable colour grades, live preview and local WebM recording. This is a rendered preview, not provider-generated cinematic footage.</small>
     </section>
   );
 }
