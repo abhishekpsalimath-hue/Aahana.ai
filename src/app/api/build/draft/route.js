@@ -157,12 +157,11 @@ export async function POST(request) {
   }
 
   const provider = (process.env.AAHANA_AI_PROVIDER || "groq").toLowerCase();
-  if (!["groq", "vercel"].includes(provider)) {
-    return NextResponse.json({ error: "The configured AI provider is not supported for code proposals." }, { status: 503 });
-  }
   const isGroq = provider === "groq";
   // Provider credentials must come only from server configuration, never request headers.
-  const providerKey = isGroq ? process.env.GROQ_API_KEY : process.env.VERCEL_OIDC_TOKEN;
+  const providerKey = isGroq
+    ? process.env.GROQ_API_KEY
+    : (process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_OIDC_TOKEN);
   const model = process.env.AAHANA_MODEL || (isGroq ? "openai/gpt-oss-120b" : "");
   if (!providerKey || !model) {
     return NextResponse.json({ error: "Aahana's AI provider is not configured for code proposal generation." }, { status: 503 });
