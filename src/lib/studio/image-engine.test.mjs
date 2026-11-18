@@ -43,6 +43,10 @@ test("builds an original prompt from Pinterest-inspired notes without forwarding
   assert.match(prompt, /Soft lilac palette/);
   assert.doesNotMatch(prompt, /pinterest\\.com/);
   assert.match(prompt, /distinct and original/);
+  const cinematic = buildPinterestInspiredPrompt({ notes: "dramatic scene", style: "cinematic" });
+  assert.match(cinematic, /cinematic lighting/);
+  const unknown = buildPinterestInspiredPrompt({ notes: "clean layout", style: "untrusted-style" });
+  assert.match(unknown, /premium editorial/);
   assert.equal(buildPinterestInspiredPrompt({ notes: "   " }), "");
 });
 
