@@ -491,7 +491,7 @@ function createThreeScene(canvas,id,selectedPlanet=null,heartFlow="body",labStat
   scene.add(group);
   makeSceneModel(group, id, selectedPlanet, heartFlow, labState);
   const labModelKey = id === "molecule" ? JSON.stringify([labState.chemistryMolecule, labState.chemistryFocus, labState.chemistryShowBonds]) : (id === "cell" || id === "plant-cell") ? String(labState.cellFocus || "all") : id === "heart" ? String(heartFlow) : "";
-  const state = { renderer, scene, camera, group, id, selectedPlanet, heartFlow, labModelKey, stars, ambientParticles, environment, hemisphere, key, fill, rim, accent, width: 0, height: 0 };
+  const state = { renderer, scene, camera, group, id, selectedPlanet, heartFlow, labModelKey, stars, ambientParticles, environment, hemisphere, key, fill, rim, accent, cameraTargetZ: environment.cameraZ, lastFrameTime: 0, width: 0, height: 0 };
   threeScenes.set(canvas,state);return state;
 }
 function clearSceneGroup(group) {
@@ -519,6 +519,7 @@ function renderThreeScene(canvas, id, yaw, pitch, zoom, time = 0, selectedPlanet
   const environment = getSceneEnvironment(id);
   if (state.environment !== environment) {
     state.environment = environment;
+    state.cameraTargetZ = environment.cameraZ;
     state.scene.background = new THREE.Color(environment.background);
     state.scene.fog = new THREE.FogExp2(environment.fog, environment.fogDensity);
     state.hemisphere.color.setHex(environment.sky);
@@ -604,7 +605,12 @@ function renderThreeScene(canvas, id, yaw, pitch, zoom, time = 0, selectedPlanet
   const baseCamera = id === "solar-system"
     ? selectedPlanet ? 4.25 : Math.max(state.environment.cameraZ, 11.8 / Math.max(state.camera.aspect, .65))
     : state.environment.cameraZ;
-  state.camera.position.z = baseCamera / zoom;
+  const desiredCameraZ = baseCamera / zoom;
+  const frameDelta = state.lastFrameTime ? Math.min(64, Math.max(0, time - state.lastFrameTime)) : 16;
+  state.lastFrameTime = time;
+  // Ease the camera into a new subject/zoom instead of snapping between frames.
+  const cameraEase = 1 - Math.exp(-frameDelta / 190);
+  state.camera.position.z += (desiredCameraZ - state.camera.position.z) * cameraEase;
   state.camera.updateProjectionMatrix();
   state.scene.updateMatrixWorld(true);
   state.renderer.render(state.scene, state.camera);
