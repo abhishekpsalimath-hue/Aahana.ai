@@ -81,3 +81,54 @@ export function removeDuplicateQuizPacks(packs, existingFingerprints = []) {
 }
 
 export const quizBankPolicyVersion = QUIZ_PACK_SCHEMA_VERSION;
+
+export const supportedQuizVisuals = Object.freeze([
+  "fraction", "orbit", "water-cycle", "plant-growth", "number-line", "molecule",
+  "concept-map", "timeline", "bar-chart", "anatomy", "circuit", "code-flow",
+  "sound-wave", "map", "3d-solar-system", "3d-planet", "3d-molecule", "3d-atom",
+  "3d-dna", "3d-geometry", "3d-terrain", "3d-plant-cell", "3d-heart",
+  "3d-pyramid", "3d-ecosystem", "3d-engine", "3d-cart",
+]);
+
+/**
+ * Validate untrusted model output before it reaches the interactive quiz UI.
+ * Invalid packs fail closed; this does not certify factual correctness.
+ */
+export function validateQuizPack(value, { minQuestions = 5, maxQuestions = 10 } = {}) {
+  if (!value || typeof value !== "object" || Array.isArray(value) || value.type !== "aahana_quiz_v1") return null;
+  if (!Array.isArray(value.questions) || value.questions.length < minQuestions || value.questions.length > maxQuestions) return null;
+  const title = cleanField(value.title, "A little challenge");
+  const seenStems = new Set();
+  const questions = [];
+
+  for (const item of value.questions) {
+    if (!item || typeof item !== "object" || Array.isArray(item)) return null;
+    const question = cleanField(item.question);
+    const explanation = cleanField(item.explanation);
+    const hint = cleanField(item.hint);
+    if (!question || question.length < 8 || !explanation || !hint) return null;
+    const stemKey = normalizeQuestionText(question);
+    if (seenStems.has(stemKey)) return null;
+    seenStems.add(stemKey);
+
+    if (!Array.isArray(item.options) || item.options.length !== 4) return null;
+    const options = item.options.map((option) => cleanField(option));
+    const optionKeys = options.map(normalizeQuestionText);
+    if (options.some((option) => !option) || new Set(optionKeys).size !== 4) return null;
+    if (!Number.isInteger(item.correctIndex) || item.correctIndex < 0 || item.correctIndex > 3) return null;
+    if (!supportedQuizVisuals.includes(item.visual)) return null;
+
+    questions.push({
+      question,
+      options,
+      correctIndex: item.correctIndex,
+      explanation,
+      hint,
+      visual: item.visual,
+    });
+  }
+
+  const fingerprint = createQuizPackFingerprint(questions);
+  if (!fingerprint) return null;
+  return { type: "aahana_quiz_v1", title, questions, fingerprint };
+}
