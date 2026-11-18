@@ -8,19 +8,6 @@ export const runtime = "nodejs";
 const MAX_REQUEST_BYTES = 4 * 1024 * 1024;
 const MAX_SOURCE_FILES = 100;
 const MAX_SOURCE_BYTES = 3 * 1024 * 1024;
-const SOURCE_MIME_TYPES = new Set([
-  "text/plain", "text/markdown", "text/csv", "text/x-python", "application/json",
-]);
-const SOURCE_EXTENSIONS = /^(?:js|jsx|ts|tsx|mjs|cjs|css|html|htm|json|md|txt|py|toml|yaml|yml|sql|sh|xml|svg)$/i;
-
-function toWorkspacePath(filename) {
-  if (typeof filename !== "string") return null;
-  const path = filename.replace(/\\/g, "/").replace(/^\/+/, "");
-  if (!path || path.length > 240 || path.split("/").some((part) => !part || part === "." || part === "..")) return null;
-  const extension = path.split("/").at(-1).split(".").at(-1);
-  return SOURCE_EXTENSIONS.test(extension) ? path : null;
-}
-
 async function readJsonBody(request, maxBytes) {
   const reader = request.body?.getReader();
   if (!reader) throw new Error("Invalid proposal request.");
