@@ -30,8 +30,8 @@ test("does not route video discussions, software requests or scripts to generati
 });
 
 test("validates prompt, duration, resolution and audio settings", () => {
-  assert.deepEqual(validateVideoGenerationInput({ prompt: " A calm ocean ", duration: 10, resolution: "fhd" }), {
-    prompt: "A calm ocean", duration: 10, resolution: "fhd", generateAudio: true,
+  assert.deepEqual(validateVideoGenerationInput({ prompt: " A calm ocean ", duration: 10, resolution: "fhd", aspectRatio: "9:16" }), {
+    prompt: "A calm ocean", duration: 10, resolution: "fhd", aspectRatio: "9:16", generateAudio: true,
   });
   assert.equal(validateVideoGenerationInput({ prompt: "A", duration: 7 }).duration, 7);
   assert.throws(() => validateVideoGenerationInput({ prompt: "", duration: 5 }));
@@ -39,6 +39,7 @@ test("validates prompt, duration, resolution and audio settings", () => {
   assert.throws(() => validateVideoGenerationInput({ prompt: "A", duration: 21 }));
   assert.throws(() => validateVideoGenerationInput({ prompt: "A", resolution: "4k" }));
   assert.throws(() => validateVideoGenerationInput({ prompt: "A", generateAudio: "yes" }));
+  assert.throws(() => validateVideoGenerationInput({ prompt: "A", aspectRatio: "4:3" }));
 });
 
 test("accepts only HTTPS Cloudflare-generated video URLs", () => {
