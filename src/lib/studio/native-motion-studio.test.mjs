@@ -33,3 +33,11 @@ test("motion studio supports an independently animated text visual layer", () =>
   assert.match(source, /textLayerEnabled && <text/);
   assert.match(source, /textLayer\.slice\(0, 80\)/);
 });
+
+test("motion text layer exposes script, editorial and size controls", () => {
+  assert.match(source, /Caveat, cursive/);
+  assert.match(source, /Georgia, serif/);
+  assert.match(source, /setTextFont/);
+  assert.match(source, /setTextSize/);
+  assert.match(source, /fontFamily=\{textFont\}/);
+});
