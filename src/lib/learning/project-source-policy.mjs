@@ -21,8 +21,8 @@ function coreFileScore(filename) {
   const basename = normalized.split("/").pop();
   if (basename === "package.json") return 100;
   if (["tsconfig.json", "jsconfig.json"].includes(basename)) return 90;
-  if (/^(?:next|vite)\\.config\\.(?:js|mjs|ts)$/.test(basename) ||
-      /^(?:astro|svelte)\\.config\\.(?:js|mjs|ts)$/.test(basename)) return 85;
+  if (/^(?:next|vite)\.config\\.(?:js|mjs|ts)$/.test(basename) ||
+      /^(?:astro|svelte)\.config\\.(?:js|mjs|ts)$/.test(basename)) return 85;
   if (basename === "index.html") return 80;
   if (basename === "readme.md") return 2;
   if (/^(?:src\/)?(?:app|pages)\/(?:page|layout|index)\.(?:js|jsx|ts|tsx)$/.test(normalized)) return 80;
