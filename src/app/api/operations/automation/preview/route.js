@@ -30,7 +30,7 @@ export async function POST(request) {
       timeZone: typeof body?.timeZone === "string" ? body.timeZone : "Asia/Kolkata",
       hour: Number(match[1]),
       minute: Number(match[2]),
-      ...(template.cadence === "weekly" ? { weekday: Number(body?.weekday) } : {}),
+      ...(template.cadence === "weekly" ? { weekday: Number.isInteger(body?.weekday) ? body.weekday : 1 } : {}),
     });
     return NextResponse.json({
       template: { id: template.id, name: template.name },
