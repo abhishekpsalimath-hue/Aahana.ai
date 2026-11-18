@@ -839,6 +839,57 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     }
   }
 
+  async function draftProjectChanges() {
+    const requestText = prompt.trim();
+    if (!selectedProjectId || !requestText || buildBusy || busy || imageGenerating) return;
+    setBuildBusy(true);
+    setError("");
+    setPrompt("");
+    setMessages((current) => [...current,
+      { role: "user", content: "Draft project changes: " + requestText },
+      { role: "assistant", content: "Reviewing the project snapshot and preparing a safe change proposal…" },
+    ]);
+    try {
+      const response = await fetch("/api/build/draft", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ projectId: selectedProjectId, prompt: requestText }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Aahana could not draft these project changes.");
+      const sections = [
+        "PROPOSAL READY — REVIEW ONLY",
+        result.summary || "Aahana prepared a project change proposal.",
+        "",
+        `Files proposed: ${Array.isArray(result.changes) ? result.changes.length : 0}`,
+        `Snapshot: ${result.snapshotFileCount} files · ${result.snapshotBytes} bytes`,
+        "",
+        "No project files have been changed. Nothing has been applied or deployed.",
+      ];
+      let remaining = 52000;
+      for (const change of result.changes || []) {
+        if (remaining <= 0) {
+          sections.push("", "Additional diff previews omitted to keep this review readable.");
+          break;
+        }
+        const diff = String(change.diff || "").slice(0, remaining);
+        sections.push("", `FILE: ${change.path} · ${change.action.toUpperCase()}`, "```diff", diff, "```");
+        remaining -= diff.length;
+      }
+      sections.push("", "Applying these changes is a separate action and is not available in this review.");
+      const output = sections.join("\n");
+      setMessages((current) => current.map((item, index) =>
+        index === current.length - 1 ? { ...item, content: output } : item
+      ));
+    } catch (err) {
+      setMessages((current) => current.map((item, index) =>
+        index === current.length - 1 ? { ...item, content: err.message || "Proposal generation failed." } : item
+      ));
+    } finally {
+      setBuildBusy(false);
+    }
+  }
+
   async function submitPrompt(event) {
     event.preventDefault();
     const text = prompt.trim();
@@ -1220,6 +1271,10 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
 
           {mode === "build" && (
             <div className="message-actions" style={{ justifyContent: "flex-start", gap: "8px", margin: "12px 0" }}>
+              <span className="message-role">PROJECT BUILD</span>
+              <button className="copy-message" type="button" disabled={!selectedProjectId || !prompt.trim() || buildBusy || busy} onClick={draftProjectChanges}>
+                {buildBusy ? "Working…" : "Draft changes"}
+              </button>
               <span className="message-role">PROJECT CHECKS</span>
               <button className="copy-message" type="button" disabled={!selectedProjectId || buildBusy || busy} onClick={() => runProjectCheck("build")}>
                 {buildBusy ? "Running…" : "Run isolated build"}
