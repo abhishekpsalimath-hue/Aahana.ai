@@ -33,6 +33,30 @@ const spaceStars = [
   { startX: "48px", startY: "-56px", endX: "43vw", endY: "-50vh", delay: "-2s", size: "2px" },
   { startX: "-76px", startY: "22px", endX: "-61vw", endY: "23vh", delay: "-11s", size: "2px" },
   { startX: "74px", startY: "-24px", endX: "62vw", endY: "-20vh", delay: "-12s", size: "3px" },
+  { startX: "-90px", startY: "-44px", endX: "-48vw", endY: "-55vh", delay: "-2.5s", size: "2px" },
+  { startX: "96px", startY: "48px", endX: "57vw", endY: "54vh", delay: "-4.5s", size: "2px" },
+  { startX: "-38px", startY: "82px", endX: "-34vw", endY: "58vh", delay: "-6.5s", size: "2px" },
+  { startX: "42px", startY: "-88px", endX: "28vw", endY: "-58vh", delay: "-8.5s", size: "3px" },
+  { startX: "-104px", startY: "4px", endX: "-64vw", endY: "4vh", delay: "-10.5s", size: "2px" },
+  { startX: "108px", startY: "-6px", endX: "66vw", endY: "-6vh", delay: "-1.5s", size: "2px" },
+  { startX: "-58px", startY: "-96px", endX: "-22vw", endY: "-60vh", delay: "-3.5s", size: "2px" },
+  { startX: "66px", startY: "96px", endX: "22vw", endY: "62vh", delay: "-5.5s", size: "3px" },
+  { startX: "-112px", startY: "62px", endX: "-62vw", endY: "40vh", delay: "-7.5s", size: "2px" },
+  { startX: "116px", startY: "-62px", endX: "64vw", endY: "-40vh", delay: "-9.5s", size: "2px" },
+  { startX: "-4px", startY: "-108px", endX: "-4vw", endY: "-62vh", delay: "-11.5s", size: "3px" },
+  { startX: "6px", startY: "112px", endX: "6vw", endY: "64vh", delay: "-2.2s", size: "2px" },
+  { startX: "-126px", startY: "-26px", endX: "-68vw", endY: "-18vh", delay: "-4.2s", size: "2px" },
+  { startX: "128px", startY: "26px", endX: "68vw", endY: "18vh", delay: "-6.2s", size: "2px" },
+  { startX: "-82px", startY: "112px", endX: "-42vw", endY: "64vh", delay: "-8.2s", size: "3px" },
+  { startX: "84px", startY: "-114px", endX: "42vw", endY: "-64vh", delay: "-10.2s", size: "2px" },
+  { startX: "-138px", startY: "-74px", endX: "-70vw", endY: "-48vh", delay: "-1.2s", size: "2px" },
+  { startX: "140px", startY: "74px", endX: "70vw", endY: "48vh", delay: "-3.2s", size: "3px" },
+  { startX: "-28px", startY: "132px", endX: "-14vw", endY: "68vh", delay: "-5.2s", size: "2px" },
+  { startX: "30px", startY: "-134px", endX: "14vw", endY: "-68vh", delay: "-7.2s", size: "2px" },
+  { startX: "-148px", startY: "32px", endX: "-72vw", endY: "22vh", delay: "-9.2s", size: "2px" },
+  { startX: "150px", startY: "-32px", endX: "72vw", endY: "-22vh", delay: "-11.2s", size: "3px" },
+  { startX: "-72px", startY: "-142px", endX: "-36vw", endY: "-70vh", delay: "-2.8s", size: "2px" },
+  { startX: "74px", startY: "144px", endX: "36vw", endY: "70vh", delay: "-4.8s", size: "2px" },
 ];
 
 function renderInlineMarkdown(value, prefix) {
@@ -1084,6 +1108,15 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         )}
 
         <div className="welcome">
+          {!messages.length && (
+            <div className="founder-welcome-note" aria-label="I'm happy to welcome you on this journey, Abhishekayya Salimath.">
+              <p>
+                <span className="welcome-line welcome-line-one">I'm happy to welcome you</span>
+                <span className="welcome-line welcome-line-two">on this journey,</span>
+              </p>
+              <strong>Abhishekayya Salimath</strong>
+            </div>
+          )}
           {!messages.length && (
             <div className="astronaut-float" aria-hidden="true">
               <svg viewBox="0 0 180 180" role="presentation">
