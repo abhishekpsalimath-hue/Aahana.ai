@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { buildImageEditPrompt, IMAGE_EDIT_STYLES, parseImageEditInput } from "./image-edit.mjs";
+import { buildImageEditPrompt, detectImageEditStyleFromPrompt, IMAGE_EDIT_STYLES, isImageEditRequest, parseImageEditInput } from "./image-edit.mjs";
 
 test("offers explicit image-to-image visual styles", () => {
   assert.deepEqual(IMAGE_EDIT_STYLES.map((style) => style.id), ["cartoon", "anime", "comic", "3d-animation", "watercolor"]);
@@ -37,4 +37,23 @@ test("Image Studio exposes a dedicated photo transformation action", async () =>
   assert.match(source, /fetch\("\/api\/images\/edit"/);
   assert.match(source, /Keep the same person, face, pose and scene/);
   assert.match(source, /Full-frame cartoon illustration/);
+});
+
+test("recognises attached-photo cartoon requests without misclassifying normal chat", () => {
+  assert.equal(isImageEditRequest("convert my image into cartoon", true), true);
+  assert.equal(isImageEditRequest("turn this photo into an anime illustration", true), true);
+  assert.equal(isImageEditRequest("what is in this photo?", true), false);
+  assert.equal(isImageEditRequest("convert my image into cartoon", false), false);
+  assert.equal(detectImageEditStyleFromPrompt("make it a cartoon"), "cartoon");
+  assert.equal(detectImageEditStyleFromPrompt("make it anime"), "anime");
+  assert.equal(detectImageEditStyleFromPrompt("turn it into a comic"), "comic");
+});
+
+test("assistant routes attached-photo style conversions to image editing before text-to-image", async () => {
+  const source = await readFile(new URL("../../app/assistant-workspace.jsx", import.meta.url), "utf8");
+  const editIndex = source.indexOf("if (imageFile && isImageEditRequest(text, true))");
+  const generationIndex = source.indexOf("if (isImageGenerationRequest(text))");
+  assert.ok(editIndex >= 0 && generationIndex > editIndex);
+  assert.match(source, /fetch\("\/api\/images\/edit"/);
+  assert.match(source, /detectImageEditStyleFromPrompt\(text\)/);
 });
