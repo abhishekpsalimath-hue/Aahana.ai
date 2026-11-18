@@ -25,15 +25,35 @@
   background: radial-gradient(circle, #9c79d51c 0%, #5f478512 34%, transparent 69%);
   filter: blur(16px);
 }
-.starOne,.starTwo,.starThree,.starFour {
-  position: absolute; width: 3px; height: 3px; border-radius: 50%;
-  background: #e7dcff; box-shadow: 0 0 13px #c4a7ff;
-  animation: twinkle 4s ease-in-out infinite;
+.starField { position: absolute; inset: 0; }
+.starField span {
+  position: absolute; width: 2px; height: 2px; border-radius: 50%;
+  background: #e7dcff; box-shadow: 0 0 10px #c4a7ff, 0 0 18px #a98af077;
+  opacity: .55; animation: twinkle 4.8s ease-in-out infinite;
 }
-.starOne { top: 21%; left: 16%; }
-.starTwo { top: 34%; right: 17%; width: 2px; height: 2px; animation-delay: -1.1s; }
-.starThree { top: 69%; left: 23%; width: 2px; height: 2px; animation-delay: -2.3s; }
-.starFour { top: 74%; right: 25%; animation-delay: -.7s; }
+.starField span:nth-child(3n) { width: 3px; height: 3px; opacity: .72; }
+.starField span:nth-child(4n) { animation-duration: 6.2s; }
+.starField span:nth-child(5n) { animation-delay: -2.4s; }
+.starField span:nth-child(1) { top: 9%; left: 12%; }
+.starField span:nth-child(2) { top: 17%; left: 38%; }
+.starField span:nth-child(3) { top: 11%; right: 19%; }
+.starField span:nth-child(4) { top: 29%; left: 7%; }
+.starField span:nth-child(5) { top: 34%; right: 9%; }
+.starField span:nth-child(6) { top: 42%; left: 24%; }
+.starField span:nth-child(7) { top: 49%; right: 27%; }
+.starField span:nth-child(8) { top: 57%; left: 11%; }
+.starField span:nth-child(9) { top: 63%; right: 12%; }
+.starField span:nth-child(10) { top: 72%; left: 31%; }
+.starField span:nth-child(11) { top: 81%; right: 23%; }
+.starField span:nth-child(12) { top: 88%; left: 17%; }
+.starField span:nth-child(13) { top: 23%; left: 72%; }
+.starField span:nth-child(14) { top: 6%; right: 39%; }
+.starField span:nth-child(15) { top: 91%; right: 8%; }
+.starField span:nth-child(16) { top: 77%; left: 66%; }
+.starField span:nth-child(17) { top: 53%; left: 83%; }
+.starField span:nth-child(18) { top: 38%; left: 91%; }
+.starField span:nth-child(19) { top: 68%; left: 48%; }
+.starField span:nth-child(20) { top: 14%; left: 88%; }
 .header {
   display: flex; align-items: center; justify-content: space-between;
   min-height: 82px; border-bottom: 1px solid #ffffff0d;
@@ -133,7 +153,8 @@
   .footer { align-items: flex-start; justify-content: center; flex-direction: column; padding: 15px 0; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .starOne,.starTwo,.starThree,.starFour,.orbit,.orbitRing,.orbitRingTwo,.hero h1 { animation: none !important; }
+  .starField span,.orbit,.orbitRing,.orbitRingTwo,.hero h1 { animation: none !important; }
+  .starField span { opacity: .35; }
   .hero h1 { opacity: 1; filter: none; transform: none; }
   .primary { transition: none; }
 }
