@@ -1,20 +1,36 @@
 const STOP_WORDS = new Set(["about","after","again","also","and","are","build","can","create","file","for","from","help","how","into","make","need","please","project","that","the","this","with","you","your"]);
+const CORE_PROJECT_FILES = new Set([
+  "package.json", "readme.md", "tsconfig.json", "jsconfig.json", "index.html",
+  "next.config.js", "next.config.mjs", "next.config.ts",
+  "vite.config.js", "vite.config.ts", "vite.config.mjs",
+  "astro.config.mjs", "astro.config.ts", "svelte.config.js",
+]);
 
 function tokens(value) {
   return new Set(
     String(value || "")
       .toLowerCase()
       .normalize("NFKC")
-      .match(/[\p{L}\p{N}]{2,}/gu)
+      .match(/[\\p{L}\\p{N}]{2,}/gu)
       ?.filter((token) => !STOP_WORDS.has(token)) || []
   );
+}
+
+function coreFileScore(filename) {
+  const normalized = String(filename || "").toLowerCase().replace(/\\\\/g, "/");
+  const basename = normalized.split("/").pop();
+  if (CORE_PROJECT_FILES.has(basename)) return 100;
+  if (/^(?:src\\/)?(?:app|pages)\\/(?:page|layout|index)\\.(?:js|jsx|ts|tsx)$/.test(normalized)) return 80;
+  if (/^(?:src\\/)?(?:main|index)\\.(?:js|jsx|ts|tsx)$/.test(normalized)) return 70;
+  return 0;
 }
 
 export function selectRelevantProjectFiles(prompt, files, limit = 8) {
   const promptTokens = tokens(prompt);
   const ranked = (Array.isArray(files) ? files : []).map((file, index) => {
-    const filenameTokens = tokens(file?.original_filename);
-    let score = 0;
+    const filename = String(file?.original_filename || "");
+    const filenameTokens = tokens(filename);
+    let score = coreFileScore(filename);
     for (const token of promptTokens) {
       if (filenameTokens.has(token)) score += 3;
     }
