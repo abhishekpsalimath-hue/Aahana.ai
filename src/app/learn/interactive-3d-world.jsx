@@ -218,7 +218,7 @@ function rod(group,a,b,color=0xb9c8e2,radius=.035) {
   const mesh=new THREE.Mesh(new THREE.CylinderGeometry(radius,radius,delta.length(),20),new THREE.MeshStandardMaterial({color,metalness:.45,roughness:.28}));
   mesh.position.copy(start).add(end).multiplyScalar(.5);mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),delta.normalize());group.add(mesh);return mesh;
 }
-function makeSceneModel(group,id,selectedPlanet=null) {
+function makeSceneModel(group,id,selectedPlanet=null,heartFlow="body") {
   if(id==="planet"){
     const earth=sphere(group,[0,0,0],1,"#ffffff",{material:new THREE.MeshStandardMaterial({map:makeEarthTexture(),roughness:.86})});
     const clouds=sphere(group,[0,0,0],1.008,"#ffffff",{material:new THREE.MeshStandardMaterial({color:0xffffff,transparent:true,opacity:.13,roughness:1,wireframe:true})});
@@ -331,10 +331,16 @@ function makeSceneModel(group,id,selectedPlanet=null) {
     if(plant){sphere(group,[0,0,0],.48,0x9ad7ef,{material:new THREE.MeshPhysicalMaterial({color:0x83cfe8,transparent:true,opacity:.38,roughness:.2})});for(let i=0;i<8;i++){const a=i*Math.PI/4;sphere(group,[Math.cos(a)*.72,Math.sin(a)*.48,.18],.09,0x6cba66);}}return;
   }
   if(id==="heart"){
-    sphere(group,[-.28,.1,0],.43,0xb94d65);sphere(group,[.25,.1,0],.43,0xd36b78);sphere(group,[0,-.35,0],.46,0xb83e57);
-    tube(group,[[.05,.48,0],[.1,.82,0],[.32,1.02,0]],0xc85b65,.105);
+    const stageColors = {
+      body: [0x477fba, 0x477fba, 0x477fba, 0x477fba],
+      lungs: [0x477fba, 0x477fba, 0xc95e78, 0xc95e78],
+      return: [0xc95e78, 0xc95e78, 0xc95e78, 0xc95e78],
+    };
+    const colors = stageColors[heartFlow] || stageColors.body;
+    sphere(group,[-.28,.1,0],.43,colors[0]);sphere(group,[.25,.1,0],.43,colors[1]);sphere(group,[-.16,-.35,.04],.38,colors[2]);sphere(group,[.22,-.35,.04],.38,colors[3]);
+    tube(group,[[.05,.48,0],[.1,.82,0],[.32,1.02,0]],heartFlow==="lungs"?0xc95e78:0xc85b65,.105);
     tube(group,[[-.25,.4,0],[-.38,.75,0],[-.55,.9,0]],0x477fba,.09);
-    tube(group,[[.2,.15,.18],[.55,.42,.18],[.62,.72,.18]],0x4b8fc5,.065);return;
+    tube(group,[[.2,.15,.18],[.55,.42,.18],[.62,.72,.18]],heartFlow==="return"?0x477fba:0xc96a62,.065);return;
   }
   if(id==="terrain"){
     const n=72,positions=[],colors=[],indices=[];
@@ -444,7 +450,7 @@ function clearSceneGroup(group) {
     if(object.material){const materials=Array.isArray(object.material)?object.material:[object.material];materials.forEach(material=>{material.map?.dispose();material.dispose();});}
   });
 }
-function renderThreeScene(canvas, id, yaw, pitch, zoom, time = 0, selectedPlanet = null, orbitSpeedMultiplier = 1) {
+function renderThreeScene(canvas, id, yaw, pitch, zoom, time = 0, selectedPlanet = null, orbitSpeedMultiplier = 1, heartFlow = "body") {
   let state = threeScenes.get(canvas);
   if (!state) {
     state = createThreeScene(canvas, id, selectedPlanet);
@@ -460,14 +466,15 @@ function renderThreeScene(canvas, id, yaw, pitch, zoom, time = 0, selectedPlanet
       return;
     }
   }
-  if (state.id !== id || state.selectedPlanet !== selectedPlanet) {
+  if (state.id !== id || state.selectedPlanet !== selectedPlanet || (id === "heart" && state.heartFlow !== heartFlow)) {
     state.scene.remove(state.group);
     clearSceneGroup(state.group);
     state.group = new THREE.Group();
     state.scene.add(state.group);
     state.id = id;
     state.selectedPlanet = selectedPlanet;
-    makeSceneModel(state.group, id, selectedPlanet);
+    state.heartFlow = heartFlow;
+    makeSceneModel(state.group, id, selectedPlanet, heartFlow);
   }
 
   const rect = canvas.getBoundingClientRect();
@@ -878,7 +885,7 @@ function illuminateFace(color, brightness) {
 }
 
 function drawScene(canvas, modelId, yaw, pitch, zoom, ecosystem = {}, time = 0, selectedPlanet = null) {
-  renderThreeScene(canvas, modelId, yaw, pitch, zoom, time, selectedPlanet, ecosystem.orbitSpeed ?? 1);
+  renderThreeScene(canvas, modelId, yaw, pitch, zoom, time, selectedPlanet, ecosystem.orbitSpeed ?? 1, ecosystem.heartFlow ?? "body");
 }
 
 function animateScene(canvas, render) {
