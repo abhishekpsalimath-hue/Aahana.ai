@@ -113,6 +113,7 @@ h1 em{font-style:normal;color:var(--lilac)}
 .project-entry{display:flex;flex:1;min-width:0;flex-direction:column;gap:4px;border:1px solid transparent;border-radius:8px;background:transparent;color:#bcb5c9;text-align:left;padding:9px 10px;font:inherit;font-size:11px;cursor:pointer;overflow:hidden}
 .project-entry span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .project-entry small{color:#777183;font-size:9px;text-transform:capitalize}
+.project-entry .project-description{color:#9a91a5;font-size:9px;text-transform:none;white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;line-height:1.35}
 .project-entry:hover,.project-entry.selected{background:#191521;border-color:#3c304d;color:#eee7fa}
 .project-archive{border:0;background:transparent;color:#766e82;padding:5px 7px;font-size:15px}
 .project-archive:hover{color:#ffb8c0}
