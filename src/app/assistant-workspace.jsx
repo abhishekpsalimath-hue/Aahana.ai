@@ -245,6 +245,7 @@ function evaluateArithmetic(input) {
 export default function Home({ userEmail = "", aiEnabled = false }) {
   const router = useRouter();
   const conversationEndRef = useRef(null);
+  const activeChatRequestRef = useRef(null);
   const [mode, setMode] = useState("solve");
   const [prompt, setPrompt] = useState("");
   const [imageFile, setImageFile] = useState(null);
@@ -751,6 +752,10 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     printWindow.document.close();
   }
 
+  function stopGeneration() {
+    activeChatRequestRef.current?.abort();
+  }
+
   async function submitPrompt(event) {
     event.preventDefault();
     const text = prompt.trim();
@@ -827,11 +832,14 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     setImageFile(null);
     setMessages((current) => [...current, userMessage, assistantMessage]);
 
+    const controller = new AbortController();
+    activeChatRequestRef.current = controller;
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: text || "Please identify and describe this image in detail.", image: imageDataUrl ? { dataUrl: imageDataUrl } : null, mode, conversationId, projectId: selectedProjectId }),
+        signal: controller.signal,
       });
 
       if (!response.ok) {
@@ -874,6 +882,12 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       ));
       setHistory([]);
     } catch (err) {
+      if (err?.name === "AbortError") {
+        setMessages((current) => current.map((item, index) => index === current.length - 1 && item.role === "assistant"
+          ? { ...item, content: item.content ? `${item.content}\\n\\nStopped.` : "Response stopped." }
+          : item));
+        return;
+      }
       setMessages((current) => {
         const last = current[current.length - 1];
         if (last?.role !== "assistant") return current;
@@ -884,6 +898,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       });
       setError(err.message || "Something went wrong. Please try again.");
     } finally {
+      if (activeChatRequestRef.current === controller) activeChatRequestRef.current = null;
       setBusy(false);
     }
   }
@@ -1230,6 +1245,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
               placeholder={aiEnabled ? "What would you like to work on today?" : "Try a calculation, e.g. 2 + 2 (offline)"} rows={3} disabled={busy} />
             <div className="composer-footer">
               <span className="composer-mode">{modes.find((item) => item.id === mode)?.hint} · Enter to send · Shift + Enter for a new line</span>
+              {busy && <button className="copy-message stop-generation" type="button" onClick={stopGeneration}>Stop</button>}
               <button className={`send send-orb${busy || imageGenerating ? " is-thinking" : ""}`} type="submit" disabled={(!prompt.trim() && !imageFile) || busy || imageGenerating || (!aiEnabled && !imageFile && !isImageGenerationRequest(prompt.trim()) && evaluateArithmetic(prompt.trim()) === null)} aria-label={busy || imageGenerating ? "Aahana is working" : "Launch your message"} title={busy || imageGenerating ? "Aahana is working" : "Launch your message"}><span className="send-orb-halo" aria-hidden="true" /><svg className="send-rocket" viewBox="0 0 32 32" aria-hidden="true"><path className="rocket-flame" d="M12 21.5c-2.1 1.2-3.3 3.2-3.4 5.1 2-.1 4-1.3 5.1-3.4" /><path className="rocket-body" d="M12.2 19.8c-1.3-4.9 1.1-11.1 8.8-15.6 1.3 8.8-1.8 14-6.6 16.5l-2.2-.9Z" /><path className="rocket-window" d="M18.7 10.1a2.1 2.1 0 1 0 0 4.2 2.1 2.1 0 0 0 0-4.2Z" /><path className="rocket-fin" d="m12.4 15.8-4.1 1.4 1.1 4.1 4.1-2.2m5.2-6.9 2.2-4.1 4.1 1.1-1.4 4.1" /></svg><span className="send-orb-thinking" aria-hidden="true"><i /><i /><i /></span></button>
             </div>
           </form>
