@@ -52,6 +52,7 @@ test("allows bounded read/build commands", () => {
 test("blocks privileged, remote and unbounded commands", () => {
   assert.throws(() => validateSandboxCommand({ command: "bash", args: ["-lc", "rm -rf /"] }));
   assert.throws(() => validateSandboxCommand({ command: "npm", args: ["install"] }));
+  assert.throws(() => validateSandboxCommand({ command: "npm", args: ["install", "--ignore-scripts=false"] }));
   assert.throws(() => validateSandboxCommand({ command: "git", args: ["push", "origin", "main"] }));
   assert.throws(() => validateSandboxCommand({ command: "npm", args: ["publish"] }));
   assert.throws(() => validateSandboxCommand({ command: "node", args: [], timeout: 120001 }));
