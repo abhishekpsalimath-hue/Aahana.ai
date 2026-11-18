@@ -358,7 +358,7 @@ test("animated lesson schema and tutor prompts can select embedded interactive 3
 test("3D learning media uses bounded high-DPI WebGL rendering and responsive scene stages", () => {
   const threeDPath = fileURLToPath(new URL("../../app/learn/interactive-3d-world.jsx", import.meta.url));
   const threeD = readFileSync(threeDPath, "utf8");
-  assert.match(threeD, /renderer\.setPixelRatio\(Math\.min\(window\.devicePixelRatio\|\|1,1\.75\)\)/);
+  assert.match(threeD, /renderer\.setPixelRatio\(Math\.min\(window\.devicePixelRatio \|\| 1, constrainedDevice \? 1\.5 : 2\)\)/);
   assert.match(threeD, /renderer\.setSize\(width,\s*height,\s*false\)/);
   assert.match(threeD, /PerspectiveCamera/);
   assert.match(threeD, /ResizeObserver/);
@@ -393,7 +393,9 @@ test("student 3D scenes use a real Three.js WebGL renderer with subject-specific
   assert.match(threeD, /new THREE\.BufferGeometry/);
   assert.match(threeD, /function disposeThreeScene\(canvas\)/);
   assert.match(threeD, /renderer\.dispose\(\)/);
-  assert.match(threeD, /devicePixelRatio\|\|1,1\.75/);
+  assert.match(threeD, /devicePixelRatio \|\| 1, constrainedDevice \? 1\.5 : 2/);
+  assert.match(threeD, /powerPreference: "high-performance"/);
+  assert.match(threeD, /PCFSoftShadowMap/);
   assert.match(threeD, /function animateScene\(canvas, render\)/);
   assert.match(threeD, /window\.requestAnimationFrame\(tick\)/);
   assert.match(threeD, /setPointerCapture/);
@@ -410,8 +412,9 @@ test("Learning Studio teaches with topic-specific context, not disconnected fact
 
 test("Learning Studio enforces visual quality, truthful renderer claims and scientific accuracy", () => {
   assert.match(route, /VISUAL ART DIRECTION AND TEACHING FIT/);
-  assert.match(route, /scientific-documentary or premium educational-visualisation aesthetic/);
-  assert.match(route, /Never describe a visual as photorealistic, high-resolution, generated or interactive unless the rendered application actually provides those properties/);
+  assert.match(route, /premium cinematic science-documentary experience/);
+  assert.match(route, /physically plausible key\/fill\/rim lighting/);
+  assert.match(route, /never describe a visual as photorealistic, high-resolution, generated or interactive unless the rendered application actually provides those properties/i);
   assert.match(route, /MISCONCEPTION AND ACCURACY CHECK/);
   assert.match(route, /every number, unit, label, causal claim, sequence, comparison and answer key agrees/);
 });

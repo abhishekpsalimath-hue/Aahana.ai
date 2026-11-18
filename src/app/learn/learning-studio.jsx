@@ -62,6 +62,8 @@ function InteractiveQuiz({ quiz, profile, memoryEnabled, onSaveProgress }) {
   const progress = summarizeLearningProgress(outcomes);
   const completed = currentIndex >= quiz.questions.length;
   const score = quiz.questions.reduce((total, item, index) => total + (answers[index] === item.correctIndex ? 1 : 0), 0);
+  const firstTryCorrect = quiz.questions.reduce((total, item, index) => total + ((attempts[index] || 0) === 1 && answers[index] === item.correctIndex ? 1 : 0), 0);
+  const reviewQuestions = quiz.questions.filter((item, index) => (attempts[index] || 0) > 1);
   const item = quiz.questions[currentIndex];
   const selected = answers[currentIndex];
   const selectedOption = selectedOptions[currentIndex];
@@ -133,7 +135,18 @@ function InteractiveQuiz({ quiz, profile, memoryEnabled, onSaveProgress }) {
       {completed && <div className="learning-quiz-finish">
         <span className="learning-celebration" aria-hidden="true">✦ ✧ ★ ✧ ✦</span>
         <strong>You completed all {quiz.questions.length} discoveries. You kept going, explored ideas and learned along the way.</strong>
-        <span>{score} ideas discovered</span>
+        <span>{score} of {quiz.questions.length} challenges solved · {firstTryCorrect} correct on the first try</span>
+        <section className="learning-quiz-review" aria-label="Personal revision guide">
+          <strong>{reviewQuestions.length ? "Your next discoveries to strengthen" : "A strong first pass!"}</strong>
+          {reviewQuestions.length > 0
+            ? <ul>{reviewQuestions.map((question) => <li key={question.question}>{question.question}</li>)}</ul>
+            : <p>You moved through these ideas without needing a retry. Keep them fresh with a quick recall later.</p>}
+          <div className="learning-revision-steps">
+            <span><b>Tomorrow</b> Recall the key idea without hints.</span>
+            <span><b>In 3 days</b> Solve a new example using the same concept.</span>
+            <span><b>In 7 days</b> Try a mixed, timed practice round.</span>
+          </div>
+        </section>
         {memoryEnabled && <button type="button" disabled={savingProgress || progressSaved} onClick={async () => {
           setSavingProgress(true);
           const saved = await onSaveProgress?.({ title: quiz.title, profile, outcomes });

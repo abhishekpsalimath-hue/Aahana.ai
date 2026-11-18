@@ -838,3 +838,14 @@
 @media (prefers-reduced-motion: reduce) {
   .student-welcome::after, .learning-mode-picker button { animation: none; transition: none; }
 }
+
+
+/* Personalised revision guide at the end of a Play & Solve journey. */
+.learning-quiz-review{display:grid;gap:10px;width:100%;padding:15px;border:1px solid #665486;border-radius:14px;background:linear-gradient(135deg,#241d35,#171522)}
+.learning-quiz-review>strong{color:#e9dcff;font-size:13px}
+.learning-quiz-review>p{margin:0;color:#c8bfd3;font-size:11px;line-height:1.6}
+.learning-quiz-review ul{display:grid;gap:7px;margin:0;padding-left:18px;color:#d8cce8;font-size:11px;line-height:1.55}
+.learning-revision-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.learning-revision-steps span{display:grid;gap:5px;padding:10px;border:1px solid #403650;border-radius:10px;background:#171321;color:#bdb1ce;font-size:10px;line-height:1.5}
+.learning-revision-steps b{color:#d8c2ff;font-size:10px}
+@media(max-width:640px){.learning-revision-steps{grid-template-columns:1fr}}
