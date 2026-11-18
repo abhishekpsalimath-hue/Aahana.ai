@@ -662,7 +662,9 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         const canvas = document.createElement("canvas");
         canvas.width = bitmap.width;
         canvas.height = bitmap.height;
-        canvas.getContext("2d")?.drawImage(bitmap, 0, 0);
+        const context = canvas.getContext("2d");
+        if (!context) { bitmap.close(); throw new Error("Could not prepare this image in the browser."); }
+        context.drawImage(bitmap, 0, 0);
         bitmap.close();
         const converted = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.82));
         if (!converted) throw new Error("Could not convert this WebP image. Choose a JPEG or PNG instead.");
