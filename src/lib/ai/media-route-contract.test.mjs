@@ -38,6 +38,8 @@ test("assistant exposes video creation, quality, duration and download controls"
   assert.match(workspace, /isVideoGenerationRequest/);
   assert.match(workspace, /Generate video/);
   assert.match(workspace, /value="fhd"/);
+  assert.match(workspace, /Video aspect ratio/);
+  assert.match(route, /aspect_ratio:\s*input\.aspectRatio/);
   assert.match(workspace, /videoDuration/);
   assert.match(workspace, /generatedVideo/);
   assert.match(workspace, /api\/videos\/download/);
