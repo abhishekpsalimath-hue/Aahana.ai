@@ -34,3 +34,14 @@ test("rejects malformed and oversized scenes", () => {
   assert.equal(validateImageScene({ layers: Array(101).fill({ type: "circle" }) }), null);
   assert.throws(() => renderImageSceneSvg({ layers: [{ type: "unknown" }] }), /Invalid Aahana image scene/);
 });
+
+
+test("builds an original prompt from Pinterest-inspired notes without forwarding the pin URL", async () => {
+  const { buildPinterestInspiredPrompt } = await import("./image-engine.mjs");
+  const prompt = buildPinterestInspiredPrompt({ title: "Study poster", notes: "Soft lilac palette, editorial typography, glowing 3D planet. https://pinterest.com/pin/123" });
+  assert.match(prompt, /Study poster/);
+  assert.match(prompt, /Soft lilac palette/);
+  assert.doesNotMatch(prompt, /pinterest\\.com/);
+  assert.match(prompt, /distinct and original/);
+  assert.equal(buildPinterestInspiredPrompt({ notes: "   " }), "");
+});
