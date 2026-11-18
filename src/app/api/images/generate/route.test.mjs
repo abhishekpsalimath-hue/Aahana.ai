@@ -35,14 +35,14 @@ test("image safety checks use the requested safety model and generation uses the
   const safetyStart = route.indexOf("async function runSafetyModel");
   const safetyEnd = route.indexOf("async function moderateImagePrompt");
   const safetyRunner = route.slice(safetyStart, safetyEnd);
-  assert.match(safetyRunner, /ai\\/run\\/\\$\\{model\\}/);
-  assert.doesNotMatch(safetyRunner, /ai\\/run\\/\\$\\{MODEL\\}/);
+  assert.ok(safetyRunner.includes("/ai/run/${model}"));
+  assert.ok(!safetyRunner.includes("/ai/run/${MODEL}"));
 
   const generationStart = route.indexOf("const { prompt: finalPrompt");
   const generationEnd = route.indexOf("const result = await response.json()", generationStart);
   const generationRequest = route.slice(generationStart, generationEnd);
-  assert.match(generationRequest, /ai\\/run\\/\\$\\{MODEL\\}/);
-  assert.doesNotMatch(generationRequest, /ai\\/run\\/\\$\\{model\\}/);
+  assert.ok(generationRequest.includes("/ai/run/${MODEL}"));
+  assert.ok(!generationRequest.includes("/ai/run/${model}"));
 });
 
 test("image safety checks use the built-in Workers AI model endpoint", () => {
