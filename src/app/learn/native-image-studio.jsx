@@ -64,10 +64,11 @@ export default function NativeImageStudio() {
   const active = scene.layers[selected];
   return (
     <section className="native-image-studio" aria-label="Aahana native image studio">
-      <div className="native-image-heading"><div><span>AAHANA-NATIVE CREATION ENGINE</span><h3>Image & Graphics Studio</h3><p>Compose vector artwork in your browser. No external image-generation service or account is called.</p></div><button type="button" onClick={exportSvg}>Export SVG</button></div>
+      <div className="native-image-heading"><div><span>AAHANA CREATIVE ENGINE</span><h3>Image & Graphics Studio</h3><p>Build editable graphics or generate original artwork from a visual direction.</p></div><button type="button" onClick={exportSvg}>Export SVG</button></div>
       <div className="native-image-layout">
         <div className="native-image-canvas"><img src={generatedImage || previewUrl} alt={generatedImage ? "AI-generated original image inspired by your written visual direction" : "Live preview of your editable vector composition"} /></div>
         <div className="native-image-controls">
+          <div className="native-image-inspiration"><strong>Pinterest inspiration</strong><label>Reference link (optional)<input type="url" value={referenceUrl} onChange={(event) => setReferenceUrl(event.target.value)} placeholder="Paste a Pinterest pin URL" /></label><label>What do you like about it?<textarea value={visualNotes} onChange={(event) => setVisualNotes(event.target.value)} maxLength={1200} placeholder="Describe colours, layout, typography, lighting, mood and subject. Aahana creates an original design from these notes." /></label><button type="button" onClick={generateInspiredImage} disabled={generating || !visualNotes.trim()}>{generating ? "Creating…" : "Generate original image"}</button><small>The image model receives your written direction, not the Pinterest link. Use references you have permission to use.</small>{generatedImage && <button type="button" onClick={exportGeneratedImage}>Export generated image</button>}</div>
           <label>Canvas background<input type="color" value={scene.background} onChange={(event) => setScene((current) => ({ ...current, background: event.target.value }))} /></label>
           <div className="native-image-add"><button type="button" onClick={() => addLayer("text")}>+ Text</button><button type="button" onClick={() => addLayer("circle")}>+ Circle</button><button type="button" onClick={() => addLayer("rect")}>+ Shape</button></div>
           <strong>Layers · {scene.layers.length}/100</strong>
