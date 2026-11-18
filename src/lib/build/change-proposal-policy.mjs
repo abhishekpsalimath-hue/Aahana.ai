@@ -75,19 +75,29 @@ export function validateChangeProposal({ currentFiles, changes } = {}) {
   }
 
   const current = new Map();
+  const currentCaseFolded = new Map();
   for (const file of currentFiles) {
     const path = validateProposalPath(file?.path);
-    if (current.has(path)) throw new Error("The project snapshot contains duplicate paths.");
+    const foldedPath = path.toLowerCase();
+    if (current.has(path) || currentCaseFolded.has(foldedPath)) {
+      throw new Error("The project snapshot contains duplicate or case-colliding paths.");
+    }
     const bytes = validateSourceText(file?.content, "Current file content");
     current.set(path, { content: file.content, sha256: sha256(file.content), bytes });
+    currentCaseFolded.set(foldedPath, path);
   }
 
   const seen = new Set();
+  const seenCaseFolded = new Set();
   let totalBytes = 0;
   const validated = changes.map((change) => {
     const path = validateProposalPath(change?.path);
-    if (seen.has(path)) throw new Error("A proposal cannot change the same path more than once.");
+    const foldedPath = path.toLowerCase();
+    if (seen.has(path) || seenCaseFolded.has(foldedPath)) {
+      throw new Error("A proposal cannot change the same path more than once or use case-colliding paths.");
+    }
     seen.add(path);
+    seenCaseFolded.add(foldedPath);
 
     const action = change?.action;
     if (!["create", "update", "delete"].includes(action)) {
@@ -95,7 +105,9 @@ export function validateChangeProposal({ currentFiles, changes } = {}) {
     }
     const existing = current.get(path);
     if (action === "create") {
-      if (existing) throw new Error("Cannot create a file that already exists: " + path);
+      if (existing || currentCaseFolded.has(foldedPath)) {
+        throw new Error("Cannot create a file that already exists or conflicts by path case: " + path);
+      }
       if (change.baseSha256 !== null) throw new Error("New files must use a null base hash.");
     } else {
       if (!existing) throw new Error("Cannot update or delete a file missing from the project snapshot: " + path);
