@@ -9,7 +9,7 @@ const ALLOWED_EXTENSIONS = new Set([
   "js", "jsx", "ts", "tsx", "mjs", "cjs", "css", "html", "htm",
   "json", "md", "txt", "py", "toml", "yaml", "yml", "sql", "sh", "xml", "svg",
 ]);
-const SENSITIVE_FILE_NAME = /(?:^|[._-])(?:credentials?|secrets?|service[-_.]?account|id_rsa|id_ed25519|private[-_.]?key)(?:[._-]|$)|\\.(?:pem|key|p12|pfx|crt|cer)$/i;
+const SENSITIVE_FILE_NAME = /(?:^|[._-])(?:credentials?|secrets?|service[-_.]?account|id_rsa|id_ed25519|private[-_.]?key)(?:[._-]|$)/i;
 
 function validateProposalPath(input) {
   const path = validateWorkspacePath(input);
