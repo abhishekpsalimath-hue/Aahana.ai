@@ -6,7 +6,7 @@ const BLOCKED_FILE_NAMES = new Set([
   ".env", ".env.local", ".env.production", ".npmrc", ".pypirc",
 ]);
 
-const ALLOWED_EXECUTABLES = new Set(["node", "npm", "python3", "git"]);
+const ALLOWED_EXECUTABLES = new Set(["node", "npm", "python3"]);
 const ALLOWED_NPM_COMMANDS = new Set(["install", "ci", "run", "test", "exec", "list"]);
 const MAX_ARGUMENTS = 40;
 const MAX_ARGUMENT_LENGTH = 1000;
@@ -73,11 +73,9 @@ export function validateSandboxCommand({ command, args = [], timeout = MAX_TIMEO
   if (command === "npm" && !ALLOWED_NPM_COMMANDS.has(args[0])) {
     throw new Error("This npm operation is not permitted.");
   }
-  if (command === "npm" && ["install", "ci"].includes(args[0]) && !args.includes("--ignore-scripts")) {
+  if (command === "npm" && ["install", "ci"].includes(args[0]) &&
+      (!args.includes("--ignore-scripts") || args.some((arg) => arg.startsWith("--ignore-scripts=")))) {
     throw new Error("Dependency installation must disable package lifecycle scripts.");
-  }
-  if (command === "git" && !["status", "diff", "log", "rev-parse"].includes(args[0])) {
-    throw new Error("Git write and remote operations are disabled in the build workspace.");
   }
 
   return Object.freeze({ command, args: [...args], timeout, sudo: false });
