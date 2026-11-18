@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createImageScene, renderImageSceneSvg, buildPinterestInspiredPrompt } from "@/lib/studio/image-engine.mjs";
 
 const PALETTE = ["#342c35", "#b9a5d4", "#e9a8c2", "#dce8c8", "#f6b98e", "#ffffff"];
@@ -13,8 +13,16 @@ export default function NativeImageStudio() {
   const [visualNotes, setVisualNotes] = useState("");
   const [generating, setGenerating] = useState(false);
   const [generatedImage, setGeneratedImage] = useState("");
+  const [referenceImage, setReferenceImage] = useState(null);
+  const [referencePreview, setReferencePreview] = useState("");
   const svg = useMemo(() => renderImageSceneSvg(scene), [scene]);
   const previewUrl = useMemo(() => `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`, [svg]);
+  useEffect(() => {
+    if (!referenceImage) { setReferencePreview(""); return; }
+    const url = URL.createObjectURL(referenceImage);
+    setReferencePreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [referenceImage]);
 
   function updateLayer(index, patch) {
     setScene((current) => ({ ...current, layers: current.layers.map((layer, i) => i === index ? { ...layer, ...patch } : layer) }));
@@ -29,6 +37,18 @@ export default function NativeImageStudio() {
     setSelected(scene.layers.length);
     setStatus("Layer added to your composition.");
   }
+  function chooseReferenceImage(file) {
+    if (!file) { setReferenceImage(null); return; }
+    if (!/^image\\/(png|jpeg|webp)$/.test(file.type) || file.size > 8 * 1024 * 1024) {
+      setStatus("Choose a PNG, JPEG or WebP image smaller than 8 MB.");
+      return;
+    }
+    setReferenceImage(file);
+    setStatus("Reference image loaded locally. Aahana has not uploaded or analysed it.");
+  }
+
+  const safePinterestUrl = (() => { try { const url = new URL(referenceUrl); return ["pinterest.com", "www.pinterest.com", "pin.it"].includes(url.hostname) && url.protocol === "https:" ? url.href : ""; } catch { return ""; } })();
+
   async function generateInspiredImage() {
     const prompt = buildPinterestInspiredPrompt({ title: scene.layers.find((layer) => layer.type === "text")?.text || "Original creative", notes: visualNotes });
     if (!prompt) { setStatus("Describe the visual direction you want Aahana to create."); return; }
@@ -39,7 +59,7 @@ export default function NativeImageStudio() {
       const result = await response.json().catch(() => ({}));
       if (!response.ok || !result.imageDataUrl) throw new Error(result.error || "Image generation is not available right now.");
       setGeneratedImage(result.imageDataUrl);
-      setStatus("Original image generated. Your Pinterest link was kept as a private reference and was not sent to the image provider.");
+      setStatus("Original image generated from your written direction. The Pinterest link and uploaded reference image were not sent to the image provider.");
     } catch (error) {
       setStatus(error?.message || "Image generation failed. Your editable vector composition is still available.");
     } finally { setGenerating(false); }
@@ -68,7 +88,7 @@ export default function NativeImageStudio() {
       <div className="native-image-layout">
         <div className="native-image-canvas"><img src={generatedImage || previewUrl} alt={generatedImage ? "AI-generated original image inspired by your written visual direction" : "Live preview of your editable vector composition"} /></div>
         <div className="native-image-controls">
-          <div className="native-image-inspiration"><strong>Pinterest inspiration</strong><label>Reference link (optional)<input type="url" value={referenceUrl} onChange={(event) => setReferenceUrl(event.target.value)} placeholder="Paste a Pinterest pin URL" /></label><label>What do you like about it?<textarea value={visualNotes} onChange={(event) => setVisualNotes(event.target.value)} maxLength={1200} placeholder="Describe colours, layout, typography, lighting, mood and subject. Aahana creates an original design from these notes." /></label><button type="button" onClick={generateInspiredImage} disabled={generating || !visualNotes.trim()}>{generating ? "Creating…" : "Generate original image"}</button><small>The image model receives your written direction, not the Pinterest link. Use references you have permission to use.</small>{generatedImage && <button type="button" onClick={exportGeneratedImage}>Export generated image</button>}</div>
+          <div className="native-image-inspiration"><strong>Pinterest inspiration</strong><label>Reference link (optional)<input type="url" value={referenceUrl} onChange={(event) => setReferenceUrl(event.target.value)} placeholder="Paste a Pinterest pin URL" /></label>{safePinterestUrl && <a href={safePinterestUrl} target="_blank" rel="noopener noreferrer">Open Pinterest reference</a>}{referenceUrl && !safePinterestUrl && <small>Enter a valid HTTPS Pinterest or pin.it link.</small>}<label>Upload a reference image<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => chooseReferenceImage(event.target.files?.[0])} /></label>{referencePreview && <div className="native-image-reference-preview"><img src={referencePreview} alt="Your locally selected visual reference" /><button type="button" onClick={() => setReferenceImage(null)}>Remove reference</button></div>}<label>What do you like about it?<textarea value={visualNotes} onChange={(event) => setVisualNotes(event.target.value)} maxLength={1200} placeholder="Describe colours, layout, typography, lighting, mood and subject. Aahana creates an original design from these notes." /></label><button type="button" onClick={generateInspiredImage} disabled={generating || !visualNotes.trim()}>{generating ? "Creating…" : "Generate original image"}</button><small>The current image model receives only your written direction. Links and uploaded images stay in this browser and are not visually analysed yet. Use references you have permission to use.</small>{generatedImage && <button type="button" onClick={exportGeneratedImage}>Export generated image</button>}</div>
           <label>Canvas background<input type="color" value={scene.background} onChange={(event) => setScene((current) => ({ ...current, background: event.target.value }))} /></label>
           <div className="native-image-add"><button type="button" onClick={() => addLayer("text")}>+ Text</button><button type="button" onClick={() => addLayer("circle")}>+ Circle</button><button type="button" onClick={() => addLayer("rect")}>+ Shape</button></div>
           <strong>Layers · {scene.layers.length}/100</strong>
@@ -83,7 +103,7 @@ export default function NativeImageStudio() {
           {status && <p role="status">{status}</p>}
         </div>
       </div>
-      <small className="native-image-disclosure">Current capabilities: editable SVG composition and an optional provider-backed original image request. Generation requires private Cloudflare Workers AI credentials; photo-reference upload and direct Pinterest import are not connected.</small>
+      <small className="native-image-disclosure">Current capabilities: editable SVG composition and an optional provider-backed original image request. Generation requires private Cloudflare Workers AI credentials; Pinterest links can be opened and reference images preview locally; automated visual analysis and direct Pinterest import are not connected.</small>
     </section>
   );
 }
