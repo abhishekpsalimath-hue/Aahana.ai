@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -909,9 +911,9 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     <main className={sidebarOpen ? "shell sidebar-expanded" : "shell sidebar-collapsed"}>
       <aside id="aahana-sidebar" className={sidebarOpen ? "sidebar sidebar-visible" : "sidebar sidebar-hidden"}>
         <div className="sidebar-heading">
-          <a className="brand" href="/" aria-label="Aahana AI home">
+          <Link className="brand" href="/" aria-label="Aahana AI home">
             <span className="brand-word">Aahana</span><span className="brand-ai">AI</span>
-          </a>
+          </Link>
           <button className="sidebar-close" type="button" onClick={() => setSidebarOpen(false)} aria-label="Hide navigation">×</button>
         </div>
         <button className="new-chat" type="button" onClick={newConversation}>
