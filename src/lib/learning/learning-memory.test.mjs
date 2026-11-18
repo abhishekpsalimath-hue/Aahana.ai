@@ -28,6 +28,14 @@ test("validates and bounds a completed learning journey", () => {
   assert.equal(typeof result.completedAt, "string");
 });
 
+test("preserves open-ended subjects up to the Student Mode 80-character limit", () => {
+  const subject = "Advanced interdisciplinary marine robotics and autonomous ocean exploration";
+  assert.ok(subject.length > 60 && subject.length <= 80);
+  const result = validateLearningJourney({ ...sample, subject });
+  assert.equal(result.subject, subject);
+  assert.equal(validateLearningJourney({ ...sample, subject: "x".repeat(81) }).subject, "x".repeat(60));
+});
+
 test("rejects incomplete, unbounded and impossible journey data", () => {
   assert.equal(validateLearningJourney(null), null);
   assert.equal(validateLearningJourney({ ...sample, sceneCount: 1 }), null);
