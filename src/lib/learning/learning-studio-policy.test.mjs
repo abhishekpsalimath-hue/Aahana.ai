@@ -134,7 +134,7 @@ test("all learning modes receive animation-first visual teaching and non-shaming
 
 test("quiz answers reveal a left-side visual for both correct and incorrect selections", () => {
   assert.match(route, /hint \(string\)/);
-  assert.match(quizBankPolicy, /const hint = cleanField\(item\.hint\)/);
+  assert.match(quizBankPolicy, /const hint = cleanField\(item\.hint, "", 300\)/);
   assert.match(quizBankPolicy, /supportedQuizVisuals\.includes\(item\.visual\)/);
   assert.match(studio, /selectedOptions/);
   assert.match(studio, /className="learning-quiz-visual-box"/);
