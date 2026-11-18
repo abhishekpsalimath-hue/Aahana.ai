@@ -37,3 +37,24 @@ test("fails closed for unknown providers and missing credentials", () => {
   assert.equal(resolveAiProviderConfig({ AAHANA_AI_PROVIDER: "vercel", AAHANA_MODEL: "model" }).error, "missing-credentials");
   assert.equal(resolveAiProviderConfig({ AAHANA_AI_PROVIDER: "groq" }).error, "missing-credentials");
 });
+
+test("normalizes provider names and rejects whitespace-only credentials", () => {
+  const config = resolveAiProviderConfig({
+    AAHANA_AI_PROVIDER: " VERCEL ",
+    AI_GATEWAY_API_KEY: " gateway-key ",
+    AAHANA_MODEL: " openai/gpt-4.1 ",
+  });
+  assert.equal(config.ok, true);
+  assert.equal(config.provider, "vercel");
+  assert.equal(config.apiKey, "gateway-key");
+  assert.equal(config.model, "openai/gpt-4.1");
+
+  assert.equal(resolveAiProviderConfig({
+    GROQ_API_KEY: "   ",
+  }).error, "missing-credentials");
+  assert.equal(resolveAiProviderConfig({
+    AAHANA_AI_PROVIDER: "vercel",
+    AI_GATEWAY_API_KEY: "key",
+    AAHANA_MODEL: "   ",
+  }).error, "missing-credentials");
+});
