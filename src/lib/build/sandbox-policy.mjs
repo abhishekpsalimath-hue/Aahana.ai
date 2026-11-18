@@ -13,7 +13,7 @@ const MAX_ARGUMENT_LENGTH = 1000;
 const MAX_TIMEOUT_MS = 120_000;
 const MAX_FILES = 100;
 const MAX_FILE_BYTES = 1 * 1024 * 1024;
-const MAX_TOTAL_FILE_BYTES = 10 * 1024 * 1024;
+const MAX_TOTAL_FILE_BYTES = 3 * 1024 * 1024;
 const AUTOMATED_ACTIONS = new Set([
   "create-preview",
   "write-sandbox-files",
@@ -57,12 +57,13 @@ export function createSafeSandboxOptions({ name, projectId }) {
 
   // Deliberately do not pass application environment variables, credentials,
   // repository credentials, user secrets, or production configuration.
+  // Project scope comes from the deployment's Vercel OIDC identity.
+  // Do not pass project IDs or credentials into the guest VM.
   return Object.freeze({
     name,
-    projectId,
     image: "vercel/sandbox/universal:latest",
     region: "bom1",
-    resources: Object.freeze({ vcpus: 1, memory: 2048 }),
+    resources: Object.freeze({ vcpus: 1 }),
     timeout: MAX_TIMEOUT_MS,
     persistent: false,
     networkPolicy: "deny-all",
@@ -119,4 +120,52 @@ export function assertHumanApprovalRequired(action) {
     throw new Error("This action requires owner approval outside the sandbox.");
   }
   return true;
+}
+
+
+const SAFE_PACKAGE_VERSION = /^(?:\\^|~|>=|<=|>|<)?\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$/;
+const SAFE_PACKAGE_NAME = /^(?:@[a-z0-9._-]+\\/)?[a-z0-9._-]+$/i;
+
+export function validatePackageManifest(files) {
+  const packageFile = files.find((file) => file.path === "package.json");
+  if (!packageFile) return Object.freeze({ manifest: null, hasDependencies: false });
+
+  let manifest;
+  try {
+    manifest = JSON.parse(packageFile.content);
+  } catch {
+    throw new Error("package.json must contain valid JSON.");
+  }
+  if (!manifest || typeof manifest !== "object" || Array.isArray(manifest)) {
+    throw new Error("package.json must contain a JSON object.");
+  }
+
+  const scripts = manifest.scripts && typeof manifest.scripts === "object" && !Array.isArray(manifest.scripts)
+    ? manifest.scripts
+    : {};
+  for (const hook of ["preinstall", "install", "postinstall", "prepare"]) {
+    if (Object.hasOwn(scripts, hook)) {
+      throw new Error("Install lifecycle scripts are not permitted in the isolated build workspace.");
+    }
+  }
+
+  let dependencyCount = 0;
+  let hasDependencies = false;
+  for (const groupName of ["dependencies", "devDependencies", "optionalDependencies"]) {
+    const group = manifest[groupName];
+    if (group === undefined) continue;
+    if (!group || typeof group !== "object" || Array.isArray(group)) {
+      throw new Error("Package dependency declarations must be objects.");
+    }
+    for (const [name, version] of Object.entries(group)) {
+      dependencyCount += 1;
+      if (dependencyCount > 200 || !SAFE_PACKAGE_NAME.test(name) ||
+          typeof version !== "string" || !SAFE_PACKAGE_VERSION.test(version)) {
+        throw new Error("Only registry packages with explicit semantic-version ranges are permitted.");
+      }
+      hasDependencies = true;
+    }
+  }
+
+  return Object.freeze({ manifest, hasDependencies });
 }
