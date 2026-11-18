@@ -1,4 +1,3 @@
-import { Sandbox } from "@vercel/sandbox";
 import {
   createSafeSandboxOptions,
   validatePackageManifest,
@@ -64,7 +63,8 @@ export async function executeBuildTask({
     args = [safeEntrypoint];
   }
 
-  const sandbox = await SandboxClient.create(
+  const Client = SandboxClient || (await import("@vercel/sandbox")).Sandbox;
+  const sandbox = await Client.create(
     createSafeSandboxOptions({ name: sandboxName, projectId }),
   );
 
