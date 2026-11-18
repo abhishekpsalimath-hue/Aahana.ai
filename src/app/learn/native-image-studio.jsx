@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { createImageScene, renderImageSceneSvg } from "@/lib/studio/image-engine.mjs";
+import { createImageScene, renderImageSceneSvg, buildPinterestInspiredPrompt } from "@/lib/studio/image-engine.mjs";
 
 const PALETTE = ["#342c35", "#b9a5d4", "#e9a8c2", "#dce8c8", "#f6b98e", "#ffffff"];
 
@@ -9,6 +9,10 @@ export default function NativeImageStudio() {
   const [scene, setScene] = useState(() => createImageScene());
   const [selected, setSelected] = useState(2);
   const [status, setStatus] = useState("");
+  const [referenceUrl, setReferenceUrl] = useState("");
+  const [visualNotes, setVisualNotes] = useState("");
+  const [generating, setGenerating] = useState(false);
+  const [generatedImage, setGeneratedImage] = useState("");
   const svg = useMemo(() => renderImageSceneSvg(scene), [scene]);
   const previewUrl = useMemo(() => `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`, [svg]);
 
@@ -25,6 +29,27 @@ export default function NativeImageStudio() {
     setSelected(scene.layers.length);
     setStatus("Layer added to your composition.");
   }
+  async function generateInspiredImage() {
+    const prompt = buildPinterestInspiredPrompt({ title: scene.layers.find((layer) => layer.type === "text")?.text || "Original creative", notes: visualNotes });
+    if (!prompt) { setStatus("Describe the visual direction you want Aahana to create."); return; }
+    setGenerating(true);
+    setStatus("Generating an original image from your written art direction…");
+    try {
+      const response = await fetch("/api/images/generate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt }) });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || !result.imageDataUrl) throw new Error(result.error || "Image generation is not available right now.");
+      setGeneratedImage(result.imageDataUrl);
+      setStatus("Original image generated. Your Pinterest link was kept as a private reference and was not sent to the image provider.");
+    } catch (error) {
+      setStatus(error?.message || "Image generation failed. Your editable vector composition is still available.");
+    } finally { setGenerating(false); }
+  }
+
+  function exportGeneratedImage() {
+    if (!generatedImage) return;
+    const anchor = document.createElement("a"); anchor.href = generatedImage; anchor.download = "aahana-original-image.jpg"; anchor.click();
+  }
+
   function exportSvg() {
     const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
     const url = URL.createObjectURL(blob);
@@ -41,7 +66,7 @@ export default function NativeImageStudio() {
     <section className="native-image-studio" aria-label="Aahana native image studio">
       <div className="native-image-heading"><div><span>AAHANA-NATIVE CREATION ENGINE</span><h3>Image & Graphics Studio</h3><p>Compose vector artwork in your browser. No external image-generation service or account is called.</p></div><button type="button" onClick={exportSvg}>Export SVG</button></div>
       <div className="native-image-layout">
-        <div className="native-image-canvas"><img src={previewUrl} alt="Live preview of your editable vector composition" /></div>
+        <div className="native-image-canvas"><img src={generatedImage || previewUrl} alt={generatedImage ? "AI-generated original image inspired by your written visual direction" : "Live preview of your editable vector composition"} /></div>
         <div className="native-image-controls">
           <label>Canvas background<input type="color" value={scene.background} onChange={(event) => setScene((current) => ({ ...current, background: event.target.value }))} /></label>
           <div className="native-image-add"><button type="button" onClick={() => addLayer("text")}>+ Text</button><button type="button" onClick={() => addLayer("circle")}>+ Circle</button><button type="button" onClick={() => addLayer("rect")}>+ Shape</button></div>
@@ -57,7 +82,7 @@ export default function NativeImageStudio() {
           {status && <p role="status">{status}</p>}
         </div>
       </div>
-      <small className="native-image-disclosure">Current capability: procedural SVG graphics, live layer editing and vector export. Neural text-to-image generation and photo editing are not yet connected.</small>
+      <small className="native-image-disclosure">Current capabilities: editable SVG composition and an optional provider-backed original image request. Generation requires private Cloudflare Workers AI credentials; photo-reference upload and direct Pinterest import are not connected.</small>
     </section>
   );
 }
