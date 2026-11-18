@@ -46,3 +46,12 @@ test("Student Mode retains its original web-search trigger while Core Assistant 
   assert.match(route, /function shouldSearchCoreWeb/);
   assert.match(route, /const requiresLiveResearch = mode === "learn" \? shouldSearchWeb\(prompt, image\) : shouldSearchCoreWeb\(prompt, image\)/);
 });
+
+
+test("Core Assistant research keeps retrieval and model calls inside the server time budget", () => {
+  assert.match(route, /timeout: 20,[\s\S]*?\}, 22000\)/);
+  assert.match(route, /\}, 8000\)/);
+  assert.match(route, /\}, 12000\)/);
+  assert.match(route, /AbortSignal\.timeout\(requiresLiveResearch \? 32000 : 45000\)/);
+  assert.match(route, /export const maxDuration = 60/);
+});
