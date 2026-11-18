@@ -114,9 +114,18 @@ test("Learning Studio validates and renders interactive quizzes with feedback an
   assert.match(studio, /function InteractiveQuiz\(\{ quiz, profile, memoryEnabled, onSaveProgress \}\)/);
   assert.match(studio, /function choose\(index, optionIndex\)/);
   assert.match(studio, /discovered/);
-  assert.match(studio, /Play again/);
-  assert.match(studio, /Save this progress/);
+  assert.match(studio, /Explore again/);
+  assert.match(studio, /Save this journey/);
   assert.match(studio, /onSaveProgress/);
+});
+
+
+test("Student Mode delivers one challenge at a time instead of a worksheet", () => {
+  assert.match(studio, /const item = quiz\\.questions\\[currentIndex\\]/);
+  assert.match(studio, /!completed && <section/);
+  assert.match(studio, /Next discovery/);
+  assert.match(studio, /Finish my journey/);
+  assert.doesNotMatch(studio, /quiz\\.questions\\.map\\(\\(item, index\\)/);
 });
 
 test("Play and Solve keeps incomplete streamed quiz JSON out of the visible conversation", () => {
@@ -138,7 +147,7 @@ test("quiz answers reveal a left-side visual for both correct and incorrect sele
   assert.match(quizBankPolicy, /supportedQuizVisuals\.includes\(item\.visual\)/);
   assert.match(studio, /selectedOptions/);
   assert.match(studio, /className="learning-quiz-visual-box"/);
-  assert.match(studio, /Your visual appears here/);
+  assert.match(studio, /LOOK · THINK · DISCOVER/);
   assert.match(studio, /<AnimatedVisual visual=\{item\.visual\} \/>/);
   assert.match(studio, /Try another answer/);
   assert.match(studio, /Not quite—and that’s okay/);
@@ -633,7 +642,7 @@ test("Student Mode now offers category, topic and all six learning modes from th
   assert.match(studio, /className="learning-discovery"/);
   assert.match(studio, /learningCategories\.map\(\(item\)/);
   assert.match(studio, /learningModes\.map\(\(mode\)/);
-  assert.match(studio, /Start a 20-question quiz/);
+  assert.match(studio, /Play a 10-question challenge/);
   assert.match(studio, /Explore \{subject\}/);
   assert.match(quizBankPolicy, /value\.questions\.length > maxQuestions/);
   assert.match(route, /exactly 10 fresh multiple-choice questions by default/);
