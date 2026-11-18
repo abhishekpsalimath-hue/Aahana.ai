@@ -141,6 +141,9 @@ test("Image Studio offers a local original-photo colour-grade export without an 
   const localExport = source.slice(source.indexOf("async function exportOriginalPhotoWithLocalGrade"), source.indexOf("function exportSvg"));
   assert.match(localExport, /URL\.createObjectURL\(referenceImage\)/);
   assert.match(localExport, /applyCubeLutToImageData/);
+  assert.match(localExport, /context\.rotate\(\(photoRotation \* Math\.PI\) \/ 180\)/);
+  assert.match(localExport, /context\.scale\(photoFlipX \? -1 : 1, 1\)/);
+  assert.match(localExport, /const sideways = Math\.abs\(photoRotation % 180\) === 90/);
   assert.match(localExport, /setTimeout\(\(\) => URL\.revokeObjectURL\(downloadUrl\), 1000\)/);
   assert.doesNotMatch(localExport, /fetch\(/);
 });
