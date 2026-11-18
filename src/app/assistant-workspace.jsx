@@ -576,7 +576,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   }
 
   function selectProject(id) {
-    if (busy || imageGenerating) return;
+    if (busy || imageGenerating || videoGenerating) return;
     setSelectedProjectId(id);
     setConversationId(null);
     setMessages([]);
