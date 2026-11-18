@@ -3,7 +3,7 @@ const MAX_MESSAGE_LENGTH = 1200;
 
 function cleanPath(value) {
   if (typeof value !== "string") return null;
-  const normalized = value.replace(/\\/g, "/").replace(/^\.\//, "");
+  const normalized = value.split("\\").join("/").startsWith("./") ? value.split("\\").join("/").slice(2) : value.split("\\").join("/");
   if (!normalized || normalized.length > 240 || normalized.startsWith("/") || normalized.split("/").includes("..")) return null;
   return normalized;
 }
