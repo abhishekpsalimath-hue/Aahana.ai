@@ -869,7 +869,7 @@ export default function Interactive3DWorld({ selectedPlanet, onSelectedPlanetCha
   const [rotation, setRotation] = useState({ yaw: -.55, pitch: -.22 });
   const [zoom, setZoom] = useState(1);
   const [conceptIndex, setConceptIndex] = useState(0);
-  const [ecosystem, setEcosystem] = useState({ rainfall: "regular", waterSource: true, pollution: false, engineCycle: "intake", physicsForce: 3, physicsFriction: 1, chemistryMolecule: "water", chemistryFocus: "all", chemistryShowBonds: true, cellFocus: "all" });
+  const [ecosystem, setEcosystem] = useState({ rainfall: "regular", waterSource: true, pollution: false, engineCycle: "intake", physicsForce: 3, physicsFriction: 1, chemistryMolecule: "water", chemistryFocus: "all", chemistryShowBonds: true, cellFocus: "all", bridgeLoad: "center" });
   const canvasRef = useRef(null);
   const dragRef = useRef(null);
   const model = models.find((item) => item.id === modelId) || models[0];
@@ -989,6 +989,19 @@ export default function Interactive3DWorld({ selectedPlanet, onSelectedPlanetCha
             </div>
             <p className="learning-3d-experiment-observation" aria-live="polite">{ecosystem.physicsForce === ecosystem.physicsFriction ? "Balanced forces: the net force is zero in this simplified comparison. Acceleration is zero." : ecosystem.physicsForce > ecosystem.physicsFriction ? "The push is greater than the opposing friction in this illustration, so the cart shifts in the push direction." : "Friction is greater than the push in this illustration, so the net force points opposite the push."}</p>
             <button type="button" onClick={() => setEcosystem((current) => ({ ...current, physicsForce: 3, physicsFriction: 1 }))}>Reset experiment</button>
+          </div>}
+          {modelId === "bridge" && <div className="learning-3d-experiment" aria-label="Bridge load path exploration">
+            <span>EXPLORE HOW A BRIDGE CARRIES LOADS</span>
+            <p>Move an illustrative load along the deck and discuss how the truss transfers forces toward its supports. This is a qualitative learning activity, not a structural analysis or safety assessment.</p>
+            <div className="learning-3d-experiment-control"><strong>Illustrative load position</strong><div role="group" aria-label="Choose illustrative load position">
+              {[["left", "Near left support"], ["center", "At midspan"], ["right", "Near right support"]].map(([value, label]) => <button type="button" key={value} className={(ecosystem.bridgeLoad || "center") === value ? "active" : ""} aria-pressed={(ecosystem.bridgeLoad || "center") === value} onClick={() => setEcosystem((current) => ({ ...current, bridgeLoad: value }))}>{label}</button>)}
+            </div></div>
+            <p className="learning-3d-experiment-observation" aria-live="polite">{({
+              left: "With the load near the left support, the nearby deck and truss members transfer forces toward that support. The exact member forces depend on the real bridge design and loading.",
+              center: "A load near midspan is farther from both supports. The deck transfers it into the truss, which carries forces through connected members toward both supports.",
+              right: "With the load near the right support, the nearby deck and truss members transfer forces toward that support. The exact member forces depend on the real bridge design and loading.",
+            })[ecosystem.bridgeLoad || "center"]}</p>
+            <button type="button" onClick={() => setEcosystem((current) => ({ ...current, bridgeLoad: "center" }))}>Reset load position</button>
           </div>}
           {modelId === "engine" && <div className="learning-3d-experiment" aria-label="Four-stroke engine learning experiment">
             <span>EXPLORE THE FOUR-STROKE CYCLE</span>
