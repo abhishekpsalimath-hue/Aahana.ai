@@ -7,6 +7,7 @@ import { findBestSpeechVoice } from "@/lib/voice/browser-capabilities.mjs";
 import { inferSpeechLocale } from "@/lib/voice/locale-detection.mjs";
 import { shouldFallbackToDeviceSpeech } from "@/lib/voice/speech-fallback-policy.mjs";
 import { detectImageEditStyleFromPrompt, isImageEditRequest, prepareImageForEditing } from "@/lib/studio/image-edit.mjs";
+import { getProjectUploadKind } from "@/lib/learning/project-upload-policy.mjs";
 
 const modes = [
   { id: "solve", label: "Solve", hint: "Work through a problem" },
@@ -592,11 +593,9 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     setFileBusy(true);
     setFilesError("");
     try {
-      const allowed = ["application/pdf", "text/plain", "text/markdown", "text/csv", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "image/png", "image/jpeg", "image/webp"];
-      const extension = file.name.toLowerCase().split(".").pop();
-      const codeExtensions = new Set(["html", "htm", "css", "js", "jsx", "ts", "tsx", "mjs", "cjs", "json", "xml", "yaml", "yml", "toml", "sql", "py", "sh", "md", "txt"]);
-      const isCodeFile = codeExtensions.has(extension);
-      if (!allowed.includes(file.type) && !isCodeFile) throw new Error("This file type is not supported.");
+      const uploadKind = getProjectUploadKind(file.name, file.type);
+      const isCodeFile = uploadKind === "code";
+      if (!uploadKind) throw new Error("This file type is not supported. Private environment files, keys and certificates cannot be uploaded.");
       if (file.size < 1 || file.size > 10 * 1024 * 1024) throw new Error("Files must be between 1 byte and 10 MB.");
       const upload = isCodeFile && !["text/plain", "text/markdown"].includes(file.type)
         ? new File([await file.text()], file.name, { type: "text/plain" })
@@ -1035,7 +1034,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
             ))}
             <label className="project-add">
               {fileBusy ? "Uploading…" : "＋ Upload file"}
-              <input type="file" hidden disabled={fileBusy} onChange={uploadFile} accept=".pdf,.txt,.md,.csv,.docx,.xlsx,.png,.jpg,.jpeg,.webp,.html,.htm,.css,.js,.jsx,.ts,.tsx,.mjs,.cjs,.json,.xml,.yaml,.yml,.toml,.sql,.py,.sh" />
+              <input type="file" hidden disabled={fileBusy} onChange={uploadFile} accept=".pdf,.txt,.md,.csv,.docx,.xlsx,.png,.jpg,.jpeg,.webp,.html,.htm,.css,.scss,.sass,.less,.js,.jsx,.ts,.tsx,.mjs,.cjs,.vue,.svelte,.astro,.mdx,.json,.jsonc,.json5,.xml,.yaml,.yml,.toml,.sql,.prisma,.graphql,.gql,.proto,.py,.pyi,.ipynb,.rb,.php,.go,.rs,.java,.kt,.kts,.swift,.dart,.cs,.fs,.fsx,.c,.h,.cc,.cpp,.cxx,.hpp,.hh,.sh,.bash,.zsh,.ps1,.bat,.cmd,.lua,.r,.jl,.scala,.sc,.ex,.exs,.erl,.hrl,.hs,.lhs,.clj,.cljs,.cljc,.gradle,.tf,.hcl,.ini,.conf,.properties" />
             </label>
           </div>
         )}
