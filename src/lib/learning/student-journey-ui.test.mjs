@@ -69,6 +69,9 @@ test("interactive 3D renderer uses adaptive quality, cinematic three-point light
   assert.match(world, /new THREE\.PointLight\(environment\.accent, environment\.accentIntensity/);
   assert.match(world, /state\.scene\.background = new THREE\.Color\(environment\.background\)/);
   assert.match(world, /state\.stars\.visible = environment\.stars/);
+  assert.match(world, /createAmbientParticles\(scene, environment\.ambient\)/);
+  assert.match(world, /state\.ambientParticles\.material\.color\.setHex\(environment\.ambient\.color\)/);
+  assert.match(world, /state\.ambientParticles\.rotation\.y = time \* \(state\.ambientParticles\.userData\.drift/);
   assert.match(world, /accentLight\.intensity/);
 });
 
