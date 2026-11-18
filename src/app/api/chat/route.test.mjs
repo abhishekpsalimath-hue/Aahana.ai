@@ -55,3 +55,10 @@ test("Core Assistant research keeps retrieval and model calls inside the server 
   assert.match(route, /AbortSignal\.timeout\(requiresLiveResearch \? 32000 : 45000\)/);
   assert.match(route, /export const maxDuration = 60/);
 });
+
+
+test("Core Assistant recognizes HTTPS and bare-domain website research requests", () => {
+  assert.match(route, /rawRequestedUrl/);
+  assert.match(route, /https:\/\/\" \+ rawRequestedUrl/);
+  assert.match(route, /\|research\|analy\[sz\]e\|review\|documentation/);
+});
