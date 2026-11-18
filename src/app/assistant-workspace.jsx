@@ -623,7 +623,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       if (typeof result.imageDataUrl !== "string" || !result.imageDataUrl.startsWith("data:image/jpeg;base64,")) {
         throw new Error("The image provider returned an invalid image.");
       }
-      setGeneratedImage({ dataUrl: result.imageDataUrl, prompt: imagePrompt });
+      setGeneratedImage({ dataUrl: result.imageDataUrl, prompt: imagePrompt, refined: result.promptRefined === true });
     } catch (err) {
       setError(err.message || "Image generation failed.");
     } finally {
@@ -1217,6 +1217,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
             {generatedImage && (
               <div className="generated-image-preview">
                 <img src={generatedImage.dataUrl} alt={generatedImage.prompt} style={{ display: "block", width: "100%", maxWidth: "640px", borderRadius: "14px" }} />
+                <small className="image-prompt-status">{generatedImage.refined ? "Aahana refined your prompt before generation." : "Generated from your original prompt."}</small>
                 <div className="message-actions">
                   <a className="copy-message" href={generatedImage.dataUrl} download="aahana-generated-image.jpg">Download image</a>
                   <button className="copy-message" type="button" onClick={() => setGeneratedImage(null)}>Remove</button>
