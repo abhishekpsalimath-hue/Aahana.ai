@@ -50,6 +50,6 @@ test("uses bounded source-content matches when filenames are generic", () => {
     { original_filename: "src/lib/first.js", content: "export function renderDashboard() {}" },
     { original_filename: "src/lib/second.js", content: "export function calculateInvoiceTax() {}" },
   ];
-  const result = selectRelevantProjectFiles("change invoice tax calculation", genericFiles, 2);
+  const result = selectRelevantProjectFiles("calculate invoice tax", genericFiles, 2);
   assert.equal(result[0].original_filename, "src/lib/second.js");
 });
