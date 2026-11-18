@@ -17,6 +17,7 @@ on:
       - "src/app/learn/native-image-studio.jsx"
       - "src/app/learn/creator-studio.css"
       - "src/lib/studio/image-engine.*"
+      - "src/lib/studio/color-grading.mjs"
       - "src/app/learn/native-motion-studio.jsx"
       - "src/lib/studio/motion-engine.*"
       - "src/lib/studio/native-motion-studio.test.mjs"
