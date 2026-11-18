@@ -67,7 +67,7 @@ test("Student Mode starts with a child-led question instead of a compulsory grad
   assert.equal(studio.includes("<LearningCategoryExplorer"), false);
   assert.equal(studio.includes("<SpaceExplorer"), false);
   assert.match(studio, /<Interactive3DWorld selectedPlanet=/);
-  assert.match(studio, /<SpaceFunQuiz \/>/);
+  assert.match(studio, /className="learning-discovery"/);
 });test("learning sessions use the authenticated chat endpoint and persist under learn mode", () => {
   assert.match(studio, /fetch\("\/api\/chat"/);
   assert.match(studio, /mode: "learn"/);
@@ -290,7 +290,7 @@ test("animated lessons include a friendly companion that celebrates discovery wi
 
  
 test("Student Mode mounts the interactive 3D Solar System as part of the learning experience", () => {
-  assert.match(studio, /const \[selectedPlanet, setSelectedPlanet\] = useState\("earth"\)/);
+  assert.match(studio, /const \[selectedPlanet, setSelectedPlanet\] = useState\(null\)/);
   assert.match(studio, /<Interactive3DWorld selectedPlanet=\{selectedPlanet\}/);
   assert.equal(studio.includes("<SpaceExplorer"), false);
   assert.match(world, /function pickSolarSystemPlanet\(/);
