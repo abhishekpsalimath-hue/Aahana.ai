@@ -382,9 +382,6 @@ button:focus-visible,a:focus-visible{outline-color:#c4a7ff}
   box-shadow:0 0 14px #b99aff22,inset 0 1px #ffffff18;
   animation:brand-chip-arrive .85s cubic-bezier(.2,.8,.2,1) .18s both,brand-chip-breathe 4.8s ease-in-out 1.2s infinite;
 }
-.brand-ai .brand-i{position:relative;font-size:0;line-height:1}
-.brand-ai .brand-i::after{content:"ı";font-size:10px;line-height:1}
-.brand-ai .brand-i::before{content:"☾";position:absolute;top:-7px;left:0;font:700 8px/1 'Plus Jakarta Sans',sans-serif;color:#f0e8ff;text-shadow:0 0 7px #d8c2ff;}
 @keyframes brand-chip-arrive{
   from{opacity:0;transform:translateY(5px) scale(.82);filter:blur(4px)}
   to{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}
