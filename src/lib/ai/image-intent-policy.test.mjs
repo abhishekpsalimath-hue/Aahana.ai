@@ -13,6 +13,25 @@ test("recognizes direct image requests in everyday language", () => {
   ]) assert.equal(isImageGenerationRequest(prompt), true, prompt);
 });
 
+test("recognizes short image requests without requiring the word image", () => {
+  for (const prompt of [
+    "Generate a cute cat",
+    "Create a birthday card",
+    "Make me a 3D model of a car",
+    "Design a flyer for my cafe",
+    "Visualize a beautiful mountain landscape",
+  ]) assert.equal(isImageGenerationRequest(prompt), true, prompt);
+});
+
+test("does not mistake ordinary planning requests for image generation", () => {
+  for (const prompt of [
+    "Create a study plan for my exams",
+    "Make a business plan for a cafe",
+    "Generate a lesson about photosynthesis",
+    "Design a project schedule",
+  ]) assert.equal(isImageGenerationRequest(prompt), false, prompt);
+});
+
 test("recognizes simple draw, sketch and paint requests without the word image", () => {
   for (const prompt of [
     "Draw a cat sitting on a windowsill",
