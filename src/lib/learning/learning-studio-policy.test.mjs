@@ -200,6 +200,13 @@ test("learning memory is opt-in, authenticated, owner-scoped and deletable", () 
   assert.match(animated, /Save to my journey/);
 });
 
+test("private learning memory POST bounds request bytes before parsing JSON", () => {
+  assert.match(learningMemoryRoute, /async function readBoundedJson\(request, maxBytes = 64 \* 1024\)/);
+  assert.match(learningMemoryRoute, /request\.body\?\.getReader\(\)/);
+  assert.match(learningMemoryRoute, /bytes > maxBytes/);
+  assert.match(learningMemoryRoute, /status: error\?\.status \|\| 400/);
+});
+
 test("learning memory API reports the actual consent setting", () => {
   assert.match(learningMemoryRoute, /return NextResponse\.json\(\{ enabled, journeys, quizProgress \}\)/);
   assert.doesNotMatch(learningMemoryRoute, /return NextResponse\.json\(\{ enabled: true, journeys/);
