@@ -3,8 +3,9 @@ const STOP_WORDS = new Set(["about","after","again","also","and","are","build","
 function tokens(value) {
   return new Set(
     String(value || "")
-      .toLowerCase()
       .normalize("NFKC")
+      .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+      .toLowerCase()
       .match(/[\p{L}\p{N}]{2,}/gu)
       ?.filter((token) => !STOP_WORDS.has(token)) || []
   );
