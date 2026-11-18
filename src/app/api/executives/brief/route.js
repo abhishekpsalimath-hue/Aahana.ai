@@ -137,9 +137,8 @@ async function generateExecutiveReport(config, systemPrompt, userPrompt) {
 }
 
 export async function GET() {
-  const supabase = await createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) return NextResponse.json({ error: "Please sign in." }, { status: 401 });
+  const { supabase, user, response: accessResponse } = await getFounderSession();
+  if (accessResponse) return accessResponse;
 
   const { data, error } = await supabase
     .from("aahana_exec_briefs")
@@ -153,9 +152,8 @@ export async function GET() {
 }
 
 export async function POST(request) {
-  const supabase = await createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) return NextResponse.json({ error: "Please sign in." }, { status: 401 });
+  const { supabase, user, response: accessResponse } = await getFounderSession();
+  if (accessResponse) return accessResponse;
 
   const config = getProviderConfig(request);
   if (!config) return NextResponse.json({ error: "Aahana's configured AI provider is not ready for executive analysis." }, { status: 503 });
