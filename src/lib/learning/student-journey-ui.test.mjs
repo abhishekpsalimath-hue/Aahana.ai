@@ -1,0 +1,44 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+
+const studio = readFileSync(new URL("../../app/learn/learning-studio.jsx", import.meta.url), "utf8");
+const styles = readFileSync(new URL("../../app/learn/learning-studio.css", import.meta.url), "utf8");
+const chatRoute = readFileSync(new URL("../../app/api/chat/route.js", import.meta.url), "utf8");
+
+test("Student Mode presents the learning journey before the conversation", () => {
+  const hero = studio.indexOf('className="learning-hero student-welcome"');
+  const discovery = studio.indexOf('className="learning-discovery"');
+  const world = studio.indexOf("<Interactive3DWorld");
+  const session = studio.indexOf('className="learning-session"');
+  assert.ok(hero >= 0 && discovery > hero && world > discovery && session > world);
+  assert.match(studio, /Every question opens/);
+  assert.match(studio, /How would you like to explore/);
+});
+
+test("all six agreed learning experiences remain available", () => {
+  for (const mode of ['"story"', '"visual"', '"play"', '"adventure"', '"talk"', '"experiment"']) {
+    assert.ok(studio.includes('id: ' + mode), "Missing learning path " + mode);
+  }
+  assert.match(studio, /useState\("adventure"\)/);
+});
+
+test("Play & Solve reveals one challenge at a time and waits for the learner to continue", () => {
+  assert.match(studio, /const item = quiz\.questions\[currentIndex\]/);
+  assert.match(studio, /!completed && <section/);
+  assert.match(studio, /Next discovery/);
+  assert.match(studio, /Finish my journey/);
+  assert.doesNotMatch(studio, /quiz\.questions\.map\(\(item, index\)/);
+});
+
+test("Play & Solve keeps a complete 10-question default and optional 15 or 20 question requests", () => {
+  assert.match(chatRoute, /exactly 10 fresh multiple-choice questions by default/);
+  assert.match(chatRoute, /15 or 20 only when explicitly requested/);
+  assert.match(studio, /Create a fresh 10-question Play & Solve journey/);
+});
+
+test("journey styling remains responsive and respects reduced-motion preferences", () => {
+  assert.match(styles, /\.student-welcome/);
+  assert.match(styles, /@media \(max-width: 760px\)/);
+  assert.match(styles, /prefers-reduced-motion: reduce/);
+});
