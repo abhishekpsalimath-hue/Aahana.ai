@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createImageScene, renderImageSceneSvg, buildPinterestInspiredPrompt } from "@/lib/studio/image-engine.mjs";
 import { COLOR_GRADES, getColorGradeFilter } from "@/lib/studio/color-grading.mjs";
+import { applyCubeLutToImageData, parseCubeLut } from "@/lib/studio/cube-lut.mjs";
 
 const PALETTE = ["#342c35", "#b9a5d4", "#e9a8c2", "#dce8c8", "#f6b98e", "#ffffff"];
 
@@ -14,6 +15,7 @@ export default function NativeImageStudio() {
   const [visualNotes, setVisualNotes] = useState("");
   const [visualStyle, setVisualStyle] = useState("editorial");
   const [colorGrade, setColorGrade] = useState("none");
+  const [cubeLut, setCubeLut] = useState(null);
   const [generating, setGenerating] = useState(false);
   const [generatedImage, setGeneratedImage] = useState("");
   const [referenceImage, setReferenceImage] = useState(null);
@@ -53,6 +55,20 @@ export default function NativeImageStudio() {
 
   const safePinterestUrl = (() => { try { const url = new URL(referenceUrl); return ["pinterest.com", "www.pinterest.com", "pin.it"].includes(url.hostname) && url.protocol === "https:" ? url.href : ""; } catch { return ""; } })();
 
+  async function loadCubeLut(file) {
+    if (!file) return;
+    if (!file.name.toLowerCase().endsWith(".cube") || file.size > 2 * 1024 * 1024) {
+      setStatus("Choose a .cube 3D LUT file smaller than 2 MB.");
+      return;
+    }
+    try {
+      const parsed = parseCubeLut(await file.text());
+      if (!parsed) throw new Error("This .cube file is invalid or uses an unsupported LUT format. A 3D LUT with 2–64 points per axis is required.");
+      setCubeLut({ ...parsed, name: file.name });
+      setStatus(`Loaded ${file.name} (${parsed.size}³ 3D LUT). It will be applied to generated-image exports.`);
+    } catch (error) { setStatus(error?.message || "Could not read this LUT file."); }
+  }
+
   async function generateInspiredImage() {
     const prompt = buildPinterestInspiredPrompt({ title: scene.layers.find((layer) => layer.type === "text")?.text || "Original creative", notes: visualNotes, style: visualStyle });
     if (!prompt) { setStatus("Describe the visual direction you want Aahana to create."); return; }
@@ -88,7 +104,7 @@ export default function NativeImageStudio() {
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement("a"); anchor.href = url; anchor.download = "aahana-graded-image.png"; anchor.click();
       URL.revokeObjectURL(url);
-      setStatus("Generated image exported with the selected colour grade.");
+      setStatus(cubeLut ? `Generated image exported with ${cubeLut.name}.` : "Generated image exported with the selected colour grade.");
     } catch (error) {
       setStatus(error?.message || "Could not export the graded image.");
     }
@@ -113,7 +129,7 @@ export default function NativeImageStudio() {
         <div className="native-image-canvas"><img src={generatedImage || previewUrl} style={{ filter: generatedImage ? gradeFilter : "none" }} alt={generatedImage ? "AI-generated original image inspired by your written visual direction" : "Live preview of your editable vector composition"} /></div>
         <div className="native-image-controls">
           <div className="native-image-inspiration"><strong>Pinterest inspiration</strong><label>Reference link (optional)<input type="url" value={referenceUrl} onChange={(event) => setReferenceUrl(event.target.value)} placeholder="Paste a Pinterest pin URL" /></label>{safePinterestUrl && <a href={safePinterestUrl} target="_blank" rel="noopener noreferrer">Open Pinterest reference</a>}{referenceUrl && !safePinterestUrl && <small>Enter a valid HTTPS Pinterest or pin.it link.</small>}<label>Upload a reference image<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => chooseReferenceImage(event.target.files?.[0])} /></label>{referencePreview && <div className="native-image-reference-preview"><img src={referencePreview} alt="Your locally selected visual reference" /><button type="button" onClick={() => setReferenceImage(null)}>Remove reference</button></div>}<label>Creative direction<select value={visualStyle} onChange={(event) => setVisualStyle(event.target.value)}><option value="editorial">Editorial & premium</option><option value="education">Education & learning</option><option value="cinematic">Cinematic & dramatic</option><option value="minimal">Minimal & clean</option><option value="playful">Playful illustration</option><option value="product">Product & brand campaign</option><option value="social">Social media poster</option></select></label><label>What do you like about it?<textarea value={visualNotes} onChange={(event) => setVisualNotes(event.target.value)} maxLength={1200} placeholder="Describe colours, layout, typography, lighting, mood and subject. Aahana creates an original design from these notes." /></label><button type="button" onClick={generateInspiredImage} disabled={generating || !visualNotes.trim()}>{generating ? "Creating…" : "Generate original image"}</button><small>The current image model receives only your written direction. Links and uploaded images stay in this browser and are not visually analysed yet. Use references you have permission to use.</small>{generatedImage && <button type="button" onClick={exportGeneratedImage}>Export generated image</button>}</div>
-          <label>Colour grade<select value={colorGrade} onChange={(event) => setColorGrade(event.target.value)}>{COLOR_GRADES.map((grade) => <option key={grade.id} value={grade.id}>{grade.label}</option>)}</select></label>
+          <label>Colour grade<select value={colorGrade} onChange={(event) => setColorGrade(event.target.value)}>{COLOR_GRADES.map((grade) => <option key={grade.id} value={grade.id}>{grade.label}</option>)}</select></label>\n          <label>Import 3D LUT (.cube)<input type="file" accept=".cube,text/plain" onChange={(event) => loadCubeLut(event.target.files?.[0])} /></label>\n          {cubeLut && <div className="native-image-lut-status"><span>{cubeLut.name} · {cubeLut.size}³</span><button type="button" onClick={() => { setCubeLut(null); setStatus("Custom LUT removed."); }}>Remove LUT</button></div>}
           <label>Canvas background<input type="color" value={scene.background} onChange={(event) => setScene((current) => ({ ...current, background: event.target.value }))} /></label>
           <div className="native-image-add"><button type="button" onClick={() => addLayer("text")}>+ Text</button><button type="button" onClick={() => addLayer("circle")}>+ Circle</button><button type="button" onClick={() => addLayer("rect")}>+ Shape</button></div>
           <strong>Layers · {scene.layers.length}/100</strong>
@@ -128,7 +144,7 @@ export default function NativeImageStudio() {
           {status && <p role="status">{status}</p>}
         </div>
       </div>
-      <small className="native-image-disclosure">Current capabilities: editable SVG composition and an optional provider-backed original image request. Generation requires private Cloudflare Workers AI credentials; Pinterest links can be opened and reference images preview locally; automated visual analysis and direct Pinterest import are not connected.</small>
+      <small className="native-image-disclosure">Current capabilities: editable SVG composition, 33 filter-based looks, custom 3D .cube LUT import for generated-image PNG export, and an optional provider-backed original image request. Custom LUTs use trilinear interpolation and require a 3D LUT with 2–64 points per axis. Generation requires private Cloudflare Workers AI credentials; Pinterest links can be opened and reference images preview locally; automated visual analysis and direct Pinterest import are not connected.</small>
     </section>
   );
 }
