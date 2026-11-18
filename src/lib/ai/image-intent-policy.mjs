@@ -2,7 +2,6 @@ const IMAGE_NOUN = /\b(?:image|picture|photo|photograph|illustration|artwork|art
 const VISUAL_ACTION = /\b(?:generate|create|draw|sketch|paint|illustrate|render|design|make|show|visuali[sz]e)\b/i;
 const NON_VISUAL_OBJECT = /^(?:a |an |the )?(?:conclusion|inference|comparison|plan|lesson|decision|argument|salary|boundary|attention|assumption|recommendation|business plan|study plan|lesson plan|project schedule|schedule|roadmap|strategy)\b/i;
 const COMMON_VISUAL_SUBJECT = /\b(?:cat|dog|puppy|kitten|tiger|lion|elephant|bird|butterfly|dragon|robot|alien|astronaut|person|woman|man|child|family|tree|flower|rose|garden|forest|mountain|beach|ocean|waterfall|river|house|home|building|car|bike|motorcycle|airplane|ship|spaceship|planet|galaxy|castle|cafe|restaurant|cake|food|burger|pizza|coffee cup|product|mascot|character|dinosaur|unicorn|logo|poster|card|invitation|flyer|sticker)\b/i;
-const IMAGE_REQUEST_LEAD = /^(?:please\s+)?(?:can you\s+)?(?:could you\s+)?(?:i want|i need|make me|show me|give me|generate|create|draw|sketch|paint|illustrate|render|design|visuali[sz]e)\b/i;
 const WEBSITE_BUILD_ACTION = /\b(?:build|create|make|develop|design|code|implement|scaffold|launch)\b/i;
 const WEBSITE_OBJECT = /\b(?:website|web site|web app|web application|landing page|portfolio site|e-?commerce site|online store|dashboard|saas app|mobile app)\b/i;
 const NON_BUILDING_CONTEXT = /\b(?:explain|what is|how does|compare|summari[sz]e|write about|ideas for|teach me about|roadmap for|plan for)\b/i;
