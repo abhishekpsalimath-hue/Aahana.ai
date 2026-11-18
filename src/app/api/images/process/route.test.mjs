@@ -34,8 +34,9 @@ test("image editing and 4K enhancement use separate provider models", () => {
   assert.match(route, /originalPreserved: true/);
 });
 
-test("image processing uses the documented Cloudflare AI run envelope", () => {
+test("image processing selects the correct Cloudflare API format for built-in and third-party models", () => {
+  assert.match(route, /model\\.startsWith\("@cf\/"\)/);
+  assert.ok(route.includes("JSON.stringify(isBuiltInModel ? input : { model, input })"));
+  assert.ok(route.includes("/ai/run/${model}"));
   assert.ok(route.includes("/ai/run`"));
-  assert.ok(route.includes("JSON.stringify({ model, input })"));
-  assert.ok(!route.includes("/ai/run/${model}"));
 });
