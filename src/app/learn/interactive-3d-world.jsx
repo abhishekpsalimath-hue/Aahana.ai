@@ -281,13 +281,13 @@ function makeSceneModel(group,id,selectedPlanet=null,heartFlow="body",labState={
     const kind=labState.chemistryMolecule||"water";
     const focus=labState.chemistryFocus||"all";
     const definitions={
-      water:{atoms:[{p:[0,.08,0],r:.36,c:0xe66b78,role:"oxygen"},{p:[-.68,-.43,.12],r:.23,c:0xe9edf7,role:"hydrogen"},{p:[.68,-.43,.12],r:.23,c:0xe9edf7,role:"hydrogen"}],bonds:[[0,1],[0,2]]},
-      carbonDioxide:{atoms:[{p:[-.9,0,0],r:.27,c:0xe66b78,role:"oxygen"},{p:[0,0,0],r:.31,c:0x737b8d,role:"carbon"},{p:[.9,0,0],r:.27,c:0xe66b78,role:"oxygen"}],bonds:[[0,1],[1,2]]},
-      methane:{atoms:[{p:[0,0,0],r:.32,c:0x737b8d,role:"carbon"},{p:[.72,.55,.55],r:.2,c:0xe9edf7,role:"hydrogen"},{p:[-.72,.55,-.55],r:.2,c:0xe9edf7,role:"hydrogen"},{p:[.55,-.65,-.55],r:.2,c:0xe9edf7,role:"hydrogen"},{p:[-.55,-.65,.55],r:.2,c:0xe9edf7,role:"hydrogen"}],bonds:[[0,1],[0,2],[0,3],[0,4]]},
-      ammonia:{atoms:[{p:[0,.12,0],r:.34,c:0x7298dc,role:"nitrogen"},{p:[.72,-.38,.18],r:.2,c:0xe9edf7,role:"hydrogen"},{p:[-.66,-.42,.22],r:.2,c:0xe9edf7,role:"hydrogen"},{p:[0,-.48,-.72],r:.2,c:0xe9edf7,role:"hydrogen"}],bonds:[[0,1],[0,2],[0,3]]},
+      water:{atoms:[{p:[0,.08,0],r:.36,c:0xe66b78,role:"oxygen"},{p:[-.616,-.397,.12],r:.23,c:0xe9edf7,role:"hydrogen"},{p:[.616,-.397,.12],r:.23,c:0xe9edf7,role:"hydrogen"}],bonds:[[0,1,1],[0,2,1]]},
+      carbonDioxide:{atoms:[{p:[-.9,0,0],r:.27,c:0xe66b78,role:"oxygen"},{p:[0,0,0],r:.31,c:0x737b8d,role:"carbon"},{p:[.9,0,0],r:.27,c:0xe66b78,role:"oxygen"}],bonds:[[0,1,2],[1,2,2]]},
+      methane:{atoms:[{p:[0,0,0],r:.32,c:0x737b8d,role:"carbon"},{p:[.72,.72,.72],r:.2,c:0xe9edf7,role:"hydrogen"},{p:[.72,-.72,-.72],r:.2,c:0xe9edf7,role:"hydrogen"},{p:[-.72,.72,-.72],r:.2,c:0xe9edf7,role:"hydrogen"},{p:[-.72,-.72,.72],r:.2,c:0xe9edf7,role:"hydrogen"}],bonds:[[0,1,1],[0,2,1],[0,3,1],[0,4,1]]},
+      ammonia:{atoms:[{p:[0,.12,0],r:.34,c:0x7298dc,role:"nitrogen"},{p:[.72,-.25,0],r:.2,c:0xe9edf7,role:"hydrogen"},{p:[-.36,-.25,.62],r:.2,c:0xe9edf7,role:"hydrogen"},{p:[-.36,-.25,-.62],r:.2,c:0xe9edf7,role:"hydrogen"}],bonds:[[0,1,1],[0,2,1],[0,3,1]]},
     };
     const molecule=definitions[kind]||definitions.water;
-    if(labState.chemistryShowBonds!==false) molecule.bonds.forEach(([a,b])=>rod(group,molecule.atoms[a].p,molecule.atoms[b].p,0xb9c8e2,.035));
+    if(labState.chemistryShowBonds!==false) molecule.bonds.forEach(([a,b,order=1])=>{ const start=molecule.atoms[a].p,end=molecule.atoms[b].p; if(order===2){ const offsets=[-.055,.055]; offsets.forEach(offset=>rod(group,[start[0],start[1],start[2]+offset],[end[0],end[1],end[2]+offset],0xb9c8e2,.026)); } else rod(group,start,end,0xb9c8e2,.035); });
     molecule.atoms.forEach(atom=>sphere(group,atom.p,atom.r,focus==="all"||focus===atom.role?atom.c:0x4a5060,{roughness:.24,metalness:.03}));
     return;
   }
@@ -455,7 +455,7 @@ function createThreeScene(canvas,id,selectedPlanet=null,heartFlow="body",labStat
   const group = new THREE.Group();
   scene.add(group);
   makeSceneModel(group, id, selectedPlanet, heartFlow, labState);
-  const state = { renderer, scene, camera, group, id, selectedPlanet, stars, width: 0, height: 0 };
+  const labModelKey = id === "molecule" ? JSON.stringify([labState.chemistryMolecule, labState.chemistryFocus, labState.chemistryShowBonds]) : (id === "cell" || id === "plant-cell") ? String(labState.cellFocus || "all") : id === "heart" ? String(heartFlow) : "";\n  const state = { renderer, scene, camera, group, id, selectedPlanet, heartFlow, labModelKey, stars, width: 0, height: 0 };
   threeScenes.set(canvas,state);return state;
 }
 function clearSceneGroup(group) {
