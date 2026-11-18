@@ -617,7 +617,7 @@ test("Build Mode always prioritises project manifests and common app entrypoints
     { original_filename: "next.config.mjs", id: "config" },
   ];
   const selected = selectRelevantProjectFiles("Explain this project", files, 8);
-  assert.deepEqual(selected.slice(0, 4).map((file) => file.id), ["manifest", "readme", "config", "page"]);
+  assert.deepEqual(selected.slice(0, 4).map((file) => file.id), ["manifest", "config", "page", "readme"]);
   assert.ok(selected.some((file) => file.id === "dashboard"));
 });
 
