@@ -505,6 +505,10 @@ export async function POST(request) {
         controller.close();
       } catch (error) {
         console.error("Aahana stream failed:", error?.message || "unknown error");
+        // Preserve any tokens already delivered when the provider stream fails mid-response.
+        await persistReply().catch((persistenceError) => {
+          console.error("Aahana partial reply persistence failed:", persistenceError?.message || "unknown error");
+        });
         if (!finished) controller.error(error);
       } finally {
         reader.releaseLock();
