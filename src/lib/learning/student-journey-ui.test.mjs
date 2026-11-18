@@ -155,3 +155,16 @@ test("chemistry 3D lab includes molecule-specific retrieval checks and retry hin
   assert.match(world, /activeChemistryCheck\.explanation/);
   assert.match(world, /setLabCheckAnswer\(null\)/);
 });
+
+test("cell biology includes guided cause-and-effect scenarios and model-specific retrieval practice", () => {
+  const world = readFileSync(new URL("../../app/learn/interactive-3d-world.jsx", import.meta.url), "utf8");
+  assert.match(world, /const cellChecks = \{/);
+  assert.match(world, /aerobic respiration/);
+  assert.match(world, /photosynthesis/);
+  assert.match(world, /What if this structure stopped working\?/);
+  assert.match(world, /const cellWhatIf = modelId === "plant-cell"/);
+  assert.match(world, /Quick cell knowledge check/);
+  assert.match(world, /setCellCheckAnswer\(null\)/);
+  assert.match(world, /activeCellCheck\.hint/);
+  assert.match(world, /activeCellCheck\.explanation/);
+});
