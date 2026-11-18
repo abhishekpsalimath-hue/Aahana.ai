@@ -11,6 +11,6 @@ export function getSafeCodeFilePath(label) {
 }
 
 export function getCodeDownloadName(filePath) {
-  const safePath = getSafeCodeFilePath(\`code \${String(filePath || "")}\`);
+  const safePath = getSafeCodeFilePath("code " + String(filePath || ""));
   return safePath ? safePath.replace(/\//g, "__") : null;
 }
