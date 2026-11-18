@@ -14,7 +14,7 @@ export function validateLearningQuizProgress(input) {
   if (!title || !subject || !gradeBand || !curriculum || !language || !outcomes) return null;
   const summary = {
     questions: new Set(outcomes.map((item) => item.conceptId)).size,
-    correct: outcomes.filter((item) => item.correct).length,
+    correct: new Set(outcomes.filter((item) => item.correct).map((item) => item.conceptId)).size,
     attempts: outcomes.length,
     hintsUsed: outcomes.filter((item) => item.hintUsed).length,
   };
