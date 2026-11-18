@@ -28,6 +28,7 @@ on:
       - "src/lib/studio/native-motion-studio.test.mjs"
       - "src/lib/learning/project-upload-policy.*"
       - "src/lib/assistant/code-file-policy.*"
+      - "src/lib/assistant/project-zip.*"
       - ".github/workflows/student-quiz-guards.yml"
   pull_request:
     paths:
