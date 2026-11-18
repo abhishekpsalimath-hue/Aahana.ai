@@ -59,11 +59,13 @@ function readQuizPayload(content) {
   }
 }
 
-function InteractiveQuiz({ quiz }) {
+function InteractiveQuiz({ quiz, profile, memoryEnabled, onSaveProgress }) {
   const [answers, setAnswers] = useState({});
   const [selectedOptions, setSelectedOptions] = useState({});
   const [attempts, setAttempts] = useState({});
   const [outcomes, setOutcomes] = useState([]);
+  const [savingProgress, setSavingProgress] = useState(false);
+  const [progressSaved, setProgressSaved] = useState(false);
   const progress = summarizeLearningProgress(outcomes);
   const completed = quiz.questions.every((_, index) => answers[index] === quiz.questions[index].correctIndex);
   const score = quiz.questions.reduce((total, item, index) => total + (answers[index] === item.correctIndex ? 1 : 0), 0);
@@ -119,7 +121,15 @@ function InteractiveQuiz({ quiz }) {
           </div>
         </section>;
       })}
-      {completed && <div className="learning-quiz-finish"><span className="learning-celebration" aria-hidden="true">✦ ✧ ★ ✧ ✦</span><strong>You did it! You solved all {quiz.questions.length} challenges.</strong><button type="button" onClick={() => { setAnswers({}); setSelectedOptions({}); setAttempts({}); setOutcomes([]); }}>Play again</button></div>}
+      {completed && <div className="learning-quiz-finish"><span className="learning-celebration" aria-hidden="true">✦ ✧ ★ ✧ ✦</span><strong>You did it! You solved all {quiz.questions.length} challenges.</strong>
+        {memoryEnabled && <button type="button" disabled={savingProgress || progressSaved} onClick={async () => {
+          setSavingProgress(true);
+          const saved = await onSaveProgress?.({ title: quiz.title, profile, outcomes });
+          setProgressSaved(saved === true);
+          setSavingProgress(false);
+        }}>{progressSaved ? "Saved to private memory" : savingProgress ? "Saving progress…" : "Save this progress"}</button>}
+        {!memoryEnabled && <span>Enable private learning memory to save this result.</span>}
+        <button type="button" onClick={() => { setAnswers({}); setSelectedOptions({}); setAttempts({}); setOutcomes([]); setProgressSaved(false); }}>Play again</button></div>}
     </div>
   );
 }
@@ -226,7 +236,7 @@ export default function LearningStudio({ userEmail = "" }) {
       const response = await fetch("/api/learning-journey", { cache: "no-store" });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || "Could not load your learning journey.");
-      setLearningMemory({ enabled: result.enabled === true, journeys: result.journeys || [] });
+      setLearningMemory({ enabled: result.enabled === true, journeys: result.journeys || [], quizProgress: result.quizProgress || [] });
     } catch (err) {
       setMemoryError(err.message || "Could not load your learning journey.");
     } finally {
@@ -261,6 +271,29 @@ export default function LearningStudio({ userEmail = "" }) {
     }
   }
 
+  const saveQuizProgress = useCallback(async ({ title, profile = {}, outcomes }) => {
+    setMemoryError("");
+    setMemoryNotice("");
+    try {
+      const response = await fetch("/api/learning-journey", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ quizProgress: {
+          title, subject: profile.subject || subject, gradeBand: profile.gradeBand || gradeBand,
+          curriculum: profile.curriculum || curriculum, language: profile.language || language, outcomes,
+        } }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Could not save this quiz progress.");
+      await loadLearningMemory();
+      setMemoryNotice("Quiz progress saved to your private learning memory.");
+      return true;
+    } catch (err) {
+      setMemoryError(err.message || "Could not save this quiz progress.");
+      return false;
+    }
+  }, [loadLearningMemory, subject, gradeBand, curriculum, language]);
+
   const saveLearningJourney = useCallback(async (journey, profile = { subject, gradeBand, curriculum, language }) => {
     setMemoryError("");
     setMemoryNotice("");
@@ -290,7 +323,7 @@ export default function LearningStudio({ userEmail = "" }) {
       const response = await fetch("/api/learning-journey?id=" + encodeURIComponent(id), { method: "DELETE" });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || "Could not delete this learning journey.");
-      setLearningMemory((current) => ({ ...current, journeys: current.journeys.filter((item) => item.id !== id) }));
+      setLearningMemory((current) => ({ ...current, journeys: current.journeys.filter((item) => item.id !== id), quizProgress: (current.quizProgress || []).filter((item) => item.id !== id) }));
       setMemoryNotice("That learning journey was deleted.");
     } catch (err) {
       setMemoryError(err.message || "Could not delete this learning journey.");
@@ -433,7 +466,12 @@ export default function LearningStudio({ userEmail = "" }) {
             return <article className={item.role === "user" ? "learning-message learner" : "learning-message tutor"} key={index}>
               <small>{item.role === "user" ? "YOU" : "AAHANA"}</small>
               {item.content ? (messageMode === "play" && item.role === "assistant" && readQuizPayload(item.content)
-                ? <InteractiveQuiz quiz={readQuizPayload(item.content)} />
+                ? <InteractiveQuiz
+                    quiz={readQuizPayload(item.content)}
+                    profile={item.profile || { gradeBand, subject, curriculum, language }}
+                    memoryEnabled={learningMemory.enabled}
+                    onSaveProgress={saveQuizProgress}
+                  />
                 : item.role === "assistant" && busy && index === messages.length - 1
                   ? <div className="learning-thinking"><i /><i /><i /> {messageMode === "play" ? "Building your quiz" : "Building your interactive lesson"}</div>
                   : item.role === "assistant" && messageMode !== "play"
@@ -461,6 +499,20 @@ export default function LearningStudio({ userEmail = "" }) {
       </section>
       <Interactive3DWorld selectedPlanet={selectedPlanet} onSelectedPlanetChange={setSelectedPlanet} />
       <SpaceFunQuiz />
+      <section className="learning-memory-panel" aria-labelledby="learning-memory-title">
+        <div className="learning-section-heading"><div><span>YOUR CHOICE</span><h2 id="learning-memory-title">Private learning memory</h2></div>
+          <button type="button" disabled={memoryLoading || memoryBusy} onClick={updateLearningMemoryConsent}>
+            {memoryLoading ? "Loading…" : memoryBusy ? "Updating…" : learningMemory.enabled ? "Turn memory off" : "Turn memory on"}
+          </button>
+        </div>
+        <p>When enabled, Aahana can save a completed lesson or quiz only when you choose to save it. Turning memory off stops new saves; it does not delete existing records.</p>
+        {memoryNotice && <p role="status">{memoryNotice}</p>}
+        {memoryError && <p className="learning-error" role="alert">{memoryError}</p>}
+        {(learningMemory.journeys.length > 0 || (learningMemory.quizProgress || []).length > 0) && <div className="learning-memory-list">
+          {learningMemory.journeys.map((item) => <div key={item.id}><span>{item.journey.title} · Lesson</span><button type="button" disabled={memoryBusy} onClick={() => deleteLearningJourney(item.id)}>Delete</button></div>)}
+          {(learningMemory.quizProgress || []).map((item) => <div key={item.id}><span>{item.progress.title} · Quiz · {item.progress.correct}/{item.progress.questions} correct</span><button type="button" disabled={memoryBusy} onClick={() => deleteLearningJourney(item.id)}>Delete</button></div>)}
+        </div>}
+      </section>
       <footer className="learning-footer"><span>Aahana Student Mode</span><span>One question at a time.</span></footer>
     </main>
   );
