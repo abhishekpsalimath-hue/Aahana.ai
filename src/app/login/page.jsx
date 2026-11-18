@@ -50,7 +50,7 @@ export default function LoginPage() {
   return (
     <main className="auth-shell">
       <section className="auth-card">
-        <Link className="brand auth-brand" href="/"><span className="brand-word">Aahana</span><span className="brand-ai">AI</span></Link>
+        <Link className="brand auth-brand" href="/"><span className="brand-word">Aahana</span><span className="brand-ai" aria-label="AI"><span>a</span><span className="brand-i">ı</span></span></Link>
         <div className="eyebrow"><span /> YOUR THINKING SPACE</div>
         <h1>{mode === "signin" ? "Welcome back." : "Start with Aahana."}</h1>
         <p className="auth-copy">{mode === "signin" ? "Sign in to return to your workspace." : "Create your account to set up your workspace."}</p>
