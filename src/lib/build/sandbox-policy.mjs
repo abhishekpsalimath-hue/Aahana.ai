@@ -28,7 +28,7 @@ export function validateWorkspacePath(input) {
     throw new Error("Invalid workspace path.");
   }
 
-  if (input.includes("\\") || input.startsWith("/") || /^[a-zA-Z]:/.test(input)) {
+  if (/[\u0000-\u001f\u007f\u202a-\u202e\u2066-\u2069]/u.test(input) || input.includes("\\") || input.startsWith("/") || /^[a-zA-Z]:/.test(input)) {
     throw new Error("Workspace paths must be relative POSIX paths.");
   }
 
