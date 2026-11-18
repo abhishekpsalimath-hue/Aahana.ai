@@ -112,6 +112,15 @@ test("enforces file, change-count and total proposal byte limits", () => {
   }), /3 MB/);
 });
 
+test("rejects binaries, unsupported files and credential-like filenames", () => {
+  for (const path of ["assets/logo.png", "certs/private.pem", "config/service-account.json", "keys/id_rsa"]) {
+    assert.throws(() => validateChangeProposal({
+      currentFiles: [],
+      changes: [{ path, action: "create", baseSha256: null, content: "not a file payload" }],
+    }), /supported source and configuration files/);
+  }
+});
+
 test("rejects duplicate paths in the supplied project snapshot", () => {
   assert.throws(() => validateChangeProposal({
     currentFiles: [
