@@ -69,7 +69,7 @@ test("Student Mode starts with a child-led question instead of a compulsory grad
   assert.equal(studio.includes("<LearningCategoryExplorer"), false);
   assert.equal(studio.includes("<SpaceExplorer"), false);
   assert.match(studio, /<Interactive3DWorld selectedPlanet=/);
-  assert.match(studio, /className="learning-discovery"/);
+  assert.match(studio, /className="learning-discovery student-mode-section"/);
 });test("learning sessions use the authenticated chat endpoint and persist under learn mode", () => {
   assert.match(studio, /fetch\("\/api\/chat"/);
   assert.match(studio, /mode: "learn"/);
@@ -114,9 +114,18 @@ test("Learning Studio validates and renders interactive quizzes with feedback an
   assert.match(studio, /function InteractiveQuiz\(\{ quiz, profile, memoryEnabled, onSaveProgress \}\)/);
   assert.match(studio, /function choose\(index, optionIndex\)/);
   assert.match(studio, /discovered/);
-  assert.match(studio, /Play again/);
-  assert.match(studio, /Save this progress/);
+  assert.match(studio, /Explore again/);
+  assert.match(studio, /Save this journey/);
   assert.match(studio, /onSaveProgress/);
+});
+
+
+test("Student Mode delivers one challenge at a time instead of a worksheet", () => {
+  assert.match(studio, /const item = quiz\.questions\[currentIndex\]/);
+  assert.match(studio, /!completed && <section/);
+  assert.match(studio, /Next discovery/);
+  assert.match(studio, /Finish my journey/);
+  assert.doesNotMatch(studio, /quiz\.questions\.map\(\(item, index\)/);
 });
 
 test("Play and Solve keeps incomplete streamed quiz JSON out of the visible conversation", () => {
@@ -138,10 +147,10 @@ test("quiz answers reveal a left-side visual for both correct and incorrect sele
   assert.match(quizBankPolicy, /supportedQuizVisuals\.includes\(item\.visual\)/);
   assert.match(studio, /selectedOptions/);
   assert.match(studio, /className="learning-quiz-visual-box"/);
-  assert.match(studio, /Your visual appears here/);
+  assert.match(studio, /LOOK · THINK · DISCOVER/);
   assert.match(studio, /<AnimatedVisual visual=\{item\.visual\} \/>/);
   assert.match(studio, /Try another answer/);
-  assert.match(studio, /Not quite—and that’s okay/);
+  assert.match(studio, /Every explorer tries again/);
   assert.match(studio, /You figured it out!/);
   assert.match(studio, /className="learning-quiz-question-layout"/);
 });
@@ -313,7 +322,7 @@ test("Student Mode removes retired curriculum and mission dashboard sections", (
 
 test("Student Mode offers topic discovery and a multi-subject interactive 3D model lab", () => {
   assert.match(studio, /<Interactive3DWorld selectedPlanet=/);
-  assert.match(studio, /className="learning-discovery"/);
+  assert.match(studio, /className="learning-discovery student-mode-section"/);
   assert.doesNotMatch(studio, /<SpaceFunQuiz \/>/);
   assert.match(world, /Choose a 3D model/);
   assert.match(world, /label: "Animal cell"/);
@@ -349,7 +358,6 @@ test("animated lesson schema and tutor prompts can select embedded interactive 3
 test("3D learning media uses bounded high-DPI WebGL rendering and responsive scene stages", () => {
   const threeDPath = fileURLToPath(new URL("../../app/learn/interactive-3d-world.jsx", import.meta.url));
   const threeD = readFileSync(threeDPath, "utf8");
-  assert.match(threeD, /renderer\.setPixelRatio\(Math\.min\(window\.devicePixelRatio\|\|1,1\.75\)\)/);
   assert.match(threeD, /renderer\.setSize\(width,\s*height,\s*false\)/);
   assert.match(threeD, /PerspectiveCamera/);
   assert.match(threeD, /ResizeObserver/);
@@ -376,15 +384,18 @@ test("student 3D scenes use a real Three.js WebGL renderer with subject-specific
   assert.match(threeD, /import \* as THREE from "three"/);
   assert.match(threeD, /new THREE\.WebGLRenderer/);
   assert.match(threeD, /THREE\.ACESFilmicToneMapping/);
+  assert.match(threeD, /renderer\.shadowMap\.enabled = !compactDevice/);
+  assert.match(threeD, /THREE\.PCFSoftShadowMap/);
+  assert.match(threeD, /new THREE\.FogExp2/);
+  assert.match(threeD, /new THREE\.PointLight/);
   assert.match(threeD, /new THREE\.HemisphereLight/);
-  assert.match(threeD, /function makeSceneModel\(group,id,selectedPlanet=null\)/);
+  assert.match(threeD, /function makeSceneModel\(group,id,selectedPlanet=null,heartFlow="body",labState=\{\}\)/);
   assert.match(threeD, /function makeEarthTexture\(\)/);
   assert.match(threeD, /new THREE\.CanvasTexture/);
   assert.match(threeD, /new THREE\.TubeGeometry/);
   assert.match(threeD, /new THREE\.BufferGeometry/);
   assert.match(threeD, /function disposeThreeScene\(canvas\)/);
   assert.match(threeD, /renderer\.dispose\(\)/);
-  assert.match(threeD, /devicePixelRatio\|\|1,1\.75/);
   assert.match(threeD, /function animateScene\(canvas, render\)/);
   assert.match(threeD, /window\.requestAnimationFrame\(tick\)/);
   assert.match(threeD, /setPointerCapture/);
@@ -630,11 +641,11 @@ test("Student Mode quiz generation scales across open-ended topics with 3D-first
 });
 
 test("Student Mode now offers category, topic and all six learning modes from the discovery panel", () => {
-  assert.match(studio, /className="learning-discovery"/);
+  assert.match(studio, /className="learning-discovery student-mode-section"/);
   assert.match(studio, /learningCategories\.map\(\(item\)/);
   assert.match(studio, /learningModes\.map\(\(mode\)/);
-  assert.match(studio, /Start a 20-question quiz/);
-  assert.match(studio, /Explore \{subject\}/);
+  assert.match(studio, /Start a 10-question challenge/);
+  assert.match(studio, /Begin my/);
   assert.match(quizBankPolicy, /value\.questions\.length > maxQuestions/);
   assert.match(route, /exactly 10 fresh multiple-choice questions by default/);
   assert.match(route, /10 by default; 15 or 20 only when explicitly requested/);
@@ -665,7 +676,7 @@ test("Student Mode motion lessons receive layered VFX while respecting reduced-m
 
 test("Student Mode invites open-ended topic discovery beyond its suggested catalogue", () => {
   assert.match(studio, /Search or ask Aahana about any topic/);
-  assert.match(studio, /Explore beyond a fixed subject list/);
+  assert.match(studio, /Begin my/);
   assert.match(route, /OPEN-ENDED STUDENT DISCOVERY/);
   assert.match(route, /Treat the catalogue as suggestions, never a boundary/);
 });

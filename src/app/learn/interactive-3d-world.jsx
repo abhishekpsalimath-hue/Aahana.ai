@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import * as THREE from "three";
+import { getSceneEnvironment } from "../../lib/learning/scene-environment.mjs";
 import worldTopology from "world-atlas/countries-110m.json";
 import { feature } from "topojson-client";
 
@@ -184,6 +185,35 @@ function createFocusedPlanet(group, planet) {
   }
 }
 
+function createAmbientParticles(scene, profile) {
+  const positions = new Float32Array(profile.count * 3);
+  const goldenAngle = Math.PI * (3 - Math.sqrt(5));
+  for (let index = 0; index < profile.count; index++) {
+    const vertical = 1 - (index / Math.max(1, profile.count - 1)) * 2;
+    const radius = Math.sqrt(1 - vertical * vertical);
+    const angle = goldenAngle * index;
+    const distance = 2.2 + ((index * 37) % 100) / 100 * 2.1;
+    positions[index * 3] = Math.cos(angle) * radius * distance;
+    positions[index * 3 + 1] = vertical * distance * 0.72;
+    positions[index * 3 + 2] = Math.sin(angle) * radius * distance;
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+  const material = new THREE.PointsMaterial({
+    color: profile.color,
+    size: profile.size,
+    transparent: true,
+    opacity: profile.opacity,
+    sizeAttenuation: true,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+  });
+  const particles = new THREE.Points(geometry, material);
+  particles.frustumCulled = false;
+  scene.add(particles);
+  return particles;
+}
+
 function addStars(scene) {
   const positions = new Float32Array(2200 * 3);
   for (let i = 0; i < 2200; i++) {
@@ -218,7 +248,7 @@ function rod(group,a,b,color=0xb9c8e2,radius=.035) {
   const mesh=new THREE.Mesh(new THREE.CylinderGeometry(radius,radius,delta.length(),20),new THREE.MeshStandardMaterial({color,metalness:.45,roughness:.28}));
   mesh.position.copy(start).add(end).multiplyScalar(.5);mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),delta.normalize());group.add(mesh);return mesh;
 }
-function makeSceneModel(group,id,selectedPlanet=null) {
+function makeSceneModel(group,id,selectedPlanet=null,heartFlow="body",labState={}) {
   if(id==="planet"){
     const earth=sphere(group,[0,0,0],1,"#ffffff",{material:new THREE.MeshStandardMaterial({map:makeEarthTexture(),roughness:.86})});
     const clouds=sphere(group,[0,0,0],1.008,"#ffffff",{material:new THREE.MeshStandardMaterial({color:0xffffff,transparent:true,opacity:.13,roughness:1,wireframe:true})});
@@ -278,18 +308,17 @@ function makeSceneModel(group,id,selectedPlanet=null) {
     return;
   }
   if(id==="molecule"){
-    // Water geometry: O-H bond length 0.9572 Å and H-O-H angle 104.5°.
-    // Radii are deliberately enlarged for visibility; bond geometry is preserved.
-    const halfAngle=THREE.MathUtils.degToRad(104.5/2);
-    const bondLength=.9572;
-    const oxygen=[0,0,0];
-    const hydrogenA=[-Math.sin(halfAngle)*bondLength,-Math.cos(halfAngle)*bondLength,0];
-    const hydrogenB=[Math.sin(halfAngle)*bondLength,-Math.cos(halfAngle)*bondLength,0];
-    rod(group,oxygen,hydrogenA,0xd6e2f0,.035);
-    rod(group,oxygen,hydrogenB,0xd6e2f0,.035);
-    sphere(group,oxygen,.42,0xe45e68,{roughness:.2,metalness:.04});
-    sphere(group,hydrogenA,.33,0xf3f6fb,{roughness:.2,metalness:.02});
-    sphere(group,hydrogenB,.33,0xf3f6fb,{roughness:.2,metalness:.02});
+    const kind=labState.chemistryMolecule||"water";
+    const focus=labState.chemistryFocus||"all";
+    const definitions={
+      water:{atoms:[{p:[0,.08,0],r:.36,c:0xe66b78,role:"oxygen"},{p:[-.616,-.397,.12],r:.23,c:0xe9edf7,role:"hydrogen"},{p:[.616,-.397,.12],r:.23,c:0xe9edf7,role:"hydrogen"}],bonds:[[0,1,1],[0,2,1]]},
+      carbonDioxide:{atoms:[{p:[-.9,0,0],r:.27,c:0xe66b78,role:"oxygen"},{p:[0,0,0],r:.31,c:0x737b8d,role:"carbon"},{p:[.9,0,0],r:.27,c:0xe66b78,role:"oxygen"}],bonds:[[0,1,2],[1,2,2]]},
+      methane:{atoms:[{p:[0,0,0],r:.32,c:0x737b8d,role:"carbon"},{p:[.72,.72,.72],r:.2,c:0xe9edf7,role:"hydrogen"},{p:[.72,-.72,-.72],r:.2,c:0xe9edf7,role:"hydrogen"},{p:[-.72,.72,-.72],r:.2,c:0xe9edf7,role:"hydrogen"},{p:[-.72,-.72,.72],r:.2,c:0xe9edf7,role:"hydrogen"}],bonds:[[0,1,1],[0,2,1],[0,3,1],[0,4,1]]},
+      ammonia:{atoms:[{p:[0,.12,0],r:.34,c:0x7298dc,role:"nitrogen"},{p:[.72,-.25,0],r:.2,c:0xe9edf7,role:"hydrogen"},{p:[-.36,-.25,.62],r:.2,c:0xe9edf7,role:"hydrogen"},{p:[-.36,-.25,-.62],r:.2,c:0xe9edf7,role:"hydrogen"}],bonds:[[0,1,1],[0,2,1],[0,3,1]]},
+    };
+    const molecule=definitions[kind]||definitions.water;
+    if(labState.chemistryShowBonds!==false) molecule.bonds.forEach(([a,b,order=1])=>{ const start=molecule.atoms[a].p,end=molecule.atoms[b].p; if(order===2){ const offsets=[-.055,.055]; offsets.forEach(offset=>rod(group,[start[0],start[1],start[2]+offset],[end[0],end[1],end[2]+offset],0xb9c8e2,.026)); } else rod(group,start,end,0xb9c8e2,.035); });
+    molecule.atoms.forEach(atom=>sphere(group,atom.p,atom.r,focus==="all"||focus===atom.role?atom.c:0x4a5060,{roughness:.24,metalness:.03}));
     return;
   }
   if(id==="atom"){
@@ -324,17 +353,38 @@ function makeSceneModel(group,id,selectedPlanet=null) {
   }
   if(id==="cell"||id==="plant-cell"){
     const plant=id==="plant-cell";
-    const membrane=sphere(group,[0,0,0],1,plant?0x5c9b59:0x62aeb0,{material:new THREE.MeshPhysicalMaterial({color:plant?0x80c66f:0x67c5c0,transparent:true,opacity:.23,roughness:.2,metalness:0,transmission:.22,thickness:.4})});
-    if(plant){const wall=new THREE.Mesh(new THREE.BoxGeometry(2.05,1.45,1.45),new THREE.MeshStandardMaterial({color:0x75a95d,wireframe:true,transparent:true,opacity:.65}));group.add(wall);}
-    sphere(group,[0,.08,.05],.34,0x9c72c6);
-    for(let i=0;i<7;i++){const a=i*Math.PI*2/7;sphere(group,[Math.cos(a)*.58,Math.sin(a)*.48,Math.sin(a*2)*.24],.12,i%2?0xe9b66c:0x69b78e);}
-    if(plant){sphere(group,[0,0,0],.48,0x9ad7ef,{material:new THREE.MeshPhysicalMaterial({color:0x83cfe8,transparent:true,opacity:.38,roughness:.2})});for(let i=0;i<8;i++){const a=i*Math.PI/4;sphere(group,[Math.cos(a)*.72,Math.sin(a)*.48,.18],.09,0x6cba66);}}return;
+    const focus=labState.cellFocus||"all";
+    const active=(role)=>focus==="all"||focus===role;
+    const muted=0x4c5260;
+    if(plant){
+      const wall=new THREE.Mesh(new THREE.BoxGeometry(2.05,1.45,1.45),new THREE.MeshStandardMaterial({color:active("cellWall")?0x9dcc88:muted,wireframe:true,transparent:true,opacity:.82}));
+      group.add(wall);
+      sphere(group,[0,0,0],.88,0x76b9d9,{material:new THREE.MeshPhysicalMaterial({color:0x76b9d9,transparent:true,opacity:active("vacuole")?.35:.12,roughness:.2,transmission:.18,thickness:.3})});
+      sphere(group,[-.55,.28,.18],.16,active("nucleus")?0x9b75c8:muted);
+      [[.48,.36,-.22],[-.48,-.35,-.18],[.5,-.3,.22]].forEach(p=>sphere(group,p,.14,active("chloroplasts")?0x77bd79:muted));
+      sphere(group,[-.05,.52,-.3],.1,active("mitochondria")?0xe7c36e:muted);
+    } else {
+      sphere(group,[0,0,0],.98,0x62b8c1,{material:new THREE.MeshPhysicalMaterial({color:active("membrane")?0x67c5c0:muted,transparent:true,opacity:.18,roughness:.2,transmission:.2,thickness:.35,side:THREE.DoubleSide})});
+      sphere(group,[0,.08,.08],.34,active("nucleus")?0xbd83d7:muted);
+      [[-.48,-.2,.12],[.46,.28,-.18]].forEach(p=>sphere(group,p,.15,active("mitochondria")?0xe9b66c:muted));
+      const erColor=active("endoplasmicReticulum")?0x77c69e:muted;
+      tube(group,[[-.36,-.48,.22],[-.05,-.55,.3],[.22,-.42,.3],[.35,-.2,.25]],erColor,.035);
+      tube(group,[[-.36,.4,-.22],[-.1,.5,-.28],[.18,.43,-.25]],erColor,.03);
+      [[.52,-.2,.18],[-.48,.28,-.2],[.32,.52,.1],[-.58,-.35,-.12]].forEach(p=>sphere(group,p,.055,active("ribosomes")?0xe6d28a:muted));
+    }
+    return;
   }
   if(id==="heart"){
-    sphere(group,[-.28,.1,0],.43,0xb94d65);sphere(group,[.25,.1,0],.43,0xd36b78);sphere(group,[0,-.35,0],.46,0xb83e57);
-    tube(group,[[.05,.48,0],[.1,.82,0],[.32,1.02,0]],0xc85b65,.105);
+    const stageColors = {
+      body: [0x477fba, 0x477fba, 0x477fba, 0x477fba],
+      lungs: [0x477fba, 0x477fba, 0xc95e78, 0xc95e78],
+      return: [0xc95e78, 0xc95e78, 0xc95e78, 0xc95e78],
+    };
+    const colors = stageColors[heartFlow] || stageColors.body;
+    sphere(group,[-.28,.1,0],.43,colors[0]);sphere(group,[.25,.1,0],.43,colors[1]);sphere(group,[-.16,-.35,.04],.38,colors[2]);sphere(group,[.22,-.35,.04],.38,colors[3]);
+    tube(group,[[.05,.48,0],[.1,.82,0],[.32,1.02,0]],heartFlow==="lungs"?0xc95e78:0xc85b65,.105);
     tube(group,[[-.25,.4,0],[-.38,.75,0],[-.55,.9,0]],0x477fba,.09);
-    tube(group,[[.2,.15,.18],[.55,.42,.18],[.62,.72,.18]],0x4b8fc5,.065);return;
+    tube(group,[[.2,.15,.18],[.55,.42,.18],[.62,.72,.18]],heartFlow==="return"?0x477fba:0xc96a62,.065);return;
   }
   if(id==="terrain"){
     const n=72,positions=[],colors=[],indices=[];
@@ -386,23 +436,62 @@ function makeSceneModel(group,id,selectedPlanet=null) {
     return;
   }
 }
-function createThreeScene(canvas,id,selectedPlanet=null) {
+function createThreeScene(canvas,id,selectedPlanet=null,heartFlow="body",labState={}) {
   let renderer;
   try { renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:"low-power"}); }
   catch { return null; }
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.75));
-  renderer.outputColorSpace=THREE.SRGBColorSpace;
-  renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.12;
-  const scene=new THREE.Scene();scene.background=new THREE.Color(0x090d19);
-  const camera=new THREE.PerspectiveCamera(36,1,.1,100);camera.position.set(0,0,5.8);
-  scene.add(new THREE.HemisphereLight(0xb8d7ff,0x1a1825,2.05));
-  const key=new THREE.DirectionalLight(0xffe4c2,3.2);key.position.set(-3,4,5);scene.add(key);
-  const rim=new THREE.DirectionalLight(0x6b8fff,2.1);rim.position.set(4,-2,-4);scene.add(rim);
+  const compactDevice = (window.matchMedia?.("(max-width: 760px)")?.matches)
+    || (navigator.hardwareConcurrency || 8) <= 4
+    || (navigator.deviceMemory || 8) <= 4;
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, compactDevice ? 1.35 : 1.8));
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.08;
+  renderer.shadowMap.enabled = !compactDevice;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+  const environment = getSceneEnvironment(id);
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(environment.background);
+  scene.fog = new THREE.FogExp2(environment.fog, environment.fogDensity);
+  const camera = new THREE.PerspectiveCamera(36, 1, .1, 100);
+  camera.position.set(0, 0, environment.cameraZ);
+
+  // Subject-specific three-point lighting: warm key, calibrated fill and rim.
+  const hemisphere = new THREE.HemisphereLight(environment.sky, environment.ground, environment.hemisphere);
+  scene.add(hemisphere);
+  const key = new THREE.DirectionalLight(environment.key, environment.keyIntensity);
+  key.position.set(-3.5, 4.5, 5);
+  key.castShadow = !compactDevice;
+  key.shadow.mapSize.set(1024, 1024);
+  key.shadow.camera.left = -7;
+  key.shadow.camera.right = 7;
+  key.shadow.camera.top = 7;
+  key.shadow.camera.bottom = -7;
+  key.shadow.camera.near = .5;
+  key.shadow.camera.far = 24;
+  key.shadow.bias = -.00018;
+  key.shadow.normalBias = .025;
+  scene.add(key);
+
+  const fill = new THREE.DirectionalLight(environment.fill, environment.fillIntensity);
+  fill.position.set(4, 1.5, 4);
+  scene.add(fill);
+  const rim = new THREE.DirectionalLight(environment.rim, environment.rimIntensity);
+  rim.position.set(4, -2, -4);
+  scene.add(rim);
+  const accent = new THREE.PointLight(environment.accent, environment.accentIntensity, 18, 2);
+  accent.position.set(-4, -1, 3);
+  scene.add(accent);
   const stars = addStars(scene);
+  stars.visible = environment.stars;
+  const ambientParticles = createAmbientParticles(scene, environment.ambient);
+  ambientParticles.userData.drift = environment.ambient.drift;
   const group = new THREE.Group();
   scene.add(group);
-  makeSceneModel(group, id, selectedPlanet);
-  const state = { renderer, scene, camera, group, id, selectedPlanet, stars, width: 0, height: 0 };
+  makeSceneModel(group, id, selectedPlanet, heartFlow, labState);
+  const labModelKey = id === "molecule" ? JSON.stringify([labState.chemistryMolecule, labState.chemistryFocus, labState.chemistryShowBonds]) : (id === "cell" || id === "plant-cell") ? String(labState.cellFocus || "all") : id === "heart" ? String(heartFlow) : "";
+  const state = { renderer, scene, camera, group, id, selectedPlanet, heartFlow, labModelKey, stars, ambientParticles, environment, hemisphere, key, fill, rim, accent, cameraTargetZ: environment.cameraZ, lastFrameTime: 0, width: 0, height: 0 };
   threeScenes.set(canvas,state);return state;
 }
 function clearSceneGroup(group) {
@@ -411,10 +500,10 @@ function clearSceneGroup(group) {
     if(object.material){const materials=Array.isArray(object.material)?object.material:[object.material];materials.forEach(material=>{material.map?.dispose();material.dispose();});}
   });
 }
-function renderThreeScene(canvas, id, yaw, pitch, zoom, time = 0, selectedPlanet = null) {
+function renderThreeScene(canvas, id, yaw, pitch, zoom, time = 0, selectedPlanet = null, orbitSpeedMultiplier = 1, heartFlow = "body", labState = {}) {
   let state = threeScenes.get(canvas);
   if (!state) {
-    state = createThreeScene(canvas, id, selectedPlanet);
+    state = createThreeScene(canvas, id, selectedPlanet, heartFlow, labState);
     if (!state) {
       const ctx = canvas.getContext("2d");
       if (ctx) {
@@ -427,14 +516,55 @@ function renderThreeScene(canvas, id, yaw, pitch, zoom, time = 0, selectedPlanet
       return;
     }
   }
-  if (state.id !== id || state.selectedPlanet !== selectedPlanet) {
+  const environment = getSceneEnvironment(id);
+  if (state.environment !== environment) {
+    state.environment = environment;
+    state.cameraTargetZ = environment.cameraZ;
+    state.scene.background = new THREE.Color(environment.background);
+    state.scene.fog = new THREE.FogExp2(environment.fog, environment.fogDensity);
+    state.hemisphere.color.setHex(environment.sky);
+    state.hemisphere.groundColor.setHex(environment.ground);
+    state.hemisphere.intensity = environment.hemisphere;
+    state.key.color.setHex(environment.key);
+    state.key.intensity = environment.keyIntensity;
+    state.fill.color.setHex(environment.fill);
+    state.fill.intensity = environment.fillIntensity;
+    state.rim.color.setHex(environment.rim);
+    state.rim.intensity = environment.rimIntensity;
+    state.accent.color.setHex(environment.accent);
+    state.accent.intensity = environment.accentIntensity;
+    state.stars.visible = environment.stars;
+    state.ambientParticles.material.color.setHex(environment.ambient.color);
+    state.ambientParticles.material.size = environment.ambient.size;
+    state.ambientParticles.material.opacity = environment.ambient.opacity;
+    state.ambientParticles.geometry.dispose();
+    const particlePositions = new Float32Array(environment.ambient.count * 3);
+    const goldenAngle = Math.PI * (3 - Math.sqrt(5));
+    for (let index = 0; index < environment.ambient.count; index++) {
+      const vertical = 1 - (index / Math.max(1, environment.ambient.count - 1)) * 2;
+      const radius = Math.sqrt(1 - vertical * vertical);
+      const angle = goldenAngle * index;
+      const distance = 2.2 + ((index * 37) % 100) / 100 * 2.1;
+      particlePositions[index * 3] = Math.cos(angle) * radius * distance;
+      particlePositions[index * 3 + 1] = vertical * distance * 0.72;
+      particlePositions[index * 3 + 2] = Math.sin(angle) * radius * distance;
+    }
+    const particleGeometry = new THREE.BufferGeometry();
+    particleGeometry.setAttribute("position", new THREE.BufferAttribute(particlePositions, 3));
+    state.ambientParticles.geometry = particleGeometry;
+    state.ambientParticles.userData.drift = environment.ambient.drift;
+  }
+  const labModelKey = id === "molecule" ? JSON.stringify([labState.chemistryMolecule, labState.chemistryFocus, labState.chemistryShowBonds]) : (id === "cell" || id === "plant-cell") ? String(labState.cellFocus || "all") : id === "heart" ? String(heartFlow) : "";
+  if (state.id !== id || state.selectedPlanet !== selectedPlanet || state.labModelKey !== labModelKey) {
     state.scene.remove(state.group);
     clearSceneGroup(state.group);
     state.group = new THREE.Group();
     state.scene.add(state.group);
     state.id = id;
     state.selectedPlanet = selectedPlanet;
-    makeSceneModel(state.group, id, selectedPlanet);
+    state.heartFlow = heartFlow;
+    state.labModelKey = labModelKey;
+    makeSceneModel(state.group, id, selectedPlanet, heartFlow, labState);
   }
 
   const rect = canvas.getBoundingClientRect();
@@ -449,10 +579,22 @@ function renderThreeScene(canvas, id, yaw, pitch, zoom, time = 0, selectedPlanet
   }
 
   state.group.rotation.set(pitch, yaw + (id === "solar-system" ? time * .000025 : time * .000012), 0);
-  state.stars.rotation.y = time * .000008;
+  if (state.stars) state.stars.rotation.y = time * .000008;
+  if (state.ambientParticles) {
+    state.ambientParticles.rotation.y = time * (state.ambientParticles.userData.drift || 0.00001);
+    state.ambientParticles.rotation.x = Math.sin(time * 0.00011) * 0.018;
+  }
+  // A very restrained moving accent keeps the scene alive without distracting
+  // from the concept or changing the learner's camera orientation.
+  const accentLight = state.scene.children.find((child) => child.isPointLight);
+  if (accentLight) {
+    accentLight.position.x = -4 + Math.sin(time * .00022) * .65;
+    accentLight.position.y = -1 + Math.cos(time * .00018) * .35;
+    accentLight.intensity = .62 + Math.sin(time * .0007) * .08;
+  }
   state.group.children.forEach((child) => {
     if (typeof child.userData?.orbitSpeed === "number") {
-      child.rotation.y = time * child.userData.orbitSpeed + child.userData.orbitPhase;
+      child.rotation.y = time * child.userData.orbitSpeed * orbitSpeedMultiplier + child.userData.orbitPhase;
     }
     if (child.userData?.isSunCore) {
       const pulse = 1 + Math.sin(time * .0015) * .035;
@@ -461,9 +603,14 @@ function renderThreeScene(canvas, id, yaw, pitch, zoom, time = 0, selectedPlanet
   });
 
   const baseCamera = id === "solar-system"
-    ? selectedPlanet ? 4.25 : Math.max(5.8, 11.8 / Math.max(state.camera.aspect, .65))
-    : 5.8;
-  state.camera.position.z = baseCamera / zoom;
+    ? selectedPlanet ? 4.25 : Math.max(state.environment.cameraZ, 11.8 / Math.max(state.camera.aspect, .65))
+    : state.environment.cameraZ;
+  const desiredCameraZ = baseCamera / zoom;
+  const frameDelta = state.lastFrameTime ? Math.min(64, Math.max(0, time - state.lastFrameTime)) : 16;
+  state.lastFrameTime = time;
+  // Ease the camera into a new subject/zoom instead of snapping between frames.
+  const cameraEase = 1 - Math.exp(-frameDelta / 190);
+  state.camera.position.z += (desiredCameraZ - state.camera.position.z) * cameraEase;
   state.camera.updateProjectionMatrix();
   state.scene.updateMatrixWorld(true);
   state.renderer.render(state.scene, state.camera);
@@ -711,12 +858,19 @@ function makeModel(id, ecosystem = {}) {
     return [...shell,...parts.flatMap((part)=>sphereMesh(part.r,8,12,focus === "all" || focus === part.role ? part.c : "#55566a").map((face)=>({...face,offset:part.p})))];
   }
   if (id === "heart") {
+    const stage = ecosystem.heartFlow || "body";
+    const chamberColors = {
+      body: ["#397fb5", "#397fb5", "#397fb5", "#397fb5"],
+      lungs: ["#397fb5", "#397fb5", "#c95e78", "#c95e78"],
+      return: ["#c95e78", "#c95e78", "#c95e78", "#c95e78"],
+    };
+    const colors = chamberColors[stage] || chamberColors.body;
     const parts = [
-      {p:[-.28,.18,0],r:.48,c:"#c95e78"},{p:[.28,.18,0],r:.48,c:"#d97786"},
-      {p:[-.22,-.34,.04],r:.38,c:"#b84d69"},{p:[.22,-.34,.04],r:.38,c:"#d05d70"},
+      {p:[-.28,.18,0],r:.48,c:colors[0]},{p:[.28,.18,0],r:.48,c:colors[1]},
+      {p:[-.22,-.34,.04],r:.38,c:colors[2]},{p:[.22,-.34,.04],r:.38,c:colors[3]},
       {p:[-.2,.78,-.08],r:.12,c:"#6b9dc7"},{p:[.22,.78,-.08],r:.12,c:"#c96a62"},
     ];
-    const vessels=[{a:[-.2,.68,-.08],b:[-.34,1.18,-.08],c:"#6b9dc7"},{a:[.22,.68,-.08],b:[.42,1.12,-.08],c:"#c96a62"}];
+    const vessels=[{a:[-.2,.68,-.08],b:[-.34,1.18,-.08],c:stage==="lungs"?"#c95e78":"#397fb5"},{a:[.22,.68,-.08],b:[.42,1.12,-.08],c:stage==="return"?"#397fb5":"#c96a62"}];
     return [...vessels.map(v=>({points:[v.a,v.b],rod:true,color:v.c})),...parts.flatMap(part=>sphereMesh(part.r,10,14,part.c).map(face=>({...face,offset:part.p})))];
   }
   if (id === "pyramid") {
@@ -731,8 +885,10 @@ function makeModel(id, ecosystem = {}) {
   }
   if (id === "ecosystem") {
     const ground = [], n = 10;
-    const dry = ecosystem.rainfall === "low";
-    const polluted = Boolean(ecosystem.pollution);
+    const rainfall = clamp(Number(ecosystem.rainfall ?? 70), 0, 100);
+    const pollution = clamp(Number(ecosystem.pollution ?? 15), 0, 100);
+    const dry = rainfall < 35;
+    const polluted = pollution >= 60;
     const waterPresent = ecosystem.waterSource !== false;
     for (let z=0;z<n;z++) for(let x=0;x<n;x++){const x0=(x/n-.5)*2.8,x1=((x+1)/n-.5)*2.8,z0=(z/n-.5)*2.2,z1=((z+1)/n-.5)*2.2,y=-.62+.06*Math.sin(x0*3)*Math.cos(z0*2);ground.push({points:[[x0,y,z0],[x1,y,z0],[x1,y,z1],[x0,y,z1]],color:dry?((x+z)%2?"#9a8058":"#a88d61"):((x+z)%2?"#537e57":"#638d5d"),solid:true});}
     const trees=[[-.9,.1,-.45],[-.35,.12,-.65],[.48,.08,-.55],[.95,.08,.1],[-.7,.08,.55],[.25,.1,.58]];
@@ -741,9 +897,14 @@ function makeModel(id, ecosystem = {}) {
     return [...ground,...stream,...forest];
   }
   if (id === "cart") {
-    const force = clamp(Number(ecosystem.physicsForce ?? 3), 0, 5);
-    const friction = clamp(Number(ecosystem.physicsFriction ?? 1), 0, 5);
-    const displacement = clamp((force - friction) * .16, -0.7, 0.7);
+    const force = clamp(Number(ecosystem.physicsForce ?? 6), 0, 10);
+    const friction = clamp(Number(ecosystem.physicsFriction ?? 2), 0, 10);
+    const mass = clamp(Number(ecosystem.physicsMass ?? 2), 1, 5);
+    const netForce = force - friction;
+    const acceleration = netForce / mass;
+    // The cart's offset is an illustrative response to acceleration, not a
+    // time-based motion prediction or a measured physical experiment.
+    const displacement = clamp(acceleration * .12, -0.7, 0.7);
     const x = displacement;
     const body = [
       { points: [[x-.55,-.12,-.18],[x+.55,-.12,-.18],[x+.55,.25,-.18],[x-.55,.25,-.18]], color: "#d89a5b", solid: true },
@@ -823,25 +984,58 @@ function illuminateFace(color, brightness) {
 }
 
 function drawScene(canvas, modelId, yaw, pitch, zoom, ecosystem = {}, time = 0, selectedPlanet = null) {
-  renderThreeScene(canvas, modelId, yaw, pitch, zoom, time, selectedPlanet);
+  renderThreeScene(canvas, modelId, yaw, pitch, zoom, time, selectedPlanet, ecosystem.orbitSpeed ?? 1, ecosystem.heartFlow ?? "body", ecosystem);
 }
 
 function animateScene(canvas, render) {
   let frame = 0;
   let active = true;
+  let pageVisible = document.visibilityState !== "hidden";
+  const motionQuery = window.matchMedia?.("(prefers-reduced-motion: reduce)");
+  let reducedMotion = Boolean(motionQuery?.matches);
+
+  const cancelFrame = () => {
+    if (frame) window.cancelAnimationFrame(frame);
+    frame = 0;
+  };
+  const drawOnce = () => {
+    if (active && pageVisible) render(performance.now());
+  };
   const tick = (time) => {
-    if (!active) return;
+    frame = 0;
+    if (!active || !pageVisible || reducedMotion) return;
     render(time);
     frame = window.requestAnimationFrame(tick);
   };
-  frame = window.requestAnimationFrame(tick);
+  const start = () => {
+    if (!active || !pageVisible) return;
+    cancelFrame();
+    if (reducedMotion) drawOnce();
+    else frame = window.requestAnimationFrame(tick);
+  };
+  const onVisibilityChange = () => {
+    pageVisible = document.visibilityState !== "hidden";
+    if (pageVisible) start();
+    else cancelFrame();
+  };
+  const onMotionChange = (event) => {
+    reducedMotion = event.matches;
+    start();
+  };
+
+  document.addEventListener("visibilitychange", onVisibilityChange);
+  motionQuery?.addEventListener?.("change", onMotionChange);
+  start();
+
   return () => {
     active = false;
-    if (frame) window.cancelAnimationFrame(frame);
+    cancelFrame();
+    document.removeEventListener("visibilitychange", onVisibilityChange);
+    motionQuery?.removeEventListener?.("change", onMotionChange);
   };
 }
 
-export function Mini3DModel({ modelId = "planet" }) {
+export function Mini3DModel({ modelId = "planet", paused = false }) {
   const [rotation, setRotation] = useState({ yaw: -.55, pitch: -.22 });
   const [zoom, setZoom] = useState(1);
   const canvasRef = useRef(null);
@@ -850,11 +1044,12 @@ export function Mini3DModel({ modelId = "planet" }) {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const render = (time = 0) => drawScene(canvas, modelId, rotation.yaw, rotation.pitch, zoom, {}, time);
-    const stopAnimation = animateScene(canvas, render);
+    // Pause the actual WebGL animation loop while a learner studies a frame.
+    const stopAnimation = paused ? (render(0), () => {}) : animateScene(canvas, render);
     const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(() => render()) : null;
     observer?.observe(canvas);
     return () => { stopAnimation(); observer?.disconnect(); disposeThreeScene(canvas); };
-  }, [modelId, rotation, zoom]);
+  }, [modelId, rotation, zoom, paused]);
   function pointerDown(event) {
     dragRef.current = { x: event.clientX, y: event.clientY, yaw: rotation.yaw, pitch: rotation.pitch };
     event.currentTarget.setPointerCapture(event.pointerId);
@@ -878,13 +1073,68 @@ export default function Interactive3DWorld({ selectedPlanet, onSelectedPlanetCha
   const [rotation, setRotation] = useState({ yaw: -.55, pitch: -.22 });
   const [zoom, setZoom] = useState(1);
   const [conceptIndex, setConceptIndex] = useState(0);
-  const [ecosystem, setEcosystem] = useState({ rainfall: "regular", waterSource: true, pollution: false, engineCycle: "intake", physicsForce: 3, physicsFriction: 1, chemistryMolecule: "water", chemistryFocus: "all", chemistryShowBonds: true, cellFocus: "all", bridgeLoad: "center" });
+  const [labCheckAnswer, setLabCheckAnswer] = useState(null);
+  const [cellCheckAnswer, setCellCheckAnswer] = useState(null);
+  useEffect(() => { setCellCheckAnswer(null); }, [modelId]);
+  const [ecosystem, setEcosystem] = useState({ rainfall: 70, waterSource: true, pollution: 15, engineCycle: "intake", physicsForce: 6, physicsFriction: 2, physicsMass: 2, chemistryMolecule: "water", chemistryFocus: "all", chemistryShowBonds: true, orbitSpeed: 1, cellFocus: "all", bridgeLoad: "center" });
   const canvasRef = useRef(null);
   const dragRef = useRef(null);
   const model = models.find((item) => item.id === modelId) || models[0];
   const selectedPlanetInfo = solarPlanets.find((item) => item.id === selectedPlanet) || null;
   const displayedTitle = selectedPlanetInfo ? selectedPlanetInfo.label : model.label;
   const displayedDescription = selectedPlanetInfo ? selectedPlanetInfo.description : model.description;
+  const chemistryChecks = {
+    water: {
+      question: "Which atom sits at the centre of a water molecule?",
+      options: ["Oxygen", "Hydrogen", "Carbon"],
+      correct: 0,
+      hint: "Look for the larger red atom connected to both smaller hydrogen atoms.",
+      explanation: "Correct. Oxygen is the central atom in H₂O, bonded to two hydrogen atoms.",
+    },
+    carbonDioxide: {
+      question: "What is the molecular shape of carbon dioxide?",
+      options: ["Bent", "Linear", "Tetrahedral"],
+      correct: 1,
+      hint: "The carbon atom sits between two oxygen atoms on opposite sides.",
+      explanation: "Correct. CO₂ is linear, with a bond angle of 180°.",
+    },
+    methane: {
+      question: "What shape do the four bonds around carbon form in methane?",
+      options: ["Tetrahedral", "Linear", "Trigonal pyramidal"],
+      correct: 0,
+      hint: "Think of four directions spreading out evenly in three dimensions.",
+      explanation: "Correct. CH₄ has a tetrahedral molecular geometry, with bond angles near 109.5°.",
+    },
+    ammonia: {
+      question: "What is the molecular shape of ammonia?",
+      options: ["Trigonal planar", "Bent", "Trigonal pyramidal"],
+      correct: 2,
+      hint: "Nitrogen has three N–H bonds and one lone pair that affects the shape.",
+      explanation: "Correct. NH₃ is trigonal pyramidal because the lone pair influences its three bonded hydrogen atoms.",
+    },
+  };
+  const activeChemistryCheck = chemistryChecks[ecosystem.chemistryMolecule] || chemistryChecks.water;
+  const cellChecks = {
+    animal: {
+      question: "Which organelle releases much of the usable energy during aerobic respiration?",
+      options: ["Mitochondrion", "Ribosome", "Cell membrane"],
+      correct: 0,
+      hint: "Look for the organelle often described as the cell's energy converter.",
+      explanation: "Mitochondria are a major site of aerobic respiration and help make ATP.",
+    },
+    plant: {
+      question: "Which structure captures light energy for photosynthesis?",
+      options: ["Large vacuole", "Chloroplast", "Cell wall"],
+      correct: 1,
+      hint: "It contains chlorophyll, the green light-absorbing pigment.",
+      explanation: "Chloroplasts contain chlorophyll and are the main site of photosynthesis in plant cells.",
+    },
+  };
+  const activeCellCheck = cellChecks[modelId === "plant-cell" ? "plant" : "animal"];
+  const cellWhatIf = modelId === "plant-cell"
+    ? "If chloroplasts could no longer capture light, photosynthesis would decrease. The plant would make less glucose from light energy; the cell wall would still provide support."
+    : "If mitochondria stopped working, aerobic ATP production would fall. Many energy-requiring cell processes would be disrupted, even though the nucleus still stores genetic information.";
+
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -940,7 +1190,29 @@ export default function Interactive3DWorld({ selectedPlanet, onSelectedPlanetCha
           {selectedPlanetInfo && <p className="learning-planet-stats">Diameter <strong>{selectedPlanetInfo.diameter}</strong><span>·</span> Average solar distance <strong>{selectedPlanetInfo.orbit}</strong></p>}
           {selectedPlanetInfo && <button type="button" className="learning-planet-back" onClick={() => { onSelectedPlanetChange(null); setRotation({ yaw: -.55, pitch: -.22 }); setZoom(1); }}>← Back to all eight planets</button>}
           {modelId === "solar-system" && !selectedPlanetInfo && <p className="learning-planet-instruction">Tap any planet in the 3D scene or choose its name below to enter its world.</p>}
+          {modelId === "solar-system" && !selectedPlanetInfo && <div className="learning-3d-experiment" aria-label="Planetary orbit experiment">
+            <span>EXPERIMENT WITH ORBITAL MOTION</span>
+            <p>Change the animation speed to compare how the planets move along their paths. This is an educational animation, not a real-time scale model of orbital periods.</p>
+            <div className="learning-3d-experiment-control"><label htmlFor="orbit-speed">Orbit animation: {ecosystem.orbitSpeed === 0 ? "Paused" : ecosystem.orbitSpeed.toFixed(1) + "× speed"}</label>
+              <input id="orbit-speed" type="range" min="0" max="3" step="0.5" value={ecosystem.orbitSpeed} onChange={(event) => setEcosystem((value) => ({ ...value, orbitSpeed: Number(event.target.value) }))} />
+            </div>
+            <p className="learning-3d-experiment-observation" aria-live="polite">{ecosystem.orbitSpeed === 0 ? "The orbital animation is paused. Notice how each planet stays on its orbital path." : "The animation is running. Inner planets complete their illustrated paths more quickly than outer planets, showing the difference in orbital periods."}</p>
+            <button type="button" onClick={() => setEcosystem((value) => ({ ...value, orbitSpeed: 1 }))}>Reset orbital speed</button>
+          </div>}
           {modelId === "solar-system" && <div className="learning-planet-picker" role="group" aria-label="Choose a planet">{solarPlanets.map((planet) => <button type="button" key={planet.id} className={selectedPlanet === planet.id ? "active" : ""} aria-pressed={selectedPlanet === planet.id} onClick={() => { onSelectedPlanetChange(planet.id); setRotation({ yaw: -.28, pitch: -.12 }); setZoom(1); }}>{planet.label}</button>)}</div>}
+          {modelId === "heart" && <div className="learning-3d-experiment" aria-label="Heart and circulation learning lab">
+            <span>FOLLOW THE CIRCULATION JOURNEY</span>
+            <p>Trace blood through the heart, lungs and body. Blue represents oxygen-poor blood and red represents oxygen-rich blood in this simplified teaching illustration.</p>
+            <div className="learning-3d-experiment-control"><strong>Choose a journey stage</strong><div role="group" aria-label="Blood circulation stage">
+              {[["body", "1 · From body"], ["lungs", "2 · To lungs"], ["return", "3 · From lungs"]].map(([value, label]) => <button type="button" key={value} className={(ecosystem.heartFlow || "body") === value ? "active" : ""} aria-pressed={(ecosystem.heartFlow || "body") === value} onClick={() => setEcosystem((current) => ({ ...current, heartFlow: value }))}>{label}</button>)}
+            </div></div>
+            <p className="learning-3d-experiment-observation" aria-live="polite">{({
+              body: "Oxygen-poor blood returns from the body to the right side of the heart. It is then pumped toward the lungs through the pulmonary arteries.",
+              lungs: "In the lungs, blood releases carbon dioxide and takes up oxygen. The pulmonary veins carry oxygen-rich blood back to the left side of the heart.",
+              return: "Oxygen-rich blood enters the left side of the heart and is pumped through the aorta to the body, where tissues use oxygen.",
+            })[ecosystem.heartFlow || "body"]}</p>
+            <button type="button" onClick={() => setEcosystem((current) => ({ ...current, heartFlow: "body" }))}>Restart circulation journey</button>
+          </div>}
           {(modelId === "cell" || modelId === "plant-cell") && <div className="learning-3d-experiment" aria-label="Interactive cell biology lab">
             <span>EXPLORE CELL STRUCTURES</span>
             <p>Switch between an animal cell and a plant cell. Highlight an organelle to discover its role. The structures are simplified teaching illustrations, not to scale.</p>
@@ -962,13 +1234,25 @@ export default function Interactive3DWorld({ selectedPlanet, onSelectedPlanetCha
               ribosomes: "Ribosomes are the structures where cells assemble proteins.",
               membrane: "The cell membrane forms a selectively permeable boundary that helps regulate what enters and leaves the cell.",
             })[ecosystem.cellFocus || "all"]}</p>
-            <button type="button" onClick={() => setEcosystem((current) => ({ ...current, cellFocus: "all" }))}>Reset cell explorer</button>
+            <div className="learning-3d-experiment-control">
+              <strong>What if this structure stopped working?</strong>
+              <p className="learning-3d-experiment-observation" aria-live="polite">{cellWhatIf}</p>
+            </div>
+            <div className="learning-3d-experiment-control">
+              <strong>Quick cell knowledge check</strong>
+              <p>{activeCellCheck.question}</p>
+              <div role="group" aria-label="Cell biology knowledge check">
+                {activeCellCheck.options.map((option, optionIndex) => <button type="button" key={option} className={cellCheckAnswer === optionIndex ? "active" : ""} aria-pressed={cellCheckAnswer === optionIndex} onClick={() => setCellCheckAnswer(optionIndex)}>{option}</button>)}
+              </div>
+              {cellCheckAnswer !== null && <p className="learning-3d-experiment-observation" role="status">{cellCheckAnswer === activeCellCheck.correct ? activeCellCheck.explanation : activeCellCheck.hint}</p>}
+            </div>
+            <button type="button" onClick={() => { setEcosystem((current) => ({ ...current, cellFocus: "all" })); setCellCheckAnswer(null); }}>Reset cell explorer</button>
           </div>}
           {modelId === "molecule" && <div className="learning-3d-experiment" aria-label="Interactive chemistry molecule lab">
             <span>BUILD & EXPLORE MOLECULES</span>
             <p>Choose a molecule, focus on an element, and show or hide its bonds. Rotate the model to inspect its shape. These are simplified educational models, not electron-density or scale-accurate simulations.</p>
             <div className="learning-3d-experiment-control"><label htmlFor="chemistry-molecule">Molecule</label>
-              <select id="chemistry-molecule" value={ecosystem.chemistryMolecule} onChange={(event) => setEcosystem((current) => ({ ...current, chemistryMolecule: event.target.value, chemistryFocus: "all" }))}>
+              <select id="chemistry-molecule" value={ecosystem.chemistryMolecule} onChange={(event) => { setEcosystem((current) => ({ ...current, chemistryMolecule: event.target.value, chemistryFocus: "all" })); setLabCheckAnswer(null); }}>
                 <option value="water">Water · H₂O</option>
                 <option value="carbonDioxide">Carbon dioxide · CO₂</option>
                 <option value="methane">Methane · CH₄</option>
@@ -987,19 +1271,40 @@ export default function Interactive3DWorld({ selectedPlanet, onSelectedPlanetCha
               methane: "Methane (CH₄): one carbon atom forms four single covalent bonds to hydrogen atoms. The molecule has a tetrahedral shape, with bond angles of about 109.5°.",
               ammonia: "Ammonia (NH₃): one nitrogen atom forms three single covalent bonds to hydrogen atoms. Its molecular shape is trigonal pyramidal; the lone electron pair on nitrogen influences the shape.",
             })[ecosystem.chemistryMolecule]}</p>
-            <button type="button" onClick={() => setEcosystem((current) => ({ ...current, chemistryMolecule: "water", chemistryFocus: "all", chemistryShowBonds: true }))}>Reset molecule lab</button>
+            <div className="learning-3d-experiment-control">
+              <strong>Quick knowledge check</strong>
+              <p>{activeChemistryCheck.question}</p>
+              <div role="group" aria-label="Molecule knowledge check">
+                {activeChemistryCheck.options.map((option, optionIndex) => <button type="button" key={option} className={labCheckAnswer === optionIndex ? "active" : ""} aria-pressed={labCheckAnswer === optionIndex} onClick={() => setLabCheckAnswer(optionIndex)}>{option}</button>)}
+              </div>
+              {labCheckAnswer !== null && <p className="learning-3d-experiment-observation" role="status">{labCheckAnswer === activeChemistryCheck.correct ? activeChemistryCheck.explanation : activeChemistryCheck.hint}</p>}
+            </div>
+            <button type="button" onClick={() => { setEcosystem((current) => ({ ...current, chemistryMolecule: "water", chemistryFocus: "all", chemistryShowBonds: true })); setLabCheckAnswer(null); }}>Reset molecule lab</button>
           </div>}
-          {modelId === "cart" && <div className="learning-3d-experiment" aria-label="Force and friction experiment">
-            <span>TRY A FORCE & FRICTION EXPERIMENT</span>
-            <p>Change the push and surface friction. Watch the cart shift to explore the idea of net force. This is a qualitative illustration, not a measured prediction.</p>
-            <div className="learning-3d-experiment-control"><label htmlFor="physics-force">Applied push: {ecosystem.physicsForce}/5</label>
-              <input id="physics-force" type="range" min="0" max="5" step="1" value={ecosystem.physicsForce} onChange={(event) => setEcosystem((current) => ({ ...current, physicsForce: Number(event.target.value) }))} />
+          {modelId === "cart" && <div className="learning-3d-experiment" aria-label="Force and acceleration experiment">
+            <span>INVESTIGATE NEWTON'S SECOND LAW</span>
+            <p>Change the applied force, opposing force and cart mass. Compare the net force and acceleration. The 3D cart position is an illustration of the calculated acceleration, not a time-based motion prediction.</p>
+            <div className="learning-3d-experiment-control"><label htmlFor="physics-force">Applied force: {ecosystem.physicsForce} N</label>
+              <input id="physics-force" type="range" min="0" max="10" step="1" value={ecosystem.physicsForce} onChange={(event) => setEcosystem((current) => ({ ...current, physicsForce: Number(event.target.value) }))} />
             </div>
-            <div className="learning-3d-experiment-control"><label htmlFor="physics-friction">Surface friction: {ecosystem.physicsFriction}/5</label>
-              <input id="physics-friction" type="range" min="0" max="5" step="1" value={ecosystem.physicsFriction} onChange={(event) => setEcosystem((current) => ({ ...current, physicsFriction: Number(event.target.value) }))} />
+            <div className="learning-3d-experiment-control"><label htmlFor="physics-friction">Opposing force: {ecosystem.physicsFriction} N</label>
+              <input id="physics-friction" type="range" min="0" max="10" step="1" value={ecosystem.physicsFriction} onChange={(event) => setEcosystem((current) => ({ ...current, physicsFriction: Number(event.target.value) }))} />
             </div>
-            <p className="learning-3d-experiment-observation" aria-live="polite">{ecosystem.physicsForce === ecosystem.physicsFriction ? "Balanced forces: the net force is zero in this simplified comparison. Acceleration is zero." : ecosystem.physicsForce > ecosystem.physicsFriction ? "The push is greater than the opposing friction in this illustration, so the cart shifts in the push direction." : "Friction is greater than the push in this illustration, so the net force points opposite the push."}</p>
-            <button type="button" onClick={() => setEcosystem((current) => ({ ...current, physicsForce: 3, physicsFriction: 1 }))}>Reset experiment</button>
+            <div className="learning-3d-experiment-control"><label htmlFor="physics-mass">Cart mass: {ecosystem.physicsMass} kg</label>
+              <input id="physics-mass" type="range" min="1" max="5" step="1" value={ecosystem.physicsMass} onChange={(event) => setEcosystem((current) => ({ ...current, physicsMass: Number(event.target.value) }))} />
+            </div>
+            <p className="learning-3d-experiment-observation" aria-live="polite">
+              Net force = {ecosystem.physicsForce - ecosystem.physicsFriction} N ·
+              Acceleration = {(ecosystem.physicsForce - ecosystem.physicsFriction) / ecosystem.physicsMass} m/s²
+              {" — "}
+              {ecosystem.physicsForce === ecosystem.physicsFriction
+                ? "Balanced forces: net force is zero, so acceleration is zero."
+                : ecosystem.physicsForce > ecosystem.physicsFriction
+                  ? "The net force points in the direction of the applied push."
+                  : "The net force points opposite to the applied push."}
+              {" "}Using Newton's second law: a = Fnet ÷ m.
+            </p>
+            <button type="button" onClick={() => setEcosystem((current) => ({ ...current, physicsForce: 6, physicsFriction: 2, physicsMass: 2 }))}>Reset experiment</button>
           </div>}
           {modelId === "bridge" && <div className="learning-3d-experiment" aria-label="Bridge load path exploration">
             <span>EXPLORE HOW A BRIDGE CARRIES LOADS</span>
@@ -1034,13 +1339,29 @@ export default function Interactive3DWorld({ selectedPlanet, onSelectedPlanetCha
             <button type="button" onClick={() => setEcosystem((current) => ({ ...current, engineCycle: "intake" }))}>Restart cycle</button>
           </div>}
           {modelId === "ecosystem" && <div className="learning-3d-experiment" aria-label="Forest habitat experiment">
-            <span>TRY A HABITAT EXPERIMENT</span>
-            <p>Change one condition and observe the illustrative habitat. These are qualitative teaching outcomes, not measured ecological predictions.</p>
-            <div className="learning-3d-experiment-control"><strong>Rainfall</strong><div role="group" aria-label="Rainfall level"><button type="button" className={ecosystem.rainfall === "regular" ? "active" : ""} aria-pressed={ecosystem.rainfall === "regular"} onClick={() => setEcosystem((value) => ({ ...value, rainfall: "regular" }))}>Regular</button><button type="button" className={ecosystem.rainfall === "low" ? "active" : ""} aria-pressed={ecosystem.rainfall === "low"} onClick={() => setEcosystem((value) => ({ ...value, rainfall: "low" }))}>Low</button></div></div>
-            <div className="learning-3d-experiment-control"><strong>Water source</strong><button type="button" className={ecosystem.waterSource ? "active" : ""} aria-pressed={ecosystem.waterSource} onClick={() => setEcosystem((value) => ({ ...value, waterSource: !value.waterSource }))}>{ecosystem.waterSource ? "Present" : "Removed"}</button></div>
-            <div className="learning-3d-experiment-control"><strong>Air pollution</strong><button type="button" className={ecosystem.pollution ? "active" : ""} aria-pressed={ecosystem.pollution} onClick={() => setEcosystem((value) => ({ ...value, pollution: !value.pollution }))}>{ecosystem.pollution ? "Higher" : "Lower"}</button></div>
-            <p className="learning-3d-experiment-observation" aria-live="polite">{ecosystem.waterSource && ecosystem.rainfall === "regular" && !ecosystem.pollution ? "Balanced starting scene: the stream is present and foliage is shown as healthy." : `${!ecosystem.waterSource ? "The stream is removed. " : ""}${ecosystem.rainfall === "low" ? "Lower rainfall changes the ground and foliage colours. " : ""}${ecosystem.pollution ? "A visible haze represents an added pollution pressure. " : ""}Discuss which organisms may be affected and why.`}</p>
-            <button type="button" onClick={() => setEcosystem({ rainfall: "regular", waterSource: true, pollution: false })}>Reset experiment</button>
+            <span>INVESTIGATE A CHANGING HABITAT</span>
+            <p>Adjust rainfall and air pollution, then observe how the illustrated habitat responds. This is a qualitative learning model, not a measured ecological forecast.</p>
+            <div className="learning-3d-experiment-control"><label htmlFor="habitat-rainfall">Rainfall level: {ecosystem.rainfall}%</label>
+              <input id="habitat-rainfall" type="range" min="0" max="100" step="5" value={ecosystem.rainfall} onChange={(event) => setEcosystem((value) => ({ ...value, rainfall: Number(event.target.value) }))} />
+            </div>
+            <div className="learning-3d-experiment-control"><strong>Freshwater stream</strong>
+              <button type="button" className={ecosystem.waterSource ? "active" : ""} aria-pressed={ecosystem.waterSource} onClick={() => setEcosystem((value) => ({ ...value, waterSource: !value.waterSource }))}>{ecosystem.waterSource ? "Present" : "Removed"}</button>
+            </div>
+            <div className="learning-3d-experiment-control"><label htmlFor="habitat-pollution">Air pollution level: {ecosystem.pollution}%</label>
+              <input id="habitat-pollution" type="range" min="0" max="100" step="5" value={ecosystem.pollution} onChange={(event) => setEcosystem((value) => ({ ...value, pollution: Number(event.target.value) }))} />
+            </div>
+            <p className="learning-3d-experiment-observation" aria-live="polite">
+              {ecosystem.rainfall < 35
+                ? "Low rainfall: the scene shows drier ground and stressed-looking foliage. Water availability can limit plant growth and affect animals that depend on plants or freshwater."
+                : "Rainfall is not in the low range of this illustration. Compare the habitat as you reduce water availability."}
+              {" "}
+              {!ecosystem.waterSource ? "The stream is absent, removing a visible freshwater source from this habitat. " : "The stream remains available in the scene. "}
+              {ecosystem.pollution >= 60
+                ? "Higher pollution pressure is represented by muted foliage. Air pollutants can harm plants, animals and people."
+                : "Pollution is below the high-pressure visual threshold in this illustration."}
+              {" "}Look for links between water, plants and animals in the habitat.
+            </p>
+            <button type="button" onClick={() => setEcosystem((value) => ({ ...value, rainfall: 70, waterSource: true, pollution: 15 }))}>Reset experiment</button>
           </div>}
           <div className="learning-3d-concept-panel" aria-live="polite">
             <span>DISCOVERY GUIDE</span>
