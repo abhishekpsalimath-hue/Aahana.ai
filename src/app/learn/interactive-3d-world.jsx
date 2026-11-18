@@ -654,6 +654,15 @@ function makeModel(id, ecosystem = {}) {
         ],
         bonds: [[0, 1], [0, 2], [0, 3], [0, 4]],
       },
+      ammonia: {
+        atoms: [
+          { element: "N", p: [0, .12, 0], r: .34, c: "#7298dc", role: "nitrogen" },
+          { element: "H", p: [.72, -.38, .18], r: .2, c: "#e9edf7", role: "hydrogen" },
+          { element: "H", p: [-.66, -.42, .22], r: .2, c: "#e9edf7", role: "hydrogen" },
+          { element: "H", p: [0, -.48, -.72], r: .2, c: "#e9edf7", role: "hydrogen" },
+        ],
+        bonds: [[0, 1], [0, 2], [0, 3]],
+      },
     };
     const molecule = definitions[kind] || definitions.water;
     const atoms = molecule.atoms.map((atom) => ({
@@ -963,10 +972,11 @@ export default function Interactive3DWorld({ selectedPlanet, onSelectedPlanetCha
                 <option value="water">Water · H₂O</option>
                 <option value="carbonDioxide">Carbon dioxide · CO₂</option>
                 <option value="methane">Methane · CH₄</option>
+                <option value="ammonia">Ammonia · NH₃</option>
               </select>
             </div>
             <div className="learning-3d-experiment-control"><strong>Highlight element</strong><div role="group" aria-label="Highlight element">
-              {[["all", "All atoms"], ["oxygen", "Oxygen"], ["hydrogen", "Hydrogen"], ["carbon", "Carbon"]].map(([value, label]) => <button type="button" key={value} className={ecosystem.chemistryFocus === value ? "active" : ""} aria-pressed={ecosystem.chemistryFocus === value} onClick={() => setEcosystem((current) => ({ ...current, chemistryFocus: value }))}>{label}</button>)}
+              {[["all", "All atoms"], ["oxygen", "Oxygen"], ["hydrogen", "Hydrogen"], ["carbon", "Carbon"], ["nitrogen", "Nitrogen"]].map(([value, label]) => <button type="button" key={value} className={ecosystem.chemistryFocus === value ? "active" : ""} aria-pressed={ecosystem.chemistryFocus === value} onClick={() => setEcosystem((current) => ({ ...current, chemistryFocus: value }))}>{label}</button>)}
             </div></div>
             <div className="learning-3d-experiment-control"><strong>Covalent bonds</strong>
               <button type="button" className={ecosystem.chemistryShowBonds ? "active" : ""} aria-pressed={ecosystem.chemistryShowBonds} onClick={() => setEcosystem((current) => ({ ...current, chemistryShowBonds: !current.chemistryShowBonds }))}>{ecosystem.chemistryShowBonds ? "Bonds visible" : "Bonds hidden"}</button>
@@ -975,6 +985,7 @@ export default function Interactive3DWorld({ selectedPlanet, onSelectedPlanetCha
               water: "Water (H₂O): two hydrogen atoms are covalently bonded to one oxygen atom. Its molecular shape is bent, with an H–O–H angle of about 104.5°.",
               carbonDioxide: "Carbon dioxide (CO₂): one carbon atom is bonded to two oxygen atoms. The molecule is linear, with a bond angle of 180°.",
               methane: "Methane (CH₄): one carbon atom forms four single covalent bonds to hydrogen atoms. The molecule has a tetrahedral shape, with bond angles of about 109.5°.",
+              ammonia: "Ammonia (NH₃): one nitrogen atom forms three single covalent bonds to hydrogen atoms. Its molecular shape is trigonal pyramidal; the lone electron pair on nitrogen influences the shape.",
             })[ecosystem.chemistryMolecule]}</p>
             <button type="button" onClick={() => setEcosystem((current) => ({ ...current, chemistryMolecule: "water", chemistryFocus: "all", chemistryShowBonds: true }))}>Reset molecule lab</button>
           </div>}
