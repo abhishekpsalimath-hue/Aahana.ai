@@ -33,7 +33,7 @@ async function moderateImagePrompt(accountId, apiToken, prompt) {
     messages: [{ role: "user", content: prompt }],
     temperature: 0,
     max_tokens: 128,
-  }, 12000);
+  }, 9000);
   const verdict = parseGuardVerdict(result.response || result.result || result);
   if (!verdict) throw new Error("Image prompt safety could not be verified.");
   if (!verdict.safe) throw Object.assign(new Error("This image request is not allowed by Aahana's image safety rules."), { status: 400 });
@@ -53,7 +53,7 @@ async function moderateGeneratedImage(accountId, apiToken, imageDataUrl) {
     }],
     temperature: 0,
     max_tokens: 160,
-  }, 18000);
+  }, 11000);
   const verdict = parseVisualSafetyVerdict(result.response || result.result || "");
   if (!verdict) throw new Error("Generated image safety could not be verified.");
   if (!verdict.safe) throw Object.assign(new Error("The generated image did not pass Aahana's image safety check."), { status: 400 });
@@ -139,7 +139,7 @@ export async function POST(request) {
         },
         body: JSON.stringify({ prompt: finalPrompt, steps: 8 }),
         cache: "no-store",
-        signal: AbortSignal.timeout(50000),
+        signal: AbortSignal.timeout(35000),
       }
     );
 
