@@ -193,3 +193,10 @@
 .native-image-edit-panel small{color:#c2b3d3;font-size:9px;line-height:1.5}
 
 .image-edit-note{display:block;margin:0 4px 8px;color:#b7a9c7;font-size:10px;line-height:1.45}
+
+
+.native-image-before-after{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:9px;border:1px solid #514365;border-radius:10px;background:#171420}
+.native-image-before-after figure{min-width:0;margin:0;display:grid;gap:6px}
+.native-image-before-after img{display:block;width:100%;height:150px;object-fit:contain;border-radius:7px;background:#0e0c14}
+.native-image-before-after figcaption{color:#cfc4dc;font-size:9px;font-weight:700;text-align:center}
+@media(max-width:420px){.native-image-before-after img{height:112px}}
