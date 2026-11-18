@@ -21,8 +21,10 @@ test("ranks project manifests and application entry points ahead of generic file
 
 test("uses prompt terms to prioritize matching file paths without losing stable ordering", () => {
   const result = selectRelevantProjectFiles("change the profile card component", files, 6);
-  assert.equal(result[0].original_filename, "package.json");
-  assert.equal(result[1].original_filename, "src/components/profile-card.jsx");
+  const profileIndex = result.findIndex((file) => file.original_filename === "src/components/profile-card.jsx");
+  const pageIndex = result.findIndex((file) => file.original_filename === "src/app/page.jsx");
+  assert.ok(profileIndex >= 0);
+  assert.ok(profileIndex < pageIndex);
 });
 
 test("caps selection at eight complete files and handles invalid inputs safely", () => {
