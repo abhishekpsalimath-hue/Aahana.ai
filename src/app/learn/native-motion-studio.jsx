@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createMotionTimeline, sampleMotionTimeline, validateMotionTimeline } from "@/lib/studio/motion-engine.mjs";
 
 const STARTER = {
@@ -22,6 +22,8 @@ export default function NativeMotionStudio() {
   const [time, setTime] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [status, setStatus] = useState("");
+  const [exporting, setExporting] = useState(false);
+  const exportCanvasRef = useRef(null);
   const sampled = useMemo(() => sampleMotionTimeline(timeline, time), [timeline, time]);
   const x = sampled.find((item) => item.property === "cx")?.value ?? 180;
 
@@ -80,6 +82,90 @@ export default function NativeMotionStudio() {
     setStatus("A midpoint keyframe was added.");
   }
 
+  async function exportWebM() {
+    if (exporting) return;
+    if (typeof MediaRecorder === "undefined" || !HTMLCanvasElement.prototype.captureStream) {
+      setStatus("WebM export is not supported by this browser. Export the timeline JSON instead.");
+      return;
+    }
+    const valid = validateMotionTimeline(timeline);
+    if (!valid) { setStatus("Timeline validation failed. Review keyframe times."); return; }
+    setExporting(true);
+    setStatus("Rendering your animation to a local WebM video…");
+    const canvas = exportCanvasRef.current;
+    const context = canvas?.getContext("2d");
+    if (!canvas || !context) { setExporting(false); setStatus("The video canvas could not be created."); return; }
+    const stream = canvas.captureStream(valid.fps);
+    const mimeType = ["video/webm;codecs=vp9", "video/webm;codecs=vp8", "video/webm"].find((type) => MediaRecorder.isTypeSupported(type));
+    let recorder;
+    try {
+      recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+    } catch {
+      stream.getTracks().forEach((track) => track.stop());
+      setExporting(false);
+      setStatus("This browser could not start WebM recording. Export the timeline JSON instead.");
+      return;
+    }
+    const chunks = [];
+    recorder.ondataavailable = (event) => { if (event.data?.size) chunks.push(event.data); };
+    recorder.onerror = () => {
+      stream.getTracks().forEach((track) => track.stop());
+      setExporting(false);
+      setStatus("Video recording failed. Your editable timeline is unchanged.");
+    };
+    recorder.onstop = () => {
+      stream.getTracks().forEach((track) => track.stop());
+      const blob = new Blob(chunks, { type: recorder.mimeType || "video/webm" });
+      if (blob.size) {
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement("a");
+        anchor.href = url;
+        anchor.download = "aahana-motion-preview.webm";
+        anchor.click();
+        window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+        setStatus("WebM video exported locally. No paid generation provider was used.");
+      } else setStatus("The browser returned an empty video. Try again or export the timeline JSON.");
+      setExporting(false);
+    };
+    const drawFrame = (frameTime) => {
+      const xValue = sampleMotionTimeline(valid, frameTime).find((item) => item.property === "cx")?.value ?? 180;
+      const x = xValue / 1000 * canvas.width;
+      const y = canvas.height * 0.5;
+      const background = context.createLinearGradient(0, 0, canvas.width, canvas.height);
+      background.addColorStop(0, "#282038");
+      background.addColorStop(1, "#171421");
+      context.fillStyle = background;
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.strokeStyle = "#79678f";
+      context.lineWidth = 2;
+      context.setLineDash([7, 12]);
+      context.beginPath(); context.moveTo(70, canvas.height * .79); context.lineTo(canvas.width - 70, canvas.height * .79); context.stroke();
+      context.setLineDash([]);
+      const orb = context.createRadialGradient(x - 20, y - 24, 5, x, y, 82);
+      orb.addColorStop(0, "#f4eafa"); orb.addColorStop(.45, "#c7a8ed"); orb.addColorStop(1, "#8064ae");
+      context.fillStyle = orb; context.beginPath(); context.arc(x, y, 82, 0, Math.PI * 2); context.fill();
+      context.fillStyle = "rgba(255,255,255,.28)"; context.beginPath(); context.arc(x - 25, y - 30, 15, 0, Math.PI * 2); context.fill();
+      context.fillStyle = "#eee5fa"; context.font = "bold 26px system-ui"; context.fillText("Aahana Motion Preview", 70, 75);
+      context.fillStyle = "#b8a9c9"; context.font = "16px system-ui"; context.fillText("Original keyframed animation", 70, 108);
+    };
+    try {
+      drawFrame(0);
+      recorder.start(200);
+      const startedAt = performance.now();
+      const tick = (now) => {
+        const elapsed = Math.min(valid.duration, now - startedAt);
+        drawFrame(elapsed);
+        if (elapsed >= valid.duration) recorder.stop();
+        else requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    } catch {
+      if (recorder.state !== "inactive") recorder.stop();
+      else { stream.getTracks().forEach((track) => track.stop()); setExporting(false); }
+      setStatus("Video rendering could not start. Your timeline remains available.");
+    }
+  }
+
   function exportTimeline() {
     const valid = validateMotionTimeline(timeline);
     if (!valid) { setStatus("Timeline validation failed. Review keyframe times."); return; }
@@ -95,8 +181,8 @@ export default function NativeMotionStudio() {
 
   return (
     <section className="native-motion-studio" aria-label="Aahana native motion studio">
-      <div className="native-motion-heading"><div><span>AAHANA-NATIVE MOTION ENGINE</span><h3>Motion & Animation Studio</h3><p>Build keyframed movement and preview it live, locally in your browser.</p></div><button type="button" onClick={exportTimeline}>Export timeline</button></div>
-      <div className="native-motion-stage">
+      <div className="native-motion-heading"><div><span>AAHANA-NATIVE MOTION ENGINE</span><h3>Motion & Animation Studio</h3><p>Build keyframed movement and preview it live, locally in your browser.</p></div><div className="native-motion-export-actions"><button type="button" onClick={exportWebM} disabled={exporting}>{exporting ? "Rendering video…" : "Export WebM video"}</button><button type="button" onClick={exportTimeline}>Export timeline</button></div></div>
+      <canvas ref={exportCanvasRef} width="1280" height="720" hidden aria-hidden="true" />\n      <div className="native-motion-stage">
         <svg viewBox="0 0 1000 360" role="img" aria-label="Animated preview of a lavender sphere moving across a stage">
           <defs><linearGradient id="aahana-motion-bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#282038"/><stop offset="1" stopColor="#171421"/></linearGradient><radialGradient id="aahana-motion-ball"><stop offset="0" stopColor="#f4eafa"/><stop offset=".45" stopColor="#c7a8ed"/><stop offset="1" stopColor="#8064ae"/></radialGradient></defs>
           <rect width="1000" height="360" rx="16" fill="url(#aahana-motion-bg)"/>
@@ -125,7 +211,7 @@ export default function NativeMotionStudio() {
         </div>)}</div>
       </div>
       {status && <p className="native-motion-status" role="status">{status}</p>}
-      <small className="native-motion-disclosure">Current capability: browser-based keyframe authoring and live vector preview. This editor does not yet encode or export a video file.</small>
+      <small className="native-motion-disclosure">Current capabilities: browser-based keyframe authoring, live vector preview and local WebM recording. This is a rendered preview, not provider-generated cinematic footage.</small>
     </section>
   );
 }
