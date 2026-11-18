@@ -10,6 +10,15 @@ export const maxDuration = 180;
 
 const VIDEO_MODEL = "black-forest-labs/flux-3-video";
 
+function extractVideoUrl(payload) {
+  const candidates = [
+    payload?.result?.result?.video,
+    payload?.result?.video,
+    payload?.video,
+  ];
+  return candidates.find((value) => typeof value === "string" && value.length > 0) || null;
+}
+
 export async function POST(request) {
   const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -67,7 +76,7 @@ export async function POST(request) {
     );
 
     const result = await response.json().catch(() => null);
-    const videoUrl = result?.result?.video;
+    const videoUrl = extractVideoUrl(result);
     if (!response.ok || result?.success === false || !isTrustedGeneratedVideoUrl(videoUrl)) {
       const providerStatus = response.status;
       console.error("Aahana video provider request failed:", {
