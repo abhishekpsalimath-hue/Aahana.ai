@@ -655,11 +655,24 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     setImageProcessing(true);
     setError("");
     try {
+      let sourceFile = imageFile;
+      if (imageFile.type === "image/webp") {
+        if (typeof createImageBitmap !== "function") throw new Error("This browser cannot prepare WebP images for editing. Choose a JPEG or PNG instead.");
+        const bitmap = await createImageBitmap(imageFile);
+        const canvas = document.createElement("canvas");
+        canvas.width = bitmap.width;
+        canvas.height = bitmap.height;
+        canvas.getContext("2d")?.drawImage(bitmap, 0, 0);
+        bitmap.close();
+        const converted = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.82));
+        if (!converted) throw new Error("Could not convert this WebP image. Choose a JPEG or PNG instead.");
+        sourceFile = new File([converted], imageFile.name.replace(/\.webp$/i, ".jpg"), { type: "image/jpeg" });
+      }
       const imageDataUrl = await new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => typeof reader.result === "string" ? resolve(reader.result) : reject(new Error("Could not read the selected image."));
         reader.onerror = () => reject(new Error("Could not read the selected image."));
-        reader.readAsDataURL(imageFile);
+        reader.readAsDataURL(sourceFile);
       });
       const response = await fetch("/api/images/process", {
         method: "POST",
@@ -1324,6 +1337,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                     if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) { setError("Choose a PNG, JPEG or WebP image."); return; }
                     if (file.size > 2 * 1024 * 1024) { setError("Images must be 2 MB or smaller."); return; }
                     setError("");
+                    setProcessedImage(null);
                     setImageFile(file);
                   }} />
               </label>
