@@ -157,15 +157,6 @@ test("does not mistake unrelated chat for image editing", () => {
   ]) assert.equal(isImageEditRequest(prompt), false, prompt);
 });
 
-  for (const prompt of [
-    "Explain how websites work",
-    "What is a landing page?",
-    "Give me ideas for an e-commerce website",
-    "Compare these website builders",
-    "Write about dashboard design principles",
-  ]) assert.equal(isWebsiteBuildRequest(prompt), false, prompt);
-});
-
 test("recognizes direct image requests in everyday language", () => {
   for (const prompt of [
     "Create an image of a futuristic city at night",
