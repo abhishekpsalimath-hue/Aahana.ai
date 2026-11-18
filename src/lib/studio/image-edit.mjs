@@ -38,7 +38,8 @@ export function buildImageEditPrompt(style = "cartoon", instructions = {}) {
 export function parseImageEditInput(dataUrl, maxBytes = 4 * 1024 * 1024) {
   if (typeof dataUrl !== "string") return null;
   const match = dataUrl.match(/^data:(image\/(?:png|jpeg|webp));base64,([A-Za-z0-9+/]+={0,2})$/);
-  if (!match) return null;
+  if (!match || match[2].length % 4 !== 0) return null;
+  if (!Number.isFinite(maxBytes) || maxBytes < 1) return null;
   const estimatedBytes = Math.floor(match[2].length * 3 / 4) - (match[2].endsWith("==") ? 2 : match[2].endsWith("=") ? 1 : 0);
   if (estimatedBytes < 1 || estimatedBytes > maxBytes) return null;
   return { mimeType: match[1], base64: match[2], estimatedBytes };
