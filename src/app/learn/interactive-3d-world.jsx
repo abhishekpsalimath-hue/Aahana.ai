@@ -834,7 +834,7 @@ export function Mini3DModel({ modelId = "planet" }) {
 }
 
 export default function Interactive3DWorld({ selectedPlanet, onSelectedPlanetChange }) {
-  const [modelId, setModelId] = useState("solar-system");
+  const [modelId, setModelId] = useState("cell");
   const [rotation, setRotation] = useState({ yaw: -.55, pitch: -.22 });
   const [zoom, setZoom] = useState(1);
   const [conceptIndex, setConceptIndex] = useState(0);
