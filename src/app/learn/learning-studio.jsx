@@ -5,8 +5,12 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import "./learning-studio.css";
 import AnimatedLesson, { AnimatedVisual, readMotionLesson } from "./animated-lesson";
+import { learningCategories, allLearningSubjects } from "@/lib/learning/learning-catalog";
 const Interactive3DWorld = dynamic(() => import("./interactive-3d-world"), { ssr: false, loading: () => <div role="status">Preparing interactive 3D learning…</div> });
 const Mini3DModel = dynamic(() => import("./interactive-3d-world").then((module) => module.Mini3DModel), { ssr: false });
+
+const subjects = allLearningSubjects;
+const curricula = ["Not specified", "CBSE", "ICSE", "Karnataka State Board", "Other Indian State Board", "Cambridge International", "International Baccalaureate (IB)", "England National Curriculum", "US Common Core", "Other / help me choose"];
 
 const learningModes = [
   { id: "story", title: "Story Mode", icon: "✦", detail: "Turn a difficult idea into a memorable story.", prompt: "Teach me through a vivid, age-appropriate story. Introduce the concept naturally, then connect each part of the story to the real idea." },
