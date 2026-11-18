@@ -1,9 +1,14 @@
 const MAX_FIELD_LENGTH = 100;
 const QUIZ_PACK_SCHEMA_VERSION = 1;
 
-function cleanField(value, fallback = "") {
+function cleanField(value, fallback = "", maxLength = MAX_FIELD_LENGTH) {
   if (typeof value !== "string") return fallback;
-  return value.normalize("NFKC").replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, MAX_FIELD_LENGTH);
+  return value.normalize("NFKC").replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, maxLength);
+}
+
+function fitsFieldLimit(value, maxLength) {
+  return typeof value === "string" &&
+    value.normalize("NFKC").replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().length <= maxLength;
 }
 
 function keyPart(value) {
@@ -28,7 +33,7 @@ export function createQuizPackKey(input = {}) {
 }
 
 function normalizeQuestionText(value) {
-  return cleanField(value).toLocaleLowerCase("en-US").replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+  return cleanField(value, "", 500).toLocaleLowerCase("en-US").replace(/[^\p{L}\p{N}]+/gu, " ").trim();
 }
 
 /**
@@ -103,16 +108,18 @@ export function validateQuizPack(value, { minQuestions = 5, maxQuestions = 10 } 
 
   for (const item of value.questions) {
     if (!item || typeof item !== "object" || Array.isArray(item)) return null;
-    const question = cleanField(item.question);
-    const explanation = cleanField(item.explanation);
-    const hint = cleanField(item.hint);
+    if (!fitsFieldLimit(item.question, 500) || !fitsFieldLimit(item.explanation, 1200) || !fitsFieldLimit(item.hint, 300)) return null;
+    const question = cleanField(item.question, "", 500);
+    const explanation = cleanField(item.explanation, "", 1200);
+    const hint = cleanField(item.hint, "", 300);
     if (!question || question.length < 8 || !explanation || !hint) return null;
     const stemKey = normalizeQuestionText(question);
     if (seenStems.has(stemKey)) return null;
     seenStems.add(stemKey);
 
     if (!Array.isArray(item.options) || item.options.length !== 4) return null;
-    const options = item.options.map((option) => cleanField(option));
+    if (item.options.some((option) => !fitsFieldLimit(option, 180))) return null;
+    const options = item.options.map((option) => cleanField(option, "", 180));
     const optionKeys = options.map(normalizeQuestionText);
     if (options.some((option) => !option) || new Set(optionKeys).size !== 4) return null;
     if (!Number.isInteger(item.correctIndex) || item.correctIndex < 0 || item.correctIndex > 3) return null;
