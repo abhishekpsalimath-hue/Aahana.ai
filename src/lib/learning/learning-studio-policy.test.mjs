@@ -11,6 +11,7 @@ const workspacePath = fileURLToPath(new URL("../../app/assistant-workspace.jsx",
 const worldPath = fileURLToPath(new URL("../../app/learn/interactive-3d-world.jsx", import.meta.url));
 const imageGenerationRoutePath = fileURLToPath(new URL("../../app/api/images/generate/route.js", import.meta.url));
 const studioPath = fileURLToPath(new URL("../../app/learn/learning-studio.jsx", import.meta.url));
+const quizBankPolicyPath = fileURLToPath(new URL("./quiz-bank-policy.mjs", import.meta.url));
 const animatedPath = fileURLToPath(new URL("../../app/learn/animated-lesson.jsx", import.meta.url));
 const learningMemoryPath = fileURLToPath(new URL("../../app/api/learning-journey/route.js", import.meta.url));
 const route = readFileSync(routePath, "utf8");
@@ -18,6 +19,7 @@ const workspace = readFileSync(workspacePath, "utf8");
 const world = readFileSync(worldPath, "utf8");
 const imageGenerationRoute = readFileSync(imageGenerationRoutePath, "utf8");
 const studio = readFileSync(studioPath, "utf8");
+const quizBankPolicy = readFileSync(quizBankPolicyPath, "utf8");
 const animated = readFileSync(animatedPath, "utf8");
 const learningMemoryRoute = readFileSync(learningMemoryPath, "utf8");
 const stylesPath = fileURLToPath(new URL("../../app/learn/learning-studio.css", import.meta.url));
@@ -106,9 +108,9 @@ test("Play and Solve requests a strict structured quiz from the tutor", () => {
 
 test("Learning Studio validates and renders interactive quizzes with feedback and scoring", () => {
   assert.match(studio, /function readQuizPayload\(content\)/);
-  assert.match(studio, /value\?\.type !== "aahana_quiz_v1"/);
-  assert.match(studio, /item\.options\.length === 4/);
-  assert.match(studio, /Number\.isInteger\(item\.correctIndex\)/);
+  assert.match(quizBankPolicy, /value\.type !== "aahana_quiz_v1"/);
+  assert.match(quizBankPolicy, /item\.options\.length !== 4/);
+  assert.match(quizBankPolicy, /Number\.isInteger\(item\.correctIndex\)/);
   assert.match(studio, /function InteractiveQuiz\(\{ quiz, profile, memoryEnabled, onSaveProgress \}\)/);
   assert.match(studio, /function choose\(index, optionIndex\)/);
   assert.match(studio, /discovered/);
@@ -132,8 +134,8 @@ test("all learning modes receive animation-first visual teaching and non-shaming
 
 test("quiz answers reveal a left-side visual for both correct and incorrect selections", () => {
   assert.match(route, /hint \(string\)/);
-  assert.match(studio, /typeof item\.hint === "string" && item\.hint\.trim\(\)/);
-  assert.match(studio, /supportedQuizVisuals\.includes\(item\.visual\)/);
+  assert.match(quizBankPolicy, /const hint = cleanField\(item\.hint\)/);
+  assert.match(quizBankPolicy, /supportedQuizVisuals\.includes\(item\.visual\)/);
   assert.match(studio, /selectedOptions/);
   assert.match(studio, /className="learning-quiz-visual-box"/);
   assert.match(studio, /Your visual appears here/);
@@ -612,9 +614,9 @@ test("Student Mode quiz generation scales across open-ended topics with 3D-first
   assert.match(route, /open-ended subjects/);
   assert.match(route, /create new questions and vary the concepts/);
   assert.match(route, /Prefer a relevant 3D visual/);
-  assert.match(studio, /3d-plant-cell/);
-  assert.match(studio, /3d-heart/);
-  assert.match(studio, /3d-ecosystem/);
+  assert.match(quizBankPolicy, /3d-plant-cell/);
+  assert.match(quizBankPolicy, /3d-heart/);
+  assert.match(quizBankPolicy, /3d-ecosystem/);
 });
 
 test("Student Mode now offers category, topic and all six learning modes from the discovery panel", () => {
@@ -623,7 +625,7 @@ test("Student Mode now offers category, topic and all six learning modes from th
   assert.match(studio, /learningModes\.map\(\(mode\)/);
   assert.match(studio, /Start a 10-question quiz/);
   assert.match(studio, /Explore \{subject\}/);
-  assert.match(studio, /questions\.length > 10/);
+  assert.match(quizBankPolicy, /value\.questions\.length > maxQuestions/);
   assert.match(route, /fresh set of 5 to 10 multiple-choice questions/);
   assert.match(route, /10,000\+ quiz sets/);
 });
@@ -631,7 +633,7 @@ test("Student Mode now offers category, topic and all six learning modes from th
 test("Student Mode opens its 3D explorer on biology and supports a physics cart model", () => {
   assert.match(world, /useState\("cell"\)/);
   assert.match(animated, /"3d-cart": "cart"/);
-  assert.match(studio, /"3d-cart"/);
+  assert.match(quizBankPolicy, /"3d-cart"/);
   assert.match(route, /3d-cart/);
   assert.doesNotMatch(studio, /<SpaceFunQuiz \/>/);
 });
