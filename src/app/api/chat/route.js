@@ -51,11 +51,43 @@ export async function POST(request) {
     }, { status: 503 });
   }
 
+  // Bound the raw request before JSON parsing. This protects the function from
+  // oversized bodies even when a client omits Content-Length or streams the body.
+  const MAX_REQUEST_BYTES = 3 * 1024 * 1024;
+  const declaredLength = Number(request.headers.get("content-length"));
+  if (Number.isFinite(declaredLength) && declaredLength > MAX_REQUEST_BYTES) {
+    return NextResponse.json({ error: "The request is too large. Please use one image under 2 MB." }, { status: 413 });
+  }
+
   let body;
+  if (!request.body) {
+    return NextResponse.json({ error: "Invalid request." }, { status: 400 });
+  }
+  const requestReader = request.body.getReader();
+  const requestChunks = [];
+  let requestBytes = 0;
   try {
-    body = await request.json();
+    while (true) {
+      const { value, done } = await requestReader.read();
+      if (done) break;
+      requestBytes += value.byteLength;
+      if (requestBytes > MAX_REQUEST_BYTES) {
+        await requestReader.cancel().catch(() => {});
+        return NextResponse.json({ error: "The request is too large. Please use one image under 2 MB." }, { status: 413 });
+      }
+      requestChunks.push(value);
+    }
+    const rawBody = new Uint8Array(requestBytes);
+    let offset = 0;
+    for (const chunk of requestChunks) {
+      rawBody.set(chunk, offset);
+      offset += chunk.byteLength;
+    }
+    body = JSON.parse(new TextDecoder().decode(rawBody));
   } catch {
     return NextResponse.json({ error: "Invalid request." }, { status: 400 });
+  } finally {
+    requestReader.releaseLock();
   }
 
   const prompt = typeof body?.message === "string" ? body.message.trim() : "";
