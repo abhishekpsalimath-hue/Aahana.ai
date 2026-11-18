@@ -82,6 +82,20 @@ test("recognizes mixed-language visual creation requests", () => {
   ]) assert.equal(isImageGenerationRequest(prompt), true, prompt);
 });
 
+test("does not block image creation when the user says to share the result", () => {
+  assert.equal(isImageGenerationRequest("Create a poster for my cafe and share it"), true);
+  assert.equal(isImageGenerationRequest("Make a logo and send it to me"), true);
+});
+
+test("keeps explicit upload and attachment requests out of image generation", () => {
+  for (const prompt of [
+    "Upload this image",
+    "Please attach the photo",
+    "Photo upload maadi",
+    "Send this picture",
+  ]) assert.equal(isImageGenerationRequest(prompt), false, prompt);
+});
+
 test("does not treat unrelated romanized chat as image generation", () => {
   for (const prompt of [
     "Nanna mane ellide",
@@ -143,6 +157,17 @@ test("recognizes natural-language image editing requests when an image is attach
     "Background remove maadi",
     "Colour blue maadi",
     "Sky change karo",
+  ]) assert.equal(isImageEditRequest(prompt), true, prompt);
+});
+
+test("recognizes native-script Hindi and Kannada image edits", () => {
+  for (const prompt of [
+    "पृष्ठभूमि हटाओ",
+    "रंग नीला करो",
+    "आकाश बदल दीजिए",
+    "ಹಿನ್ನೆಲೆ ತೆಗೆದುಹಾಕಿ",
+    "ಬಣ್ಣ ನೀಲಿ ಮಾಡಿ",
+    "ಆಕಾಶ ಬದಲಿಸಿ",
   ]) assert.equal(isImageEditRequest(prompt), true, prompt);
 });
 
