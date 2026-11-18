@@ -25,7 +25,7 @@ on:
       - "src/app/api/images/edit/route.js"
       - "src/app/learn/native-motion-studio.jsx"
       - "src/lib/studio/motion-engine.*"
-      - "src/lib/studio/native-motion-studio.test.mjs"
+      - "src/lib/studio/native-motion-studio.test.mjs src/lib/learning/project-upload-policy.test.mjs"
       - ".github/workflows/student-quiz-guards.yml"
   pull_request:
     paths:
