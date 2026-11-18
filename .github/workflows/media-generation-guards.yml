@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - "fix/aahana-media-generation-live"
+      - "fix/aahana-parallel-media-generation"
     paths:
       - "src/app/assistant-workspace.jsx"
       - "src/app/api/images/generate/route.js"

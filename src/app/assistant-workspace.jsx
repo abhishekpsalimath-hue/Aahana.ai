@@ -322,7 +322,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   }
 
   function newConversation() {
-    if (busy || imageGenerating) return;
+    if (busy || imageGenerating || videoGenerating) return;
     setPrompt("");
     setMessages([]);
     setConversationId(null);
@@ -481,11 +481,10 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   }
 
   async function generateVideo(videoPrompt = prompt.trim()) {
-    if (!videoPrompt || videoGenerating || imageGenerating || busy || imageFile) return;
+    if (!videoPrompt || videoGenerating || busy || imageFile) return;
     setVideoGenerating(true);
     setError("");
     setGeneratedVideo(null);
-    setPrompt("");
     setMessages((current) => [...current,
       { role: "user", content: videoPrompt },
       { role: "assistant", content: "Creating your video…" },
@@ -577,7 +576,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   }
 
   function selectProject(id) {
-    if (busy || imageGenerating) return;
+    if (busy || imageGenerating || videoGenerating) return;
     setSelectedProjectId(id);
     setConversationId(null);
     setMessages([]);
@@ -1031,11 +1030,11 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
               </label>
               {imageFile && <span className="image-attach-name">{imageFile.name} <button type="button" onClick={() => setImageFile(null)}>Remove</button></span>}
               <button className="copy-message" type="button" onClick={generateImage}
-                disabled={!prompt.trim() || imageGenerating || videoGenerating || busy || Boolean(imageFile)}>
+                disabled={!prompt.trim() || imageGenerating || busy || Boolean(imageFile)}>
                 {imageGenerating ? "Creating image…" : "Generate image"}
               </button>
               <button className="copy-message" type="button" onClick={() => generateVideo()}
-                disabled={!prompt.trim() || videoGenerating || imageGenerating || busy || Boolean(imageFile)}>
+                disabled={!prompt.trim() || videoGenerating || busy || Boolean(imageFile)}>
                 {videoGenerating ? "Creating video…" : "Generate video"}
               </button>
             </div>
