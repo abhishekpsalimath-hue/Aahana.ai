@@ -341,7 +341,12 @@ export async function POST(request) {
       body: JSON.stringify({
         model: image && isGroq ? (process.env.AAHANA_VISION_MODEL || "qwen/qwen3.8-27b") : model,
         stream: !requiresLiveResearch,
-        ...(isGroq ? { max_completion_tokens: 4096 } : { max_tokens: 4096 }),
+        // Reserve stronger deliberation for implementation and complex improvement work.
+        // Groq documents medium/high reasoning effort for GPT-OSS 120B and Qwen 3.8 27B.
+        ...(isGroq ? {
+          reasoning_effort: mode === "build" || mode === "improve" ? "high" : "medium",
+          max_completion_tokens: 4096,
+        } : { max_tokens: 4096 }),
         messages: [
           { role: "system", content: systemPrompt },
           ...(mode === "learn" ? [{
