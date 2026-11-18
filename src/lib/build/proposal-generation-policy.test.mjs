@@ -91,6 +91,21 @@ test("rejects a newly introduced missing named export and missing local source f
   }), /unresolved local source imports/);
 });
 
+test("does not misclassify missing static asset imports as source-module failures", () => {
+  const currentFiles = [
+    { path: "src/page.ts", content: "export const page = true;" },
+  ];
+  const result = validateProposalContracts({
+    currentFiles,
+    proposalChanges: [{
+      path: "src/page.ts",
+      action: "update",
+      after: 'import "./logo.png";\\nexport const page = true;',
+    }],
+  });
+  assert.equal(result.introducedUnresolvedLocalImports, 0);
+});
+
 test("allows existing unresolved imports so legacy project debt does not block a proposal", () => {
   const currentFiles = [
     { path: "src/page.ts", content: 'import { legacy } from "./legacy";' },
