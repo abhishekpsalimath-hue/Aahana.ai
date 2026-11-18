@@ -3,15 +3,17 @@
  * Never accept provider credentials from browser-controlled request headers.
  */
 export function resolveAiProviderConfig(env = process.env) {
-  const provider = String(env.AAHANA_AI_PROVIDER || "groq").toLowerCase();
+  const provider = String(env.AAHANA_AI_PROVIDER || "groq").trim().toLowerCase();
   if (!["groq", "vercel"].includes(provider)) {
     return { ok: false, error: "unsupported-provider", provider };
   }
   const isGroq = provider === "groq";
-  const apiKey = isGroq
+  const configuredKey = isGroq
     ? env.GROQ_API_KEY
     : (env.AI_GATEWAY_API_KEY || env.VERCEL_OIDC_TOKEN);
-  const model = env.AAHANA_MODEL || (isGroq ? "openai/gpt-oss-120b" : "");
+  const apiKey = typeof configuredKey === "string" ? configuredKey.trim() : "";
+  const configuredModel = env.AAHANA_MODEL || (isGroq ? "openai/gpt-oss-120b" : "");
+  const model = typeof configuredModel === "string" ? configuredModel.trim() : "";
   if (!apiKey || !model) {
     return { ok: false, error: "missing-credentials", provider };
   }
