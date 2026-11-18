@@ -45,6 +45,12 @@ function readQuizPayload(content) {
   }
 }
 
+function looksLikeIncompleteQuizPayload(content) {
+  if (typeof content !== "string") return false;
+  const cleaned = content.trim().replace(/^\s*```(?:json)?\s*/i, "");
+  return cleaned.startsWith("{") && (/"questions"/i.test(cleaned) || /"type"\s*:\s*"aahana_quiz_v1"/i.test(cleaned));
+}
+
 function InteractiveQuiz({ quiz, profile, memoryEnabled, onSaveProgress }) {
   const [answers, setAnswers] = useState({});
   const [selectedOptions, setSelectedOptions] = useState({});
@@ -410,6 +416,15 @@ export default function LearningStudio({ userEmail = "" }) {
                   />
                 : item.role === "assistant" && busy && index === messages.length - 1
                   ? <div className="learning-thinking"><i /><i /><i /> {messageMode === "play" ? "Building your quiz" : "Building your interactive lesson"}</div>
+                  : item.role === "assistant" && messageMode === "play" && looksLikeIncompleteQuizPayload(item.content)
+                    ? <div className="learning-quiz-feedback encouraging" role="status">
+                        <strong>I couldn’t build a complete quiz this time.</strong>
+                        <p>Your quiz needs at least 10 valid questions. Nothing incomplete will be shown as a finished quiz.</p>
+                        <button type="button" disabled={busy} onClick={() => {
+                          const previousQuestion = messages.slice(0, index).reverse().find((message) => message.role === "user")?.content;
+                          if (previousQuestion) startLearning(null, previousQuestion, false, item.profile || { gradeBand, subject, curriculum, language, learningMode: messageMode });
+                        }}>Try generating the quiz again</button>
+                      </div>
                   : item.role === "assistant" && messageMode !== "play"
                     ? <AnimatedLesson
                         content={item.content}
