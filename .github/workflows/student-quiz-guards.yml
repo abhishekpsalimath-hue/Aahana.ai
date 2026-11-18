@@ -34,6 +34,7 @@ on:
       - "src/lib/studio/motion-engine.*"
       - "src/lib/learning/learning-studio-policy.test.mjs"
       - "src/lib/learning/student-journey-ui.test.mjs"
+      - "src/lib/studio/native-motion-studio.test.mjs"
       - ".github/workflows/student-quiz-guards.yml"
   workflow_dispatch:
 
