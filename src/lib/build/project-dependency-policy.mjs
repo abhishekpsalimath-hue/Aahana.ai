@@ -220,16 +220,24 @@ function collectExportedSymbols(source) {
 function collectApiHandlerContracts(source, exports) {
   const text = stripComments(source);
   const methods = new Set(["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"]);
-  return exports
-    .filter((item) => methods.has(item.name))
-    .map((item) => ({
-      method: item.name,
-      readsJsonBody: /\brequest\s*\.\s*json\s*\(/.test(text),
-      readsFormData: /\brequest\s*\.\s*formData\s*\(/.test(text),
-      readsSearchParams: /\b(?:request\s*\.\s*nextUrl\s*\.\s*searchParams|url\s*\.\s*searchParams)/.test(text),
-      returnsJson: /\b(?:NextResponse|Response)\s*\.\s*json\s*\(/.test(text),
-      usesNextResponse: /\bNextResponse\s*\.\s*json\s*\(/.test(text),
-    }));
+  const exportedMethods = [];
+  const pattern = /\\bexport\\s+(?:(?:async\\s+)?function\\s+([A-Z]+)|const\\s+([A-Z]+)\\s*=)/g;
+  for (const match of text.matchAll(pattern)) {
+    const method = match[1] || match[2];
+    if (methods.has(method)) exportedMethods.push({ method, index: match.index });
+  }
+  return exportedMethods.map(({ method, index }, position) => {
+    const nextIndex = exportedMethods[position + 1]?.index ?? text.length;
+    const handlerSource = text.slice(index, nextIndex);
+    return {
+      method,
+      readsJsonBody: /\\brequest\\s*\\.\\s*json\\s*\\(/.test(handlerSource),
+      readsFormData: /\\brequest\\s*\\.\\s*formData\\s*\\(/.test(handlerSource),
+      readsSearchParams: /\\b(?:request\\s*\\.\\s*nextUrl\\s*\\.\\s*searchParams|url\\s*\\.\\s*searchParams)/.test(handlerSource),
+      returnsJson: /\\b(?:NextResponse|Response)\\s*\\.\\s*json\\s*\\(/.test(handlerSource),
+      usesNextResponse: /\\bNextResponse\\s*\\.\\s*json\\s*\\(/.test(handlerSource),
+    };
+  });
 }
 
 function collectImportedBindings(source) {
