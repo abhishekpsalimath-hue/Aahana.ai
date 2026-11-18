@@ -133,7 +133,7 @@ test("prepares photo input within the model's 512px reference-image limit", asyn
   assert.match(source, /outputScale = 1024/);
 });
 
-test("Image Studio offers a local original-photo colour-grade export without an AI request", async () => {
+test("Image Studio exports original photos with free local grading and transforms", async () => {
   const source = await readFile(new URL("../../app/learn/native-image-studio.jsx", import.meta.url), "utf8");
   assert.match(source, /exportOriginalPhotoWithLocalGrade/);
   assert.match(source, /Export edited photo \(free\)/);
