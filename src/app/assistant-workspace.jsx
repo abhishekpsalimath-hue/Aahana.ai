@@ -9,6 +9,7 @@ import { shouldFallbackToDeviceSpeech } from "@/lib/voice/speech-fallback-policy
 import { detectImageEditStyleFromPrompt, isImageEditRequest, prepareImageForEditing } from "@/lib/studio/image-edit.mjs";
 import { getProjectUploadKind } from "@/lib/learning/project-upload-policy.mjs";
 import { getSafeCodeFilePath, getCodeDownloadName } from "@/lib/assistant/code-file-policy.mjs";
+import { createStoredZip, extractProjectFiles } from "@/lib/assistant/project-zip.mjs";
 
 const modes = [
   { id: "solve", label: "Solve", hint: "Work through a problem" },
@@ -69,6 +70,8 @@ const modePlaceholders = {
 function renderAssistantContent(content) {
   const nodes = [];
   const source = String(content || "");
+  const projectFiles = extractProjectFiles(source);
+  const firstProjectPath = projectFiles[0]?.path;
   const codeBlock = /\`\`\`([^\n]*)\n([\s\S]*?)\`\`\`/g;
   const citationLink = /\[([^\]]+)\]\((https:\/\/[^\s)]+)\)/g;
   let lastIndex = 0;
@@ -120,6 +123,24 @@ function renderAssistantContent(content) {
                 anchor.remove();
                 window.setTimeout(() => URL.revokeObjectURL(url), 1000);
               }}>Download file</button>
+            )}
+            {safeFilePath === firstProjectPath && projectFiles.length > 1 && (
+              <button type="button" onClick={() => {
+                try {
+                  const archive = createStoredZip(projectFiles);
+                  const url = URL.createObjectURL(new Blob([archive], { type: "application/zip" }));
+                  const anchor = document.createElement("a");
+                  anchor.href = url;
+                  anchor.download = "aahana-project.zip";
+                  anchor.rel = "noopener";
+                  document.body.appendChild(anchor);
+                  anchor.click();
+                  anchor.remove();
+                  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+                } catch {
+                  // Individual file downloads remain available if ZIP creation fails.
+                }
+              }}>Download project ZIP ({projectFiles.length} files)</button>
             )}
             <button type="button" onClick={() => navigator.clipboard?.writeText(code).catch(() => {})}>Copy code</button>
           </div>
