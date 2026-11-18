@@ -196,6 +196,99 @@ function packageName(specifier) {
   return specifier.startsWith("@") ? parts.slice(0, 2).join("/") : parts[0];
 }
 
+function collectExportedSymbols(source) {
+  const text = stripComments(source);
+  const symbols = new Map();
+  const declarationPattern = /\\bexport\\s+(?:declare\\s+)?(?:default\\s+)?(?:async\\s+)?(function|class|const|let|var|interface|type|enum)\\s+([A-Za-z_$][\\w$]*)/g;
+  for (const match of text.matchAll(declarationPattern)) {
+    symbols.set(match[2], match[1]);
+  }
+  const defaultFunction = /\\bexport\\s+default\\s+(?:async\\s+)?(?:function|class)\\b/.test(text);
+  if (/\\bexport\\s+default\\s+(?!function\\b|class\\b)/.test(text) || defaultFunction) {
+    symbols.set("default", "default");
+  }
+  for (const match of text.matchAll(/\\bexport\\s*\\{([^}]+)\\}(?:\\s*from\\s*["'][^"']+["'])?/g)) {
+    for (const item of match[1].split(",")) {
+      const parts = item.trim().split(/\\s+as\\s+/);
+      const exported = (parts[1] || parts[0] || "").trim();
+      if (/^[A-Za-z_$][\\w$]*$/.test(exported)) symbols.set(exported, "re-export");
+    }
+  }
+  return [...symbols].map(([name, kind]) => ({ name, kind }));
+}
+
+function collectImportedBindings(source) {
+  const text = stripComments(source);
+  const imports = [];
+  const pattern = /\\bimport\\s+(?!\\()([^;\\n]+?)\\s+from\\s*["']([^"']+)["']/g;
+  for (const match of text.matchAll(pattern)) {
+    const clause = match[1].trim();
+    const bindings = [];
+    const defaultMatch = clause.match(/^([A-Za-z_$][\\w$]*)/);
+    if (defaultMatch && defaultMatch[1] !== "type") bindings.push({ imported: "default", local: defaultMatch[1] });
+    const namedMatch = clause.match(/\\{([^}]+)\\}/);
+    if (namedMatch) {
+      for (const item of namedMatch[1].split(",")) {
+        const normalized = item.trim().replace(/^type\\s+/, "");
+        if (!normalized) continue;
+        const parts = normalized.split(/\\s+as\\s+/);
+        if (/^[A-Za-z_$][\\w$]*$/.test(parts[0])) {
+          bindings.push({ imported: parts[0], local: (parts[1] || parts[0]).trim() });
+        }
+      }
+    }
+    const namespaceMatch = clause.match(/\\*\\s+as\\s+([A-Za-z_$][\\w$]*)/);
+    if (namespaceMatch) bindings.push({ imported: "*", local: namespaceMatch[1] });
+    imports.push({ specifier: match[2], bindings });
+  }
+  return imports;
+}
+
+/**
+ * Reports visible module exports/import bindings and lightweight typed component
+ * prop references. This is static text analysis, not a TypeScript/JSX parser.
+ */
+export function analyzeProjectContracts(files) {
+  const records = Array.isArray(files) ? files : [];
+  const graph = analyzeProjectDependencies(records);
+  const byPath = new Map(records.map((file) => [normalizePath(file?.path || file?.original_filename), file]));
+  const modules = [];
+  const bindingRelationships = [];
+  const unresolvedBindings = [];
+
+  for (const [path, file] of byPath) {
+    if (!path || typeof file?.content !== "string") continue;
+    const exports = collectExportedSymbols(file.content);
+    const imports = collectImportedBindings(file.content);
+    const propTypes = [];
+    const propPattern = /\\b(?:function|const|let)\\s+([A-Za-z_$][\\w$]*)[\\s\\S]{0,180}?\\(\\s*\\{[^}]*\\}\\s*:\\s*([A-Za-z_$][\\w$]*(?:\\.[A-Za-z_$][\\w$]*)*)/g;
+    for (const match of stripComments(file.content).matchAll(propPattern)) {
+      propTypes.push({ component: match[1], typeName: match[2] });
+    }
+    modules.push({ path, exports, imports, propTypes });
+
+    for (const entry of imports) {
+      const target = resolveLocalImport(path, entry.specifier, new Set(byPath.keys())) ||
+        resolveAliasImport(entry.specifier, readAliasConfig(byPath), new Set(byPath.keys()));
+      if (!target) continue;
+      const targetExports = new Set((modules.find((item) => item.path === target)?.exports ||
+        collectExportedSymbols(byPath.get(target)?.content || "")).map((item) => item.name));
+      for (const binding of entry.bindings) {
+        if (binding.imported === "*" || targetExports.has(binding.imported)) {
+          bindingRelationships.push({ from: path, to: target, imported: binding.imported, local: binding.local, status: "matched" });
+        } else {
+          unresolvedBindings.push({ from: path, to: target, imported: binding.imported, local: binding.local });
+        }
+      }
+    }
+  }
+  return Object.freeze({
+    modules: Object.freeze(modules),
+    bindingRelationships: Object.freeze(bindingRelationships),
+    unresolvedBindings: Object.freeze(unresolvedBindings),
+  });
+}
+
 /**
  * Builds a conservative static import graph from the supplied source snapshot.
  * It never executes source code and does not resolve package aliases by guessing.
