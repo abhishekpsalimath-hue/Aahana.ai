@@ -12,10 +12,9 @@ export default function SharePage() {
     <main className={styles.page}>
       <div className={styles.ambient} aria-hidden="true">
         <span className={styles.glow} />
-        <span className={styles.starOne} />
-        <span className={styles.starTwo} />
-        <span className={styles.starThree} />
-        <span className={styles.starFour} />
+        <div className={styles.starField}>
+          {Array.from({ length: 20 }, (_, index) => <span key={index} />)}
+        </div>
       </div>
 
       <header className={styles.header}>
