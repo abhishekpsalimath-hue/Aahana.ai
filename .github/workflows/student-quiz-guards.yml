@@ -29,6 +29,7 @@ on:
       - ".github/workflows/student-quiz-guards.yml"
   pull_request:
     paths:
+      - "src/app/assistant-workspace.jsx"
       - "src/app/api/chat/route.js"
       - "src/app/learn/learning-studio.jsx"
       - "src/app/learn/learning-studio.css"
