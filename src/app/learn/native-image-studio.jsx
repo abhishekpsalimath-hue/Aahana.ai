@@ -69,9 +69,29 @@ export default function NativeImageStudio() {
     } finally { setGenerating(false); }
   }
 
-  function exportGeneratedImage() {
+  async function exportGeneratedImage() {
     if (!generatedImage) return;
-    const anchor = document.createElement("a"); anchor.href = generatedImage; anchor.download = "aahana-original-image.jpg"; anchor.click();
+    try {
+      const image = new Image();
+      image.src = generatedImage;
+      await new Promise((resolve, reject) => { image.onload = resolve; image.onerror = reject; });
+      const canvas = document.createElement("canvas");
+      canvas.width = image.naturalWidth;
+      canvas.height = image.naturalHeight;
+      const context = canvas.getContext("2d");
+      if (!context) throw new Error("Image export canvas is unavailable.");
+      context.filter = gradeFilter;
+      context.drawImage(image, 0, 0);
+      context.filter = "none";
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+      if (!blob) throw new Error("The graded image could not be encoded.");
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a"); anchor.href = url; anchor.download = "aahana-graded-image.png"; anchor.click();
+      URL.revokeObjectURL(url);
+      setStatus("Generated image exported with the selected colour grade.");
+    } catch (error) {
+      setStatus(error?.message || "Could not export the graded image.");
+    }
   }
 
   function exportSvg() {
