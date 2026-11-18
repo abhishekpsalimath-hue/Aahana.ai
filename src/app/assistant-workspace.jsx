@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { findBestSpeechVoice } from "@/lib/voice/browser-capabilities.mjs";
 import { inferSpeechLocale } from "@/lib/voice/locale-detection.mjs";
 import { shouldFallbackToDeviceSpeech } from "@/lib/voice/speech-fallback-policy.mjs";
-import { isImageEditRequest, isImageGenerationRequest } from "@/lib/ai/image-intent-policy.mjs";
+import { isImageEditRequest, isImageGenerationRequest, isWebsiteBuildRequest } from "@/lib/ai/image-intent-policy.mjs";
 
 const modes = [
   { id: "solve", label: "Solve", hint: "Work through a problem" },
@@ -938,6 +938,8 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       return;
     }
 
+    const requestMode = mode === "build" || isWebsiteBuildRequest(text) ? "build" : mode;
+    if (requestMode !== mode) setMode(requestMode);
     setPrompt("");
     setError("");
     setBusy(true);
@@ -963,7 +965,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text || "Please identify and describe this image in detail.", image: imageDataUrl ? { dataUrl: imageDataUrl } : null, mode, conversationId, projectId: selectedProjectId }),
+        body: JSON.stringify({ message: text || "Please identify and describe this image in detail.", image: imageDataUrl ? { dataUrl: imageDataUrl } : null, mode: requestMode, conversationId, projectId: selectedProjectId }),
       });
 
       if (!response.ok) {
