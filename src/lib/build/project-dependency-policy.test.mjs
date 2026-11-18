@@ -179,7 +179,7 @@ test("maps imported bindings to target exports and flags missing named exports",
 
 test("reports route handler exports and avoids inventing bindings for absent source files", () => {
   const result = analyzeProjectContracts([
-    { path: "src/app/api/items/route.js", content: 'export async function GET() {}\\nexport async function POST() {}' },
+    { path: "src/app/api/items/route.js", content: 'export async function GET() {}\nexport async function POST() {}' },
     { path: "src/client.js", content: 'import { GET } from "./app/api/items/route.js";' },
   ]);
   const route = result.modules.find((module) => module.path.endsWith("/route.js"));
