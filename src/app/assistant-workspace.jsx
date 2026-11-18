@@ -44,7 +44,7 @@ function renderInlineMarkdown(value, prefix) {
   while ((match = pattern.exec(value)) !== null) {
     if (match.index > lastIndex) nodes.push(value.slice(lastIndex, match.index));
     const token = match[0];
-    if (token.startsWith("\`")) {
+    if (token.charCodeAt(0) === 96) {
       nodes.push(<code className="inline-code" key={prefix + "-inline-" + key++}>{token.slice(1, -1)}</code>);
     } else if (token.startsWith("**")) {
       nodes.push(<strong key={prefix + "-strong-" + key++}>{token.slice(2, -2)}</strong>);
@@ -127,7 +127,7 @@ function renderMarkdownText(value, prefix) {
 function renderAssistantContent(content, onCopyCode) {
   const source = String(content || "");
   const nodes = [];
-  const fence = /\`\`\`([a-zA-Z0-9_+.-]*)[ \t]*\n([\s\S]*?)\`\`\`/g;
+  const fence = /\x60{3}([a-zA-Z0-9_+.-]*)[ \t]*\n([\s\S]*?)\x60{3}/g;
   let lastIndex = 0;
   let match;
   let key = 0;
@@ -244,13 +244,13 @@ function evaluateArithmetic(input) {
 export default function Home({ userEmail = "", aiEnabled = false }) {
   const router = useRouter();
   const conversationEndRef = useRef(null);
-  useEffect(() => {
-    if (messages.length) conversationEndRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
-  }, [messages]);
   const [mode, setMode] = useState("solve");
   const [prompt, setPrompt] = useState("");
   const [imageFile, setImageFile] = useState(null);
   const [messages, setMessages] = useState([]);
+  useEffect(() => {
+    if (messages.length) conversationEndRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
+  }, [messages]);
   const [copiedMessage, setCopiedMessage] = useState(null);
   const [conversationId, setConversationId] = useState(null);
   const [busy, setBusy] = useState(false);
