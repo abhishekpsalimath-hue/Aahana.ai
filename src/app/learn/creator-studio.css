@@ -180,3 +180,14 @@
 .native-image-controls select,.native-motion-grade-label select{width:100%;min-width:0;padding:9px 10px;border:1px solid #4b405d;border-radius:8px;background:#201b2a;color:#f5f0fa;font:500 11px 'DM Sans',sans-serif}
 .native-motion-layer-editor{display:grid;gap:10px;margin:14px 0;padding:12px;border:1px solid #40354f;border-radius:12px;background:#15121e}
 .native-motion-grade-label{display:grid;gap:6px;max-width:360px;color:#cfc4dc;font-size:10px;font-weight:700}
+
+.native-image-edit-panel{display:grid;gap:8px;padding:12px;border:1px solid #8d78ad;border-radius:10px;background:linear-gradient(145deg,#211a2d,#191622)}
+.native-image-edit-panel>strong{color:#f1e8ff;font-size:11px}
+.native-image-edit-panel p{color:#d3c4e8;font-size:10px;line-height:1.5}
+.native-image-edit-panel label{display:grid;gap:5px;color:#ded2ef;font-size:10px;font-weight:700}
+.native-image-edit-panel output{justify-self:end;color:#e7d5ff;font-variant-numeric:tabular-nums}
+.native-image-edit-panel input[type=range]{width:100%;accent-color:#c5a9ef}
+.native-image-edit-panel select{width:100%;padding:9px;border:1px solid #59486f;border-radius:8px;background:#201b2a;color:#f5f0fa;font:500 11px 'DM Sans',sans-serif}
+.native-image-edit-panel button{border:1px solid #c5a9ef;border-radius:8px;background:#c5a9ef;color:#21172f;padding:10px 12px;font:700 11px 'DM Sans',sans-serif;cursor:pointer}
+.native-image-edit-panel button:disabled{opacity:.5;cursor:not-allowed}
+.native-image-edit-panel small{color:#c2b3d3;font-size:9px;line-height:1.5}
