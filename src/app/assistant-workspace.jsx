@@ -645,9 +645,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
 
     async function supabaseRemoveUploadedFiles(paths) {
       try {
-        const supabase = createClient();
-        await supabase.storage.from("aahana-private").remove(paths);
-        await fetch("/api/files/cleanup", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ objectPaths: paths }) });
+        await fetch("/api/files", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ objectPaths: paths }) });
       } catch {
         // Storage cleanup is best-effort; failed records remain private and are not executed automatically.
       }
