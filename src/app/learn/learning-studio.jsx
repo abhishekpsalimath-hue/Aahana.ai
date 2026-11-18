@@ -178,6 +178,7 @@ export default function LearningStudio({ userEmail = "" }) {
   const [conversationId, setConversationId] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const showSpaceLearning = /\b(?:solar system|space science|astronomy|planets?|planetary|moon|lunar|sun|orbit(?:al)?)\b/i.test([subject, question, ...messages.filter((item) => item.role === "user").map((item) => item.content)].join(" "));
 
   const [history, setHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(true);
@@ -446,8 +447,10 @@ export default function LearningStudio({ userEmail = "" }) {
         {error && <p className="learning-error" role="alert">{error}</p>}
         <p className="learning-note">Explore beyond a fixed subject list: school subjects, advanced ideas, science, technology, history, arts, cultures and everyday questions. Aahana adapts the explanation to your level.</p>
       </section>
-      <Interactive3DWorld selectedPlanet={selectedPlanet} onSelectedPlanetChange={setSelectedPlanet} />
-      <SpaceFunQuiz />
+      {showSpaceLearning && <>
+        <Interactive3DWorld selectedPlanet={selectedPlanet} onSelectedPlanetChange={setSelectedPlanet} />
+        <SpaceFunQuiz />
+      </>}
       <footer className="learning-footer"><span>Aahana Student Mode</span><span>One question at a time.</span></footer>
     </main>
   );
