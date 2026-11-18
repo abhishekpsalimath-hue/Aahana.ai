@@ -390,14 +390,47 @@ function createThreeScene(canvas,id,selectedPlanet=null) {
   let renderer;
   try { renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:"low-power"}); }
   catch { return null; }
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.75));
-  renderer.outputColorSpace=THREE.SRGBColorSpace;
-  renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.12;
-  const scene=new THREE.Scene();scene.background=new THREE.Color(0x090d19);
-  const camera=new THREE.PerspectiveCamera(36,1,.1,100);camera.position.set(0,0,5.8);
-  scene.add(new THREE.HemisphereLight(0xb8d7ff,0x1a1825,2.05));
-  const key=new THREE.DirectionalLight(0xffe4c2,3.2);key.position.set(-3,4,5);scene.add(key);
-  const rim=new THREE.DirectionalLight(0x6b8fff,2.1);rim.position.set(4,-2,-4);scene.add(rim);
+  const compactDevice = (window.matchMedia?.("(max-width: 760px)")?.matches)
+    || (navigator.hardwareConcurrency || 8) <= 4
+    || (navigator.deviceMemory || 8) <= 4;
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, compactDevice ? 1.35 : 1.8));
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.08;
+  renderer.shadowMap.enabled = !compactDevice;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x090d19);
+  scene.fog = new THREE.FogExp2(0x090d19, 0.0085);
+  const camera = new THREE.PerspectiveCamera(36, 1, .1, 100);
+  camera.position.set(0, 0, 5.8);
+
+  // Three-point documentary lighting: warm key, cool fill and a clean rim.
+  scene.add(new THREE.HemisphereLight(0xc7ddff, 0x171321, 1.65));
+  const key = new THREE.DirectionalLight(0xffe6c8, 3.15);
+  key.position.set(-3.5, 4.5, 5);
+  key.castShadow = !compactDevice;
+  key.shadow.mapSize.set(1024, 1024);
+  key.shadow.camera.left = -7;
+  key.shadow.camera.right = 7;
+  key.shadow.camera.top = 7;
+  key.shadow.camera.bottom = -7;
+  key.shadow.camera.near = .5;
+  key.shadow.camera.far = 24;
+  key.shadow.bias = -.00018;
+  key.shadow.normalBias = .025;
+  scene.add(key);
+
+  const fill = new THREE.DirectionalLight(0x8dbbff, 1.05);
+  fill.position.set(4, 1.5, 4);
+  scene.add(fill);
+  const rim = new THREE.DirectionalLight(0x8b91ff, 2.25);
+  rim.position.set(4, -2, -4);
+  scene.add(rim);
+  const accent = new THREE.PointLight(0x6f9fff, .7, 18, 2);
+  accent.position.set(-4, -1, 3);
+  scene.add(accent);
   const stars = addStars(scene);
   const group = new THREE.Group();
   scene.add(group);
@@ -450,6 +483,14 @@ function renderThreeScene(canvas, id, yaw, pitch, zoom, time = 0, selectedPlanet
 
   state.group.rotation.set(pitch, yaw + (id === "solar-system" ? time * .000025 : time * .000012), 0);
   state.stars.rotation.y = time * .000008;
+  // A very restrained moving accent keeps the scene alive without distracting
+  // from the concept or changing the learner's camera orientation.
+  const accentLight = state.scene.children.find((child) => child.isPointLight);
+  if (accentLight) {
+    accentLight.position.x = -4 + Math.sin(time * .00022) * .65;
+    accentLight.position.y = -1 + Math.cos(time * .00018) * .35;
+    accentLight.intensity = .62 + Math.sin(time * .0007) * .08;
+  }
   state.group.children.forEach((child) => {
     if (typeof child.userData?.orbitSpeed === "number") {
       child.rotation.y = time * child.userData.orbitSpeed + child.userData.orbitPhase;
