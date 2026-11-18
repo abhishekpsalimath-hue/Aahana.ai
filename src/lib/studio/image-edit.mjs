@@ -7,11 +7,11 @@ export const IMAGE_EDIT_STYLES = Object.freeze([
 ]);
 
 const STYLE_DIRECTIONS = Object.freeze({
-  cartoon: "Transform the photograph into a polished 2D cartoon illustration with clean expressive linework, appealing but natural proportions, smooth colour shading and carefully drawn details.",
-  anime: "Transform the photograph into a refined anime illustration while keeping the same real person's recognisable facial structure, hairstyle and expression.",
-  comic: "Transform the photograph into a detailed comic-book illustration with confident ink lines, controlled halftone texture and rich but faithful colours.",
-  "3d-animation": "Transform the photograph into a polished 3D animated-film-style portrait, retaining the same person's facial structure, hairstyle, expression and clothing.",
-  watercolor: "Transform the photograph into a carefully painted watercolour portrait, preserving the person's face, expression, hairstyle and clothing.",
+  cartoon: "Render the complete source photograph as a cohesive, hand-drawn 2D cartoon scene. Use consistent illustrated linework, simplified but recognisable shapes, natural proportions and clean cel shading. Cartoonise the people, objects and background together; do not isolate the people.",
+  anime: "Render the complete source photograph as one cohesive anime-style scene. Use refined anime linework and colour treatment while keeping the same people, clothing, objects, spatial relationships and background. Do not turn the subject into a standalone anime avatar.",
+  comic: "Render the complete source photograph as one cohesive comic-book panel, with expressive ink work, controlled halftone texture and faithful colours. Keep the original scene, people, objects and framing together.",
+  "3d-animation": "Render the complete source photograph as a cohesive stylised 3D animated scene. Preserve the same people, clothing, objects, environment and camera framing; do not replace the people with generic animated characters.",
+  watercolor: "Render the complete source photograph as one cohesive watercolour illustration, with natural pigment texture and soft colour transitions. Paint the people, objects and background as the same complete scene; do not crop to a portrait.",
 });
 
 function cleanEditInstruction(value) {
@@ -24,14 +24,15 @@ export function buildImageEditPrompt(style = "cartoon", instructions = {}) {
   const direction = STYLE_DIRECTIONS[style];
   if (!direction) return null;
   return [
-    "IMAGE-TO-IMAGE EDIT. Use input_image_0 as the source photograph and transform that exact image directly; do not invent a new subject.",
+    "SOURCE-LOCKED IMAGE EDIT: input_image_0 is the photograph to edit. Directly restyle this exact image. It is the source canvas, not merely inspiration or a character reference.",
+    "PRIMARY TASK: change the visual rendering style while retaining the photograph's complete content and composition.",
     direction,
-    "IDENTITY AND CONTENT PRESERVATION ARE THE HIGHEST PRIORITY: depict the exact same person or people from the input photograph. Preserve recognisable identity, facial geometry, eyes, nose, mouth, skin tone, age, hairstyle, expression, clothing, accessories, body proportions, pose and orientation. If multiple people are present, preserve every person and their relative positions. Keep the original camera framing, crop, perspective, scene layout and background unless a change is essential to the selected art medium.",
-    "Apply the requested art treatment to the whole photograph, including the background. This is a full-frame image transformation, not a sticker, emoji, avatar, mascot, cut-out, isolated headshot, character sheet or replacement portrait. Do not add a white sticker outline, die-cut border, transparent sticker background, text, logo, extra people, props or decorative elements.",
-    "Keep source details unchanged unless the user explicitly requests a specific edit. Never change the subject's identity, facial geometry, age, skin tone or number of people. No generic stock character.",
-    cleanEditInstruction(instructions.change) ? `USER-REQUESTED CHANGE: ${cleanEditInstruction(instructions.change)}.` : "No additional content change was requested; apply only the selected artistic treatment.",
-    cleanEditInstruction(instructions.preserve) ? `USER-REQUESTED PRESERVATION: ${cleanEditInstruction(instructions.preserve)}.` : "Preserve the original pose, framing, clothing, accessories and background unless the selected art treatment requires minor rendering changes.",
-    "Output one finished full-frame image.",
+    "PRESERVE THE SOURCE: retain every original person and their recognisable facial features, age, skin tone, hairstyle, expression, clothing, accessories, body proportions, pose and position. Retain the original number of people, objects, background elements, lighting direction, camera angle, perspective, crop and aspect ratio. Keep people in their original locations in the frame.",
+    "FULL-FRAME REQUIREMENT: apply the same selected art treatment across the entire image, edge to edge, including the background and foreground. The result must remain the same overall photograph, now illustrated.",
+    "DO NOT: create a sticker, die-cut image, emoji, avatar, mascot, character sheet, isolated headshot or replacement portrait. Do not remove or add people, change the scene, invent props, add text or logos, add borders, or introduce a white outline or transparent background.",
+    cleanEditInstruction(instructions.change) ? `USER-REQUESTED CHANGE: ${cleanEditInstruction(instructions.change)}.` : "Do not change the content or setting; only apply the selected visual style.",
+    cleanEditInstruction(instructions.preserve) ? `USER-REQUESTED PRESERVATION: ${cleanEditInstruction(instructions.preserve)}.` : "Keep all original scene details, people, objects and framing.",
+    "If a stylistic choice conflicts with preserving the source photograph, preserve the source content and composition. Return one complete full-frame edited image.",
   ].join(" ");
 }
 
