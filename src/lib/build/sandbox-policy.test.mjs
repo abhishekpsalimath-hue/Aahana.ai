@@ -31,10 +31,11 @@ test("creates a least-privilege sandbox configuration", () => {
   });
   assert.equal(config.networkPolicy, "deny-all");
   assert.equal(config.persistent, false);
-  assert.deepEqual(config.resources, { vcpus: 1, memory: 2048 });
+  assert.deepEqual(config.resources, { vcpus: 1 });
   assert.deepEqual(config.ports, []);
   assert.equal("env" in config, false);
   assert.equal("source" in config, false);
+  assert.equal("projectId" in config, false);
 });
 
 test("rejects invalid sandbox identifiers", () => {
@@ -78,4 +79,52 @@ test("protected release actions always require owner approval", () => {
   assert.equal(assertHumanApprovalRequired("create-preview"), true);
   assert.throws(() => assertHumanApprovalRequired("unknown-action"));
   assert.throws(() => assertHumanApprovalRequired("git-push"));
+});
+
+
+test("accepts only registry-backed semantic-version dependencies", () => {
+  const files = [{
+    path: "package.json",
+    content: JSON.stringify({
+      dependencies: { react: "^19.1.0", three: "~0.180.0" },
+      devDependencies: { eslint: "9.35.0" },
+      scripts: { build: "next build", test: "node --test" },
+    }),
+  }];
+  const result = validatePackageManifest(files);
+  assert.equal(result.hasDependencies, true);
+  assert.equal(result.manifest.scripts.build, "next build");
+});
+
+test("rejects remote, local, alias and non-semver dependency sources", () => {
+  for (const version of [
+    "https://example.com/pkg.tgz",
+    "git+https://github.com/user/repo.git",
+    "file:../local-package",
+    "workspace:*",
+    "npm:other-package@^1.0.0",
+    "latest",
+  ]) {
+    assert.throws(() => validatePackageManifest([{
+      path: "package.json",
+      content: JSON.stringify({ dependencies: { example: version } }),
+    }]));
+  }
+});
+
+test("rejects package install lifecycle scripts", () => {
+  for (const hook of ["preinstall", "install", "postinstall", "prepare"]) {
+    assert.throws(() => validatePackageManifest([{
+      path: "package.json",
+      content: JSON.stringify({ scripts: { [hook]: "node malicious.js" } }),
+    }]));
+  }
+});
+
+test("accepts workspaces without package dependencies", () => {
+  const result = validatePackageManifest([{
+    path: "package.json",
+    content: JSON.stringify({ scripts: { build: "node build.js" } }),
+  }]);
+  assert.equal(result.hasDependencies, false);
 });
