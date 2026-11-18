@@ -130,14 +130,14 @@ export async function POST(request) {
     await moderateImagePrompt(accountId, apiToken, prompt);
     const { prompt: finalPrompt, refined } = await refineImagePrompt(prompt);
     const response = await fetch(
-      `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/ai/run/${MODEL}`,
+      `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/ai/run`,
       {
         method: "POST",
         headers: {
           Authorization: `Bearer ${apiToken}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ prompt: finalPrompt, steps: 8 }),
+        body: JSON.stringify({ model: MODEL, input: { prompt: finalPrompt, steps: 8 } }),
         cache: "no-store",
         signal: AbortSignal.timeout(35000),
       }
