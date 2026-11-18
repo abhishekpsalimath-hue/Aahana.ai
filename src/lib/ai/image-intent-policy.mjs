@@ -17,7 +17,9 @@ export function isWebsiteBuildRequest(value) {
   const text = String(value || "").normalize("NFKC").trim();
   if (!text || text.length > 8000) return false;
   if (NON_BUILDING_CONTEXT.test(text) && !/\\b(?:build|create|develop|implement|code)\\b/i.test(text)) return false;
-  return WEBSITE_BUILD_ACTION.test(text) && WEBSITE_OBJECT.test(text);
+  const directBuildRequest = WEBSITE_BUILD_ACTION.test(text) && WEBSITE_OBJECT.test(text);
+  const statedNeed = /\\b(?:i need|i want)\\b/i.test(text) && WEBSITE_OBJECT.test(text);
+  return directBuildRequest || statedNeed;
 }
 
 export function isImageGenerationRequest(value) {
