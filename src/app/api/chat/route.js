@@ -4,6 +4,7 @@ import { logSystemEvent, recordUserOpsEvent } from "@/lib/operations/server";
 import { buildResearchQuery, rankAndDedupeResearchResults } from "@/lib/research/research-policy.mjs";
 import { getGradeLearningCurriculum } from "@/lib/learning/curriculum-engine.js";
 import { selectRelevantProjectFiles } from "@/lib/learning/project-source-policy.mjs";
+import { resolveAiProviderConfig } from "@/lib/ai/provider-policy.mjs";
 import { normalizeLearningSubject } from "@/lib/learning/subject-policy.mjs";
 
 export const runtime = "nodejs";
@@ -53,21 +54,18 @@ export async function POST(request) {
     return NextResponse.json({ error: "Aahana AI is not enabled yet." }, { status: 503 });
   }
 
-  // Basic mode uses Groq's no-card Free tier only. Never fall back to paid Vercel AI Gateway.
-  const provider = (process.env.AAHANA_AI_PROVIDER || "groq").toLowerCase();
-  const isGroq = provider === "groq";
-  const providerKey = isGroq
-    ? process.env.GROQ_API_KEY
-    : (request.headers.get("x-vercel-oidc-token") || process.env.VERCEL_OIDC_TOKEN);
-  const model = process.env.AAHANA_MODEL || (isGroq ? "openai/gpt-oss-120b" : "");
-  if (!providerKey || !model) {
-    const code = !providerKey ? (isGroq ? "MISSING_GROQ_API_KEY" : "MISSING_GATEWAY_AUTH") : "MISSING_MODEL";
-    console.error("Aahana AI configuration missing:", { provider, keyPresent: Boolean(providerKey), modelPresent: Boolean(model) });
+  // Basic mode defaults to Groq. Provider credentials are resolved only from server configuration.
+  const providerConfig = resolveAiProviderConfig(process.env);
+  if (!providerConfig.ok) {
+    console.error("Aahana AI provider configuration unavailable:", { provider: providerConfig.provider, reason: providerConfig.error });
     return NextResponse.json({
-      error: !providerKey ? "Aahana free AI provider key is not connected yet." : "Aahana Vercel AI Gateway authentication token is missing.",
-      code,
+      error: providerConfig.error === "unsupported-provider"
+        ? "Aahana's configured AI provider is not supported."
+        : "Aahana's AI provider credentials are not configured.",
+      code: providerConfig.error === "unsupported-provider" ? "UNSUPPORTED_AI_PROVIDER" : "MISSING_AI_PROVIDER_CREDENTIALS",
     }, { status: 503 });
   }
+  const { provider, isGroq, apiKey: providerKey, model, endpoint } = providerConfig;
 
   let body;
   try {
@@ -528,7 +526,6 @@ export async function POST(request) {
 
   let upstream;
   try {
-    const endpoint = isGroq ? "https://api.groq.com/openai/v1/chat/completions" : "https://ai-gateway.vercel.sh/v1/chat/completions";
     upstream = await fetch(endpoint, {
       method: "POST",
       headers: {
