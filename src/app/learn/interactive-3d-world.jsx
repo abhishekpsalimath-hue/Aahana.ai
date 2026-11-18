@@ -185,6 +185,35 @@ function createFocusedPlanet(group, planet) {
   }
 }
 
+function createAmbientParticles(scene, profile) {
+  const positions = new Float32Array(profile.count * 3);
+  const goldenAngle = Math.PI * (3 - Math.sqrt(5));
+  for (let index = 0; index < profile.count; index++) {
+    const vertical = 1 - (index / Math.max(1, profile.count - 1)) * 2;
+    const radius = Math.sqrt(1 - vertical * vertical);
+    const angle = goldenAngle * index;
+    const distance = 2.2 + ((index * 37) % 100) / 100 * 2.1;
+    positions[index * 3] = Math.cos(angle) * radius * distance;
+    positions[index * 3 + 1] = vertical * distance * 0.72;
+    positions[index * 3 + 2] = Math.sin(angle) * radius * distance;
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+  const material = new THREE.PointsMaterial({
+    color: profile.color,
+    size: profile.size,
+    transparent: true,
+    opacity: profile.opacity,
+    sizeAttenuation: true,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+  });
+  const particles = new THREE.Points(geometry, material);
+  particles.frustumCulled = false;
+  scene.add(particles);
+  return particles;
+}
+
 function addStars(scene) {
   const positions = new Float32Array(2200 * 3);
   for (let i = 0; i < 2200; i++) {
@@ -456,11 +485,13 @@ function createThreeScene(canvas,id,selectedPlanet=null,heartFlow="body",labStat
   scene.add(accent);
   const stars = addStars(scene);
   stars.visible = environment.stars;
+  const ambientParticles = createAmbientParticles(scene, environment.ambient);
+  ambientParticles.userData.drift = environment.ambient.drift;
   const group = new THREE.Group();
   scene.add(group);
   makeSceneModel(group, id, selectedPlanet, heartFlow, labState);
   const labModelKey = id === "molecule" ? JSON.stringify([labState.chemistryMolecule, labState.chemistryFocus, labState.chemistryShowBonds]) : (id === "cell" || id === "plant-cell") ? String(labState.cellFocus || "all") : id === "heart" ? String(heartFlow) : "";
-  const state = { renderer, scene, camera, group, id, selectedPlanet, heartFlow, labModelKey, stars, environment, hemisphere, key, fill, rim, accent, width: 0, height: 0 };
+  const state = { renderer, scene, camera, group, id, selectedPlanet, heartFlow, labModelKey, stars, ambientParticles, environment, hemisphere, key, fill, rim, accent, width: 0, height: 0 };
   threeScenes.set(canvas,state);return state;
 }
 function clearSceneGroup(group) {
@@ -502,6 +533,25 @@ function renderThreeScene(canvas, id, yaw, pitch, zoom, time = 0, selectedPlanet
     state.accent.color.setHex(environment.accent);
     state.accent.intensity = environment.accentIntensity;
     state.stars.visible = environment.stars;
+    state.ambientParticles.material.color.setHex(environment.ambient.color);
+    state.ambientParticles.material.size = environment.ambient.size;
+    state.ambientParticles.material.opacity = environment.ambient.opacity;
+    state.ambientParticles.geometry.dispose();
+    const particlePositions = new Float32Array(environment.ambient.count * 3);
+    const goldenAngle = Math.PI * (3 - Math.sqrt(5));
+    for (let index = 0; index < environment.ambient.count; index++) {
+      const vertical = 1 - (index / Math.max(1, environment.ambient.count - 1)) * 2;
+      const radius = Math.sqrt(1 - vertical * vertical);
+      const angle = goldenAngle * index;
+      const distance = 2.2 + ((index * 37) % 100) / 100 * 2.1;
+      particlePositions[index * 3] = Math.cos(angle) * radius * distance;
+      particlePositions[index * 3 + 1] = vertical * distance * 0.72;
+      particlePositions[index * 3 + 2] = Math.sin(angle) * radius * distance;
+    }
+    const particleGeometry = new THREE.BufferGeometry();
+    particleGeometry.setAttribute("position", new THREE.BufferAttribute(particlePositions, 3));
+    state.ambientParticles.geometry = particleGeometry;
+    state.ambientParticles.userData.drift = environment.ambient.drift;
   }
   const labModelKey = id === "molecule" ? JSON.stringify([labState.chemistryMolecule, labState.chemistryFocus, labState.chemistryShowBonds]) : (id === "cell" || id === "plant-cell") ? String(labState.cellFocus || "all") : id === "heart" ? String(heartFlow) : "";
   if (state.id !== id || state.selectedPlanet !== selectedPlanet || state.labModelKey !== labModelKey) {
@@ -529,6 +579,10 @@ function renderThreeScene(canvas, id, yaw, pitch, zoom, time = 0, selectedPlanet
 
   state.group.rotation.set(pitch, yaw + (id === "solar-system" ? time * .000025 : time * .000012), 0);
   if (state.stars) state.stars.rotation.y = time * .000008;
+  if (state.ambientParticles) {
+    state.ambientParticles.rotation.y = time * (state.ambientParticles.userData.drift || 0.00001);
+    state.ambientParticles.rotation.x = Math.sin(time * 0.00011) * 0.018;
+  }
   // A very restrained moving accent keeps the scene alive without distracting
   // from the concept or changing the learner's camera orientation.
   const accentLight = state.scene.children.find((child) => child.isPointLight);
