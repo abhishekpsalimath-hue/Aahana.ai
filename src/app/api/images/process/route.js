@@ -41,7 +41,7 @@ async function moderatePrompt(accountId, apiToken, prompt) {
     messages: [{ role: "user", content: prompt }],
     temperature: 0,
     max_tokens: 128,
-  }, 12000);
+  }, 9000);
   const verdict = parseGuardVerdict(result.response || result.result || result);
   if (!verdict) throw new Error("Prompt safety could not be verified.");
   if (!verdict.safe) throw Object.assign(new Error("This image request is not allowed by Aahana's image safety rules."), { status: 400 });
@@ -61,7 +61,7 @@ async function moderateImage(accountId, apiToken, imageDataUrl) {
     }],
     temperature: 0,
     max_tokens: 160,
-  }, 18000);
+  }, 11000);
   const verdict = parseVisualSafetyVerdict(result.response || result.result || "");
   if (!verdict) throw new Error("Image safety could not be verified.");
   if (!verdict.safe) throw Object.assign(new Error("This image cannot be processed because it did not pass Aahana's image safety check."), { status: 400 });
@@ -112,9 +112,10 @@ export async function POST(request) {
   }
 
   try {
-    if (action === "edit") await moderatePrompt(accountId, apiToken, prompt);
     const inputDataUrl = `data:${parsedImage.mimeType};base64,${parsedImage.base64}`;
-    await moderateImage(accountId, apiToken, inputDataUrl);
+    const checks = [moderateImage(accountId, apiToken, inputDataUrl)];
+    if (action === "edit") checks.push(moderatePrompt(accountId, apiToken, prompt));
+    await Promise.all(checks);
 
     let result;
     if (action === "edit") {
@@ -122,7 +123,7 @@ export async function POST(request) {
         prompt,
         images: [inputDataUrl],
         resolution: "1k",
-      });
+      }, 32000);
     } else {
       result = await runCloudflare(accountId, apiToken, UPSCALE_MODEL, {
         image: inputDataUrl,
@@ -131,7 +132,7 @@ export async function POST(request) {
         recovery_strength: 0.65,
         opacity: 0.85,
         face_enhancement: false,
-      });
+      }, 32000);
     }
 
     const imageUrl = result.image || result.sample;
