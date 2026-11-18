@@ -33,7 +33,7 @@ test("preserves open-ended subjects up to the Student Mode 80-character limit", 
   assert.ok(subject.length > 60 && subject.length <= 80);
   const result = validateLearningJourney({ ...sample, subject });
   assert.equal(result.subject, subject);
-  assert.equal(validateLearningJourney({ ...sample, subject: "x".repeat(81) }).subject, "x".repeat(60));
+  assert.equal(validateLearningJourney({ ...sample, subject: "x".repeat(81) }).subject, "x".repeat(80));
 });
 
 test("rejects incomplete, unbounded and impossible journey data", () => {
