@@ -327,7 +327,12 @@ export async function POST(request) {
           if (!response.ok) throw new Error("Tavily " + endpoint + " returned " + response.status);
           return response.json();
         };
-        const requestedUrl = prompt.match(/https?:\/\/[^\s<>"')\]]+/i)?.[0]?.replace(/[.,;!?]+$/, "") || "";
+        const rawRequestedUrl = prompt.match(/https?:\/\/[^\s<>"')\]]+/i)?.[0]
+          || prompt.match(/\b(?:www\.)?(?:[a-z0-9-]+\.)+[a-z]{2,}(?:\/[^\s<>"')\]]*)?/i)?.[0]
+          || "";
+        const requestedUrl = rawRequestedUrl
+          ? (rawRequestedUrl.replace(/[.,;!?]+$/, "").match(/^https?:\/\//i) ? rawRequestedUrl.replace(/[.,;!?]+$/, "") : "https://" + rawRequestedUrl.replace(/[.,;!?]+$/, ""))
+          : "";
         let retrievedPages = [];
         try {
           const wantsSiteDiscovery = Boolean(requestedUrl) && /\b(?:website|web site|whole site|entire site|all pages|all (?:of )?(?:the )?(?:website|site)|deep dive|deep-dive|explore|inspect|audit|documentation|docs|site structure|discover the site)\b/i.test(prompt);
