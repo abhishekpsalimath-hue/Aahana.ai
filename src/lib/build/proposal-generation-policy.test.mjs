@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { prepareValidatedProposal } from "./proposal-generation-policy.mjs";
+import { prepareValidatedProposal, validateProposalContracts } from "./proposal-generation-policy.mjs";
 
 const hash = (value) => createHash("sha256").update(value, "utf8").digest("hex");
 
@@ -51,6 +51,77 @@ test("permits a new file without exposing an unrelated existing file", () => {
   });
   assert.equal(result.changes[0].action, "create");
   assert.equal(result.changes[0].baseSha256, null);
+});
+
+test("rejects a proposal that removes an export still imported by another file", () => {
+  const currentFiles = [
+    { path: "src/components/card.ts", content: "export function Card() {}\\nexport function Badge() {}" },
+    { path: "src/page.ts", content: 'import { Card, Badge } from "./components/card";' },
+  ];
+  const result = validateProposalContracts({
+    currentFiles,
+    proposalChanges: [{
+      path: "src/components/card.ts",
+      action: "update",
+      after: "export function Card() {}",
+    }],
+  });
+  assert.fail("Expected contract validation to reject the removed export: " + JSON.stringify(result));
+});
+
+test("rejects a newly introduced missing named export and missing local source file", () => {
+  const currentFiles = [
+    { path: "src/lib/utils.ts", content: "export const ready = true;" },
+    { path: "src/page.ts", content: 'import { ready } from "./lib/utils";' },
+  ];
+  assert.throws(() => validateProposalContracts({
+    currentFiles,
+    proposalChanges: [{
+      path: "src/page.ts",
+      action: "update",
+      after: 'import { missing } from "./lib/utils";',
+    }],
+  }), /broken module export contract/);
+  assert.throws(() => validateProposalContracts({
+    currentFiles,
+    proposalChanges: [{
+      path: "src/page.ts",
+      action: "update",
+      after: 'import { ready } from "./lib/utils";\\nimport "./missing-module";',
+    }],
+  }), /unresolved local source imports/);
+});
+
+test("allows existing unresolved imports so legacy project debt does not block a proposal", () => {
+  const currentFiles = [
+    { path: "src/page.ts", content: 'import { legacy } from "./legacy";' },
+    { path: "src/feature.ts", content: "export const enabled = true;" },
+  ];
+  const result = validateProposalContracts({
+    currentFiles,
+    proposalChanges: [{
+      path: "src/feature.ts",
+      action: "update",
+      after: "export const enabled = false;",
+    }],
+  });
+  assert.equal(result.introducedBrokenBindings, 0);
+  assert.equal(result.introducedUnresolvedLocalImports, 0);
+});
+
+test("accepts a coordinated multi-file export rename", () => {
+  const currentFiles = [
+    { path: "src/lib/value.ts", content: "export const oldName = 1;" },
+    { path: "src/page.ts", content: 'import { oldName } from "./lib/value";' },
+  ];
+  const result = validateProposalContracts({
+    currentFiles,
+    proposalChanges: [
+      { path: "src/lib/value.ts", action: "update", after: "export const newName = 1;" },
+      { path: "src/page.ts", action: "update", after: 'import { newName } from "./lib/value";' },
+    ],
+  });
+  assert.equal(result.introducedBrokenBindings, 0);
 });
 
 test("rejects missing model context and malformed draft envelopes", () => {
