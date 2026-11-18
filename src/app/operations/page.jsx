@@ -43,6 +43,9 @@ export default function OperationsPage() {
   const [selectedBriefId, setSelectedBriefId] = useState("");
   const [briefTaskBusy, setBriefTaskBusy] = useState(false);
   const [automationBusyId, setAutomationBusyId] = useState("");
+  const [automationPreviewBusyId, setAutomationPreviewBusyId] = useState("");
+  const [automationTime, setAutomationTime] = useState("09:00");
+  const [automationPreviews, setAutomationPreviews] = useState({});
 
   const load = useCallback(async () => {
     setError("");
@@ -173,6 +176,23 @@ export default function OperationsPage() {
     } catch {
       setError("Could not connect to the private automation queue.");
     } finally { setAutomationBusyId(""); }
+  }
+
+  async function previewAutomationSchedule(template) {
+    if (!template || !["daily", "weekly"].includes(template.cadence) || automationPreviewBusyId) return;
+    setAutomationPreviewBusyId(template.id); setError("");
+    try {
+      const response = await fetch("/api/operations/automation/preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ templateId: template.id, time: automationTime, timeZone: "Asia/Kolkata", weekday: 1 }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) setError(payload.error || "Could not preview the schedule.");
+      else setAutomationPreviews((current) => ({ ...current, [template.id]: payload }));
+    } catch {
+      setError("Could not connect to the private schedule preview.");
+    } finally { setAutomationPreviewBusyId(""); }
   }
 
   const counts = useMemo(() => ({
@@ -329,11 +349,20 @@ export default function OperationsPage() {
         <section className="ops-section">
           <div className="ops-section-heading"><div><div className="ops-eyebrow">PRIVATE AUTOMATION / DRAFT BLUEPRINTS</div><h2>Automation for your work</h2></div><span className="ops-muted">Founder-only</span></div>
           <p className="ops-muted">These are private automation ideas for your own operations—not public Aahana AI features. Proposing one creates a review task only. Nothing is scheduled or connected until its design, data access and permissions are approved.</p>
+          <div className="ops-panel">
+            <label htmlFor="automation-local-time">Daily / weekly preview time (India)</label>
+            <input id="automation-local-time" type="time" value={automationTime} onChange={(event) => { setAutomationTime(event.target.value); setAutomationPreviews({}); }} />
+            <p className="ops-muted">Weekly previews default to Monday. Time zone: Asia/Kolkata.</p>
+          </div>
           <div className="ops-role-grid">
             {PRIVATE_AUTOMATION_TEMPLATES.map((item) => <article className="ops-panel" key={item.id}>
               <div className="ops-eyebrow">{item.trigger} · {item.cadence}</div>
               <h3>{item.name}</h3>
               <p className="ops-muted">{item.description}</p>
+              {["daily", "weekly"].includes(item.cadence) && <>
+                <button className="ops-secondary" type="button" disabled={!!automationPreviewBusyId} onClick={() => previewAutomationSchedule(item)}>{automationPreviewBusyId === item.id ? "Checking…" : "Preview next run"}</button>
+                {automationPreviews[item.id] && <p className="ops-muted">Next preview: {new Date(automationPreviews[item.id].nextRunAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}. Not scheduled.</p>}
+              </>}
               <button className="ops-primary" type="button" disabled={!!automationBusyId} onClick={() => proposeAutomation(item)}>{automationBusyId === item.id ? "Adding proposal…" : "Propose setup"}</button>
             </article>)}
           </div>
