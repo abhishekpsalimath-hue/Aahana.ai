@@ -15,6 +15,8 @@ test("offers explicit image-to-image visual styles and identity-preserving promp
   assert.match(buildImageEditPrompt("cartoon"), /full-frame image transformation/);
   assert.match(buildImageEditPrompt("cartoon"), /not a sticker/);
   assert.match(buildImageEditPrompt("cartoon"), /input_image_0/);
+  assert.match(buildImageEditPrompt("cartoon", { change: "make the background a soft watercolor landscape", preserve: "keep the same jacket" }), /USER-REQUESTED CHANGE: make the background a soft watercolor landscape/);
+  assert.match(buildImageEditPrompt("cartoon", { change: "x".repeat(500), preserve: "y".repeat(500) }), /USER-REQUESTED PRESERVATION:/);
   assert.equal(buildImageEditPrompt("unknown"), null);
 });
 
@@ -44,7 +46,7 @@ test("Image Studio exposes a dedicated photo transformation action", async () =>
   assert.match(source, /fetch\("\/api\/images\/edit"/);
   assert.match(source, /Keep the same person, face, pose and scene/);
   assert.match(source, /Full-frame cartoon illustration/);
-  assert.match(source, /native-image-before-after/);
+  assert.match(source, /native-image-before-after/);\n  assert.match(source, /What should change\\?/);\n  assert.match(source, /What must stay the same\\?/);
   assert.match(source, /Original uploaded photo/);
   assert.match(source, /Transformed result/);
 });
