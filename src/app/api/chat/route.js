@@ -258,7 +258,7 @@ export async function POST(request) {
             include_raw_content: false,
             topic: /\b(?:news|breaking|today|yesterday|this week|this month|developments|announcements|breakthroughs|release|launched|November|December|October|September|August|July|June|May|April|March|February|January)\b/i.test(prompt) ? "news" : "general",
           }),
-          signal: AbortSignal.timeout(10000),
+          signal: AbortSignal.any([request.signal, AbortSignal.timeout(10000)]),
         });
         if (searchResponse.ok) {
           const searchData = await searchResponse.json();
@@ -354,9 +354,12 @@ export async function POST(request) {
           ...context,
         ],
       }),
-      signal: AbortSignal.timeout(45000),
+      signal: AbortSignal.any([request.signal, AbortSignal.timeout(45000)]),
     });
-  } catch {
+  } catch (error) {
+    if (request.signal.aborted || error?.name === "AbortError") {
+      return new Response(null, { status: 499 });
+    }
     return NextResponse.json({ error: "Aahana could not connect to the AI service. Please try again." }, { status: 502 });
   }
 
