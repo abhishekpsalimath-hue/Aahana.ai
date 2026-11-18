@@ -42,8 +42,8 @@ export function validateProposalContracts({ currentFiles, proposalChanges } = {}
   const beforeUnresolvedImports = new Set(beforeDependencies.unresolved.map(unresolvedImportKey));
   const introducedImports = afterDependencies.unresolved.filter((item) => {
     const pathLike = item.specifier.startsWith(".") || item.specifier.startsWith("/");
-    const hasExtension = /\\.[^/]+$/.test(item.specifier);
-    const supportedSource = !hasExtension || /\\.(?:[cm]?[jt]sx?|json|css|svg)$/i.test(item.specifier);
+    const hasExtension = /\.[^/]+$/.test(item.specifier);
+    const supportedSource = !hasExtension || /\.(?:[cm]?[jt]sx?|json|css|svg)$/i.test(item.specifier);
     return pathLike && supportedSource && !beforeUnresolvedImports.has(unresolvedImportKey(item));
   });
   if (introducedImports.length) {
