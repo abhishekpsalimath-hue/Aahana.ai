@@ -48,3 +48,17 @@ test("journey styling remains responsive and respects reduced-motion preferences
   assert.match(styles, /@media \(max-width: 760px\)/);
   assert.match(styles, /prefers-reduced-motion: reduce/);
 });
+
+
+test("interactive 3D renderer uses adaptive quality, cinematic three-point lighting and soft shadows", () => {
+  const world = readFileSync(new URL("../../app/learn/interactive-3d-world.jsx", import.meta.url), "utf8");
+  assert.match(world, /compactDevice/);
+  assert.match(world, /renderer\.shadowMap\.enabled = !compactDevice/);
+  assert.match(world, /THREE\.PCFSoftShadowMap/);
+  assert.match(world, /new THREE\.FogExp2/);
+  assert.match(world, /new THREE\.HemisphereLight/);
+  assert.match(world, /new THREE\.DirectionalLight\(0xffe6c8/);
+  assert.match(world, /new THREE\.DirectionalLight\(0x8dbbff/);
+  assert.match(world, /new THREE\.PointLight\(0x6f9fff/);
+  assert.match(world, /accentLight\.intensity/);
+});
