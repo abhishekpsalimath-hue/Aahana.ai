@@ -15,6 +15,30 @@ const MAX_FILE_BYTES = 1024 * 1024;
 const MAX_SOURCE_BYTES = 3 * 1024 * 1024;
 const MAX_MODEL_RESPONSE_BYTES = 4 * 1024 * 1024;
 
+async function readBoundedResponse(response, maxBytes) {
+  const reader = response.body?.getReader();
+  if (!reader) throw new Error("The AI provider returned an empty response.");
+  const chunks = [];
+  let totalBytes = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    totalBytes += value.byteLength;
+    if (totalBytes > maxBytes) {
+      await reader.cancel().catch(() => {});
+      throw new Error("The AI proposal response exceeded the safe size limit.");
+    }
+    chunks.push(value);
+  }
+  const bytes = new Uint8Array(totalBytes);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return new TextDecoder().decode(bytes);
+}
+
 async function readJsonBody(request) {
   const reader = request.body?.getReader();
   if (!reader) throw new Error("Invalid proposal generation request.");
@@ -133,10 +157,12 @@ export async function POST(request) {
   }
 
   const provider = (process.env.AAHANA_AI_PROVIDER || "groq").toLowerCase();
+  if (!["groq", "vercel"].includes(provider)) {
+    return NextResponse.json({ error: "The configured AI provider is not supported for code proposals." }, { status: 503 });
+  }
   const isGroq = provider === "groq";
-  const providerKey = isGroq
-    ? process.env.GROQ_API_KEY
-    : (request.headers.get("x-vercel-oidc-token") || process.env.VERCEL_OIDC_TOKEN);
+  // Provider credentials must come only from server configuration, never request headers.
+  const providerKey = isGroq ? process.env.GROQ_API_KEY : process.env.VERCEL_OIDC_TOKEN;
   const model = process.env.AAHANA_MODEL || (isGroq ? "openai/gpt-oss-120b" : "");
   if (!providerKey || !model) {
     return NextResponse.json({ error: "Aahana's AI provider is not configured for code proposal generation." }, { status: 503 });
@@ -212,13 +238,13 @@ export async function POST(request) {
 
   let payload;
   try {
-    const responseText = await upstream.text();
-    if (new TextEncoder().encode(responseText).byteLength > MAX_MODEL_RESPONSE_BYTES) {
-      return NextResponse.json({ error: "The AI proposal response exceeded the safe size limit." }, { status: 502 });
-    }
+    const responseText = await readBoundedResponse(upstream, MAX_MODEL_RESPONSE_BYTES);
     payload = JSON.parse(responseText);
-  } catch {
-    return NextResponse.json({ error: "The AI provider returned an unreadable proposal." }, { status: 502 });
+  } catch (error) {
+    const message = error?.message === "The AI proposal response exceeded the safe size limit."
+      ? error.message
+      : "The AI provider returned an unreadable proposal.";
+    return NextResponse.json({ error: message }, { status: 502 });
   }
 
   const modelContent = payload?.choices?.[0]?.message?.content;
