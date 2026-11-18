@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createImageScene, renderImageSceneSvg, buildPinterestInspiredPrompt } from "@/lib/studio/image-engine.mjs";
 import { COLOR_GRADES, getColorGradeFilter } from "@/lib/studio/color-grading.mjs";
 import { applyCubeLutToImageData, parseCubeLut } from "@/lib/studio/cube-lut.mjs";
@@ -25,6 +25,8 @@ export default function NativeImageStudio() {
   const [generatedImage, setGeneratedImage] = useState("");
   const [referenceImage, setReferenceImage] = useState(null);
   const [referencePreview, setReferencePreview] = useState("");
+  const editInFlightRef = useRef(false);
+  const editAttemptRef = useRef(0);
   const svg = useMemo(() => renderImageSceneSvg(scene, colorGrade), [scene, colorGrade]);
   const gradeFilter = getColorGradeFilter(colorGrade);
   const previewUrl = useMemo(() => `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`, [svg]);
@@ -76,23 +78,44 @@ export default function NativeImageStudio() {
   }
 
   async function transformReferenceImage() {
-    if (!referenceImage || editing || generating) return;
+    if (!referenceImage || editInFlightRef.current || generating) return;
+    editInFlightRef.current = true;
+    const attempt = ++editAttemptRef.current;
+    const sourceFile = referenceImage;
+    const requestedStyle = editStyle;
+    const changeRequest = editChange;
+    const preserveRequest = editPreserve;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 60000);
     setEditing(true);
-    setStatus("Transforming your uploaded photo while preserving the original person and composition…");
+    setStatus("Transforming your uploaded photo. Your original remains available for another attempt…");
     try {
-      const prepared = await prepareImageForEditing(referenceImage);
+      const prepared = await prepareImageForEditing(sourceFile);
       const response = await fetch("/api/images/edit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...prepared, style: editStyle, changeRequest: editChange, preserveRequest: editPreserve }),
+        body: JSON.stringify({ ...prepared, style: requestedStyle, changeRequest, preserveRequest }),
+        signal: controller.signal,
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok || !result.imageDataUrl) throw new Error(result.error || "Photo transformation is unavailable right now.");
+      if (attempt !== editAttemptRef.current) return;
       setGeneratedImage(result.imageDataUrl);
-      setStatus("Your photo has been transformed from the uploaded image. The source photo, identity and composition were supplied to the image-edit model.");
+      setStatus("Photo transformed. Your original upload is still preserved and can be used for another style or retry.");
     } catch (error) {
-      setStatus(error?.message || "Could not transform this photo. Your original upload remains unchanged.");
-    } finally { setEditing(false); }
+      if (attempt === editAttemptRef.current) {
+        const message = error?.name === "AbortError"
+          ? "The transformation took too long. Your original photo is safe—try again."
+          : error?.message || "Could not transform this photo. Your original upload is safe—try again.";
+        setStatus(message);
+      }
+    } finally {
+      clearTimeout(timeout);
+      if (attempt === editAttemptRef.current) {
+        editInFlightRef.current = false;
+        setEditing(false);
+      }
+    }
   }
 
   async function generateInspiredImage() {
@@ -159,7 +182,7 @@ export default function NativeImageStudio() {
       <div className="native-image-layout">
         <div className="native-image-canvas"><img src={generatedImage || previewUrl} style={{ filter: generatedImage ? gradeFilter : "none" }} alt={generatedImage ? "AI-generated or image-edited result" : "Live preview of your editable vector composition"} /></div>
         <div className="native-image-controls">
-          <div className="native-image-inspiration"><strong>Pinterest inspiration</strong><label>Reference link (optional)<input type="url" value={referenceUrl} onChange={(event) => setReferenceUrl(event.target.value)} placeholder="Paste a Pinterest pin URL" /></label>{safePinterestUrl && <a href={safePinterestUrl} target="_blank" rel="noopener noreferrer">Open Pinterest reference</a>}{referenceUrl && !safePinterestUrl && <small>Enter a valid HTTPS Pinterest or pin.it link.</small>}<label>Upload your photo<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => chooseReferenceImage(event.target.files?.[0])} /></label>{referencePreview && <div className="native-image-reference-preview"><img src={referencePreview} alt="Your original photo, kept unchanged" /><button type="button" onClick={() => { setReferenceImage(null); setGeneratedImage(""); }}>Remove photo</button></div>}{referencePreview && generatedImage && <div className="native-image-before-after" aria-label="Before and after photo comparison"><figure><img src={referencePreview} alt="Original uploaded photo" /><figcaption>Original photo</figcaption></figure><figure><img src={generatedImage} alt="Transformed photo" /><figcaption>Transformed result</figcaption></figure></div>}<div className="native-image-edit-panel"><strong>Transform your actual photo</strong><p>Keep the same person, face, pose and scene. Change only the artistic treatment.</p><label>What should change?<textarea value={editChange} onChange={(event) => setEditChange(event.target.value)} maxLength={400} placeholder="Example: turn the whole scene into a hand-drawn cartoon, keep the same background." /></label><label>What must stay the same?<textarea value={editPreserve} onChange={(event) => setEditPreserve(event.target.value)} maxLength={400} /></label><label>Transformation style<select value={editStyle} onChange={(event) => setEditStyle(event.target.value)}><option value="cartoon">Full-frame cartoon illustration</option><option value="anime">Anime illustration</option><option value="comic">Comic-book art</option><option value="3d-animation">3D animated-film look</option><option value="watercolor">Watercolour painting</option></select></label><button type="button" onClick={transformReferenceImage} disabled={!referenceImage || editing || generating}>{editing ? "Transforming photo…" : "Transform my photo"}</button><small>Uses image-to-image editing. It is not the same as generating a new cartoon character or sticker. The photo is resized to a maximum 512px input for the editor and sent only when you press the button. Each edit may incur Cloudflare Workers AI usage charges.</small></div><label>Creative direction<select value={visualStyle} onChange={(event) => setVisualStyle(event.target.value)}><option value="editorial">Editorial & premium</option><option value="education">Education & learning</option><option value="cinematic">Cinematic & dramatic</option><option value="minimal">Minimal & clean</option><option value="playful">Playful illustration</option><option value="product">Product & brand campaign</option><option value="social">Social media poster</option></select></label><label>What do you like about it?<textarea value={visualNotes} onChange={(event) => setVisualNotes(event.target.value)} maxLength={1200} placeholder="Describe colours, layout, typography, lighting, mood and subject. Aahana creates an original design from these notes." /></label><button type="button" onClick={generateInspiredImage} disabled={generating || editing || !visualNotes.trim()}>{generating ? "Creating…" : "Generate original image"}</button><small>The current image model receives only your written direction. Links and uploaded images stay in this browser and are not visually analysed yet. Use references you have permission to use.</small>{generatedImage && <button type="button" onClick={exportGeneratedImage}>Export generated image</button>}</div>
+          <div className="native-image-inspiration"><strong>Pinterest inspiration</strong><label>Reference link (optional)<input type="url" value={referenceUrl} onChange={(event) => setReferenceUrl(event.target.value)} placeholder="Paste a Pinterest pin URL" /></label>{safePinterestUrl && <a href={safePinterestUrl} target="_blank" rel="noopener noreferrer">Open Pinterest reference</a>}{referenceUrl && !safePinterestUrl && <small>Enter a valid HTTPS Pinterest or pin.it link.</small>}<label>Upload your photo<input type="file" accept="image/png,image/jpeg,image/webp" disabled={editing} onChange={(event) => { chooseReferenceImage(event.target.files?.[0]); event.target.value = ""; }} /></label>{referencePreview && <div className="native-image-reference-preview"><img src={referencePreview} alt="Your original photo, kept unchanged" /><button type="button" disabled={editing} onClick={() => { setReferenceImage(null); setGeneratedImage(""); }}>Remove photo</button></div>}{referencePreview && generatedImage && <div className="native-image-before-after" aria-label="Before and after photo comparison"><figure><img src={referencePreview} alt="Original uploaded photo" /><figcaption>Original photo</figcaption></figure><figure><img src={generatedImage} alt="Transformed photo" /><figcaption>Transformed result</figcaption></figure></div>}<div className="native-image-edit-panel"><strong>Transform your actual photo</strong><p>Keep the same person, face, pose and scene. Change only the artistic treatment.</p><label>What should change?<textarea value={editChange} onChange={(event) => setEditChange(event.target.value)} maxLength={400} placeholder="Example: turn the whole scene into a hand-drawn cartoon, keep the same background." /></label><label>What must stay the same?<textarea value={editPreserve} onChange={(event) => setEditPreserve(event.target.value)} maxLength={400} /></label><label>Transformation style<select value={editStyle} onChange={(event) => setEditStyle(event.target.value)}><option value="cartoon">Full-frame cartoon illustration</option><option value="anime">Anime illustration</option><option value="comic">Comic-book art</option><option value="3d-animation">3D animated-film look</option><option value="watercolor">Watercolour painting</option></select></label><button type="button" onClick={transformReferenceImage} disabled={!referenceImage || editing || generating}>{editing ? "Transforming photo…" : "Transform my photo"}</button><small>Uses image-to-image editing. It is not the same as generating a new cartoon character or sticker. The photo is resized to a maximum 512px input for the editor and sent only when you press the button. Each edit may incur Cloudflare Workers AI usage charges.</small></div><label>Creative direction<select value={visualStyle} onChange={(event) => setVisualStyle(event.target.value)}><option value="editorial">Editorial & premium</option><option value="education">Education & learning</option><option value="cinematic">Cinematic & dramatic</option><option value="minimal">Minimal & clean</option><option value="playful">Playful illustration</option><option value="product">Product & brand campaign</option><option value="social">Social media poster</option></select></label><label>What do you like about it?<textarea value={visualNotes} onChange={(event) => setVisualNotes(event.target.value)} maxLength={1200} placeholder="Describe colours, layout, typography, lighting, mood and subject. Aahana creates an original design from these notes." /></label><button type="button" onClick={generateInspiredImage} disabled={generating || editing || !visualNotes.trim()}>{generating ? "Creating…" : "Generate original image"}</button><small>The current image model receives only your written direction. Links and uploaded images stay in this browser and are not visually analysed yet. Use references you have permission to use.</small>{generatedImage && <button type="button" onClick={exportGeneratedImage}>Export generated image</button>}</div>
           <label>Colour grade<select value={colorGrade} onChange={(event) => setColorGrade(event.target.value)}>{COLOR_GRADES.map((grade) => <option key={grade.id} value={grade.id}>{grade.label}</option>)}</select></label>
           <label>Import 3D LUT (.cube)<input type="file" accept=".cube,text/plain" onChange={(event) => loadCubeLut(event.target.files?.[0])} /></label>
           {cubeLut && <div className="native-image-lut-status"><span>{cubeLut.name} · {cubeLut.size}³</span><button type="button" onClick={() => { setCubeLut(null); setStatus("Custom LUT removed."); }}>Remove LUT</button></div>}
