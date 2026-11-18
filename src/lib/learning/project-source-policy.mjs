@@ -31,7 +31,7 @@ export function selectRelevantProjectFiles(prompt, files, limit = 8) {
     const filenameTokens = tokens(filename);
     let score = coreFileScore(filename);
     for (const token of promptTokens) {
-      if (filenameTokens.has(token)) score += 3;
+      if (filenameTokens.has(token)) score += 40;
     }
     return { file, index, score };
   });
