@@ -360,6 +360,31 @@ function makeSceneModel(group,id,selectedPlanet=null) {
     for(const x of [-.48,.48]){const wheel=new THREE.Mesh(new THREE.CylinderGeometry(.22,.22,.13,32),new THREE.MeshStandardMaterial({color:0x242735,roughness:.8}));wheel.rotation.z=Math.PI/2;wheel.position.set(x,-.08,.32);group.add(wheel);const hub=sphere(group,[x,-.08,.4],.075,0xb7c3d4);}
     const push=tube(group,[[-1.05,.3,0],[-.82,.3,0],[-.68,.3,0]],0xf2cf83,.025);return;
   }
+  if(id==="bridge"){
+    // Simplified steel truss bridge: deck, supports, cross-bracing and tension members.
+    const steel=new THREE.MeshStandardMaterial({color:0x8da8c5,metalness:.72,roughness:.3});
+    const deck=new THREE.Mesh(new THREE.BoxGeometry(3.35,.12,.62),new THREE.MeshStandardMaterial({color:0x65778f,metalness:.35,roughness:.55}));
+    deck.position.y=-.42;group.add(deck);
+    for(const x of [-1.28,1.28]){
+      const tower=new THREE.Mesh(new THREE.BoxGeometry(.12,1.42,.12),steel);tower.position.set(x,.23,0);group.add(tower);
+      rod(group,[x,-.34,-.29],[x,.92,-.29],0xb8cbe0,.035);
+      rod(group,[x,-.34,.29],[x,.92,.29],0xb8cbe0,.035);
+    }
+    for(let i=0;i<8;i++){
+      const x=-1.42+i*.405;
+      rod(group,[x,-.34,-.29],[x+.405,.52,-.29],0x78c7dc,.025);
+      rod(group,[x,-.34,.29],[x+.405,.52,.29],0x78c7dc,.025);
+      rod(group,[x,-.34,-.29],[x+.405,-.34,-.29],0x9bb1ca,.022);
+      rod(group,[x,-.34,.29],[x+.405,-.34,.29],0x9bb1ca,.022);
+    }
+    rod(group,[-1.55,.92,-.29],[1.55,.92,-.29],0xc4d4e7,.04);
+    rod(group,[-1.55,.92,.29],[1.55,.92,.29],0xc4d4e7,.04);
+    for(const x of [-1.28,-.86,-.43,0,.43,.86,1.28]){
+      rod(group,[x,.88,-.29],[x,-.34,-.29],0x78c7dc,.018);
+      rod(group,[x,.88,.29],[x,-.34,.29],0x78c7dc,.018);
+    }
+    return;
+  }
 }
 function createThreeScene(canvas,id,selectedPlanet=null) {
   let renderer;
@@ -477,6 +502,7 @@ const models = [
   { id: "ecosystem", label: "Forest ecosystem", subject: "Ecology · Environmental science", description: "Explore a simplified forest habitat with trees, plants, water and terrain. Organisms and relationships are illustrative, not a measured ecosystem.", color: "#77b982" },
   { id: "engine", label: "Mechanical engine", subject: "Engineering · Physics", description: "Inspect a simplified mechanical assembly with a crankshaft, connecting rods and piston-like cylinders. It is a conceptual model, not a working engine simulation.", color: "#91a8c7" },
   { id: "cart", label: "Force & motion cart", subject: "Physics · Mechanics", description: "Experiment with a small cart to explore how a push and friction affect motion. The movement is a qualitative learning illustration, not a measured physics simulation.", color: "#e2ae70" },
+  { id: "bridge", label: "Truss bridge", subject: "Civil engineering · Physics", description: "Inspect a simplified steel truss bridge and trace how triangles, cross-bracing and the deck form a connected structure. This is a teaching model, not a load-rated design.", color: "#83b9d5" },
 ];
 
 const modelExplorations = {
@@ -539,6 +565,11 @@ const modelExplorations = {
     { title: "Producers", question: "Where does most energy in this habitat begin?", explanation: "Green plants are producers. They capture energy from sunlight and store some of it as chemical energy through photosynthesis." },
     { title: "Food web", question: "What connects plants, herbivores and predators?", explanation: "A food web links many food chains. Energy moves when organisms eat plants or other organisms; arrows point from the food to the eater." },
     { title: "Habitat balance", question: "What might happen if the water source disappears?", explanation: "Organisms that depend on that water may move, decline or compete more strongly. A habitat is a connected system, so one change can affect many populations." },
+  ],
+  bridge: [
+    { title: "Triangular trusses", question: "Why are triangles used in a truss?", explanation: "A triangle keeps its shape when its side lengths stay fixed. Truss members use connected triangles to distribute forces through the structure." },
+    { title: "Load path", question: "How does the bridge carry a load toward its supports?", explanation: "The deck transfers loads into the truss. The connected members carry tension or compression, and forces travel toward the supports and foundations." },
+    { title: "Tension & compression", question: "What are two common forces in bridge members?", explanation: "Tension pulls a member apart; compression pushes it together. Which members experience each force depends on the bridge geometry and where the load acts." },
   ],
   engine: [
     { title: "Piston", question: "Which part moves back and forth inside a cylinder?", explanation: "The piston travels up and down inside the cylinder. In an engine, expanding hot gases push it and transfer force to the connecting rod." },
