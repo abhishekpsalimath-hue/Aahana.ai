@@ -68,6 +68,64 @@ test("does not invent unresolved relative paths or resolve package aliases by gu
   assert.ok(graph.external.some((item) => item.packageName === "react"));
 });
 
+test("resolves tsconfig paths aliases and baseUrl imports conservatively", () => {
+  const files = [
+    { path: "tsconfig.json", content: JSON.stringify({
+      compilerOptions: {
+        baseUrl: ".",
+        paths: {
+          "@/*": ["src/*"],
+          "@ui/*": ["src/components/*"],
+          "@exact": ["src/lib/exact.js"],
+        },
+      },
+    }) },
+    { path: "src/app/page.tsx", content: [
+      'import Card from "@/components/card";',
+      'import Button from "@ui/button";',
+      'import exact from "@exact";',
+      'import helper from "lib/helper";',
+      'import external from "react";',
+    ].join("\\n") },
+    { path: "src/components/card.tsx", content: "export default function Card() {}" },
+    { path: "src/components/button/index.tsx", content: "export default function Button() {}" },
+    { path: "src/lib/exact.js", content: "export default 1;" },
+    { path: "lib/helper.js", content: "export default 2;" },
+  ];
+  const graph = analyzeProjectDependencies(files);
+  const dependencies = graph.dependencies.get("src/app/page.tsx");
+  assert.ok(dependencies.has("src/components/card.tsx"));
+  assert.ok(dependencies.has("src/components/button/index.tsx"));
+  assert.ok(dependencies.has("src/lib/exact.js"));
+  assert.ok(dependencies.has("lib/helper.js"));
+  assert.ok(graph.external.some((item) => item.packageName === "react"));
+  assert.equal(graph.aliasConfig.configPath, "tsconfig.json");
+  assert.equal(graph.aliasConfig.pathMappings, 3);
+});
+
+test("uses jsconfig when tsconfig is absent and leaves unknown aliases unresolved", () => {
+  const files = [
+    { path: "jsconfig.json", content: JSON.stringify({ compilerOptions: { baseUrl: ".", paths: { "~/*": ["app/*"] } } }) },
+    { path: "src/page.js", content: 'import Known from "~/known";\\nimport Unknown from "~/missing";' },
+    { path: "app/known.js", content: "export default 1;" },
+  ];
+  const graph = analyzeProjectDependencies(files);
+  assert.ok(graph.dependencies.get("src/page.js").has("app/known.js"));
+  assert.ok(graph.unresolved.some((item) => item.specifier === "~/missing"));
+  assert.equal(graph.aliasConfig.configPath, "jsconfig.json");
+});
+
+test("does not guess when the project alias configuration is invalid JSON", () => {
+  const files = [
+    { path: "tsconfig.json", content: "{ invalid json" },
+    { path: "src/page.js", content: 'import Alias from "@/components/alias";' },
+  ];
+  const graph = analyzeProjectDependencies(files);
+  assert.equal(graph.dependencies.get("src/page.js").size, 0);
+  assert.ok(graph.unresolved.some((item) => item.specifier === "@/components/alias"));
+  assert.equal(graph.aliasConfig.invalid, true);
+});
+
 test("handles side-effect, dynamic and CommonJS imports", () => {
   const files = [
     { path: "src/main.js", content: 'import "./setup.js";\nconst lazy = import("./lazy.js");\nconst util = require("./util.cjs");' },
