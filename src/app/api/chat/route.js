@@ -65,7 +65,7 @@ export async function POST(request) {
   if (image && (!imageMatch || imageDataUrl.length > 2_850_000)) {
     return NextResponse.json({ error: "Please attach one PNG, JPEG or WebP image under 2 MB." }, { status: 400 });
   }
-  const mode = ["solve", "create", "write", "build", "improve"].includes(body?.mode) ? body.mode : "solve";
+  const mode = ["solve", "create", "write", "build", "improve", "learn"].includes(body?.mode) ? body.mode : "solve";
   const requestedConversationId = typeof body?.conversationId === "string" ? body.conversationId : null;
   const requestedProjectId = typeof body?.projectId === "string" ? body.projectId : null;
 
@@ -333,6 +333,16 @@ export async function POST(request) {
         ...(isGroq ? { max_completion_tokens: 4096 } : { max_tokens: 4096 }),
         messages: [
           { role: "system", content: systemPrompt },
+          ...(mode === "learn" ? [{
+            role: "system",
+            content: [
+              "STUDENT MODE: You are Aahana's patient, rigorous, age-aware learning tutor.",
+              "Teach the learner's selected subject, grade band, curriculum and language. Explain concepts accurately in clear steps, use examples and check understanding without shaming mistakes.",
+              "When the learner asks for an interactive quiz, return a valid JSON object with type aahana_quiz_v1, title, and a questions array. Each question must include question, four options, correctIndex, explanation, hint, and a supported visual identifier.",
+              "When a motion lesson is requested, return a valid structured motion lesson with scenes, narration, visual, challenge and support data matching the Student Mode lesson parser. Never fabricate curriculum facts or claim a lesson is official.",
+              "Do not reveal answer keys before the learner attempts a question unless they ask for the explanation. Keep the learner safe, age-appropriate and encouraged.",
+            ].join("\\n"),
+          }] : []),
           ...(privateMemoryMessage ? [privateMemoryMessage] : []),
           ...(researchMessage ? [researchMessage] : []),
           ...context,
