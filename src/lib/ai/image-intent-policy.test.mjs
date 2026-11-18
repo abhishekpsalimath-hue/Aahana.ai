@@ -171,6 +171,21 @@ test("recognizes native-script Hindi and Kannada image edits", () => {
   ]) assert.equal(isImageEditRequest(prompt), true, prompt);
 });
 
+test("recognizes broader Hindi, Kannada and romanized image edits", () => {
+  for (const prompt of [
+    "कपड़े का रंग नीला करो",
+    "शर्ट का रंग बदलो",
+    "रोशनी बढ़ाओ",
+    "ಬಟ್ಟೆಯ ಬಣ್ಣ ನೀಲಿ ಮಾಡಿ",
+    "ಶರ್ಟ್ ಬಣ್ಣ ಬದಲಿಸಿ",
+    "ಬೆಳಕು ಹೆಚ್ಚಿಸಿ",
+    "Kapde ka rang badlo",
+    "Roshni badhao",
+    "Batte banna neeli maadi",
+    "Belaku hechchisi",
+  ]) assert.equal(isImageEditRequest(prompt), true, prompt);
+});
+
 test("does not mistake unrelated chat for image editing", () => {
   for (const prompt of [
     "Explain how to edit a photograph",
