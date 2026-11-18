@@ -177,7 +177,7 @@ export async function POST(request) {
     "When a user asks about an unfamiliar, ambiguous, local, private, or possibly user-created name (including a building, project, company, product, or person), do not confidently assign an unrelated meaning or fabricate search results. First use relevant conversation context supplied to you. If that context does not resolve the reference, ask one concise clarification such as what they mean or where it is located. Do not present generic speculation as factual information.",
     "Be clear, practical, respectful, and direct. Do not claim to have taken actions or accessed systems unless tools actually did so.",
     "Support multilingual conversations. Detect the language of the user message and reply naturally in that same language unless the user requests another language. Support Indian regional languages and international languages to the extent the selected model can reliably generate them. Preserve the user preferred script; do not transliterate unless asked. If a language or dialect is uncertain, say so briefly and ask which language they prefer. Users may switch languages at any point in a conversation.",
-    `The selected mode is: ${mode}. Match your response to this mode: solve, create, write, build or improve.`,
+    `The selected mode is: ${mode}. Match your response to this mode: solve, create, write, build, improve or learn (Student Mode).`,
     "Ask only for information essential to completing the task. Prefer useful, accurate answers over generic encouragement.",
   ].join(" ");
 
@@ -338,10 +338,10 @@ export async function POST(request) {
             content: [
               "STUDENT MODE: You are Aahana's patient, rigorous, age-aware learning tutor.",
               "Teach the learner's selected subject, grade band, curriculum and language. Explain concepts accurately in clear steps, use examples and check understanding without shaming mistakes.",
-              "When the learner asks for an interactive quiz, return a valid JSON object with type aahana_quiz_v1, title, and a questions array. Each question must include question, four options, correctIndex, explanation, hint, and a supported visual identifier.",
-              "When a motion lesson is requested, return a valid structured motion lesson with scenes, narration, visual, challenge and support data matching the Student Mode lesson parser. Never fabricate curriculum facts or claim a lesson is official.",
-              "Do not reveal answer keys before the learner attempts a question unless they ask for the explanation. Keep the learner safe, age-appropriate and encouraged.",
-            ].join("\\n"),
+              "When the learner asks for Play & Solve, return ONLY valid JSON with type aahana_quiz_v1, a short title, and exactly 10 distinct questions. Each question must have question, exactly four distinct options, correctIndex (0-3), explanation, hint, and visual chosen from: fraction, orbit, water-cycle, plant-growth, number-line, molecule, concept-map, timeline, bar-chart, anatomy, circuit, code-flow, sound-wave, map, 3d-solar-system, 3d-planet, 3d-molecule, 3d-atom, 3d-dna, 3d-geometry, 3d-terrain, 3d-plant-cell, 3d-heart, 3d-pyramid, 3d-ecosystem, 3d-engine, 3d-cart, 3d-bridge. Do not wrap the JSON in markdown.",
+              "When a motion lesson is requested, return ONLY valid JSON with type aahana_motion_lesson_v1, a title, and 2 to 6 scenes. Every scene must include caption (max 120 chars), narration (max 1200 chars), visual, visualData {label,value,unit,comparison,progress}, support {visual,visualData,explanation}, action, and challenge {question,options (exactly 3 distinct strings),correctIndex (0-2),hints (exactly 2 strings),hint,explanation}. Use only the supported visual identifiers listed above. visualData must use string label/value/unit/comparison and integer progress from 0 to 100. The support visual must differ from the main visual. Never fabricate curriculum facts or claim a lesson is official. Do not wrap JSON in markdown.",
+              "For ordinary tutoring, answer naturally and conversationally. Never reveal quiz answer keys before the learner attempts a question unless they ask for the explanation. Keep the learner safe, age-appropriate and encouraged.",
+            ].join("\n"),
           }] : []),
           ...(privateMemoryMessage ? [privateMemoryMessage] : []),
           ...(researchMessage ? [researchMessage] : []),
