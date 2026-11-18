@@ -18,12 +18,16 @@ const GUARD_MODEL = "@cf/meta/llama-guard-3-8b";
 const VISION_MODEL = "@cf/meta/llama-4-scout-17b-16e-instruct";
 
 async function runCloudflare(accountId, apiToken, model, input, timeoutMs = 45000) {
+  const isBuiltInModel = model.startsWith("@cf/");
+  const endpoint = isBuiltInModel
+    ? `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/ai/run/${model}`
+    : `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/ai/run`;
   const response = await fetch(
-    `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/ai/run`,
+    endpoint,
     {
       method: "POST",
       headers: { Authorization: `Bearer ${apiToken}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ model, input }),
+      body: JSON.stringify(isBuiltInModel ? input : { model, input }),
       cache: "no-store",
       signal: AbortSignal.timeout(timeoutMs),
     }
