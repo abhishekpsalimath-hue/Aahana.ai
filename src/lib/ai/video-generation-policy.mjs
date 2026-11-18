@@ -18,7 +18,7 @@ export function isVideoGenerationRequest(value) {
 export function validateVideoGenerationInput({ prompt, duration = 5, resolution = "hd", generateAudio = true } = {}) {
   const cleanPrompt = typeof prompt === "string" ? prompt.normalize("NFKC").trim() : "";
   if (!cleanPrompt || cleanPrompt.length > 4000) throw new Error("Describe the video in 1–4,000 characters.");
-  if (!Number.isInteger(duration) || duration < 5 || duration > 20) throw new Error("Video duration must be between 5 and 20 seconds.");
+  if (![5, 10, 15, 20].includes(duration)) throw new Error("Choose a video duration of 5, 10, 15 or 20 seconds.");
   if (!["hd", "fhd"].includes(resolution)) throw new Error("Choose HD or Full HD video.");
   if (typeof generateAudio !== "boolean") throw new Error("Audio setting must be true or false.");
   return Object.freeze({ prompt: cleanPrompt, duration, resolution, generateAudio });
