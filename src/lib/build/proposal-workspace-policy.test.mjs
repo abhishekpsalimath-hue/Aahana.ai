@@ -30,18 +30,21 @@ test("materializes a proposal into an isolated in-memory workspace without write
   assert.equal(workspace.contractCheck.staticAnalysisOnly, true);
 });
 
-test("rejects a workspace whose merged snapshot exceeds sandbox file limits", () => {
-  const currentFiles = [{ path: "src/app.js", content: "export const app = true;" }];
+test("rejects a merged snapshot that exceeds the sandbox total-byte limit", () => {
+  const currentFiles = Array.from({ length: 4 }, (_, index) => ({
+    path: "src/file-" + index + ".js",
+    content: "x".repeat(800 * 1024),
+  }));
   const proposal = validateChangeProposal({
     currentFiles,
     changes: [{
-      path: "src/large.js",
-      action: "create",
-      baseSha256: null,
-      content: "x".repeat(1024 * 1024),
+      path: "src/file-0.js",
+      action: "update",
+      baseSha256: hash(currentFiles[0].content),
+      content: "export const updated = true;",
     }],
   });
-  assert.throws(() => prepareIsolatedProposalWorkspace({ currentFiles, proposal }), /3 MB|100 files/);
+  assert.throws(() => prepareIsolatedProposalWorkspace({ currentFiles, proposal }), /3 MB/);
 });
 
 test("rejects malformed inputs and broken cross-file contracts", () => {
