@@ -34,7 +34,7 @@ export default function NativeImageStudio() {
     if (!referenceImage) { setReferencePreview(""); return; }
     const url = URL.createObjectURL(referenceImage);
     setReferencePreview(url);
-    return () => URL.revokeObjectURL(url);
+    return () => setTimeout(() => URL.revokeObjectURL(url), 1000);
   }, [referenceImage]);
 
   function updateLayer(index, patch) {
@@ -157,7 +157,7 @@ export default function NativeImageStudio() {
       if (!blob) throw new Error("The graded image could not be encoded.");
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement("a"); anchor.href = url; anchor.download = "aahana-graded-image.png"; anchor.click();
-      URL.revokeObjectURL(url);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
       setStatus(cubeLut ? `Generated image exported with ${cubeLut.name}.` : "Generated image exported with the selected colour grade.");
     } catch (error) {
       setStatus(error?.message || "Could not export the graded image.");
@@ -192,7 +192,7 @@ export default function NativeImageStudio() {
       anchor.href = downloadUrl;
       anchor.download = "aahana-original-photo-local-grade.png";
       anchor.click();
-      URL.revokeObjectURL(downloadUrl);
+      setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
       setStatus("Original photo exported with the selected local colour grade. No AI service was used.");
     } catch (error) {
       setStatus(error?.message || "Could not export the original photo locally.");
@@ -208,7 +208,7 @@ export default function NativeImageStudio() {
     anchor.href = url;
     anchor.download = "aahana-creation.svg";
     anchor.click();
-    URL.revokeObjectURL(url);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
     setStatus(`SVG exported with ${COLOR_GRADES.find((grade) => grade.id === colorGrade)?.label || "Original"} grade. This is an editable vector graphic, not an AI-generated photograph.`);
   }
 
