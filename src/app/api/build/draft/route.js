@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { prepareValidatedProposal } from "@/lib/build/proposal-generation-policy.mjs";
+import { resolveAiProviderConfig } from "@/lib/ai/provider-policy.mjs";
 import { toProposalSnapshotPath } from "@/lib/build/proposal-snapshot-policy.mjs";
 import { selectRelevantProjectFiles } from "@/lib/learning/project-source-policy.mjs";
 
@@ -155,19 +156,15 @@ export async function POST(request) {
     return NextResponse.json({ error: "Upload the project's source files before asking Aahana to draft changes." }, { status: 409 });
   }
 
-  const provider = (process.env.AAHANA_AI_PROVIDER || "groq").toLowerCase();
-  if (!["groq", "vercel"].includes(provider)) {
-    return NextResponse.json({ error: "The configured AI provider is not supported for code proposals." }, { status: 503 });
+  const providerConfig = resolveAiProviderConfig(process.env);
+  if (!providerConfig.ok) {
+    return NextResponse.json({
+      error: providerConfig.error === "unsupported-provider"
+        ? "The configured AI provider is not supported for code proposals."
+        : "Aahana's AI provider is not configured for code proposal generation.",
+    }, { status: 503 });
   }
-  const isGroq = provider === "groq";
-  // Provider credentials must come only from server configuration, never request headers.
-  const providerKey = isGroq
-    ? process.env.GROQ_API_KEY
-    : (process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_OIDC_TOKEN);
-  const model = process.env.AAHANA_MODEL || (isGroq ? "openai/gpt-oss-120b" : "");
-  if (!providerKey || !model) {
-    return NextResponse.json({ error: "Aahana's AI provider is not configured for code proposal generation." }, { status: 503 });
-  }
+  const { provider, isGroq, apiKey: providerKey, model, endpoint } = providerConfig;
 
   // Keep the model context bounded and complete: the full snapshot remains available
   // for server-side hash validation, but only whole, relevant files are sent to the model.
@@ -211,7 +208,7 @@ export async function POST(request) {
   let upstream;
   try {
     upstream = await fetch(
-      isGroq ? "https://api.groq.com/openai/v1/chat/completions" : "https://ai-gateway.vercel.sh/v1/chat/completions",
+      endpoint,
       {
         method: "POST",
         headers: { Authorization: `Bearer ${providerKey}`, "Content-Type": "application/json" },
