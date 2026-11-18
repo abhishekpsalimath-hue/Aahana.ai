@@ -32,6 +32,16 @@ test("rejects malformed profiles, unbounded outcomes and invalid quiz sizes", ()
   assert.equal(validateLearningQuizProgress({ ...sample, outcomes: Array.from({ length: 11 }, (_, i) => ({ conceptId: "q-" + i, correct: true })) }), null);
 });
 
+test("accepts progress for a full ten-question quiz", () => {
+  const outcomes = Array.from({ length: 10 }, (_, index) => ({
+    conceptId: "question-" + (index + 1),
+    correct: index % 2 === 0,
+  }));
+  const result = validateLearningQuizProgress({ ...sample, outcomes });
+  assert.equal(result.questions, 10);
+  assert.equal(result.correct, 5);
+});
+
 test("round-trips only marked and valid quiz progress records", () => {
   const progress = validateLearningQuizProgress(sample);
   const serialized = serializeLearningQuizProgress(progress);
