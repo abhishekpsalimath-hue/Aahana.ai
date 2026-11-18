@@ -3,7 +3,7 @@ const MAX_MESSAGE_LENGTH = 1200;
 
 function cleanPath(value) {
   if (typeof value !== "string") return null;
-  const normalized = value.replace(/\\\\/g, "/").replace(/^\\.\\//, "");
+  const normalized = value.replace(/\\/g, "/").replace(/^\.\//, "");
   if (!normalized || normalized.length > 240 || normalized.startsWith("/") || normalized.split("/").includes("..")) return null;
   return normalized;
 }
@@ -35,17 +35,17 @@ export function extractBuildDiagnostics({ stdout = "", stderr = "", exitCode = 0
     results.push(item);
   };
 
-  for (const rawLine of output.split(/\\r?\\n/)) {
+  for (const rawLine of output.split(/\r?\n/)) {
     const lineText = rawLine.trim();
     if (!lineText) continue;
     let match;
-    if ((match = lineText.match(/^(.+?)\\((\\d+),(\\d+)\\):\\s*(error|warning)\\s+(TS\\d+):\\s*(.+)$/i))) {
+    if ((match = lineText.match(/^(.+?)\((\d+),(\d+)\):\s*(error|warning)\s+(TS\d+):\s*(.+)$/i))) {
       add(diagnostic({ source: "typescript", file: match[1], line: Number(match[2]), column: Number(match[3]), severity: match[4].toLowerCase(), code: match[5], message: match[6] }));
-    } else if ((match = lineText.match(/^(.+?):(\\d+):(\\d+):\\s*(ERROR|WARNING):\\s*(.+)$/i))) {
+    } else if ((match = lineText.match(/^(.+?):(\d+):(\d+):\s*(ERROR|WARNING):\s*(.+)$/i))) {
       add(diagnostic({ source: "compiler", file: match[1], line: Number(match[2]), column: Number(match[3]), severity: match[4].toLowerCase(), message: match[5] }));
-    } else if ((match = lineText.match(/^(.+?)\\s+(\\d+):(\\d+)\\s+(error|warning)\\s+(.+?)(?:\\s{2,}([\\w/-]+))?$/i))) {
+    } else if ((match = lineText.match(/^(.+?)\s+(\d+):(\d+)\s+(error|warning)\s+(.+?)(?:\s{2,}([\w/-]+))?$/i))) {
       add(diagnostic({ source: "eslint", file: match[1], line: Number(match[2]), column: Number(match[3]), severity: match[4].toLowerCase(), code: match[6] || null, message: match[5] }));
-    } else if ((match = lineText.match(/^File ["'](.+?)["'], line (\\d+)/))) {
+    } else if ((match = lineText.match(/^File ["'](.+?)["'], line (\d+)/))) {
       add(diagnostic({ source: "python", file: match[1], line: Number(match[2]), message: "Python traceback location" }));
     } else if ((match = lineText.match(/^npm ERR! code (.+)$/))) {
       add(diagnostic({ source: "npm", code: match[1], message: "npm reported an installation or script error." }));
