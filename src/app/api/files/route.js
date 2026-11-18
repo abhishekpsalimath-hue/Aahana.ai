@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { isSupportedSourceFile } from "@/lib/build/source-file-policy.mjs";
 
 const BUCKET = "aahana-private";
 const MAX_BYTES = 10 * 1024 * 1024;
@@ -7,6 +8,7 @@ const ALLOWED_TYPES = new Set([
   "application/pdf", "text/plain", "text/markdown", "text/csv",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/json", "text/javascript", "application/javascript", "text/css", "text/html", "text/x-python",
   "image/png", "image/jpeg", "image/webp",
 ]);
 
@@ -36,12 +38,15 @@ export async function POST(request) {
   let body;
   try { body = await request.json(); } catch { return NextResponse.json({ error: "Invalid request." }, { status: 400 }); }
   const { objectPath, originalFilename, mimeType, sizeBytes, projectId = null } = body || {};
+  const sourceFile = typeof originalFilename === "string" && typeof mimeType === "string" &&
+    isSupportedSourceFile(originalFilename, mimeType);
+  const maxUploadBytes = sourceFile ? 1024 * 1024 : MAX_BYTES;
   if (typeof objectPath !== "string" || !objectPath.startsWith(`${user.id}/`) ||
       typeof originalFilename !== "string" || !originalFilename.trim() || originalFilename.length > 255 ||
-      typeof mimeType !== "string" || !ALLOWED_TYPES.has(mimeType) ||
-      !Number.isInteger(sizeBytes) || sizeBytes < 1 || sizeBytes > MAX_BYTES ||
+      typeof mimeType !== "string" || (!ALLOWED_TYPES.has(mimeType) && !sourceFile) ||
+      !Number.isInteger(sizeBytes) || sizeBytes < 1 || sizeBytes > maxUploadBytes ||
       (projectId !== null && typeof projectId !== "string")) {
-    return NextResponse.json({ error: "Invalid file details." }, { status: 400 });
+    return NextResponse.json({ error: "Invalid file details. Source files must be 1 MB or smaller." }, { status: 400 });
   }
 
   if (projectId) {
