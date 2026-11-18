@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { buildResearchQuery, rankAndDedupeResearchResults } from "../research/research-policy.mjs";
+import { selectRelevantProjectFiles } from "./project-source-policy.mjs";
 import "./learning-memory.test.mjs";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -611,4 +612,27 @@ test("project creation lets users set a useful project type and shows the projec
   assert.match(workspace, /<option value="design">Design<\/option>/);
   assert.match(workspace, /project\.project_type \|\| "other"/);
   assert.match(workspace, /project\.description &&/);
+});
+
+
+test("Build Mode ranks relevant project filenames before recent unrelated files and keeps a strict eight-file cap", () => {
+  const files = [
+    { original_filename: "readme.md", id: "recent" },
+    { original_filename: "database-schema.sql", id: "schema" },
+    { original_filename: "checkout-payment-flow.md", id: "checkout" },
+    { original_filename: "unrelated-notes.txt", id: "notes" },
+    { original_filename: "checkout-tests.csv", id: "tests" },
+    { original_filename: "checkout-api.md", id: "api" },
+    { original_filename: "checkout-ui.md", id: "ui" },
+    { original_filename: "checkout-config.txt", id: "config" },
+    { original_filename: "checkout-errors.md", id: "errors" },
+    { original_filename: "checkout-analytics.md", id: "analytics" },
+  ];
+  const selected = selectRelevantProjectFiles("Fix the checkout payment flow", files, 8);
+  assert.equal(selected.length, 8);
+  assert.equal(selected[0].id, "checkout");
+  assert.ok(selected.some((file) => file.id === "api"));
+  assert.ok(selected.some((file) => file.id === "tests"));
+  assert.equal(selectRelevantProjectFiles("unmatched prompt", files, 8)[0].id, "recent");
+  assert.equal(selectRelevantProjectFiles("checkout", files, 100).length, 8);
 });
