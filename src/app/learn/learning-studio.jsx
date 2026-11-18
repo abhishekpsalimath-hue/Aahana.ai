@@ -8,7 +8,6 @@ import AnimatedLesson, { AnimatedVisual, readMotionLesson } from "./animated-les
 import { learningCategories, allLearningSubjects } from "@/lib/learning/learning-catalog";
 import { summarizeLearningProgress } from "@/lib/learning/learner-progress-policy.mjs";
 const Interactive3DWorld = dynamic(() => import("./interactive-3d-world"), { ssr: false, loading: () => <div role="status">Preparing interactive 3D learning…</div> });
-const Mini3DModel = dynamic(() => import("./interactive-3d-world").then((module) => module.Mini3DModel), { ssr: false });
 
 const subjects = allLearningSubjects;
 const curricula = ["Not specified", "CBSE", "ICSE", "Karnataka State Board", "Other Indian State Board", "Cambridge International", "International Baccalaureate (IB)", "England National Curriculum", "US Common Core", "Other / help me choose"];
@@ -135,56 +134,6 @@ function InteractiveQuiz({ quiz, profile, memoryEnabled, onSaveProgress }) {
 }
 
 
-
-const spaceQuizQuestions = [
-  { question: "Which planet is known as the Red Planet?", options: ["Venus", "Mars", "Mercury", "Neptune"], answer: 1, explanation: "Mars looks reddish because iron minerals in its soil have oxidised, much like rust." },
-  { question: "Which planet has the largest rings?", options: ["Saturn", "Earth", "Jupiter", "Uranus"], answer: 0, explanation: "Saturn has the Solar System’s most prominent and extensive ring system, made mainly of ice and rocky particles." },
-  { question: "Which planet is the largest in our Solar System?", options: ["Neptune", "Earth", "Jupiter", "Saturn"], answer: 2, explanation: "Jupiter is the largest planet by both diameter and mass." },
-  { question: "Which planet takes about 365 days to orbit the Sun?", options: ["Mars", "Earth", "Venus", "Mercury"], answer: 1, explanation: "One Earth year is about 365.25 days." },
-  { question: "Which planet rotates almost on its side?", options: ["Uranus", "Jupiter", "Mars", "Venus"], answer: 0, explanation: "Uranus has an extreme axial tilt of about 98 degrees." },
-];
-
-function SpaceFunQuiz() {
-  const [questionIndex, setQuestionIndex] = useState(0);
-  const [selected, setSelected] = useState(null);
-  const [score, setScore] = useState(0);
-  const [finished, setFinished] = useState(false);
-  const current = spaceQuizQuestions[questionIndex];
-  function choose(index) {
-    if (selected !== null || finished) return;
-    setSelected(index);
-    if (index === current.answer) setScore((value) => value + 1);
-  }
-  function next() {
-    if (questionIndex === spaceQuizQuestions.length - 1) setFinished(true);
-    else { setQuestionIndex((value) => value + 1); setSelected(null); }
-  }
-  function restart() { setQuestionIndex(0); setSelected(null); setScore(0); setFinished(false); }
-  return (
-    <section className="space-fun-quiz" aria-label="3D space fun quiz game">
-      <div className="learning-section-heading"><div><span>SPACE FUN QUIZ</span><h2>Launch your planet challenge</h2></div><span className="space-explorer-tag">5 QUESTIONS · 3D SPACE</span></div>
-      <div className="space-fun-quiz-layout">
-        <div className="space-fun-quiz-model"><Mini3DModel modelId="solar-system" /><p>Explore the planets in 3D, then test what you discover.</p></div>
-        <div className="space-fun-quiz-play">
-          {finished ? <>
-            <span className="space-quiz-eyebrow">MISSION COMPLETE</span>
-            <h3>You scored {score} out of {spaceQuizQuestions.length}!</h3>
-            <p>{score === 5 ? "Perfect orbit! You’re a Solar System star." : "Great exploring. Every round makes your space knowledge stronger."}</p>
-            <button type="button" onClick={restart}>Play again</button>
-          </> : <>
-            <div className="space-quiz-meta"><span>QUESTION {questionIndex + 1} / {spaceQuizQuestions.length}</span><span>{score} STARS</span></div>
-            <div className="space-quiz-track"><span style={{ width: `${((questionIndex + (selected !== null ? 1 : 0)) / spaceQuizQuestions.length) * 100}%` }} /></div>
-            <h3>{current.question}</h3>
-            <div className="space-quiz-options">
-              {current.options.map((option, index) => <button type="button" key={option} onClick={() => choose(index)} disabled={selected !== null} className={selected === index ? (index === current.answer ? "correct" : "retry") : selected !== null && index === current.answer ? "correct" : ""}>{String.fromCharCode(65 + index)} <span>{option}</span></button>)}
-            </div>
-            {selected !== null && <div className={selected === current.answer ? "space-quiz-feedback correct" : "space-quiz-feedback"} role="status"><strong>{selected === current.answer ? "Nice shot!" : "Not quite—keep exploring!"}</strong><p>{current.explanation}</p><button type="button" onClick={next}>{questionIndex === spaceQuizQuestions.length - 1 ? "See my score" : "Next question"}</button></div>}
-          </>}
-        </div>
-      </div>
-    </section>
-  );
-}
 
 export default function LearningStudio({ userEmail = "" }) {
   const [selectedPlanet, setSelectedPlanet] = useState(null);
