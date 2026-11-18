@@ -101,3 +101,5 @@ jobs:
         run: node --check ../../src/app/api/chat/route.js
       - name: Syntax-check authenticated project build route
         run: node --check ../../src/app/api/build/project/route.js
+      - name: Syntax-check authenticated Build Engine status route
+        run: node --check ../../src/app/api/build/status/route.js
