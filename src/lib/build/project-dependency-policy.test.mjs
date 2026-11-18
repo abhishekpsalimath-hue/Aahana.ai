@@ -185,8 +185,8 @@ test("reports route handler exports and avoids inventing bindings for absent sou
   const route = result.modules.find((module) => module.path.endsWith("/route.js"));
   assert.ok(route.exports.some((item) => item.name === "GET"));
   assert.ok(route.exports.some((item) => item.name === "POST"));
-  assert.ok(route.apiHandlers.some((item) => item.method === "GET" && item.readsSearchParams && item.returnsJson));
-  assert.ok(route.apiHandlers.some((item) => item.method === "POST" && item.readsJsonBody && item.usesNextResponse));
+  assert.ok(route.apiHandlers.some((item) => item.method === "GET" && item.readsSearchParams && item.returnsJson && !item.readsJsonBody));
+  assert.ok(route.apiHandlers.some((item) => item.method === "POST" && item.readsJsonBody && item.usesNextResponse && !item.readsSearchParams));
   assert.ok(result.bindingRelationships.some((edge) => edge.imported === "GET" && edge.status === "matched"));
 });
 
