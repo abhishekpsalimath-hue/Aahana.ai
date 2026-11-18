@@ -4,6 +4,7 @@ import { logSystemEvent, recordUserOpsEvent } from "@/lib/operations/server";
 import { buildResearchQuery, rankAndDedupeResearchResults } from "@/lib/research/research-policy.mjs";
 import { getGradeLearningCurriculum } from "@/lib/learning/curriculum-engine.js";
 import { selectRelevantProjectFiles } from "@/lib/learning/project-source-policy.mjs";
+import { normalizeLearningSubject } from "@/lib/learning/learning-memory.js";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -91,7 +92,9 @@ export async function POST(request) {
   const learningProfile = mode === "learn" ? {
     gradeBand: allowedGradeBands.includes(rawLearningProfile.gradeBand) ? rawLearningProfile.gradeBand : "not-sure",
     schoolGrade: ["1","2","3","4","5","6","7","8","9","10"].includes(String(rawLearningProfile.schoolGrade)) ? Number(rawLearningProfile.schoolGrade) : null,
-    subject: allowedLearningSubjects.includes(rawLearningProfile.subject) ? rawLearningProfile.subject : "Anything / explore",
+    subject: allowedLearningSubjects.includes(rawLearningProfile.subject)
+      ? rawLearningProfile.subject
+      : (normalizeLearningSubject(rawLearningProfile.subject) || "Anything / explore"),
     curriculum: allowedCurricula.includes(rawLearningProfile.curriculum) ? rawLearningProfile.curriculum : "Not specified",
     language: typeof rawLearningProfile.language === "string" && /^[\p{L}\p{M}\s-]{1,35}$/u.test(rawLearningProfile.language.trim()) ? rawLearningProfile.language.trim() : "Use my language",
     learningMode: allowedLearningModes.includes(rawLearningProfile.learningMode) ? rawLearningProfile.learningMode : "talk",
