@@ -44,3 +44,12 @@ test("normalizes Unicode prompt and path tokens before matching", () => {
   const result = selectRelevantProjectFiles("update cafe\u0301 menu", unicodeFiles, 2);
   assert.equal(result[0].original_filename, "src/café-menu.jsx");
 });
+
+test("uses bounded source-content matches when filenames are generic", () => {
+  const genericFiles = [
+    { original_filename: "src/lib/first.js", content: "export function renderDashboard() {}" },
+    { original_filename: "src/lib/second.js", content: "export function calculateInvoiceTax() {}" },
+  ];
+  const result = selectRelevantProjectFiles("change invoice tax calculation", genericFiles, 2);
+  assert.equal(result[0].original_filename, "src/lib/second.js");
+});
