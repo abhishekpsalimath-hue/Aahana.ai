@@ -54,19 +54,16 @@ test("learning instructions are included in the actual model system prompt", () 
   ]) assert.ok(systemPrompt.includes(phrase), `Missing learning policy: ${phrase}`);
 });
 
-test("Student Mode stays focused on Grades 1–10 and keeps advanced exploration in Assistant", () => {
-  assert.match(studio, /Choose your school grade/);
-  assert.match(studio, /Which grade are you in\?/);
-  assert.match(studio, /Array\.from\(\{ length: 10 \}/);
-  assert.match(studio, /Grade \{value\}/);
-  assert.match(studio, /Your learning conversation/);
+test("Student Mode starts with a child-led question instead of a compulsory grade-selection screen", () => {
+  assert.match(studio, /What would you like me to help you understand\\?/);
+  assert.match(studio, /Ask Aahana anything you are curious about/);
   assert.match(studio, /Aahana will choose the best way to explain it/);
-  assert.doesNotMatch(studio, /<LearningCategoryExplorer/);
-  assert.doesNotMatch(studio, /<CreatorStudio/);
-  assert.doesNotMatch(studio, /<SpaceExplorer/);
-});
-
-test("learning sessions use the authenticated chat endpoint and persist under learn mode", () => {
+  assert.doesNotMatch(studio, /Choose your school grade/);
+  assert.doesNotMatch(studio, /Which grade are you in/);
+  assert.doesNotMatch(studio, /Array\\.from\\(\\{ length: 10 \\}/);
+  assert.doesNotMatch(studio, /<LearningCategoryExplorer(?:\\s|>)/);
+  assert.doesNotMatch(studio, /<SpaceExplorer(?:\\s|>)/);
+});test("learning sessions use the authenticated chat endpoint and persist under learn mode", () => {
   assert.match(studio, /fetch\("\/api\/chat"/);
   assert.match(studio, /mode: "learn"/);
   assert.match(studio, /learningProfile: profile/);
@@ -200,18 +197,15 @@ test("learning memory API reports the actual consent setting", () => {
   assert.doesNotMatch(learningMemoryRoute, /return NextResponse\.json\(\{ enabled: true, journeys \}\)/);
 });
 
-test("adaptive roadmap is built only from saved learner-selected topics and offers clear next actions", () => {
-  assert.match(studio, /const learningRoadmap = learningMemory\.journeys\.reduce/);
-  assert.match(studio, /scene\.alternateExplanationUsed/);
-  assert.match(studio, /Explore with a fresh explanation/);
-  assert.match(studio, /Continue your curiosity/);
-  assert.match(studio, /Explore again/);
+test("learning revisit suggestions are derived only from saved journeys and use the learner's chosen topic", () => {
+  assert.match(studio, /const learningRoadmap = learningMemory\\.journeys\\.reduce/);
+  assert.match(studio, /scene\\.alternateExplanationUsed/);
+  assert.match(studio, /function exploreRoadmapTopic\\(topic, revisit = false\\)/);
   assert.match(studio, /Let's explore/);
+  assert.match(studio, /with a fresh animated explanation and a different example/);
   assert.match(studio, /Let's continue exploring/);
-  assert.match(studio, /invitations—not grades or assumptions/);
-});
-
-test("animated lesson renderer validates scene data and provides subject-specific visuals", () => {
+  assert.match(studio, /setLearningMode\\("story"\\)/);
+});test("animated lesson renderer validates scene data and provides subject-specific visuals", () => {
   assert.match(animated, /function readMotionLesson\(content\)/);
   assert.match(animated, /value\?\.type !== "aahana_motion_lesson_v1"/);
   assert.match(animated, /value\.scenes\.length < 2/);
@@ -334,8 +328,9 @@ test("Learning Studio exposes a broad category-based catalogue and validates eve
   assert.ok(catalog.allLearningSubjects.includes("Kannada"));
   assert.ok(catalog.allLearningSubjects.includes("Artificial intelligence"));
   assert.ok(catalog.allLearningSubjects.includes("UPSC foundation"));
-  assert.ok(studio.includes("Learning category"));
-  assert.ok(studio.includes("Choose a subject or topic"));
+  assert.match(studio, /export function LearningCategoryExplorer\\(/);
+  assert.doesNotMatch(studio, /<LearningCategoryExplorer(?:\\s|>)/);
+  assert.match(studio, /findLearningSubjects\\(query, 12\\)/);
   assert.match(route, /const allowedLearningSubjects = allLearningSubjects/);
   assert.ok(catalogPath.endsWith("learning-catalog.js"));
 });
