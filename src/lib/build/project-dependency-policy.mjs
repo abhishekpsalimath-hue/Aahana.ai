@@ -137,8 +137,8 @@ function readAliasConfig(byPath) {
     const options = config?.compilerOptions || {};
     const configDir = configPath.includes("/") ? configPath.slice(0, configPath.lastIndexOf("/")) : "";
     const baseUrl = typeof options.baseUrl === "string"
-      ? normalizePath([configDir, options.baseUrl].filter(Boolean).join("/")) || ""
-      : configDir;
+      ? (normalizePath([configDir, options.baseUrl].filter(Boolean).join("/")) || ".")
+      : (configDir || ".");
     const paths = options.paths && typeof options.paths === "object" && !Array.isArray(options.paths)
       ? Object.entries(options.paths)
           .filter(([pattern, targets]) => typeof pattern === "string" && Array.isArray(targets) &&
