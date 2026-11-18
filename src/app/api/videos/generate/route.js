@@ -45,6 +45,7 @@ export async function POST(request) {
       prompt: body?.prompt,
       duration: body?.duration ?? 5,
       resolution: body?.resolution ?? "hd",
+      aspectRatio: body?.aspectRatio ?? "16:9",
       generateAudio: body?.generateAudio ?? true,
     });
   } catch (error) {
@@ -66,6 +67,7 @@ export async function POST(request) {
             mode: "t2v",
             prompt: input.prompt,
             resolution: input.resolution,
+            aspect_ratio: input.aspectRatio,
             duration: input.duration,
             generate_audio: input.generateAudio,
           },
