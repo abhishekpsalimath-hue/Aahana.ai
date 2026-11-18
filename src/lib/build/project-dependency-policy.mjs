@@ -50,12 +50,90 @@ function resolveLocalImport(importer, specifier, knownPaths) {
   return null;
 }
 
+function parseJsonConfig(source) {
+  const input = String(source || "");
+  let uncommented = "";
+  let inString = false;
+  let escaped = false;
+  let lineComment = false;
+  let blockComment = false;
+  for (let index = 0; index < input.length; index += 1) {
+    const char = input[index];
+    const next = input[index + 1];
+    if (lineComment) {
+      if (char === "\n") {
+        lineComment = false;
+        uncommented += char;
+      } else {
+        uncommented += " ";
+      }
+      continue;
+    }
+    if (blockComment) {
+      if (char === "*" && next === "/") {
+        blockComment = false;
+        uncommented += "  ";
+        index += 1;
+      } else {
+        uncommented += char === "\n" ? "\n" : " ";
+      }
+      continue;
+    }
+    if (inString) {
+      uncommented += char;
+      if (escaped) escaped = false;
+      else if (char === "\\") escaped = true;
+      else if (char === '"') inString = false;
+      continue;
+    }
+    if (char === '"') {
+      inString = true;
+      uncommented += char;
+    } else if (char === "/" && next === "/") {
+      lineComment = true;
+      uncommented += "  ";
+      index += 1;
+    } else if (char === "/" && next === "*") {
+      blockComment = true;
+      uncommented += "  ";
+      index += 1;
+    } else {
+      uncommented += char;
+    }
+  }
+
+  let json = "";
+  inString = false;
+  escaped = false;
+  for (let index = 0; index < uncommented.length; index += 1) {
+    const char = uncommented[index];
+    if (inString) {
+      json += char;
+      if (escaped) escaped = false;
+      else if (char === "\\") escaped = true;
+      else if (char === '"') inString = false;
+      continue;
+    }
+    if (char === '"') {
+      inString = true;
+      json += char;
+    } else if (char === ",") {
+      let lookahead = index + 1;
+      while (/\\s/.test(uncommented[lookahead] || "")) lookahead += 1;
+      if (uncommented[lookahead] !== "}" && uncommented[lookahead] !== "]") json += char;
+    } else {
+      json += char;
+    }
+  }
+  return JSON.parse(json);
+}
+
 function readAliasConfig(byPath) {
   const configPath = byPath.has("tsconfig.json") ? "tsconfig.json"
     : byPath.has("jsconfig.json") ? "jsconfig.json" : null;
   if (!configPath) return { configPath: null, baseUrl: "", paths: [] };
   try {
-    const config = JSON.parse(byPath.get(configPath).content);
+    const config = parseJsonConfig(byPath.get(configPath).content);
     const options = config?.compilerOptions || {};
     const configDir = configPath.includes("/") ? configPath.slice(0, configPath.lastIndexOf("/")) : "";
     const baseUrl = typeof options.baseUrl === "string"
