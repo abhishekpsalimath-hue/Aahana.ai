@@ -321,3 +321,45 @@ button:focus-visible,a:focus-visible{outline-color:#c4a7ff}
 .build-tools-actions button:disabled{opacity:.42;cursor:not-allowed}
 .build-tools-note{margin:10px 0 0;color:#a99fb7;font-size:10px;line-height:1.5}
 @media(max-width:760px){.build-tools{padding:12px}.build-tools-heading{align-items:flex-start}.build-tools-actions{width:100%}.build-tools-actions button{flex:1}}
+
+
+/* Founder welcome — preserve the reference preview's display typography. */
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Unbounded:wght@400;500;600;700&display=swap');
+.welcome{isolation:isolate}
+.founder-welcome-note{
+  position:relative;z-index:3;display:grid;justify-items:center;gap:11px;
+  width:min(92%,680px);margin:12px auto 22px;padding:0 12px;text-align:center;
+  pointer-events:none;animation:founder-welcome-arrive 1.2s cubic-bezier(.16,1,.3,1) both;
+}
+.founder-welcome-note p{
+  display:grid;justify-items:center;gap:4px;margin:0;
+  color:#eee9fa;font-family:'Unbounded',sans-serif;
+  font-size:clamp(15px,2vw,21px);font-weight:500;line-height:1.5;
+  letter-spacing:-.045em;text-wrap:balance;
+}
+.founder-welcome-note strong{
+  color:#cbb8ff;font-family:'Space Grotesk',sans-serif;
+  font-size:clamp(12px,1.5vw,16px);font-weight:700;
+  letter-spacing:.11em;text-transform:uppercase;
+  text-shadow:0 0 22px #b99aff33;
+}
+@keyframes founder-welcome-arrive{
+  from{opacity:0;filter:blur(9px);transform:translate3d(0,16px,0)}
+  to{opacity:1;filter:blur(0);transform:translate3d(0,0,0)}
+}
+.welcome h1,.welcome h1 em{
+  font-family:'Unbounded',sans-serif;font-weight:600;
+  letter-spacing:-.075em;line-height:1.08;
+}
+.welcome>p{font-family:'Space Grotesk',sans-serif}
+.space-star{animation-duration:7.5s;box-shadow:0 0 9px #e8dcff,0 0 22px #a98af099}
+@media(max-width:760px){
+  .founder-welcome-note{width:min(94%,520px);margin:10px auto 18px;gap:8px}
+  .founder-welcome-note p{font-size:clamp(14px,4vw,18px);line-height:1.48}
+  .founder-welcome-note strong{font-size:clamp(10px,2.8vw,13px);letter-spacing:.08em}
+  .welcome h1,.welcome h1 em{letter-spacing:-.065em}
+}
+@media(prefers-reduced-motion:reduce){
+  .founder-welcome-note{animation:none;opacity:1;filter:none;transform:none}
+  .space-star{animation:none!important;opacity:.22;transform:none}
+}
