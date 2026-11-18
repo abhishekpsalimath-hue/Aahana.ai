@@ -10,6 +10,8 @@ on:
       - "src/app/api/voice/transcribe/route.js"
       - "src/app/api/voice/speech/route.js"
       - "src/app/api/chat/route.js"
+      - "src/app/api/images/generate/route.js"
+      - "src/lib/ai/image-intent-policy.*"
       - "src/app/api/build/**"
       - "src/app/api/files/**"
       - "src/app/assistant-workspace.jsx"
@@ -102,6 +104,10 @@ jobs:
         run: node --test ../../src/lib/build/change-proposal-policy.test.mjs ../../src/lib/build/proposal-snapshot-policy.test.mjs ../../src/lib/build/proposal-draft-policy.test.mjs
       - name: Test AI proposal generation validation
         run: node --test ../../src/lib/build/proposal-generation-policy.test.mjs
+      - name: Test natural-language image generation intent
+        run: node --test ../../src/lib/ai/image-intent-policy.test.mjs
+      - name: Syntax-check authenticated image generation API
+        run: node --check ../../src/app/api/images/generate/route.js
       - name: Test server-only AI provider configuration
         run: node --test ../../src/lib/ai/provider-policy.test.mjs
       - name: Test isolated Build Engine orchestration
