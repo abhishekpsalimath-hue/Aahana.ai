@@ -14,7 +14,7 @@ const VISION_MODEL = "@cf/meta/llama-4-scout-17b-16e-instruct";
 
 async function runSafetyModel(accountId, apiToken, model, input, timeoutMs) {
   const response = await fetch(
-    `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/ai/run`,
+    `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/ai/run/${MODEL}`,
     {
       method: "POST",
       headers: { Authorization: `Bearer ${apiToken}`, "Content-Type": "application/json" },
@@ -137,7 +137,7 @@ export async function POST(request) {
           Authorization: `Bearer ${apiToken}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ model: MODEL, input: { prompt: finalPrompt, steps: 8 } }),
+        body: JSON.stringify({ prompt: finalPrompt, steps: 8 }),
         cache: "no-store",
         signal: AbortSignal.timeout(35000),
       }
