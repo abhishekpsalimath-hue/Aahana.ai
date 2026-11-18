@@ -21,6 +21,6 @@ test("uses a useful compiled prompt and normalizes whitespace", () => {
 test("falls back to the original when the compiler output is empty or invalid", () => {
   assert.equal(selectCompiledImagePrompt("", "A detailed city at night"), "A detailed city at night");
   assert.equal(selectCompiledImagePrompt("short", "A detailed city at night"), "A detailed city at night");
-  assert.equal(selectCompiledImagePrompt("x".repeat(4001), "A detailed city at night"), "A detailed city at night");
+  assert.equal(selectCompiledImagePrompt("x".repeat(2049), "A detailed city at night"), "A detailed city at night");
   assert.equal(selectCompiledImagePrompt("Useful detailed image prompt", ""), "");
 });
