@@ -109,10 +109,12 @@ test("Learning Studio validates and renders interactive quizzes with feedback an
   assert.match(studio, /value\?\.type !== "aahana_quiz_v1"/);
   assert.match(studio, /item\.options\.length === 4/);
   assert.match(studio, /Number\.isInteger\(item\.correctIndex\)/);
-  assert.match(studio, /function InteractiveQuiz\(\{ quiz \}\)/);
+  assert.match(studio, /function InteractiveQuiz\(\{ quiz, profile, memoryEnabled, onSaveProgress \}\)/);
   assert.match(studio, /function choose\(index, optionIndex\)/);
   assert.match(studio, /discovered/);
   assert.match(studio, /Play again/);
+  assert.match(studio, /Save this progress/);
+  assert.match(studio, /onSaveProgress/);
 });
 
 test("Play and Solve keeps incomplete streamed quiz JSON out of the visible conversation", () => {
@@ -199,8 +201,8 @@ test("learning memory is opt-in, authenticated, owner-scoped and deletable", () 
 });
 
 test("learning memory API reports the actual consent setting", () => {
-  assert.match(learningMemoryRoute, /return NextResponse\.json\(\{ enabled, journeys \}\)/);
-  assert.doesNotMatch(learningMemoryRoute, /return NextResponse\.json\(\{ enabled: true, journeys \}\)/);
+  assert.match(learningMemoryRoute, /return NextResponse\.json\(\{ enabled, journeys, quizProgress \}\)/);
+  assert.doesNotMatch(learningMemoryRoute, /return NextResponse\.json\(\{ enabled: true, journeys/);
 });
 
 test("the old learning pathway and revisit panel logic are removed", () => {
