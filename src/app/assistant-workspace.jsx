@@ -877,7 +877,8 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         result.stderr ? `\nDiagnostics:\n${result.stderr}` : "",
         Array.isArray(result.diagnostics) && result.diagnostics.length
           ? "\nStructured findings:\n" + result.diagnostics.map((item) =>
-              "- " + (item.severity || "error") + ": " + (item.file || "project") + (item.line ? ":" + item.line + (item.column ? ":" + item.column : "") : "") + (item.code ? " [" + item.code + "]" : "") + " " + item.message
+              "- " + (item.severity || "error") + ": " + (item.file || "project") + (item.line ? ":" + item.line + (item.column ? ":" + item.column : "") : "") + (item.code ? " [" + item.code + "]" : "") + " " + item.message +
+              (item.sourceContext?.excerpt ? "\n" + item.sourceContext.excerpt : "")
             ).join("\n")
           : "",
         "\nNo project files were changed and nothing was deployed.",
