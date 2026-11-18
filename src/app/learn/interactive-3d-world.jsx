@@ -991,6 +991,7 @@ export default function Interactive3DWorld({ selectedPlanet, onSelectedPlanetCha
   const [zoom, setZoom] = useState(1);
   const [conceptIndex, setConceptIndex] = useState(0);
   const [labCheckAnswer, setLabCheckAnswer] = useState(null);
+  const [cellCheckAnswer, setCellCheckAnswer] = useState(null);
   const [ecosystem, setEcosystem] = useState({ rainfall: 70, waterSource: true, pollution: 15, engineCycle: "intake", physicsForce: 6, physicsFriction: 2, physicsMass: 2, chemistryMolecule: "water", chemistryFocus: "all", chemistryShowBonds: true, orbitSpeed: 1, cellFocus: "all", bridgeLoad: "center" });
   const canvasRef = useRef(null);
   const dragRef = useRef(null);
@@ -1029,6 +1030,27 @@ export default function Interactive3DWorld({ selectedPlanet, onSelectedPlanetCha
     },
   };
   const activeChemistryCheck = chemistryChecks[ecosystem.chemistryMolecule] || chemistryChecks.water;
+  const cellChecks = {
+    animal: {
+      question: "Which organelle releases much of the usable energy during aerobic respiration?",
+      options: ["Mitochondrion", "Ribosome", "Cell membrane"],
+      correct: 0,
+      hint: "Look for the organelle often described as the cell's energy converter.",
+      explanation: "Mitochondria are a major site of aerobic respiration and help make ATP.",
+    },
+    plant: {
+      question: "Which structure captures light energy for photosynthesis?",
+      options: ["Large vacuole", "Chloroplast", "Cell wall"],
+      correct: 1,
+      hint: "It contains chlorophyll, the green light-absorbing pigment.",
+      explanation: "Chloroplasts contain chlorophyll and are the main site of photosynthesis in plant cells.",
+    },
+  };
+  const activeCellCheck = cellChecks[modelId === "plant-cell" ? "plant" : "animal"];
+  const cellWhatIf = modelId === "plant-cell"
+    ? "If chloroplasts could no longer capture light, photosynthesis would decrease. The plant would make less glucose from light energy; the cell wall would still provide support."
+    : "If mitochondria stopped working, aerobic ATP production would fall. Many energy-requiring cell processes would be disrupted, even though the nucleus still stores genetic information.";
+
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -1128,7 +1150,19 @@ export default function Interactive3DWorld({ selectedPlanet, onSelectedPlanetCha
               ribosomes: "Ribosomes are the structures where cells assemble proteins.",
               membrane: "The cell membrane forms a selectively permeable boundary that helps regulate what enters and leaves the cell.",
             })[ecosystem.cellFocus || "all"]}</p>
-            <button type="button" onClick={() => setEcosystem((current) => ({ ...current, cellFocus: "all" }))}>Reset cell explorer</button>
+            <div className="learning-3d-experiment-control">
+              <strong>What if this structure stopped working?</strong>
+              <p className="learning-3d-experiment-observation" aria-live="polite">{cellWhatIf}</p>
+            </div>
+            <div className="learning-3d-experiment-control">
+              <strong>Quick cell knowledge check</strong>
+              <p>{activeCellCheck.question}</p>
+              <div role="group" aria-label="Cell biology knowledge check">
+                {activeCellCheck.options.map((option, optionIndex) => <button type="button" key={option} className={cellCheckAnswer === optionIndex ? "active" : ""} aria-pressed={cellCheckAnswer === optionIndex} onClick={() => setCellCheckAnswer(optionIndex)}>{option}</button>)}
+              </div>
+              {cellCheckAnswer !== null && <p className="learning-3d-experiment-observation" role="status">{cellCheckAnswer === activeCellCheck.correct ? activeCellCheck.explanation : activeCellCheck.hint}</p>}
+            </div>
+            <button type="button" onClick={() => { setEcosystem((current) => ({ ...current, cellFocus: "all" })); setCellCheckAnswer(null); }}>Reset cell explorer</button>
           </div>}
           {modelId === "molecule" && <div className="learning-3d-experiment" aria-label="Interactive chemistry molecule lab">
             <span>BUILD & EXPLORE MOLECULES</span>
