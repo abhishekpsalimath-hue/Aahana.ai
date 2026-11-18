@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { executeBuildTask } from "@/lib/build/build-engine.mjs";
 import { validateWorkspaceFiles } from "@/lib/build/sandbox-policy.mjs";
+import { authorizeWorkspaceExecution } from "@/lib/build/workspace-approval-policy.mjs";
 
 export const runtime = "nodejs";
 export const maxDuration = 180;
@@ -66,6 +67,22 @@ export async function POST(request) {
 
   if (projectError || !project) {
     return NextResponse.json({ error: "Project not found." }, { status: 404 });
+  }
+
+  try {
+    authorizeWorkspaceExecution({
+      userId: user.id,
+      projectOwnerId: user.id,
+      projectId,
+      approval: body?.approval,
+      files,
+      operation,
+      entrypoint,
+    });
+  } catch (error) {
+    return NextResponse.json({
+      error: error?.message || "Explicit owner approval is required before execution.",
+    }, { status: 403 });
   }
 
   activeBuildUsers.add(user.id);
