@@ -406,7 +406,7 @@ function makeSceneModel(group,id,selectedPlanet=null,heartFlow="body",labState={
     return;
   }
 }
-function createThreeScene(canvas,id,selectedPlanet=null) {
+function createThreeScene(canvas,id,selectedPlanet=null,heartFlow="body",labState={}) {
   let renderer;
   try { renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:"low-power"}); }
   catch { return null; }
@@ -454,7 +454,7 @@ function createThreeScene(canvas,id,selectedPlanet=null) {
   const stars = addStars(scene);
   const group = new THREE.Group();
   scene.add(group);
-  makeSceneModel(group, id, selectedPlanet);
+  makeSceneModel(group, id, selectedPlanet, heartFlow, labState);
   const state = { renderer, scene, camera, group, id, selectedPlanet, stars, width: 0, height: 0 };
   threeScenes.set(canvas,state);return state;
 }
@@ -464,10 +464,10 @@ function clearSceneGroup(group) {
     if(object.material){const materials=Array.isArray(object.material)?object.material:[object.material];materials.forEach(material=>{material.map?.dispose();material.dispose();});}
   });
 }
-function renderThreeScene(canvas, id, yaw, pitch, zoom, time = 0, selectedPlanet = null, orbitSpeedMultiplier = 1, heartFlow = "body") {
+function renderThreeScene(canvas, id, yaw, pitch, zoom, time = 0, selectedPlanet = null, orbitSpeedMultiplier = 1, heartFlow = "body", labState = {}) {
   let state = threeScenes.get(canvas);
   if (!state) {
-    state = createThreeScene(canvas, id, selectedPlanet);
+    state = createThreeScene(canvas, id, selectedPlanet, heartFlow, labState);
     if (!state) {
       const ctx = canvas.getContext("2d");
       if (ctx) {
@@ -480,7 +480,7 @@ function renderThreeScene(canvas, id, yaw, pitch, zoom, time = 0, selectedPlanet
       return;
     }
   }
-  if (state.id !== id || state.selectedPlanet !== selectedPlanet || (id === "heart" && state.heartFlow !== heartFlow)) {
+  const labModelKey = id === "molecule" ? JSON.stringify([labState.chemistryMolecule, labState.chemistryFocus, labState.chemistryShowBonds]) : (id === "cell" || id === "plant-cell") ? String(labState.cellFocus || "all") : id === "heart" ? String(heartFlow) : "";\n  if (state.id !== id || state.selectedPlanet !== selectedPlanet || state.labModelKey !== labModelKey) {
     state.scene.remove(state.group);
     clearSceneGroup(state.group);
     state.group = new THREE.Group();
@@ -899,7 +899,7 @@ function illuminateFace(color, brightness) {
 }
 
 function drawScene(canvas, modelId, yaw, pitch, zoom, ecosystem = {}, time = 0, selectedPlanet = null) {
-  renderThreeScene(canvas, modelId, yaw, pitch, zoom, time, selectedPlanet, ecosystem.orbitSpeed ?? 1, ecosystem.heartFlow ?? "body");
+  renderThreeScene(canvas, modelId, yaw, pitch, zoom, time, selectedPlanet, ecosystem.orbitSpeed ?? 1, ecosystem.heartFlow ?? "body", ecosystem);
 }
 
 function animateScene(canvas, render) {
