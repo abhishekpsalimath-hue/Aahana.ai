@@ -119,3 +119,16 @@ test("heart biology lab guides learners through the body-lungs-body circulation 
   assert.match(world, /oxygen-rich blood back to the left side/);
   assert.match(world, /Restart circulation journey/);
 });
+
+test("cell and chemistry controls rebuild the actual Three.js learning models", () => {
+  const world = readFileSync(new URL("../../app/learn/interactive-3d-world.jsx", import.meta.url), "utf8");
+  assert.match(world, /function makeSceneModel\(group,id,selectedPlanet=null,heartFlow="body",labState=\{\}\)/);
+  assert.match(world, /chemistryShowBonds!==false/);
+  assert.match(world, /labState\.chemistryMolecule/);
+  assert.match(world, /labState\.chemistryFocus/);
+  assert.match(world, /labState\.cellFocus/);
+  assert.match(world, /active\("chloroplasts"\)/);
+  assert.match(world, /active\("mitochondria"\)/);
+  assert.match(world, /state\.labModelKey !== labModelKey/);
+  assert.match(world, /ecosystem\.heartFlow \?\? "body", ecosystem/);
+});
