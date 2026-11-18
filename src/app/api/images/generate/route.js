@@ -18,7 +18,7 @@ async function runSafetyModel(accountId, apiToken, model, input, timeoutMs) {
     {
       method: "POST",
       headers: { Authorization: `Bearer ${apiToken}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ model, input }),
+      body: JSON.stringify(input),
       cache: "no-store",
       signal: AbortSignal.timeout(timeoutMs),
     }
@@ -130,7 +130,7 @@ export async function POST(request) {
     await moderateImagePrompt(accountId, apiToken, prompt);
     const { prompt: finalPrompt, refined } = await refineImagePrompt(prompt);
     const response = await fetch(
-      `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/ai/run`,
+      `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/ai/run/${model}`,
       {
         method: "POST",
         headers: {
