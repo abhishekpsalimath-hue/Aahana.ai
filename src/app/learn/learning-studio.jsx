@@ -299,7 +299,7 @@ export function SolarSystemCurriculum({ onStartUnit }) {
 
 export default function LearningStudio({ userEmail = "" }) {
   const [selectedPlanet, setSelectedPlanet] = useState(null);
-  const [gradeBand, setGradeBand] = useState("primary");
+  const [gradeBand, setGradeBand] = useState("not-sure");
   const [schoolGrade, setSchoolGrade] = useState("");
   const [subject, setSubject] = useState("Anything / explore");
   const [category, setCategory] = useState("Explore anything");
@@ -584,19 +584,6 @@ export default function LearningStudio({ userEmail = "" }) {
         <p>Tell me what you're learning or what feels confusing. We'll figure it out together, one small step at a time.</p>
       </section>
 
-      <section className="learning-profile student-grade-picker" aria-label="Choose your school grade">
-        <label htmlFor="student-school-grade">Which grade are you in?</label>
-        <select id="student-school-grade" required value={schoolGrade} onChange={(event) => {
-          const nextGrade = event.target.value;
-          setSchoolGrade(nextGrade);
-          const numericGrade = Number(nextGrade);
-          setGradeBand(numericGrade <= 5 ? "primary" : numericGrade <= 8 ? "middle" : "secondary");
-        }} disabled={busy}>
-          <option value="">Choose your grade</option>
-          {Array.from({ length: 10 }, (_, index) => String(index + 1)).map((value) => <option value={value} key={value}>Grade {value}</option>)}
-        </select>
-      </section>
-
       <section className="learning-session">
         <div className="learning-section-heading"><div><span>LET’S BEGIN</span><h2>Your learning conversation</h2></div><span className="learning-session-status">{busy ? "Aahana is thinking…" : "Ready when you are"}</span></div>
         {messages.length > 0 && <div className="learning-conversation" aria-live="polite">
@@ -625,8 +612,8 @@ export default function LearningStudio({ userEmail = "" }) {
         </div>}
         <form className="learning-composer" onSubmit={startLearning}>
           <label htmlFor="learning-question">What would you like me to help you understand?</label>
-          <textarea id="learning-question" value={question} onChange={(event) => setQuestion(event.target.value)} rows={3} maxLength={8000} disabled={busy} placeholder="Hi Aahana, I am [your name]. I am in Grade 4. Can you explain fractions with a simple picture?" />
-          <div><span>Aahana will choose the best way to explain it.</span><button type="submit" disabled={!schoolGrade || !question.trim() || busy}>{busy ? "Learning…" : "Start learning"}</button></div>
+          <textarea id="learning-question" value={question} onChange={(event) => setQuestion(event.target.value)} rows={3} maxLength={8000} disabled={busy} placeholder="Ask Aahana anything you are curious about… Why does the Moon change shape? How do birds fly? Can you show me fractions?" />
+          <div><span>Aahana will choose the best way to explain it.</span><button type="submit" disabled={!question.trim() || busy}>{busy ? "Learning…" : "Start learning"}</button></div>
         </form>
         {error && <p className="learning-error" role="alert">{error}</p>}
         <p className="learning-note">You only need to ask. Aahana can choose a simple explanation, example, diagram or interactive lesson when that capability is available.</p>
