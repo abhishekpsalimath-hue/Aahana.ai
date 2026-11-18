@@ -607,6 +607,20 @@ test("Build Mode ranks relevant project filenames before recent unrelated files 
 });
 
 
+test("Build Mode always prioritises project manifests and common app entrypoints", () => {
+  const files = [
+    { original_filename: "notes/random.txt", id: "notes" },
+    { original_filename: "src/app/page.tsx", id: "page" },
+    { original_filename: "src/components/dashboard.tsx", id: "dashboard" },
+    { original_filename: "package.json", id: "manifest" },
+    { original_filename: "README.md", id: "readme" },
+    { original_filename: "next.config.mjs", id: "config" },
+  ];
+  const selected = selectRelevantProjectFiles("Explain this project", files, 8);
+  assert.deepEqual(selected.slice(0, 4).map((file) => file.id), ["manifest", "readme", "config", "page"]);
+  assert.ok(selected.some((file) => file.id === "dashboard"));
+});
+
 test("Student Mode quiz generation scales across open-ended topics with 3D-first visuals where useful", () => {
   assert.match(route, /1,000\+ quiz sets/);
   assert.match(route, /open-ended subjects/);
