@@ -265,6 +265,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [conversationId, setConversationId] = useState(null);
   const [busy, setBusy] = useState(false);
   const [buildBusy, setBuildBusy] = useState(false);
+  const [buildEntrypoint, setBuildEntrypoint] = useState("src/index.js");
   const [buildEnabled, setBuildEnabled] = useState(false);
   const [buildStatusLoading, setBuildStatusLoading] = useState(true);
   const [error, setError] = useState("");
@@ -688,7 +689,12 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
 
   async function runProjectCheck(operation) {
     if (!selectedProjectId || buildBusy || busy || !buildEnabled) return;
-    const label = operation === "test" ? "Run isolated project tests" : "Run isolated project build";
+    const entrypoint = buildEntrypoint.trim();
+    if (operation === "run" && !entrypoint) {
+      setError("Enter a project-relative JavaScript or Python file path to run.");
+      return;
+    }
+    const label = operation === "test" ? "Run isolated project tests" : operation === "run" ? `Run ${entrypoint} in isolation` : "Run isolated project build";
     setBuildBusy(true);
     setError("");
     setMessages((current) => [...current,
@@ -698,7 +704,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     try {
       const response = await fetch("/api/build/project", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectId: selectedProjectId, operation }),
+        body: JSON.stringify({ projectId: selectedProjectId, operation, ...(operation === "run" ? { entrypoint } : {}) }),
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || "The isolated project check could not start.");
@@ -1179,6 +1185,21 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                     Run tests
                   </button>
                 </div>
+              </div>
+              <div className="build-tools-run">
+                <label htmlFor="build-entrypoint">Run a source file</label>
+                <input
+                  id="build-entrypoint"
+                  type="text"
+                  value={buildEntrypoint}
+                  onChange={(event) => setBuildEntrypoint(event.target.value)}
+                  placeholder="src/index.js or scripts/check.py"
+                  spellCheck={false}
+                  autoComplete="off"
+                />
+                <button type="button" disabled={!selectedProjectId || !buildEnabled || buildBusy || busy || !buildEntrypoint.trim()} onClick={() => runProjectCheck("run")}>
+                  Run in isolation
+                </button>
               </div>
               <p className="build-tools-note">
                 {!selectedProjectId
