@@ -120,10 +120,12 @@ jobs:
         run: node --check ../../src/app/api/images/generate/route.js
       - name: Test server-only AI provider configuration
         run: node --test ../../src/lib/ai/provider-policy.test.mjs
+      - name: Test structured isolated build diagnostics
+        run: node --test ../../src/lib/build/build-diagnostic-policy.test.mjs
       - name: Test isolated Build Engine orchestration
         run: node --test ../../src/lib/build/build-engine.test.mjs
       - name: Syntax-check isolated build engine and policies
-        run: node --check ../../src/lib/build/sandbox-policy.mjs && node --check ../../src/lib/build/release-policy.mjs && node --check ../../src/lib/build/change-proposal-policy.mjs && node --check ../../src/lib/build/proposal-snapshot-policy.mjs && node --check ../../src/lib/ai/provider-policy.mjs && node --check ../../src/lib/build/proposal-draft-policy.mjs && node --check ../../src/lib/build/proposal-generation-policy.mjs && node --check ../../src/lib/build/proposal-workspace-policy.mjs && node --check ../../src/lib/build/workspace-check-plan-policy.mjs && node --check ../../src/lib/build/workspace-approval-policy.mjs && node --check ../../src/lib/build/project-dependency-policy.mjs && node --check ../../src/lib/build/build-engine.mjs && node --check ../../src/app/api/build/run/route.js
+        run: node --check ../../src/lib/build/sandbox-policy.mjs && node --check ../../src/lib/build/release-policy.mjs && node --check ../../src/lib/build/change-proposal-policy.mjs && node --check ../../src/lib/build/proposal-snapshot-policy.mjs && node --check ../../src/lib/ai/provider-policy.mjs && node --check ../../src/lib/build/proposal-draft-policy.mjs && node --check ../../src/lib/build/proposal-generation-policy.mjs && node --check ../../src/lib/build/proposal-workspace-policy.mjs && node --check ../../src/lib/build/workspace-check-plan-policy.mjs && node --check ../../src/lib/build/workspace-approval-policy.mjs && node --check ../../src/lib/build/build-diagnostic-policy.mjs && node --check ../../src/lib/build/project-dependency-policy.mjs && node --check ../../src/lib/build/build-engine.mjs && node --check ../../src/app/api/build/run/route.js
       - name: Syntax-check chat route
         run: node --check ../../src/app/api/chat/route.js
       - name: Syntax-check authenticated project build route
