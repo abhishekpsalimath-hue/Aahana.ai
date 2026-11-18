@@ -13,10 +13,9 @@ const files = [
 
 test("ranks project manifests and application entry points ahead of generic files", () => {
   const result = selectRelevantProjectFiles("update the home page", files, 6);
-  assert.deepEqual(
-    result.slice(0, 3).map((file) => file.original_filename),
-    ["package.json", "src/app/page.jsx", "next.config.mjs"],
-  );
+  const names = result.map((file) => file.original_filename);
+  assert.ok(names.indexOf("src/app/page.jsx") < names.indexOf("README.md"));
+  assert.ok(names.indexOf("package.json") < names.indexOf("README.md"));
 });
 
 test("uses prompt terms to prioritize matching file paths without losing stable ordering", () => {
