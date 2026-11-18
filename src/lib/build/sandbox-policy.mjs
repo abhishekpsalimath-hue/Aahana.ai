@@ -155,7 +155,7 @@ export function validatePackageManifest(files) {
 
   let dependencyCount = 0;
   let hasDependencies = false;
-  for (const groupName of ["dependencies", "devDependencies", "optionalDependencies"]) {
+  for (const groupName of ["dependencies", "devDependencies", "optionalDependencies", "peerDependencies"]) {
     const group = manifest[groupName];
     if (group === undefined) continue;
     if (!group || typeof group !== "object" || Array.isArray(group)) {
