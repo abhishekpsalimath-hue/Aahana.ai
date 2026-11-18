@@ -27,6 +27,47 @@ const starters = [
   "Help me design an app or website",
 ];
 
+const modeStarters = {
+  solve: [
+    "Help me understand a difficult problem step by step",
+    "Compare these options and recommend a practical choice",
+    "Explain this concept with a simple example",
+    "Help me analyse this information",
+  ],
+  create: [
+    "Create a premium visual identity for my new brand",
+    "Generate an original photorealistic digital character",
+    "Develop a creative concept for a short video",
+    "Turn this rough idea into a polished design direction",
+  ],
+  write: [
+    "Write a clear, professional email",
+    "Turn these notes into a concise proposal",
+    "Rewrite this so it sounds natural and confident",
+    "Create a practical product brief",
+  ],
+  build: [
+    "Build a responsive website for my business",
+    "Create a full-stack app with authentication and a database",
+    "Review this codebase and fix the issue I describe",
+    "Design the architecture and implementation for my product",
+  ],
+  improve: [
+    "Review this website and suggest specific improvements",
+    "Refactor this code without changing its behaviour",
+    "Make this workflow simpler and more reliable",
+    "Improve this product experience for mobile users",
+  ],
+};
+
+const modePlaceholders = {
+  solve: "Ask a question or describe the problem you want to solve…",
+  create: "Describe what you want to create…",
+  write: "Tell Aahana what you need to write…",
+  build: "Describe the website, app or software you want to build…",
+  improve: "Share what you want Aahana to review or improve…",
+};
+
 function renderAssistantContent(content) {
   const nodes = [];
   const source = String(content || "");
@@ -164,6 +205,7 @@ function evaluateArithmetic(input) {
 export default function Home({ userEmail = "", aiEnabled = false }) {
   const router = useRouter();
   const [mode, setMode] = useState("solve");
+  const activeStarters = modeStarters[mode] || starters;
   const [creativeStudioOpen, setCreativeStudioOpen] = useState(false);
   const [learningWorldsOpen, setLearningWorldsOpen] = useState(false);
   const [selectedPlanet, setSelectedPlanet] = useState("earth");
@@ -1305,7 +1347,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
             <label className="sr-only" htmlFor="prompt">What would you like to work on?</label>
             <textarea id="prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); } }}
-              placeholder={aiEnabled ? "What would you like to work on today?" : "Try a calculation, e.g. 2 + 2 (offline)"} rows={3} disabled={busy} />
+              placeholder={aiEnabled ? (modePlaceholders[mode] || "What would you like to work on today?") : "Try a calculation, e.g. 2 + 2 (offline)"} rows={3} disabled={busy} />
             <div className="composer-footer">
               <span className="composer-mode">{modes.find((item) => item.id === mode)?.hint} · Enter to send · Shift + Enter for a new line</span>
               <button className={`send send-orb${busy || imageGenerating ? " is-thinking" : ""}`} type="submit" disabled={(!prompt.trim() && !imageFile) || busy || imageGenerating || (!aiEnabled && !imageFile && !isImageGenerationRequest(prompt.trim()) && evaluateArithmetic(prompt.trim()) === null)} aria-label={busy || imageGenerating ? "Aahana is working" : "Launch your message"} title={busy || imageGenerating ? "Aahana is working" : "Launch your message"}><span className="send-orb-halo" aria-hidden="true" /><svg className="send-rocket" viewBox="0 0 32 32" aria-hidden="true"><path className="rocket-flame" d="M12 21.5c-2.1 1.2-3.3 3.2-3.4 5.1 2-.1 4-1.3 5.1-3.4" /><path className="rocket-body" d="M12.2 19.8c-1.3-4.9 1.1-11.1 8.8-15.6 1.3 8.8-1.8 14-6.6 16.5l-2.2-.9Z" /><path className="rocket-window" d="M18.7 10.1a2.1 2.1 0 1 0 0 4.2 2.1 2.1 0 0 0 0-4.2Z" /><path className="rocket-fin" d="m12.4 15.8-4.1 1.4 1.1 4.1 4.1-2.2m5.2-6.9 2.2-4.1 4.1 1.1-1.4 4.1" /></svg><span className="send-orb-thinking" aria-hidden="true"><i /><i /><i /></span></button>
@@ -1316,7 +1358,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
             <>
               <div className="notice">{aiEnabled ? "Your workspace is ready. Send a prompt to begin." : "Your workspace is ready. AI activation is pending billing and connection checks. Prompts are not sent yet."}</div>
               <div className="starter-grid">
-                {starters.map((item, index) => (
+                {activeStarters.map((item, index) => (
                   <button className="starter" type="button" key={item} onClick={() => setPrompt(item)}>
                     <span className="starter-icon">{["◇", "↗", "✎", "⌘"][index]}</span>
                     <span>{item}</span>
