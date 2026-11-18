@@ -166,5 +166,6 @@ test("cell biology includes guided cause-and-effect scenarios and model-specific
   assert.match(world, /Quick cell knowledge check/);
   assert.match(world, /setCellCheckAnswer\(null\)/);
   assert.match(world, /activeCellCheck\.hint/);
+  assert.match(world, /useEffect/);
   assert.match(world, /activeCellCheck\.explanation/);
 });
