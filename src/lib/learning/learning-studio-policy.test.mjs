@@ -633,10 +633,10 @@ test("Student Mode now offers category, topic and all six learning modes from th
   assert.match(studio, /className="learning-discovery"/);
   assert.match(studio, /learningCategories\.map\(\(item\)/);
   assert.match(studio, /learningModes\.map\(\(mode\)/);
-  assert.match(studio, /Start a 10-question quiz/);
+  assert.match(studio, /Start a 20-question quiz/);
   assert.match(studio, /Explore \{subject\}/);
   assert.match(quizBankPolicy, /value\.questions\.length > maxQuestions/);
-  assert.match(route, /fresh set of 5 to 10 multiple-choice questions/);
+  assert.match(route, /exactly 20 fresh multiple-choice questions/);
   assert.match(route, /10,000\+ quiz sets/);
 });
 
