@@ -17,12 +17,15 @@ test("recognises direct video-generation requests in English and Indian language
   ]) assert.equal(isVideoGenerationRequest(prompt), true, prompt);
 });
 
-test("does not route video discussions or scripts to generation", () => {
+test("does not route video discussions, software requests or scripts to generation", () => {
   for (const prompt of [
     "Explain how video generation works",
     "Write a script for a video about science",
     "Give me ideas for a short film",
     "What is frame rate?",
+    "Create a video player component in React",
+    "Build a video editing website",
+    "Make an app for uploading and streaming videos",
   ]) assert.equal(isVideoGenerationRequest(prompt), false, prompt);
 });
 
