@@ -17,6 +17,12 @@ test("video endpoint authenticates before provider calls and bounds execution", 
   assert.match(route, /black-forest-labs\/flux-3-video/);
 });
 
+test("video endpoint extracts the signed URL from supported Cloudflare response envelopes", () => {
+  assert.match(route, /payload\?\.result\?\.result\?\.video/);
+  assert.match(route, /payload\?\.result\?\.video/);
+  assert.match(route, /payload\?\.video/);
+});
+
 test("assistant exposes video creation, quality and duration controls", () => {
   assert.match(workspace, /isVideoGenerationRequest/);
   assert.match(workspace, /Generate video/);
