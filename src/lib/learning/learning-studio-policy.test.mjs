@@ -607,13 +607,32 @@ test("Build Mode ranks relevant project filenames before recent unrelated files 
 
 
 test("Student Mode quiz generation scales across open-ended topics with 3D-first visuals where useful", () => {
-  assert.match(route, /1,000\+ quiz sets/);
+  assert.match(route, /10,000\+ quiz sets/);
   assert.match(route, /open-ended subjects/);
   assert.match(route, /create new questions and vary the concepts/);
   assert.match(route, /Prefer a relevant 3D visual/);
   assert.match(studio, /3d-plant-cell/);
   assert.match(studio, /3d-heart/);
   assert.match(studio, /3d-ecosystem/);
+});
+
+test("Student Mode now offers category, topic and all six learning modes from the discovery panel", () => {
+  assert.match(studio, /className="learning-discovery"/);
+  assert.match(studio, /learningCategories\.map\(\(item\)/);
+  assert.match(studio, /learningModes\.map\(\(mode\)/);
+  assert.match(studio, /Start a 10-question quiz/);
+  assert.match(studio, /Explore \{subject\}/);
+  assert.match(studio, /questions\.length > 10/);
+  assert.match(route, /fresh set of 5 to 10 multiple-choice questions/);
+  assert.match(route, /10,000\+ quiz sets/);
+});
+
+test("Student Mode opens its 3D explorer on biology and supports a physics cart model", () => {
+  assert.match(world, /useState\("cell"\)/);
+  assert.match(animated, /"3d-cart": "cart"/);
+  assert.match(studio, /"3d-cart"/);
+  assert.match(route, /3d-cart/);
+  assert.doesNotMatch(studio, /<SpaceFunQuiz \/>/);
 });
 
 test("Student Mode motion lessons receive layered VFX while respecting reduced-motion settings", () => {
