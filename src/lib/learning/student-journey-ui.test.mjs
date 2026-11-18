@@ -169,3 +169,12 @@ test("cell biology includes guided cause-and-effect scenarios and model-specific
   assert.match(world, /useEffect/);
   assert.match(world, /activeCellCheck\.explanation/);
 });
+
+test("lesson pause control freezes the actual embedded WebGL model and resumes it on demand", () => {
+  const world = readFileSync(new URL("../../app/learn/interactive-3d-world.jsx", import.meta.url), "utf8");
+  const lesson = readFileSync(new URL("../../app/learn/animated-lesson.jsx", import.meta.url), "utf8");
+  assert.match(lesson, /<Mini3DModel modelId=\{model3d\} paused=\{paused\} \/>/);
+  assert.match(world, /export function Mini3DModel\(\{ modelId = "planet", paused = false \}\)/);
+  assert.match(world, /const stopAnimation = paused \? \(render\(0\), \(\) => \{\}\) : animateScene\(canvas, render\)/);
+  assert.match(world, /\[modelId, rotation, zoom, paused\]/);
+});
