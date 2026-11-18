@@ -482,6 +482,8 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     setPrompt("");
     setMessages([]);
     setConversationId(null);
+    setGeneratedImage(null);
+    setImageFile(null);
     setError("");
     setMode("solve");
   }
@@ -738,6 +740,8 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     setSelectedProjectId(id);
     setConversationId(null);
     setMessages([]);
+    setGeneratedImage(null);
+    setImageFile(null);
     setPrompt("");
     setHistory([]);
     setHistoryOpen(false);
@@ -876,12 +880,12 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     const text = prompt.trim();
     if ((!text && !imageFile) || busy || imageGenerating) return;
 
-    const imageEditRequest = Boolean(imageFile && isImageEditRequest(text));
-    const imageCreateRequest = !imageFile && isImageGenerationRequest(text);
+    const imageEditRequest = Boolean(isImageEditRequest(text) && (imageFile || generatedImage?.dataUrl));
+    const imageCreateRequest = !imageFile && !imageEditRequest && isImageGenerationRequest(text);
     if (imageEditRequest || imageCreateRequest) {
       setPrompt("");
       setError("");
-      setGeneratedImage(null);
+      if (imageCreateRequest || imageFile) setGeneratedImage(null);
       setImageGenerating(true);
       setMessages((current) => [...current,
         { role: "user", content: imageEditRequest ? `${text} [Image attached: ${imageFile.name}]` : text },
@@ -890,12 +894,19 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       try {
         let inputImage = null;
         if (imageEditRequest) {
-          inputImage = await new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => typeof reader.result === "string" ? resolve(reader.result) : reject(new Error("Could not read the attached image."));
-            reader.onerror = () => reject(new Error("Could not read the attached image."));
-            reader.readAsDataURL(imageFile);
-          });
+          inputImage = imageFile
+            ? await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => typeof reader.result === "string" ? resolve(reader.result) : reject(new Error("Could not read the attached image."));
+                reader.onerror = () => reject(new Error("Could not read the attached image."));
+                reader.readAsDataURL(imageFile);
+              })
+            : generatedImage?.dataUrl;
+          if (!inputImage) throw new Error("Attach an image or create one first, then describe the edit.");
+          const payloadLength = inputImage.slice(inputImage.indexOf(",") + 1).length;
+          if (Math.floor(payloadLength * 3 / 4) > 2 * 1024 * 1024) {
+            throw new Error("This image is larger than the 2 MB editing limit. Download it, reduce its size, and attach it again.");
+          }
         }
         const response = await fetch("/api/images/generate", {
           method: "POST",
@@ -915,6 +926,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
             imagePrompt: text,
           } : item
         ));
+        setGeneratedImage({ dataUrl: result.imageDataUrl, prompt: text });
         if (imageEditRequest) setImageFile(null);
       } catch (err) {
         setMessages((current) => current.map((item, index) =>
@@ -1305,7 +1317,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                 <img src={generatedImage.dataUrl} alt={generatedImage.prompt} style={{ display: "block", width: "100%", maxWidth: "640px", borderRadius: "14px" }} />
                 <div className="message-actions">
                   <a className="copy-message" href={generatedImage.dataUrl} download="aahana-generated-image.jpg">Download image</a>
-                  <button className="copy-message" type="button" onClick={() => setGeneratedImage(null)}>Remove</button>
+                  <button className="copy-message" type="button" onClick={() => setGeneratedImage(null)}>Remove from editing context</button>
                 </div>
               </div>
             )}
