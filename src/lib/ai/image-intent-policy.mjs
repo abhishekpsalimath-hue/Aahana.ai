@@ -13,7 +13,7 @@ export function isImageGenerationRequest(value) {
 
   if (IMAGE_NOUN.test(text) && VISUAL_ACTION.test(text)) return true;
   if (/\b(?:i want|i need|make me|show me|give me)\b[\s\S]{0,100}\b(?:a |an |the )?(?:logo|picture|image|drawing|poster|wallpaper|portrait|illustration|icon|banner)\b/i.test(text)) return true;
-  if (/\b(?:draw|sketch|paint|illustrate)\s+(?:me\s+)?(?:a |an |the )?([a-z][a-z-]{1,30})(?:\s+(?:of|with|in|wearing|under|on|at|beside|near)\b|[.!?]*$)/i.test(text)
+  if (/\b(?:draw|sketch|paint|illustrate)\s+(?:me\s+)?(?:a |an |the )?([a-z][a-z-]{1,30})\b/i.test(text)
     && !NON_VISUAL_OBJECT.test(text.replace(/^.*?\b(?:draw|sketch|paint|illustrate)\s+/i, ""))) return true;
   if (/\b(?:make|create|design)\s+(?:me\s+)?(?:a |an |the )?(?:logo|poster|cover|banner|wallpaper|icon|thumbnail|avatar)\b/i.test(text)) return true;
   if (/\b(?:turn this into|visualise|visualize)\b/i.test(text) && /\b(?:art|visual|scene|picture|image|illustration)\b/i.test(text)) return true;
