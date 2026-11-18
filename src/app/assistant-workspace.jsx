@@ -247,6 +247,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [conversationId, setConversationId] = useState(null);
   const [busy, setBusy] = useState(false);
   const [buildBusy, setBuildBusy] = useState(false);
+  const [pendingProjectCheck, setPendingProjectCheck] = useState(null);
   const [error, setError] = useState("");
   const [history, setHistory] = useState([]);
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -823,23 +824,50 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     printWindow.document.close();
   }
 
-  async function runProjectCheck(operation) {
+  async function runProjectCheck(operation, approval = null) {
     if (!selectedProjectId || buildBusy || busy) return;
     const label = operation === "test" ? "Run isolated project tests" : "Run isolated project build";
     setBuildBusy(true);
     setError("");
     setMessages((current) => [...current,
-      { role: "user", content: label },
-      { role: "assistant", content: "Preparing the latest uploaded project source for an isolated check…" },
+      { role: "user", content: approval ? "Approve and run isolated project " + operation : label },
+      { role: "assistant", content: approval ? "Verifying approval against the latest uploaded source snapshot…" : "Preparing the latest uploaded project source for review before any Sandbox starts…" },
     ]);
     try {
       const response = await fetch("/api/build/project", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectId: selectedProjectId, operation }),
+        body: JSON.stringify({
+          projectId: selectedProjectId,
+          operation,
+          ...(approval ? { approval } : {}),
+        }),
       });
       const result = await response.json().catch(() => ({}));
+      if (result.approvalRequired) {
+        setPendingProjectCheck({
+          projectId: result.projectId,
+          operation: result.operation,
+          workspaceDigest: result.workspaceDigest,
+          sourceFileCount: result.sourceFileCount,
+          sourceBytes: result.sourceBytes,
+        });
+        const output = [
+          "REVIEW REQUIRED — SANDBOX NOT STARTED",
+          result.message || "Aahana prepared the source snapshot for your review.",
+          `Operation: ${result.operation}`,
+          `Source files: ${result.sourceFileCount}`,
+          `Source size: ${result.sourceBytes} bytes`,
+          "",
+          "Nothing has run yet. Use the approval button below only if you want Aahana to execute this exact snapshot in the isolated Sandbox.",
+        ].join("\n");
+        setMessages((current) => current.map((item, index) =>
+          index === current.length - 1 ? { ...item, content: output } : item
+        ));
+        return;
+      }
       if (!response.ok) throw new Error(result.error || "The isolated project check could not start.");
+      setPendingProjectCheck(null);
       const output = [
         result.status === "passed" ? "Isolated check passed." : "Isolated check failed.",
         `Operation: ${result.operation}`,
@@ -859,6 +887,19 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     } finally {
       setBuildBusy(false);
     }
+  }
+
+  async function approvePendingProjectCheck() {
+    const pending = pendingProjectCheck;
+    if (!pending || pending.projectId !== selectedProjectId || buildBusy || busy) return;
+    setPendingProjectCheck(null);
+    await runProjectCheck(pending.operation, {
+      approved: true,
+      projectId: pending.projectId,
+      operation: pending.operation,
+      entrypoint: null,
+      workspaceDigest: pending.workspaceDigest,
+    });
   }
 
   async function draftProjectChanges(requestTextOverride) {
@@ -1345,6 +1386,18 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
               <button className="copy-message" type="button" disabled={!selectedProjectId || buildBusy || busy} onClick={() => runProjectCheck("test")}>
                 Run isolated tests
               </button>
+              {pendingProjectCheck && pendingProjectCheck.projectId === selectedProjectId && (
+                <div className="notice" role="group" aria-label="Approve isolated project check">
+                  <strong>Review the exact source snapshot</strong>
+                  <p>{pendingProjectCheck.operation === "test" ? "Run tests" : "Run build"} · {pendingProjectCheck.sourceFileCount} files · {pendingProjectCheck.sourceBytes} bytes. No Sandbox has started yet.</p>
+                  <button className="copy-message" type="button" disabled={buildBusy || busy} onClick={approvePendingProjectCheck}>
+                    {buildBusy ? "Starting…" : "Approve & run isolated check"}
+                  </button>
+                  <button className="copy-message" type="button" disabled={buildBusy || busy} onClick={() => setPendingProjectCheck(null)}>
+                    Cancel
+                  </button>
+                </div>
+              )}
               <small>{selectedProjectId ? "Uses the latest source files uploaded to this project. No saved files are changed or deployed." : "Select a project and upload its source files to enable checks."}</small>
             </div>
           )}
