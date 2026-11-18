@@ -119,7 +119,7 @@ h1 em{font-style:normal;color:var(--lilac)}
 .project-archive:hover{color:#ffb8c0}
 .project-add{border:1px dashed #4a4058;border-radius:8px;background:transparent;color:#c8b4f5;padding:9px 10px;text-align:left;font-size:11px}
 .project-create-form{display:flex;flex-direction:column;gap:7px;padding:8px;border:1px solid #3c3349;border-radius:9px;background:#111017}
-.project-create-form input,.project-create-form textarea{width:100%;border:1px solid #373140;border-radius:7px;background:#0b0a10;color:#f3f0f8;padding:8px;font-size:11px;outline:none;resize:vertical}
+.project-create-form input,.project-create-form textarea,.project-create-form select{width:100%;min-width:0;border:1px solid #373140;border-radius:7px;background:#0b0a10;color:#f3f0f8;padding:8px;font:inherit;font-size:11px;outline:none}.project-create-form textarea{resize:vertical}.project-create-form select{color-scheme:dark;cursor:pointer}
 .project-create-form div{display:flex;justify-content:flex-end;gap:6px}
 .project-create-form button,.mobile-project-panel form button{border:1px solid #4a4058;border-radius:7px;background:#211b2d;color:#ddceff;padding:6px 9px;font-size:10px}
 .project-create-form button:disabled,.mobile-project-panel button:disabled{opacity:.45}
