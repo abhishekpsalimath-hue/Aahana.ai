@@ -8,6 +8,7 @@ import { inferSpeechLocale } from "@/lib/voice/locale-detection.mjs";
 import { shouldFallbackToDeviceSpeech } from "@/lib/voice/speech-fallback-policy.mjs";
 import { detectImageEditStyleFromPrompt, isImageEditRequest, prepareImageForEditing } from "@/lib/studio/image-edit.mjs";
 import { getProjectUploadKind } from "@/lib/learning/project-upload-policy.mjs";
+import { getSafeCodeFilePath, getCodeDownloadName } from "@/lib/assistant/code-file-policy.mjs";
 
 const modes = [
   { id: "solve", label: "Solve", hint: "Work through a problem" },
@@ -99,13 +100,8 @@ function renderAssistantContent(content) {
     if (match.index > lastIndex) appendProse(source.slice(lastIndex, match.index));
     const code = match[2].replace(/\n$/, "");
     const label = match[1].trim() || "Code";
-    const filePath = label.split(/\s+/).slice(1).join(" ");
-    const safeFilePath = filePath
-      && !filePath.startsWith("/")
-      && !filePath.split("/").some((part) => !part || part === "." || part === "..")
-      && /^[A-Za-z0-9._/-]+$/.test(filePath)
-      ? filePath
-      : null;
+    const safeFilePath = getSafeCodeFilePath(label);
+    const downloadName = safeFilePath ? getCodeDownloadName(safeFilePath) : null;
     nodes.push(
       <section className="assistant-code-block" key={key++}>
         <div className="assistant-code-heading">
@@ -117,7 +113,7 @@ function renderAssistantContent(content) {
                 const url = URL.createObjectURL(blob);
                 const anchor = document.createElement("a");
                 anchor.href = url;
-                anchor.download = safeFilePath.split("/").pop();
+                anchor.download = downloadName;
                 anchor.rel = "noopener";
                 document.body.appendChild(anchor);
                 anchor.click();
