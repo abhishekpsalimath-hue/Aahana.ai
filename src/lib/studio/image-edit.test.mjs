@@ -76,6 +76,17 @@ test("Image Studio exposes photo transformation, constraints and before-after co
   assert.match(source, /Transformed result/);
 });
 
+test("Image Studio prevents duplicate edits and protects the original photo during retries", async () => {
+  const source = await readFile(new URL("../../app/learn/native-image-studio.jsx", import.meta.url), "utf8");
+  assert.match(source, /editInFlightRef\.current/);
+  assert.match(source, /const sourceFile = referenceImage/);
+  assert.match(source, /new AbortController\(\)/);
+  assert.match(source, /controller\.abort\(\)/);
+  assert.match(source, /disabled=\{editing\} onChange=\{\(event\) => \{ chooseReferenceImage/);
+  assert.match(source, /Your original photo is safe—try again/);
+  assert.match(source, /Your original upload is still preserved/);
+});
+
 test("recognises attached-photo cartoon requests without misclassifying normal chat", () => {
   assert.equal(isImageEditRequest("convert my image into cartoon", true), true);
   assert.equal(isImageEditRequest("create a cartoon from this photo", true), true);
