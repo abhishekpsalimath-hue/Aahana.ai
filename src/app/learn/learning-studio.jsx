@@ -420,10 +420,9 @@ export default function LearningStudio({ userEmail = "" }) {
         <p>Explore stories, animated worlds, missions, conversations and experiments. Follow your curiosity. We’ll learn one discovery at a time.</p>
       </section>
 
-      <Interactive3DWorld selectedPlanet={selectedPlanet} onSelectedPlanetChange={setSelectedPlanet} />
 
         <section className="learning-discovery" aria-label="Choose a learning topic and mode">
-          <div className="learning-discovery-heading"><span>EXPLORE MORE</span><h3>What would you like to discover?</h3><p>Choose from a wide range of subjects, then learn through a conversation, visual lesson or quiz.</p></div>
+          <div className="learning-discovery-heading"><span>CHOOSE YOUR PATH</span><h3>How would you like to explore?</h3><p>Pick a learning adventure. Follow a story, step into an animated world, solve a challenge, talk it through or try an experiment.</p></div>
           <div className="learning-discovery-selects">
             <label>Subject area
               <select value={category} onChange={(event) => {
@@ -447,10 +446,16 @@ export default function LearningStudio({ userEmail = "" }) {
             </button>)}
           </div>
           <div className="learning-topic-actions">
-            <button type="button" disabled={busy} onClick={() => startLearning(null, "Teach me " + subject + " with an engaging, level-appropriate lesson. Start with the foundations and build toward a useful real-world example.", true, { gradeBand, schoolGrade, subject, curriculum, language, learningMode: learningMode === "play" ? "talk" : learningMode })}>Explore {subject}</button>
-            <button type="button" disabled={busy} onClick={() => startLearning(null, "Create a fresh 10-question Play & Solve quiz about " + subject + ". Vary the concepts and difficulty for my level, use accurate explanations and relevant visuals, and do not repeat questions from earlier in this conversation.", true, { gradeBand, schoolGrade, subject, curriculum, language, learningMode: "play" })}>Play a 10-question challenge</button>
+            <button type="button" disabled={busy} onClick={() => startLearning(null, learningMode === "play"
+              ? "Create a fresh 10-question Play & Solve journey about " + subject + ". Ask one challenge at a time, include a relevant visual, adapt gently to my answers, and explain each idea after I solve it."
+              : "Take me on a " + learningModes.find((mode) => mode.id === learningMode)?.title + " learning journey about " + subject + ". Make it joyful, visual and interactive, with small discoveries and one meaningful learner action at a time.", true, { gradeBand, schoolGrade, subject, curriculum, language, learningMode })}>
+              {learningMode === "play" ? "Start a 10-question challenge" : "Begin my " + (learningModes.find((mode) => mode.id === learningMode)?.title || "adventure")}
+            </button>
           </div>
         </section>
+
+      <Interactive3DWorld selectedPlanet={selectedPlanet} onSelectedPlanetChange={setSelectedPlanet} />
+
 
 
       <section className="learning-session">
