@@ -44,6 +44,9 @@ test("Image Studio exposes a dedicated photo transformation action", async () =>
   assert.match(source, /fetch\("\/api\/images\/edit"/);
   assert.match(source, /Keep the same person, face, pose and scene/);
   assert.match(source, /Full-frame cartoon illustration/);
+  assert.match(source, /native-image-before-after/);
+  assert.match(source, /Original uploaded photo/);
+  assert.match(source, /Transformed result/);
 });
 
 test("recognises attached-photo cartoon requests without misclassifying normal chat", () => {
