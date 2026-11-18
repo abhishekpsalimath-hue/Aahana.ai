@@ -123,8 +123,8 @@ export function assertHumanApprovalRequired(action) {
 }
 
 
-const SAFE_PACKAGE_VERSION = /^(?:\\^|~|>=|<=|>|<)?\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$/;
-const SAFE_PACKAGE_NAME = /^(?:@[a-z0-9._-]+\\/)?[a-z0-9._-]+$/i;
+const SAFE_PACKAGE_VERSION = /^(?:[\^~]|>=|<=|>|<)?[0-9]+[.][0-9]+[.][0-9]+(?:-[0-9A-Za-z.-]+)?(?:[+][0-9A-Za-z.-]+)?$/;
+const SAFE_PACKAGE_NAME = /^(?:@[a-z0-9._-]+\/)?[a-z0-9._-]+$/i;
 
 export function validatePackageManifest(files) {
   const packageFile = files.find((file) => file.path === "package.json");
