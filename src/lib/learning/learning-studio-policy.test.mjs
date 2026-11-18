@@ -641,6 +641,12 @@ test("Student Mode opens its 3D explorer on biology and supports a physics cart 
   assert.match(animated, /"3d-cart": "cart"/);
   assert.match(quizBankPolicy, /3d-cart/);
   assert.match(route, /3d-cart/);
+  assert.match(world, /id: "bridge", label: "Truss bridge"/);
+  assert.match(world, /modelId === "bridge"/);
+  assert.match(world, /Illustrative load position/);
+  assert.match(animated, /"3d-bridge": "bridge"/);
+  assert.match(quizBankPolicy, /3d-bridge/);
+  assert.match(route, /3d-bridge/);
   assert.doesNotMatch(studio, /<SpaceFunQuiz \/>/);
 });
 
