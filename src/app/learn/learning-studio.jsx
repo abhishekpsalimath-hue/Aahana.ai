@@ -40,7 +40,7 @@ function readQuizPayload(content) {
   const cleaned = content.trim().replace(/^\s*```(?:json)?\s*/i, "").replace(/\s*```$/, "");
   try {
     const value = JSON.parse(cleaned);
-    if (value?.type !== "aahana_quiz_v1" || !Array.isArray(value.questions) || value.questions.length < 1 || value.questions.length > 5) return null;
+    if (value?.type !== "aahana_quiz_v1" || !Array.isArray(value.questions) || value.questions.length < 1 || value.questions.length > 10) return null;
     const supportedQuizVisuals = ["fraction", "orbit", "water-cycle", "plant-growth", "number-line", "molecule", "concept-map", "timeline", "bar-chart", "anatomy", "circuit", "code-flow", "sound-wave", "map", "3d-solar-system", "3d-planet", "3d-molecule", "3d-atom", "3d-dna", "3d-geometry", "3d-terrain", "3d-plant-cell", "3d-heart", "3d-pyramid", "3d-ecosystem", "3d-engine"];
     const questions = value.questions.filter((item) =>
       typeof item?.question === "string" && item.question.trim() &&
@@ -187,7 +187,7 @@ function SpaceFunQuiz() {
 }
 
 export default function LearningStudio({ userEmail = "" }) {
-  const [selectedPlanet, setSelectedPlanet] = useState("earth");
+  const [selectedPlanet, setSelectedPlanet] = useState(null);
   const [gradeBand, setGradeBand] = useState("not-sure");
   const [schoolGrade, setSchoolGrade] = useState("");
   const [subject, setSubject] = useState("Anything / explore");
@@ -489,6 +489,35 @@ export default function LearningStudio({ userEmail = "" }) {
             </article>;
           })}
         </div>}
+        <section className="learning-discovery" aria-label="Choose a learning topic and mode">
+          <div className="learning-discovery-heading"><span>EXPLORE MORE</span><h3>What would you like to discover?</h3><p>Choose from a wide range of subjects, then learn through a conversation, visual lesson or quiz.</p></div>
+          <div className="learning-discovery-selects">
+            <label>Subject area
+              <select value={category} onChange={(event) => {
+                const nextCategory = event.target.value;
+                const nextSubjects = learningCategories.find((item) => item.name === nextCategory)?.subjects || [];
+                setCategory(nextCategory);
+                if (nextSubjects.length) setSubject(nextSubjects[0]);
+              }}>
+                {learningCategories.map((item) => <option key={item.name} value={item.name}>{item.name}</option>)}
+              </select>
+            </label>
+            <label>Topic
+              <select value={categorySubjects.includes(subject) ? subject : categorySubjects[0]} onChange={(event) => setSubject(event.target.value)}>
+                {categorySubjects.map((item) => <option key={item} value={item}>{item}</option>)}
+              </select>
+            </label>
+          </div>
+          <div className="learning-mode-picker" role="group" aria-label="Choose how to learn">
+            {learningModes.map((mode) => <button type="button" key={mode.id} className={learningMode === mode.id ? "active" : ""} aria-pressed={learningMode === mode.id} onClick={() => setLearningMode(mode.id)}>
+              <span aria-hidden="true">{mode.icon}</span><strong>{mode.title}</strong><small>{mode.detail}</small>
+            </button>)}
+          </div>
+          <div className="learning-topic-actions">
+            <button type="button" disabled={busy} onClick={() => startLearning(null, "Teach me " + subject + " with an engaging, level-appropriate lesson. Start with the foundations and build toward a useful real-world example.", true, { gradeBand, schoolGrade, subject, curriculum, language, learningMode: learningMode === "play" ? "talk" : learningMode })}>Explore {subject}</button>
+            <button type="button" disabled={busy} onClick={() => startLearning(null, "Create a fresh 10-question Play & Solve quiz about " + subject + ". Vary the concepts and difficulty for my level, use accurate explanations and relevant visuals, and do not repeat questions from earlier in this conversation.", true, { gradeBand, schoolGrade, subject, curriculum, language, learningMode: "play" })}>Start a 10-question quiz</button>
+          </div>
+        </section>
         <form className="learning-composer" onSubmit={startLearning}>
           <label htmlFor="learning-question">Search or ask Aahana about any topic</label>
           <textarea id="learning-question" value={question} onChange={(event) => setQuestion(event.target.value)} rows={3} maxLength={8000} disabled={busy} placeholder="Search any topic or ask a question… Why does the Moon change shape? How do birds fly? How does AI work?" />
@@ -498,7 +527,6 @@ export default function LearningStudio({ userEmail = "" }) {
         <p className="learning-note">Explore beyond a fixed subject list: school subjects, advanced ideas, science, technology, history, arts, cultures and everyday questions. Aahana adapts the explanation to your level.</p>
       </section>
       <Interactive3DWorld selectedPlanet={selectedPlanet} onSelectedPlanetChange={setSelectedPlanet} />
-      <SpaceFunQuiz />
       <section className="learning-memory-panel" aria-labelledby="learning-memory-title">
         <div className="learning-section-heading"><div><span>YOUR CHOICE</span><h2 id="learning-memory-title">Private learning memory</h2></div>
           <button type="button" disabled={memoryLoading || memoryBusy} onClick={updateLearningMemoryConsent}>
