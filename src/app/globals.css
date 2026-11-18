@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=Unbounded:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=Unbounded:wght@400;500;600;700&display=swap');
 
 :root{color-scheme:dark;--bg:#09090d;--panel:#101016;--panel-2:#15151e;--line:#252431;--text:#f3f0f8;--muted:#9691a4;--lilac:#c4a7ff;--lilac-2:#a987f2}
 *{box-sizing:border-box}
@@ -367,4 +367,55 @@ button:focus-visible,a:focus-visible{outline-color:#c4a7ff}
 @media(prefers-reduced-motion:reduce){
   .founder-welcome-note{animation:none;opacity:1;filter:none;transform:none}
   .space-star{animation:none!important;opacity:.22;transform:none}
+}
+
+
+/* Aahana wordmark and welcome motion refinement */
+.brand{gap:10px;font-family:'Plus Jakarta Sans',sans-serif;letter-spacing:-.8px}
+.brand-word{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;letter-spacing:-1.05px}
+.brand-ai{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:27px;height:20px;padding:0 8px;border:1px solid #bda4f4aa;
+  border-radius:999px;background:linear-gradient(135deg,#bfa5f522,#8e70c933);
+  color:#dfd0ff;font:700 10px/1 'Plus Jakarta Sans',sans-serif;
+  letter-spacing:.04em;text-transform:lowercase;
+  box-shadow:0 0 14px #b99aff22,inset 0 1px #ffffff18;
+  animation:brand-chip-arrive .85s cubic-bezier(.2,.8,.2,1) .18s both,brand-chip-breathe 4.8s ease-in-out 1.2s infinite;
+}
+@keyframes brand-chip-arrive{
+  from{opacity:0;transform:translateY(5px) scale(.82);filter:blur(4px)}
+  to{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}
+}
+@keyframes brand-chip-breathe{
+  0%,100%{box-shadow:0 0 12px #b99aff1e,inset 0 1px #ffffff18}
+  50%{box-shadow:0 0 20px #b99aff55,inset 0 1px #ffffff2b}
+}
+.welcome h1,.welcome h1 em{
+  font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;
+  letter-spacing:-.065em;line-height:1.04;
+}
+.welcome h1{display:flex;flex-direction:column;align-items:flex-start;gap:0}
+.welcome h1 em{font-style:normal;color:#cbb5ff}
+.welcome-headline .headline-line{animation:headline-arrive .95s cubic-bezier(.16,1,.3,1) both}
+.welcome-headline .headline-line-one{animation-delay:.12s}
+.welcome-headline .headline-line-two{animation-delay:.28s}
+@keyframes headline-arrive{
+  from{opacity:0;transform:translateY(18px);filter:blur(8px)}
+  to{opacity:1;transform:translateY(0);filter:blur(0)}
+}
+.astronaut-float{animation:astronaut-drift 7s ease-in-out infinite}
+@keyframes astronaut-drift{
+  0%,100%{transform:translate3d(0,0,0) rotate(-1.5deg)}
+  50%{transform:translate3d(0,-9px,0) rotate(1.5deg)}
+}
+.welcome-signal .signal-orbit{animation:signal-orbit-turn 16s linear infinite}
+.welcome-signal .signal-orbit-two{animation-direction:reverse;animation-duration:22s}
+@keyframes signal-orbit-turn{to{transform:rotate(360deg)}}
+@media(max-width:760px){
+  .welcome h1{font-size:clamp(38px,10vw,54px);letter-spacing:-.06em}
+}
+@media(prefers-reduced-motion:reduce){
+  .brand-ai,.welcome-headline .headline-line,.astronaut-float,.welcome-signal .signal-orbit{animation:none!important}
+  .brand-ai{opacity:1;transform:none;filter:none}
+  .welcome-headline .headline-line{opacity:1;transform:none;filter:none}
 }
