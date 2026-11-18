@@ -82,7 +82,7 @@ export async function POST(request) {
           Authorization: `Bearer ${apiToken}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ prompt: finalPrompt, steps: 4 }),
+        body: JSON.stringify({ prompt: finalPrompt, steps: 8 }),
         cache: "no-store",
         signal: AbortSignal.timeout(50000),
       }
