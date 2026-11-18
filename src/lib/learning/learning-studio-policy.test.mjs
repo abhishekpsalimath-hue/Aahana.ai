@@ -530,6 +530,11 @@ test("Build Mode loads only owner-scoped text files from the selected private pr
   assert.match(sourceLoader, /\.eq\("project_id", projectId\)/);
   assert.ok(sourceLoader.includes('["text/plain", "text/markdown", "text/csv"].includes(file.mime_type)'));
   assert.match(sourceLoader, /file\.bucket_id !== "aahana-private"/);
+  assert.match(sourceLoader, /file\.size_bytes > 1 \* 1024 \* 1024/);
+  assert.match(sourceLoader, /downloaded\.size !== file\.size_bytes/);
+  assert.match(sourceLoader, /downloaded\.size > 1 \* 1024 \* 1024/);
+  assert.match(sourceLoader, /totalBytes \+ downloaded\.size > 3 \* 1024 \* 1024/);
+  assert.match(sourceLoader, /let totalBytes = 0/);
   assert.match(sourceLoader, /file\.object_path\.startsWith\(\x60\$\{user\.id\}\/\$\{projectId\}\/\x60\)/);
   assert.ok(sourceLoader.includes("const selectedTextFiles = selectRelevantProjectFiles(prompt, textFiles, 8)"));
   assert.match(sourceLoader, /totalCharacters >= 60000/);
