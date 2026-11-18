@@ -24,7 +24,7 @@ test("validates data URL MIME type and image size before provider upload", () =>
 
 test("image edit API uses the img2img model and sends the uploaded image with bounded strength", async () => {
   const source = await readFile(new URL("../../app/api/images/edit/route.js", import.meta.url), "utf8");
-  assert.match(source, /stable-diffusion-v1-5-img2img/);
+  assert.match(source, /flux-2-klein-9b/);
   assert.match(source, /image_b64: image\.base64/);
   assert.match(source, /strength,/);
   assert.match(source, /buildImageEditPrompt\(style\)/);
@@ -56,4 +56,13 @@ test("assistant routes attached-photo style conversions to image editing before 
   assert.ok(editIndex >= 0 && generationIndex > editIndex);
   assert.match(source, /fetch\("\/api\/images\/edit"/);
   assert.match(source, /detectImageEditStyleFromPrompt\(text\)/);
+});
+
+test("prepares image input to the model's 512px reference-image limit", async () => {
+  const source = await readFile(new URL("./image-edit.mjs", import.meta.url), "utf8");
+  assert.match(source, /maxDimension = 512/);
+  assert.match(source, /createElement\("canvas"\)/);
+  assert.match(source, /drawImage\(image, 0, 0, width, height\)/);
+  assert.match(source, /toBlob\(resolve, "image\/jpeg", 0\.9\)/);
+  assert.match(source, /input_image_0/);
 });
