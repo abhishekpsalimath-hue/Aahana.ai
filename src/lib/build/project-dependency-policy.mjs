@@ -199,19 +199,19 @@ function packageName(specifier) {
 function collectExportedSymbols(source) {
   const text = stripComments(source);
   const symbols = new Map();
-  const declarationPattern = /\\bexport\\s+(?:declare\\s+)?(?:default\\s+)?(?:async\\s+)?(function|class|const|let|var|interface|type|enum)\\s+([A-Za-z_$][\\w$]*)/g;
+  const declarationPattern = /\bexport\s+(?:declare\s+)?(?:default\s+)?(?:async\s+)?(function|class|const|let|var|interface|type|enum)\s+([A-Za-z_$][\w$]*)/g;
   for (const match of text.matchAll(declarationPattern)) {
     symbols.set(match[2], match[1]);
   }
-  const defaultFunction = /\\bexport\\s+default\\s+(?:async\\s+)?(?:function|class)\\b/.test(text);
-  if (/\\bexport\\s+default\\s+(?!function\\b|class\\b)/.test(text) || defaultFunction) {
+  const defaultFunction = /\bexport\s+default\s+(?:async\s+)?(?:function|class)\b/.test(text);
+  if (/\bexport\s+default\s+(?!function\b|class\b)/.test(text) || defaultFunction) {
     symbols.set("default", "default");
   }
-  for (const match of text.matchAll(/\\bexport\\s*\\{([^}]+)\\}(?:\\s*from\\s*["'][^"']+["'])?/g)) {
+  for (const match of text.matchAll(/\bexport\s*\{([^}]+)\}(?:\s*from\s*["'][^"']+["'])?/g)) {
     for (const item of match[1].split(",")) {
-      const parts = item.trim().split(/\\s+as\\s+/);
+      const parts = item.trim().split(/\s+as\s+/);
       const exported = (parts[1] || parts[0] || "").trim();
-      if (/^[A-Za-z_$][\\w$]*$/.test(exported)) symbols.set(exported, "re-export");
+      if (/^[A-Za-z_$][\w$]*$/.test(exported)) symbols.set(exported, "re-export");
     }
   }
   return [...symbols].map(([name, kind]) => ({ name, kind }));
@@ -220,24 +220,24 @@ function collectExportedSymbols(source) {
 function collectImportedBindings(source) {
   const text = stripComments(source);
   const imports = [];
-  const pattern = /\\bimport\\s+(?!\\()([^;\\n]+?)\\s+from\\s*["']([^"']+)["']/g;
+  const pattern = /\bimport\s+(?!\()([^;\n]+?)\s+from\s*["']([^"']+)["']/g;
   for (const match of text.matchAll(pattern)) {
     const clause = match[1].trim();
     const bindings = [];
-    const defaultMatch = clause.match(/^([A-Za-z_$][\\w$]*)/);
+    const defaultMatch = clause.match(/^([A-Za-z_$][\w$]*)/);
     if (defaultMatch && defaultMatch[1] !== "type") bindings.push({ imported: "default", local: defaultMatch[1] });
-    const namedMatch = clause.match(/\\{([^}]+)\\}/);
+    const namedMatch = clause.match(/\{([^}]+)\}/);
     if (namedMatch) {
       for (const item of namedMatch[1].split(",")) {
-        const normalized = item.trim().replace(/^type\\s+/, "");
+        const normalized = item.trim().replace(/^type\s+/, "");
         if (!normalized) continue;
-        const parts = normalized.split(/\\s+as\\s+/);
-        if (/^[A-Za-z_$][\\w$]*$/.test(parts[0])) {
+        const parts = normalized.split(/\s+as\s+/);
+        if (/^[A-Za-z_$][\w$]*$/.test(parts[0])) {
           bindings.push({ imported: parts[0], local: (parts[1] || parts[0]).trim() });
         }
       }
     }
-    const namespaceMatch = clause.match(/\\*\\s+as\\s+([A-Za-z_$][\\w$]*)/);
+    const namespaceMatch = clause.match(/\*\s+as\s+([A-Za-z_$][\w$]*)/);
     if (namespaceMatch) bindings.push({ imported: "*", local: namespaceMatch[1] });
     imports.push({ specifier: match[2], bindings });
   }
