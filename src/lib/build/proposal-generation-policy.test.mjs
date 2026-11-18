@@ -63,5 +63,5 @@ test("rejects missing model context and malformed draft envelopes", () => {
     currentFiles: [],
     modelVisiblePaths: new Set(),
     draft: { type: "wrong", summary: "x", changes: [] },
-  }), /proposal envelope/);
+  }), /valid Aahana code change proposal/);
 });
