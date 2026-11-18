@@ -35,6 +35,27 @@ test("recognizes common Kannada and Hindi image requests", () => {
   ]) assert.equal(isImageGenerationRequest(prompt), true, prompt);
 });
 
+test("recognizes mixed-language visual creation requests", () => {
+  for (const prompt of [
+    "Ondu cute cat image maadi",
+    "Nanna photo create maadu",
+    "Ek billi ki photo banao",
+    "Mujhe ek poster bana do",
+    "एक बिल्ली की तस्वीर बनाओ",
+    "ಒಂದು ಬೆಕ್ಕಿನ ಚಿತ್ರ ಮಾಡಿ",
+    "ಚಿತ್ರ ಬಿಡಿಸಿ",
+  ]) assert.equal(isImageGenerationRequest(prompt), true, prompt);
+});
+
+test("does not treat unrelated romanized chat as image generation", () => {
+  for (const prompt of [
+    "Nanna mane ellide",
+    "Ek billi ke baare mein batao",
+    "Photo upload maadi",
+    "Mujhe study plan bana do",
+  ]) assert.equal(isImageGenerationRequest(prompt), false, prompt);
+});
+
 test("does not mistake ordinary planning requests for image generation", () => {
   for (const prompt of [
     "Create a study plan for my exams",
