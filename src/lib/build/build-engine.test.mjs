@@ -190,3 +190,26 @@ test("stops the disposable sandbox when registry egress cannot be enabled", asyn
   assert.equal(calls.filter((call) => call.type === "stop").length, 1);
   assert.equal(calls.at(-1).type, "stop");
 });
+
+test("stops the sandbox when workspace upload fails before any command can run", async () => {
+  const calls = [];
+  const sandbox = {
+    async writeFiles() { calls.push("writeFiles"); throw new Error("upload failed"); },
+    async update() { calls.push("update"); },
+    async runCommand() { calls.push("runCommand"); return { exitCode: 0, async stdout() { return ""; }, async stderr() { return ""; } }; },
+    async stop() { calls.push("stop"); },
+  };
+  const SandboxClient = { async create() { calls.push("create"); return sandbox; } };
+
+  await assert.rejects(() => executeBuildTask({
+    files: [{ path: "src/main.js", content: "console.log('hello')" }],
+    operation: "run",
+    entrypoint: "src/main.js",
+    projectId: "prj_12345678",
+    sandboxName: "aahana-build-upload-failure",
+    SandboxClient,
+  }), /upload failed/);
+
+  assert.deepEqual(calls, ["create", "writeFiles", "update", "stop"]);
+  assert.equal(calls.includes("runCommand"), false);
+});
