@@ -27,6 +27,9 @@ test("validates data URL MIME type and image size before provider upload", () =>
   assert.equal(parseImageEditInput("https://example.com/photo.png"), null);
   assert.equal(parseImageEditInput("data:image/svg+xml;base64,PHN2Zz4="), null);
   assert.equal(parseImageEditInput("data:image/png;base64,%%%"), null);
+  assert.equal(parseImageEditInput("data:image/png;base64,YQ="), null);
+  assert.equal(parseImageEditInput("data:image/png;base64,Y"), null);
+  assert.equal(parseImageEditInput("data:image/png;base64,YQ==", 0), null);
   assert.equal(parseImageEditInput(`data:image/jpeg;base64,${"A".repeat(5_600_000)}`), null);
 });
 
