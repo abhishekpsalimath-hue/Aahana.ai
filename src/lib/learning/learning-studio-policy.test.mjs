@@ -121,11 +121,11 @@ test("Learning Studio validates and renders interactive quizzes with feedback an
 
 
 test("Student Mode delivers one challenge at a time instead of a worksheet", () => {
-  assert.match(studio, /const item = quiz\\.questions\\[currentIndex\\]/);
+  assert.match(studio, /const item = quiz\.questions\[currentIndex\]/);
   assert.match(studio, /!completed && <section/);
   assert.match(studio, /Next discovery/);
   assert.match(studio, /Finish my journey/);
-  assert.doesNotMatch(studio, /quiz\\.questions\\.map\\(\\(item, index\\)/);
+  assert.doesNotMatch(studio, /quiz\.questions\.map\(\(item, index\)/);
 });
 
 test("Play and Solve keeps incomplete streamed quiz JSON out of the visible conversation", () => {
