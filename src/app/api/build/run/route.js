@@ -18,6 +18,11 @@ export async function POST(request) {
     return NextResponse.json({ error: "Please sign in to use Build Mode." }, { status: 401 });
   }
 
+  // Runtime execution is opt-in and remains disabled until an owner enables it.
+  if (process.env.AAHANA_BUILD_ENGINE_ENABLED !== "true") {
+    return NextResponse.json({ error: "Aahana Build Engine is not enabled yet." }, { status: 503 });
+  }
+
   const contentLength = Number(request.headers.get("content-length") || 0);
   if (contentLength > MAX_REQUEST_BYTES) {
     return NextResponse.json({ error: "Build submissions must be 4 MB or smaller." }, { status: 413 });
