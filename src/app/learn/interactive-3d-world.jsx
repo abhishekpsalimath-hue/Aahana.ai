@@ -387,21 +387,49 @@ function makeSceneModel(group,id,selectedPlanet=null) {
   }
 }
 function createThreeScene(canvas,id,selectedPlanet=null) {
+  const constrainedDevice = window.matchMedia?.("(max-width: 760px)")?.matches
+    || (navigator.hardwareConcurrency || 8) <= 4
+    || window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
   let renderer;
-  try { renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false,powerPreference:"low-power"}); }
+  try { renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: "high-performance", precision: constrainedDevice ? "mediump" : "highp" }); }
   catch { return null; }
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.75));
-  renderer.outputColorSpace=THREE.SRGBColorSpace;
-  renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.12;
-  const scene=new THREE.Scene();scene.background=new THREE.Color(0x090d19);
-  const camera=new THREE.PerspectiveCamera(36,1,.1,100);camera.position.set(0,0,5.8);
-  scene.add(new THREE.HemisphereLight(0xb8d7ff,0x1a1825,2.05));
-  const key=new THREE.DirectionalLight(0xffe4c2,3.2);key.position.set(-3,4,5);scene.add(key);
-  const rim=new THREE.DirectionalLight(0x6b8fff,2.1);rim.position.set(4,-2,-4);scene.add(rim);
+  // Render sharply on capable screens while keeping a safe mobile performance ceiling.
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, constrainedDevice ? 1.5 : 2));
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.08;
+  renderer.shadowMap.enabled = !constrainedDevice;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x070b17);
+  const camera = new THREE.PerspectiveCamera(36, 1, .1, 100);
+  camera.position.set(0, 0, 5.8);
+  scene.add(new THREE.HemisphereLight(0xc7ddff, 0x171326, 1.75));
+  const key = new THREE.DirectionalLight(0xffe8ce, 3.5);
+  key.position.set(-3, 4, 5);
+  key.castShadow = !constrainedDevice;
+  key.shadow.mapSize.set(1024, 1024);
+  key.shadow.camera.near = .5;
+  key.shadow.camera.far = 24;
+  key.shadow.bias = -0.00012;
+  scene.add(key);
+  const fill = new THREE.DirectionalLight(0x9d8bff, 1.05);
+  fill.position.set(3, 1, 4);
+  scene.add(fill);
+  const rim = new THREE.DirectionalLight(0x65aaff, 2.4);
+  rim.position.set(4, -2, -4);
+  scene.add(rim);
   const stars = addStars(scene);
   const group = new THREE.Group();
   scene.add(group);
   makeSceneModel(group, id, selectedPlanet);
+  // Real light/shadow response adds depth to solid models without affecting the fallback renderer.
+  group.traverse((object) => {
+    if (object.isMesh) {
+      object.castShadow = renderer.shadowMap.enabled;
+      object.receiveShadow = renderer.shadowMap.enabled;
+    }
+  });
   const state = { renderer, scene, camera, group, id, selectedPlanet, stars, width: 0, height: 0 };
   threeScenes.set(canvas,state);return state;
 }
@@ -435,6 +463,12 @@ function renderThreeScene(canvas, id, yaw, pitch, zoom, time = 0, selectedPlanet
     state.id = id;
     state.selectedPlanet = selectedPlanet;
     makeSceneModel(state.group, id, selectedPlanet);
+    state.group.traverse((object) => {
+      if (object.isMesh) {
+        object.castShadow = state.renderer.shadowMap.enabled;
+        object.receiveShadow = state.renderer.shadowMap.enabled;
+      }
+    });
   }
 
   const rect = canvas.getBoundingClientRect();
