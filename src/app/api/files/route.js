@@ -70,3 +70,30 @@ export async function POST(request) {
   }
   return NextResponse.json({ file: data }, { status: 201 });
 }
+
+export async function DELETE(request) {
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) return NextResponse.json({ error: "Please sign in." }, { status: 401 });
+
+  let body;
+  try { body = await request.json(); } catch { return NextResponse.json({ error: "Invalid cleanup request." }, { status: 400 }); }
+  const paths = body?.objectPaths;
+  if (!Array.isArray(paths) || paths.length < 1 || paths.length > 100 ||
+      paths.some((path) => typeof path !== "string" || !path.startsWith(user.id + "/") || path.split("/").length !== 3)) {
+    return NextResponse.json({ error: "Invalid cleanup paths." }, { status: 400 });
+  }
+
+  const { data: rows, error: lookupError } = await supabase.from("user_files")
+    .select("id, object_path").eq("user_id", user.id).in("object_path", paths);
+  if (lookupError) return NextResponse.json({ error: "Could not verify uploaded files." }, { status: 500 });
+
+  const ownedPaths = (rows || []).map((row) => row.object_path);
+  if (ownedPaths.length) {
+    const { error: storageError } = await supabase.storage.from(BUCKET).remove(paths);
+    if (storageError) return NextResponse.json({ error: "Could not clean up uploaded files." }, { status: 500 });
+    const { error: deleteError } = await supabase.from("user_files").delete().eq("user_id", user.id).in("object_path", ownedPaths);
+    if (deleteError) return NextResponse.json({ error: "Files were removed from storage but metadata cleanup failed." }, { status: 500 });
+  }
+  return NextResponse.json({ removed: ownedPaths.length });
+}
