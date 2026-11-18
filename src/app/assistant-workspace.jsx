@@ -1242,7 +1242,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
               <div className="generated-video-preview">
                 <video src={generatedVideo.url} controls playsInline preload="metadata" aria-label={generatedVideo.prompt} />
                 <div className="message-actions">
-                  <a className="copy-message" href={generatedVideo.url} target="_blank" rel="noreferrer">Open or save video</a>
+                  <a className="copy-message" href={`/api/videos/download?url=${encodeURIComponent(generatedVideo.url)}`} download="aahana-video.mp4">Download video</a>
                   <button className="copy-message" type="button" onClick={() => setGeneratedVideo(null)}>Remove preview</button>
                 </div>
                 <small>{generatedVideo.duration}s · {generatedVideo.resolution.toUpperCase()} · Video links are temporary; save your video promptly.</small>
