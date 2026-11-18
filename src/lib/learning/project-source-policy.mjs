@@ -19,7 +19,12 @@ function tokens(value) {
 function coreFileScore(filename) {
   const normalized = String(filename || "").toLowerCase().replace(/\\/g, "/");
   const basename = normalized.split("/").pop();
-  if (CORE_PROJECT_FILES.has(basename)) return 100;
+  if (basename === "package.json") return 100;
+  if (["tsconfig.json", "jsconfig.json"].includes(basename)) return 90;
+  if (/^(?:next|vite)\\.config\\.(?:js|mjs|ts)$/.test(basename) ||
+      /^(?:astro|svelte)\\.config\\.(?:js|mjs|ts)$/.test(basename)) return 85;
+  if (basename === "index.html") return 80;
+  if (basename === "readme.md") return 2;
   if (/^(?:src\/)?(?:app|pages)\/(?:page|layout|index)\.(?:js|jsx|ts|tsx)$/.test(normalized)) return 80;
   if (/^(?:src\/)?(?:main|index)\.(?:js|jsx|ts|tsx)$/.test(normalized)) return 70;
   return 0;
