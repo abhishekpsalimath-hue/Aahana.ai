@@ -176,3 +176,7 @@
 .native-motion-track-label strong{color:#e4d8f2;font-size:10px}
 .native-motion-track-label button+button{border-color:#74505a;color:#f0c4cc}
 @media(max-width:620px){.native-motion-track-title{align-items:flex-start;flex-direction:column}.native-motion-track-label{align-items:flex-start;flex-direction:column}}
+
+.native-image-controls select,.native-motion-grade-label select{width:100%;min-width:0;padding:9px 10px;border:1px solid #4b405d;border-radius:8px;background:#201b2a;color:#f5f0fa;font:500 11px 'DM Sans',sans-serif}
+.native-motion-layer-editor{display:grid;gap:10px;margin:14px 0;padding:12px;border:1px solid #40354f;border-radius:12px;background:#15121e}
+.native-motion-grade-label{display:grid;gap:6px;max-width:360px;color:#cfc4dc;font-size:10px;font-weight:700}
