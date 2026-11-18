@@ -31,7 +31,7 @@ async function refineImagePrompt(originalPrompt) {
         ],
       }),
       cache: "no-store",
-      signal: AbortSignal.timeout(4500),
+      signal: AbortSignal.timeout(3500),
     });
     if (!response.ok) {
       console.warn("Aahana image prompt refinement skipped:", { status: response.status });
@@ -84,7 +84,7 @@ export async function POST(request) {
         },
         body: JSON.stringify({ prompt: finalPrompt, steps: 4 }),
         cache: "no-store",
-        signal: AbortSignal.timeout(55000),
+        signal: AbortSignal.timeout(50000),
       }
     );
 
