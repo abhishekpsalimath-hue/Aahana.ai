@@ -11,7 +11,7 @@ test("Student Mode presents the learning journey before the conversation", () =>
   const discovery = studio.indexOf('className="learning-discovery"');
   const world = studio.indexOf("<Interactive3DWorld");
   const session = studio.indexOf('className="learning-session"');
-  assert.ok(hero >= 0 && discovery > hero && world > discovery && session > world);
+  assert.ok(hero >= 0 && world > hero && discovery > world && session > discovery);
   assert.match(studio, /Every question opens/);
   assert.match(studio, /How would you like to explore/);
 });
