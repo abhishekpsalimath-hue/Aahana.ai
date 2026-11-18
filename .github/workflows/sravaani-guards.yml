@@ -13,6 +13,7 @@ on:
       - "src/app/assistant-workspace.jsx"
       - "src/app/learn/**"
       - "src/lib/learning/**"
+      - "src/lib/build/**"
       - "src/lib/voice/audio-wav.*"
       - "src/lib/voice/locale-detection.*"
       - "src/lib/voice/locale-support.*"
@@ -21,6 +22,7 @@ on:
     branches:
       - "feat/aahana-voice-runtime-adapters"
       - "feat/aahana-learning-studio"
+      - "feat/aahana-safe-build-engine"
     paths:
       - "services/sravaani-asr/**"
       - ".github/workflows/sravaani-guards.yml"
@@ -85,5 +87,11 @@ jobs:
         run: node --check ../../src/app/api/voice/speech/route.js
       - name: Syntax-check authenticated voice capabilities route
         run: node --check ../../src/app/api/voice/capabilities/route.js
+      - name: Test isolated build sandbox policy
+        run: node --test ../../src/lib/build/sandbox-policy.test.mjs
+      - name: Test owner-controlled release policy
+        run: node --test ../../src/lib/build/release-policy.test.mjs
+      - name: Syntax-check isolated build and release policies
+        run: node --check ../../src/lib/build/sandbox-policy.mjs && node --check ../../src/lib/build/release-policy.mjs
       - name: Syntax-check chat route
         run: node --check ../../src/app/api/chat/route.js
