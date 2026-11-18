@@ -1,4 +1,5 @@
 import { extractBuildDiagnostics } from "./build-diagnostic-policy.mjs";
+import { attachDiagnosticSourceContext } from "./diagnostic-source-context.mjs";
 import {
   createSafeSandboxOptions,
   validatePackageManifest,
@@ -99,7 +100,7 @@ export async function executeBuildTask({
           exitCode: installResult.exitCode ?? 1,
           stdout: installOutput,
           stderr: "Dependency installation failed. Project scripts were not executed.",
-          diagnostics: extractBuildDiagnostics({ stdout: installOutput, stderr: "Dependency installation failed. Project scripts were not executed.", exitCode: installResult.exitCode, operation }),
+          diagnostics: attachDiagnosticSourceContext(extractBuildDiagnostics({ stdout: installOutput, stderr: "Dependency installation failed. Project scripts were not executed.", exitCode: installResult.exitCode, operation }), workspaceFiles),
         };
       }
     }
@@ -116,7 +117,7 @@ export async function executeBuildTask({
       exitCode: result.exitCode ?? 1,
       stdout: (installOutput + stdout).slice(0, OUTPUT_LIMIT),
       stderr: stderr.slice(0, OUTPUT_LIMIT),
-      diagnostics: extractBuildDiagnostics({ stdout: stdout.slice(0, OUTPUT_LIMIT), stderr: stderr.slice(0, OUTPUT_LIMIT), exitCode: result.exitCode, operation }),
+      diagnostics: attachDiagnosticSourceContext(extractBuildDiagnostics({ stdout: stdout.slice(0, OUTPUT_LIMIT), stderr: stderr.slice(0, OUTPUT_LIMIT), exitCode: result.exitCode, operation }), workspaceFiles),
     };
   } finally {
     await sandbox.update({ networkPolicy: "deny-all" }).catch(() => {});
