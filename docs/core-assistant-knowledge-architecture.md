@@ -34,3 +34,10 @@ No production merge or public preview announcement is implied by this document. 
 - Citation links are restricted to HTTPS URLs retrieved for that specific request. If live retrieval fails or the provider key is missing, the route fails closed instead of presenting stale model knowledge as verified research.
 - Search, extraction, and crawling are external network operations. Response time depends on provider latency, site size, and extraction complexity; sub-second completion cannot be guaranteed. The current implementation is bounded for responsiveness, not a promise to crawl every page of every site.
 - Website crawling requires TAVILY_API_KEY to be configured in the deployment environment. No credentials are embedded in source code.
+
+
+### Research latency budget
+
+- The Core Assistant route has a 60-second server execution ceiling. Website crawl is bounded to a 20-second provider timeout (22-second client timeout); search and extraction have shorter individual timeouts, and the research model call has a 32-second timeout.
+- The crawl is limited to depth 3, breadth 10, and at most 30 returned pages. These limits trade exhaustive coverage for a bounded response time; large sites may require multiple targeted research questions.
+- These are upper bounds, not a sub-second speed guarantee. Network, crawler, and model latency vary.
