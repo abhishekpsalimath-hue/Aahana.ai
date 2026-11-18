@@ -30,7 +30,7 @@ export async function POST(request) {
   }
   const prompt = typeof body?.prompt === "string" ? body.prompt.trim() : "";
   const inputImage = typeof body?.inputImage === "string" ? body.inputImage : null;
-  const imageMatch = inputImage?.match(/^data:(image\\/(?:png|jpeg|webp));base64,([A-Za-z0-9+/=]+)$/);
+  const imageMatch = inputImage?.match(/^data:(image\/(?:png|jpeg|webp));base64,([A-Za-z0-9+/=]+)$/);
   if (!prompt || prompt.length > MAX_PROMPT_LENGTH) {
     return NextResponse.json({ error: "Describe the image in 1–2,048 characters." }, { status: 400 });
   }
@@ -59,12 +59,12 @@ export async function POST(request) {
 
     const result = await response.json().catch(() => null);
     let image = result?.result?.image;
-    if (typeof image === "string" && /^https:\\/\\//i.test(image)) {
+    if (typeof image === "string" && /^https:\/\//i.test(image)) {
       try {
         const imageResponse = await fetch(image, { cache: "no-store", signal: AbortSignal.timeout(15000) });
         const contentType = imageResponse.headers.get("content-type") || "";
         const bytes = await imageResponse.arrayBuffer();
-        if (imageResponse.ok && /^image\\/(?:jpeg|png|webp)$/i.test(contentType) && bytes.byteLength <= 10 * 1024 * 1024) {
+        if (imageResponse.ok && /^image\/(?:jpeg|png|webp)$/i.test(contentType) && bytes.byteLength <= 10 * 1024 * 1024) {
           image = Buffer.from(bytes).toString("base64");
         } else image = null;
       } catch { image = null; }
