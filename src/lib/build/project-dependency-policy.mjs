@@ -217,6 +217,21 @@ function collectExportedSymbols(source) {
   return [...symbols].map(([name, kind]) => ({ name, kind }));
 }
 
+function collectApiHandlerContracts(source, exports) {
+  const text = stripComments(source);
+  const methods = new Set(["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"]);
+  return exports
+    .filter((item) => methods.has(item.name))
+    .map((item) => ({
+      method: item.name,
+      readsJsonBody: /\\brequest\\s*\\.\\s*json\\s*\\(/.test(text),
+      readsFormData: /\\brequest\\s*\\.\\s*formData\\s*\\(/.test(text),
+      readsSearchParams: /\\b(?:request\\s*\\.\\s*nextUrl\\s*\\.\\s*searchParams|url\\s*\\.\\s*searchParams)/.test(text),
+      returnsJson: /\\b(?:NextResponse|Response)\\s*\\.\\s*json\\s*\\(/.test(text),
+      usesNextResponse: /\\bNextResponse\\s*\\.\\s*json\\s*\\(/.test(text),
+    }));
+}
+
 function collectImportedBindings(source) {
   const text = stripComments(source);
   const imports = [];
@@ -259,6 +274,7 @@ export function analyzeProjectContracts(files) {
     if (!path || typeof file?.content !== "string") continue;
     const exports = collectExportedSymbols(file.content);
     const imports = collectImportedBindings(file.content);
+    const apiHandlers = collectApiHandlerContracts(file.content, exports);
     const propTypes = [];
     const sourceText = stripComments(file.content);
     const propPatterns = [
@@ -270,7 +286,7 @@ export function analyzeProjectContracts(files) {
         propTypes.push({ component: match[1], typeName: match[2] });
       }
     }
-    modules.push({ path, exports, imports, propTypes });
+    modules.push({ path, exports, imports, propTypes, apiHandlers });
 
     for (const entry of imports) {
       const target = resolveLocalImport(path, entry.specifier, new Set(byPath.keys())) ||
