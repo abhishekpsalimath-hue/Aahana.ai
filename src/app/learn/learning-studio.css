@@ -743,3 +743,98 @@
 .learning-topic-actions button:disabled{opacity:.55;cursor:not-allowed}
 @media(max-width:760px){.learning-discovery{margin:18px 14px;padding:17px}.learning-discovery-selects{grid-template-columns:1fr}.learning-mode-picker{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(prefers-reduced-motion:reduce){.learning-mode-picker button{transition:none}}
+
+
+/* Student Mode: journey-first, playful and welcoming. */
+.student-welcome {
+  position: relative;
+  isolation: isolate;
+  max-width: 1160px;
+  margin: 34px auto 22px;
+  padding: 54px 34px 42px;
+  overflow: hidden;
+  border: 1px solid #b99be944;
+  border-radius: 26px;
+  background:
+    radial-gradient(ellipse at 88% 18%, #7556a855 0%, transparent 34%),
+    radial-gradient(ellipse at 12% 100%, #4d8ca633 0%, transparent 38%),
+    linear-gradient(135deg, #211a31 0%, #151322 58%, #19172a 100%);
+}
+.student-welcome::after {
+  content: "✦";
+  position: absolute;
+  z-index: -1;
+  right: 7%;
+  top: 8%;
+  color: #e3d1ff22;
+  font-size: clamp(100px, 18vw, 210px);
+  line-height: 1;
+  animation: learning-sparkle 5s ease-in-out infinite;
+}
+.student-welcome h1 { max-width: 760px; font-size: clamp(38px, 6vw, 68px); }
+.student-welcome p { max-width: 690px; font-size: 15px; }
+
+.learning-discovery {
+  margin: 18px auto 28px;
+  padding: 26px;
+  border: 1px solid #b99be955;
+  border-radius: 24px;
+  background:
+    radial-gradient(ellipse at 100% 0%, #8e70bd20 0%, transparent 38%),
+    linear-gradient(145deg, #1d1929, #12101b 72%);
+  box-shadow: 0 18px 55px #00000022;
+}
+.learning-discovery-heading h3 { font-size: clamp(23px, 3vw, 30px); letter-spacing: -.6px; }
+.learning-discovery-heading p { max-width: 720px; }
+.learning-mode-picker button {
+  min-height: 104px;
+  padding: 15px;
+  border-radius: 16px;
+  transition: transform .2s ease, border-color .2s ease, background .2s ease;
+}
+.learning-mode-picker button:hover { transform: translateY(-3px); border-color: #b99be9aa; }
+.learning-mode-picker button strong { font-size: 13px; }
+.learning-mode-picker button small { font-size: 11px; }
+.learning-mode-picker button:nth-child(1) > span { color: #f0bb91; }
+.learning-mode-picker button:nth-child(2) > span { color: #8ed0e8; }
+.learning-mode-picker button:nth-child(3) > span { color: #e6c27e; }
+.learning-mode-picker button:nth-child(4) > span { color: #d2a8ef; }
+.learning-mode-picker button:nth-child(5) > span { color: #9fd4b5; }
+.learning-mode-picker button:nth-child(6) > span { color: #efa9bb; }
+.learning-topic-actions button {
+  min-height: 44px;
+  padding: 12px 20px;
+  font-size: 13px;
+  box-shadow: 0 7px 22px #b99be922;
+}
+.learning-3d-lab { margin-top: 30px; }
+.learning-quiz { gap: 20px; padding: 22px; border-radius: 20px; }
+.learning-quiz-heading span { font-weight: 750; }
+.learning-quiz-question { padding-top: 18px; }
+.learning-quiz-feedback.correct button {
+  margin-top: 12px;
+  border: 1px solid #b99be9aa;
+  border-radius: 999px;
+  background: #b99be922;
+  color: #f5eefe;
+  padding: 10px 17px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.learning-quiz-finish {
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 24px;
+  border: 1px solid #b99be955;
+  border-radius: 18px;
+  background: radial-gradient(ellipse at 80% 0%, #b99be922, transparent 55%), #1a1626;
+}
+@media (max-width: 760px) {
+  .student-welcome { margin: 22px 0 16px; padding: 36px 20px 30px; border-radius: 21px; }
+  .learning-discovery { margin: 16px 0 22px; padding: 18px; border-radius: 20px; }
+  .learning-mode-picker button { min-height: 116px; padding: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .student-welcome::after, .learning-mode-picker button { animation: none; transition: none; }
+}
