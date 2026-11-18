@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { findBestSpeechVoice } from "@/lib/voice/browser-capabilities.mjs";
 import { inferSpeechLocale } from "@/lib/voice/locale-detection.mjs";
 import { shouldFallbackToDeviceSpeech } from "@/lib/voice/speech-fallback-policy.mjs";
+import { detectImageEditStyleFromPrompt, isImageEditRequest } from "@/lib/studio/image-edit.mjs";
 
 const modes = [
   { id: "solve", label: "Solve", hint: "Work through a problem" },
@@ -776,6 +777,49 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     const text = prompt.trim();
     if ((!text && !imageFile) || busy || imageGenerating) return;
 
+    if (imageFile && isImageEditRequest(text, true)) {
+      const sourceFile = imageFile;
+      const style = detectImageEditStyleFromPrompt(text);
+      setPrompt("");
+      setError("");
+      setGeneratedImage(null);
+      setImageGenerating(true);
+      setImageFile(null);
+      setMessages((current) => [...current,
+        { role: "user", content: `${text}\n[Photo attached: ${sourceFile.name}]` },
+        { role: "assistant", content: "Transforming your actual photo while preserving the same person and composition…" },
+      ]);
+      try {
+        const imageDataUrl = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => typeof reader.result === "string" ? resolve(reader.result) : reject(new Error("Could not read the selected photo."));
+          reader.onerror = () => reject(new Error("Could not read the selected photo."));
+          reader.readAsDataURL(sourceFile);
+        });
+        const response = await fetch("/api/images/edit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ imageDataUrl, style, strength: 0.38 }),
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok || typeof result.imageDataUrl !== "string" || !result.imageDataUrl.startsWith("data:image/png;base64,")) {
+          throw new Error(result.error || "Could not transform your photo.");
+        }
+        setGeneratedImage({ dataUrl: result.imageDataUrl, prompt: `Photo transformed into ${style} artwork` });
+        setMessages((current) => current.map((item, index) =>
+          index === current.length - 1 ? { ...item, content: "Your photo transformation is ready. The result was created from your uploaded image, not from a new character prompt." } : item
+        ));
+      } catch (err) {
+        setMessages((current) => current.map((item, index) =>
+          index === current.length - 1 ? { ...item, content: "I couldn't transform your uploaded photo. Your original image remains unchanged." } : item
+        ));
+        setError(err.message || "Image editing failed.");
+      } finally {
+        setImageGenerating(false);
+      }
+      return;
+    }
+
     if (isImageGenerationRequest(text)) {
       setPrompt("");
       setError("");
@@ -1147,12 +1191,12 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
           )}
 
           <form className="composer" onSubmit={submitPrompt}>
-            <label className="sr-only" htmlFor="image-upload">Attach an image for Aahana to identify or analyse</label>
+            <label className="sr-only" htmlFor="image-upload">Attach an image for Aahana to analyse or transform</label>
             {generatedImage && (
               <div className="generated-image-preview">
                 <img src={generatedImage.dataUrl} alt={generatedImage.prompt} style={{ display: "block", width: "100%", maxWidth: "640px", borderRadius: "14px" }} />
                 <div className="message-actions">
-                  <a className="copy-message" href={generatedImage.dataUrl} download="aahana-generated-image.jpg">Download image</a>
+                  <a className="copy-message" href={generatedImage.dataUrl} download="aahana-image.png">Download image</a>
                   <button className="copy-message" type="button" onClick={() => setGeneratedImage(null)}>Remove</button>
                 </div>
               </div>
