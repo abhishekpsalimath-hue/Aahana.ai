@@ -146,7 +146,7 @@ export async function POST(request) {
   // for server-side hash validation, but only whole, relevant files are sent to the model.
   const selectedSourceFiles = selectRelevantProjectFiles(
     prompt,
-    currentFiles.map((file) => ({ filename: file.path, path: file.path, content: file.content })),
+    currentFiles.map((file) => ({ original_filename: file.path, path: file.path, content: file.content })),
     8,
   );
   const sourceRecords = [];
