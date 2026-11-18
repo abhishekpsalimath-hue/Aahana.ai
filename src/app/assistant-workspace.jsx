@@ -605,11 +605,14 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       const saved = [];
       for (const file of selected) {
         const relativeName = file.webkitRelativePath || file.name;
-        const normalized = relativeName.replace(/\\/g, "/");
-        const segments = normalized.split("/");
-        if (!normalized || normalized.startsWith("/") || segments.some((part) => !part || part === "." || part === ".." || /[\\u0000-\\u001f\\u007f\\u202a-\\u202e\\u2066-\\u2069]/.test(part))) {
+        const rawPath = relativeName.replace(/\\/g, "/");
+        const rawSegments = rawPath.split("/");
+        if (!rawPath || rawPath.startsWith("/") || rawSegments.some((part) => !part || part === "." || part === ".." || /[\\u0000-\\u001f\\u007f\\u202a-\\u202e\\u2066-\\u2069]/.test(part))) {
           throw new Error("The folder contains an unsafe file path.");
         }
+        // Browser folder selection prefixes every file with the chosen folder name; strip that wrapper.
+        const normalized = (file.webkitRelativePath ? rawSegments.slice(1) : rawSegments).join("/");
+        if (!normalized) throw new Error("The folder contains an invalid file path.");
         const extension = file.name.toLowerCase().split(".").pop();
         const isCodeFile = codeExtensions.has(extension);
         if (!allowed.includes(file.type) && !isCodeFile) throw new Error("Unsupported file type: " + file.name);
