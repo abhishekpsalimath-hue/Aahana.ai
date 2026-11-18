@@ -107,3 +107,15 @@ test("solar system experiment lets learners pause and adjust illustrative orbita
   assert.match(world, /EXPERIMENT WITH ORBITAL MOTION/);
   assert.match(world, /not a real-time scale model of orbital periods/);
 });
+
+test("heart biology lab guides learners through the body-lungs-body circulation pathway", () => {
+  const world = readFileSync(new URL("../../app/learn/interactive-3d-world.jsx", import.meta.url), "utf8");
+  assert.match(world, /aria-label="Heart and circulation learning lab"/);
+  assert.match(world, /heartFlow/);
+  assert.match(world, /From body/);
+  assert.match(world, /To lungs/);
+  assert.match(world, /From lungs/);
+  assert.match(world, /oxygen-poor blood returns from the body/);
+  assert.match(world, /oxygen-rich blood back to the left side/);
+  assert.match(world, /Restart circulation journey/);
+});
