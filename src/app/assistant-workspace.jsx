@@ -249,6 +249,16 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [prompt, setPrompt] = useState("");
   const [imageFile, setImageFile] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [showLoginWelcome, setShowLoginWelcome] = useState(true);
+  const [dissolvingLoginWelcome, setDissolvingLoginWelcome] = useState(false);
+  useEffect(() => {
+    const dissolveTimer = window.setTimeout(() => setDissolvingLoginWelcome(true), 3000);
+    const removeTimer = window.setTimeout(() => setShowLoginWelcome(false), 3900);
+    return () => {
+      window.clearTimeout(dissolveTimer);
+      window.clearTimeout(removeTimer);
+    };
+  }, []);
   useEffect(() => {
     if (messages.length) conversationEndRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
   }, [messages]);
@@ -1090,6 +1100,20 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         )}
 
         <div className="welcome">
+          {showLoginWelcome && !messages.length && (
+            <div
+              className={dissolvingLoginWelcome ? "founder-welcome-note is-dissolving" : "founder-welcome-note"}
+              role="status"
+              aria-live="polite"
+              aria-label="Welcome to Aahana AI from Abhishekayya Salimath."
+            >
+              <p>
+                <span>Welcome to Aahana AI.</span>
+                <span>I’m glad you’re here.</span>
+              </p>
+              <strong>From Abhishekayya Salimath</strong>
+            </div>
+          )}
           {!messages.length && (
             <div className="astronaut-float" aria-hidden="true">
               <svg viewBox="0 0 180 180" role="presentation">
