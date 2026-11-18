@@ -11,6 +11,7 @@ on:
       - "src/app/api/voice/speech/route.js"
       - "src/app/api/chat/route.js"
       - "src/app/api/build/**"
+      - "src/app/api/files/**"
       - "src/app/api/build/**"
       - "src/app/assistant-workspace.jsx"
       - "src/app/learn/**"
