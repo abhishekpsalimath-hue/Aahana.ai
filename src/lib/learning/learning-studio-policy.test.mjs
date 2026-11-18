@@ -150,7 +150,7 @@ test("quiz answers reveal a left-side visual for both correct and incorrect sele
   assert.match(studio, /LOOK · THINK · DISCOVER/);
   assert.match(studio, /<AnimatedVisual visual=\{item\.visual\} \/>/);
   assert.match(studio, /Try another answer/);
-  assert.match(studio, /Not quite—and that’s okay/);
+  assert.match(studio, /Every explorer tries again/);
   assert.match(studio, /You figured it out!/);
   assert.match(studio, /className="learning-quiz-question-layout"/);
 });
