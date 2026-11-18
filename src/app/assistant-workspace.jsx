@@ -3,8 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { findBestSpeechVoice, getBrowserVoiceCapabilities } from "@/lib/voice/browser-capabilities.mjs";
-import { encodeMonoPcm16Wav } from "@/lib/voice/audio-wav.mjs";
+import { findBestSpeechVoice } from "@/lib/voice/browser-capabilities.mjs";
 import { inferSpeechLocale } from "@/lib/voice/locale-detection.mjs";
 import { shouldFallbackToDeviceSpeech } from "@/lib/voice/speech-fallback-policy.mjs";
 
@@ -23,36 +22,119 @@ const starters = [
   "Help me design an app or website",
 ];
 
+const modeStarters = {
+  solve: [
+    "Help me understand a difficult problem step by step",
+    "Compare these options and recommend a practical choice",
+    "Explain this concept with a simple example",
+    "Help me analyse this information",
+  ],
+  create: [
+    "Create a premium visual identity for my new brand",
+    "Generate an original photorealistic digital character",
+    "Develop a creative concept for a short video",
+    "Turn this rough idea into a polished design direction",
+  ],
+  write: [
+    "Write a clear, professional email",
+    "Turn these notes into a concise proposal",
+    "Rewrite this so it sounds natural and confident",
+    "Create a practical product brief",
+  ],
+  build: [
+    "Build a responsive website for my business",
+    "Create a full-stack app with authentication and a database",
+    "Review this codebase and fix the issue I describe",
+    "Design the architecture and implementation for my product",
+  ],
+  improve: [
+    "Review this website and suggest specific improvements",
+    "Refactor this code without changing its behaviour",
+    "Make this workflow simpler and more reliable",
+    "Improve this product experience for mobile users",
+  ],
+};
+
+const modePlaceholders = {
+  solve: "Ask a question or describe the problem you want to solve…",
+  create: "Describe what you want to create…",
+  write: "Tell Aahana what you need to write…",
+  build: "Describe the website, app or software you want to build…",
+  improve: "Share what you want Aahana to review or improve…",
+};
+
 function renderAssistantContent(content) {
   const nodes = [];
+  const source = String(content || "");
+  const codeBlock = /\`\`\`([^\n]*)\n([\s\S]*?)\`\`\`/g;
   const citationLink = /\[([^\]]+)\]\((https:\/\/[^\s)]+)\)/g;
   let lastIndex = 0;
   let match;
   let key = 0;
 
-  while ((match = citationLink.exec(String(content || ""))) !== null) {
-    if (match.index > lastIndex) nodes.push(String(content).slice(lastIndex, match.index));
-    try {
-      const url = new URL(match[2]);
-      if (url.protocol === "https:") {
-        nodes.push(
-          <a key={key++} href={url.toString()} target="_blank" rel="noopener noreferrer">
-            {match[1]}
-          </a>
-        );
-      } else {
-        nodes.push(match[0]);
+  function appendProse(value) {
+    let proseIndex = 0;
+    let citation;
+    while ((citation = citationLink.exec(value)) !== null) {
+      if (citation.index > proseIndex) nodes.push(value.slice(proseIndex, citation.index));
+      try {
+        const url = new URL(citation[2]);
+        if (url.protocol === "https:") {
+          nodes.push(<a key={key++} href={url.toString()} target="_blank" rel="noopener noreferrer">{citation[1]}</a>);
+        } else {
+          nodes.push(citation[0]);
+        }
+      } catch {
+        nodes.push(citation[0]);
       }
-    } catch {
-      nodes.push(match[0]);
+      proseIndex = citationLink.lastIndex;
     }
-    lastIndex = citationLink.lastIndex;
+    citationLink.lastIndex = 0;
+    if (proseIndex < value.length) nodes.push(value.slice(proseIndex));
   }
 
-  if (lastIndex < String(content || "").length) nodes.push(String(content).slice(lastIndex));
+  while ((match = codeBlock.exec(source)) !== null) {
+    if (match.index > lastIndex) appendProse(source.slice(lastIndex, match.index));
+    const code = match[2].replace(/\n$/, "");
+    const label = match[1].trim() || "Code";
+    const filePath = label.split(/\s+/).slice(1).join(" ");
+    const safeFilePath = filePath
+      && !filePath.startsWith("/")
+      && !filePath.split("/").some((part) => !part || part === "." || part === "..")
+      && /^[A-Za-z0-9._/-]+$/.test(filePath)
+      ? filePath
+      : null;
+    nodes.push(
+      <section className="assistant-code-block" key={key++}>
+        <div className="assistant-code-heading">
+          <span>{label}</span>
+          <div className="assistant-code-actions">
+            {safeFilePath && (
+              <button type="button" onClick={() => {
+                const blob = new Blob([code], { type: "text/plain;charset=utf-8" });
+                const url = URL.createObjectURL(blob);
+                const anchor = document.createElement("a");
+                anchor.href = url;
+                anchor.download = safeFilePath.split("/").pop();
+                anchor.rel = "noopener";
+                document.body.appendChild(anchor);
+                anchor.click();
+                anchor.remove();
+                window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+              }}>Download file</button>
+            )}
+            <button type="button" onClick={() => navigator.clipboard?.writeText(code).catch(() => {})}>Copy code</button>
+          </div>
+        </div>
+        <pre><code>{code}</code></pre>
+      </section>
+    );
+    lastIndex = codeBlock.lastIndex;
+  }
+
+  if (lastIndex < source.length) appendProse(source.slice(lastIndex));
   return nodes;
 }
-
 function isImageGenerationRequest(value) {
   const text = String(value || "").trim();
   if (!text) return false;
@@ -141,6 +223,7 @@ function evaluateArithmetic(input) {
 export default function Home({ userEmail = "", aiEnabled = false }) {
   const router = useRouter();
   const [mode, setMode] = useState("solve");
+  const activeStarters = modeStarters[mode] || starters;
   const [prompt, setPrompt] = useState("");
   const [imageFile, setImageFile] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -159,6 +242,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [showProjectForm, setShowProjectForm] = useState(false);
   const [projectName, setProjectName] = useState("");
   const [projectDescription, setProjectDescription] = useState("");
+  const [projectType, setProjectType] = useState("web");
   const [selectedProjectId, setSelectedProjectId] = useState(null);
   const [projectBusy, setProjectBusy] = useState(false);
   const [filesOpen, setFilesOpen] = useState(false);
@@ -177,91 +261,18 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [memoryLoading, setMemoryLoading] = useState(false);
   const [memoryBusy, setMemoryBusy] = useState(false);
   const [memoryError, setMemoryError] = useState("");
-  const [voiceLanguage, setVoiceLanguage] = useState("en-IN");
-  const [autoSpeak, setAutoSpeak] = useState(true);
+  const [voiceLanguage] = useState("en-IN");
   const [listening, setListening] = useState(false);
   const [speakingMessage, setSpeakingMessage] = useState(null);
-  const [voicePreferencesLoaded, setVoicePreferencesLoaded] = useState(false);
   const [speechVoices, setSpeechVoices] = useState([]);
-  const [speechInputAvailable, setSpeechInputAvailable] = useState(false);
-  const [voiceProviderCapabilities, setVoiceProviderCapabilities] = useState(null);
-  const [voiceConsent, setVoiceConsent] = useState(false);
-  const [providerRecording, setProviderRecording] = useState(false);
-  const [providerTranscribing, setProviderTranscribing] = useState(false);
-  const [providerSeconds, setProviderSeconds] = useState(0);
-  const mediaRecorderRef = useRef(null);
-  const mediaStreamRef = useRef(null);
-  const recordingChunksRef = useRef([]);
-  const recordingTimerRef = useRef(null);
-  const recordingStartedAtRef = useRef(0);
   const audioPlaybackRef = useRef(null);
   const audioObjectUrlRef = useRef(null);
-  // Recognition and speech use the browser/device language packs. This list covers
-  // major Indian regional languages and widely used international locales.
-  const voiceLanguages = [
-    ["kn-IN","ಕನ್ನಡ (Kannada)"],["hi-IN","हिन्दी (Hindi)"],["ta-IN","தமிழ் (Tamil)"],["te-IN","తెలుగు (Telugu)"],["ml-IN","മലയാളം (Malayalam)"],["mr-IN","मराठी (Marathi)"],["bn-IN","বাংলা (Bengali)"],["gu-IN","ગુજરાતી (Gujarati)"],["pa-IN","ਪੰਜਾਬੀ (Punjabi)"],["ur-IN","اردو (Urdu)"],["or-IN","ଓଡ଼ିଆ (Odia)"],["as-IN","অসমীয়া (Assamese)"],["ne-NP","नेपाली (Nepali)"],["sa-IN","संस्कृत (Sanskrit)"],["ks-IN","Kashmiri"],["sd-IN","Sindhi"],["kok-IN","Konkani"],["doi-IN","Dogri"],["mni-IN","Manipuri"],["brx-IN","Bodo"],
-    ["en-IN","English (India)"],["en-US","English (US)"],["en-GB","English (UK)"],["en-AU","English (Australia)"],["en-CA","English (Canada)"],["es-ES","Español (Spanish)"],["es-MX","Spanish (Mexico)"],["fr-FR","Français (French)"],["fr-CA","French (Canada)"],["de-DE","Deutsch (German)"],["pt-BR","Português (Brazil)"],["pt-PT","Portuguese (Portugal)"],["ar-SA","العربية (Arabic)"],["ar-EG","Arabic (Egypt)"],["zh-CN","中文 (Mandarin)"],["zh-TW","Chinese (Traditional)"],["yue-HK","Cantonese"],["ja-JP","日本語 (Japanese)"],["ko-KR","한국어 (Korean)"],["ru-RU","Русский (Russian)"],["it-IT","Italiano (Italian)"],["nl-NL","Nederlands (Dutch)"],["sv-SE","Swedish"],["no-NO","Norwegian"],["da-DK","Danish"],["fi-FI","Finnish"],["is-IS","Icelandic"],["pl-PL","Polish"],["cs-CZ","Czech"],["sk-SK","Slovak"],["hu-HU","Hungarian"],["ro-RO","Romanian"],["bg-BG","Bulgarian"],["el-GR","Greek"],["tr-TR","Türkçe (Turkish)"],["he-IL","עברית (Hebrew)"],["th-TH","ไทย (Thai)"],["vi-VN","Tiếng Việt (Vietnamese)"],["id-ID","Bahasa Indonesia"],["ms-MY","Bahasa Melayu"],["fil-PH","Filipino"],["sw-KE","Swahili"],["af-ZA","Afrikaans"],["uk-UA","Ukrainian"],["hr-HR","Croatian"],["sr-RS","Serbian"],["sl-SI","Slovenian"],["lt-LT","Lithuanian"],["lv-LV","Latvian"],["et-EE","Estonian"],["fa-IR","Persian"],["am-ET","Amharic"]
-  ];
-
   useEffect(() => {
-    let active = true;
-    fetch("/api/voice/capabilities", { cache: "no-store" })
-      .then(async (response) => {
-        if (!response.ok) throw new Error("Voice capability status unavailable");
-        return response.json();
-      })
-      .then((result) => { if (active) setVoiceProviderCapabilities(result); })
-      .catch(() => { if (active) setVoiceProviderCapabilities(null); });
-    return () => { active = false; };
+    const refreshVoices = () => setSpeechVoices(window.speechSynthesis?.getVoices?.() || []);
+    refreshVoices();
+    window.speechSynthesis?.addEventListener?.("voiceschanged", refreshVoices);
+    return () => window.speechSynthesis?.removeEventListener?.("voiceschanged", refreshVoices);
   }, []);
-
-  useEffect(() => {
-    const refreshCapabilities = () => {
-      const recognitionAvailable = Boolean(window.SpeechRecognition || window.webkitSpeechRecognition);
-      const synthesisAvailable = Boolean(window.speechSynthesis);
-      const voices = synthesisAvailable ? window.speechSynthesis.getVoices() : [];
-      const capabilities = getBrowserVoiceCapabilities({ recognitionAvailable, synthesisAvailable, voices });
-      setSpeechInputAvailable(capabilities.inputAvailable);
-      setSpeechVoices(voices);
-    };
-    refreshCapabilities();
-    window.speechSynthesis?.addEventListener?.("voiceschanged", refreshCapabilities);
-    return () => window.speechSynthesis?.removeEventListener?.("voiceschanged", refreshCapabilities);
-  }, []);
-
-  // Keep voice choices on this device. This is a convenience preference only;
-  // it does not imply that the browser has a speech model for the selected locale.
-  useEffect(() => {
-    try {
-      const saved = window.localStorage.getItem("aahana:voice-preferences:v1");
-      if (saved) {
-        const preferences = JSON.parse(saved);
-        if (typeof preferences?.voiceLanguage === "string"
-          && voiceLanguages.some(([code]) => code === preferences.voiceLanguage)) {
-          setVoiceLanguage(preferences.voiceLanguage);
-        }
-        if (typeof preferences?.autoSpeak === "boolean") {
-          setAutoSpeak(preferences.autoSpeak);
-        }
-      }
-    } catch {
-      // Ignore unavailable or malformed local preferences and keep safe defaults.
-    } finally {
-      setVoicePreferencesLoaded(true);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!voicePreferencesLoaded) return;
-    try {
-      window.localStorage.setItem("aahana:voice-preferences:v1", JSON.stringify({
-        voiceLanguage,
-        autoSpeak,
-      }));
-    } catch {
-      // Voice preferences remain usable for this session if storage is unavailable.
-    }
-  }, [voiceLanguage, autoSpeak, voicePreferencesLoaded]);
 
   function startVoiceInput() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -294,97 +305,9 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   }
 
   useEffect(() => () => {
-    if (recordingTimerRef.current) window.clearInterval(recordingTimerRef.current);
-    mediaRecorderRef.current?.stop?.();
-    mediaStreamRef.current?.getTracks?.().forEach((track) => track.stop());
     audioPlaybackRef.current?.pause?.();
     if (audioObjectUrlRef.current) URL.revokeObjectURL(audioObjectUrlRef.current);
   }, []);
-
-  async function startProviderRecording() {
-    if (!voiceConsent) {
-      setError("Please confirm that you agree to send this recording to Aahana's configured private speech service.");
-      return;
-    }
-    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
-      setError("Private multilingual recording is not supported by this browser. You can still use the browser Speak option or type.");
-      return;
-    }
-    try {
-      setError("");
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true } });
-      mediaStreamRef.current = stream;
-      const preferredType = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"].find((type) => MediaRecorder.isTypeSupported?.(type));
-      const recorder = preferredType ? new MediaRecorder(stream, { mimeType: preferredType }) : new MediaRecorder(stream);
-      recordingChunksRef.current = [];
-      recorder.ondataavailable = (event) => { if (event.data?.size) recordingChunksRef.current.push(event.data); };
-      recorder.onerror = () => {
-        setError("The microphone recording failed. Check microphone permission and try again.");
-        setProviderRecording(false);
-        stream.getTracks().forEach((track) => track.stop());
-      };
-      recorder.onstop = async () => {
-        if (recordingTimerRef.current) window.clearInterval(recordingTimerRef.current);
-        setProviderRecording(false);
-        stream.getTracks().forEach((track) => track.stop());
-        mediaStreamRef.current = null;
-        const recording = new Blob(recordingChunksRef.current, { type: recorder.mimeType || "audio/webm" });
-        recordingChunksRef.current = [];
-        if (!recording.size) { setError("No audio was recorded. Please try again."); return; }
-        setProviderTranscribing(true);
-        let audioContext;
-        try {
-          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-          if (!AudioContextClass) throw new Error("Audio conversion is not supported in this browser.");
-          audioContext = new AudioContextClass();
-          const decoded = await audioContext.decodeAudioData(await recording.arrayBuffer());
-          const mono = new Float32Array(decoded.length);
-          for (let channel = 0; channel < decoded.numberOfChannels; channel++) {
-            const samples = decoded.getChannelData(channel);
-            for (let i = 0; i < samples.length; i++) mono[i] += samples[i] / decoded.numberOfChannels;
-          }
-          const wav = encodeMonoPcm16Wav(mono, decoded.sampleRate);
-          if (wav.size > 15 * 1024 * 1024) throw new Error("This recording is larger than the 15 MB voice upload limit.");
-          const form = new FormData();
-          form.append("file", wav, "aahana-recording.wav");
-          form.append("locale", voiceLanguage);
-          form.append("consent", "true");
-          const response = await fetch("/api/voice/transcribe", { method: "POST", body: form });
-          const result = await response.json().catch(() => ({}));
-          if (!response.ok) throw new Error(result.error || "The private speech service is unavailable or not configured yet.");
-          const transcript = String(result.text || "").trim();
-          if (!transcript) throw new Error("The speech service returned an empty transcript.");
-          setPrompt((current) => current ? current + " " + transcript : transcript);
-          setError("");
-        } catch (err) {
-          setError(err.message || "Could not transcribe this recording. You can use browser Speak or type instead.");
-        } finally {
-          await audioContext?.close?.().catch(() => {});
-          setProviderTranscribing(false);
-        }
-      };
-      mediaRecorderRef.current = recorder;
-      recordingStartedAtRef.current = Date.now();
-      setProviderSeconds(0);
-      recorder.start(500);
-      setProviderRecording(true);
-      recordingTimerRef.current = window.setInterval(() => {
-        const elapsed = Math.floor((Date.now() - recordingStartedAtRef.current) / 1000);
-        setProviderSeconds(elapsed);
-        if (elapsed >= 60 && mediaRecorderRef.current?.state === "recording") mediaRecorderRef.current.stop();
-      }, 500);
-    } catch (err) {
-      mediaStreamRef.current?.getTracks?.().forEach((track) => track.stop());
-      mediaStreamRef.current = null;
-      setError(err.name === "NotAllowedError"
-        ? "Microphone permission was denied. Allow microphone access and try again."
-        : err.message || "Could not start microphone recording.");
-    }
-  }
-
-  function stopProviderRecording() {
-    if (mediaRecorderRef.current?.state === "recording") mediaRecorderRef.current.stop();
-  }
 
   async function speakResponse(text, index) {
     const spokenText = String(text || "").trim();
@@ -669,19 +592,25 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     setFilesError("");
     try {
       const allowed = ["application/pdf", "text/plain", "text/markdown", "text/csv", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "image/png", "image/jpeg", "image/webp"];
-      if (!allowed.includes(file.type)) throw new Error("This file type is not supported.");
+      const extension = file.name.toLowerCase().split(".").pop();
+      const codeExtensions = new Set(["html", "htm", "css", "js", "jsx", "ts", "tsx", "mjs", "cjs", "json", "xml", "yaml", "yml", "toml", "sql", "py", "sh", "md", "txt"]);
+      const isCodeFile = codeExtensions.has(extension);
+      if (!allowed.includes(file.type) && !isCodeFile) throw new Error("This file type is not supported.");
       if (file.size < 1 || file.size > 10 * 1024 * 1024) throw new Error("Files must be between 1 byte and 10 MB.");
+      const upload = isCodeFile && !["text/plain", "text/markdown"].includes(file.type)
+        ? new File([await file.text()], file.name, { type: "text/plain" })
+        : file;
       const supabase = createClient();
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError || !user) throw new Error("Please sign in again.");
       const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-100) || "upload";
       const folder = selectedProjectId || "personal";
       const objectPath = `${user.id}/${folder}/${crypto.randomUUID()}-${safeName}`;
-      const { error: storageError } = await supabase.storage.from("aahana-private").upload(objectPath, file, { contentType: file.type, upsert: false });
+      const { error: storageError } = await supabase.storage.from("aahana-private").upload(objectPath, upload, { contentType: upload.type, upsert: false });
       if (storageError) throw new Error("Upload failed. Please try again.");
       const response = await fetch("/api/files", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ objectPath, originalFilename: file.name, mimeType: file.type, sizeBytes: file.size, projectId: selectedProjectId }),
+        body: JSON.stringify({ objectPath, originalFilename: file.name, mimeType: upload.type, sizeBytes: upload.size, projectId: selectedProjectId }),
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) {
@@ -776,7 +705,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       const response = await fetch("/api/projects", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: projectName.trim(), description: projectDescription.trim(), project_type: "other" }),
+        body: JSON.stringify({ name: projectName.trim(), description: projectDescription.trim(), project_type: projectType }),
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || "Could not create project.");
@@ -784,6 +713,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       setSelectedProjectId(result.project.id);
       setProjectName("");
       setProjectDescription("");
+      setProjectType("web");
       setShowProjectForm(false);
       setMessages([]);
       setConversationId(null);
@@ -962,7 +892,6 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       setMessages((current) => current.map((item, index) =>
         index === current.length - 1 ? { ...item, content: answer || "I couldn't generate a response. Please try again." } : item
       ));
-      if (autoSpeak && answer.trim()) speakResponse(answer, messages.length + 1);
       setHistory([]);
     } catch (err) {
       setMessages((current) => {
@@ -990,6 +919,8 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         </button>
         <div className="side-label">WORKSPACE</div>
         <button className={selectedProjectId ? "side-item assistant-nav" : "side-item active assistant-nav"} type="button" onClick={() => selectProject(null)}>✳ <span>Assistant</span></button>
+        <a className="side-item muted learning-nav" href="/learn" aria-label="Open Student Mode">✧ <span>Student Mode</span></a>
+        <a className="side-item muted" href="/creator-studio">✦ <span>Creator Studio</span></a>
         <button className={historyOpen ? "side-item active history-toggle" : "side-item muted history-toggle"} type="button" onClick={toggleHistory}>◷ <span>History</span></button>
         {historyOpen && (
           <div className="history-list">
@@ -1064,7 +995,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
             ))}
             <label className="project-add">
               {fileBusy ? "Uploading…" : "＋ Upload file"}
-              <input type="file" hidden disabled={fileBusy} onChange={uploadFile} accept=".pdf,.txt,.md,.csv,.docx,.xlsx,.png,.jpg,.jpeg,.webp" />
+              <input type="file" hidden disabled={fileBusy} onChange={uploadFile} accept=".pdf,.txt,.md,.csv,.docx,.xlsx,.png,.jpg,.jpeg,.webp,.html,.htm,.css,.js,.jsx,.ts,.tsx,.mjs,.cjs,.json,.xml,.yaml,.yml,.toml,.sql,.py,.sh" />
             </label>
           </div>
         )}
@@ -1076,7 +1007,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
             {projects.map((project) => (
               <div className="project-row" key={project.id}>
                 <button className={selectedProjectId === project.id ? "project-entry selected" : "project-entry"} type="button" onClick={() => selectProject(project.id)}>
-                  <span>{project.name}</span><small>{project.status}</small>
+                  <span>{project.name}</span><small>{project.project_type || "other"} · {project.status}</small>{project.description && <small className="project-description" title={project.description}>{project.description}</small>}
                 </button>
                 <button className="project-archive" type="button" aria-label={`Archive ${project.name}`} onClick={() => archiveProject(project.id)}>×</button>
               </div>
@@ -1085,6 +1016,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
               <form className="project-create-form" onSubmit={createProject}>
                 <input value={projectName} onChange={(event) => setProjectName(event.target.value)} maxLength={80} placeholder="Project name" aria-label="Project name" required />
                 <textarea value={projectDescription} onChange={(event) => setProjectDescription(event.target.value)} maxLength={500} placeholder="Short description (optional)" aria-label="Project description" rows={2} />
+                <select value={projectType} onChange={(event) => setProjectType(event.target.value)} aria-label="Project type"><option value="web">Website</option><option value="app">App</option><option value="design">Design</option><option value="other">Other</option></select>
                 <div><button type="button" onClick={() => setShowProjectForm(false)}>Cancel</button><button type="submit" disabled={!projectName.trim() || projectBusy}>{projectBusy ? "Saving…" : "Create"}</button></div>
               </form>
             ) : (
@@ -1102,7 +1034,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       <section className="main-panel">
         <header className="topbar">
           <div className="breadcrumb">Workspace <span>/</span> {selectedProjectId ? (projects.find((item) => item.id === selectedProjectId)?.name || "Project") : "Assistant"}</div>
-          <div className="top-actions"><button className="mobile-history-toggle" type="button" onClick={toggleProjects}>Projects</button><button className="mobile-history-toggle" type="button" onClick={toggleHistory}>History</button><button className="mobile-history-toggle" type="button" onClick={toggleFiles}>Files</button><button className="mobile-history-toggle" type="button" onClick={toggleMemoryPanel}>Memory</button><span>Private workspace</span></div>
+          <div className="top-actions"><button className="mobile-history-toggle" type="button" onClick={toggleProjects}>Projects</button><button className="mobile-history-toggle" type="button" onClick={toggleHistory}>History</button><button className="mobile-history-toggle" type="button" onClick={toggleFiles}>Files</button><button className="mobile-history-toggle" type="button" onClick={toggleMemoryPanel}>Memory</button><a className="student-mode-shortcut" href="/learn">✧ Student Mode</a><button className="mobile-history-toggle" type="button" onClick={() => setCreativeStudioOpen((value) => !value)}>Creative Studio</button><button className="mobile-history-toggle" type="button" onClick={() => setLearningWorldsOpen((value) => !value)}>Learning Worlds</button><span>Private workspace</span></div>
         </header>
         {projectsOpen && (
           <div className="mobile-project-panel">
@@ -1160,6 +1092,10 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
 
         <div className="welcome">
           {!messages.length && <div className="cosmic-field" aria-hidden="true"><span className="cosmic-nebula" /><span className="cosmic-stars cosmic-stars-far" /><span className="cosmic-stars cosmic-stars-mid" /><span className="cosmic-stars cosmic-stars-near" /><span className="cosmic-core" /></div>}
+          {!messages.length && <div className="founder-welcome-note" aria-label="I'm happy to welcome you on this journey with Aahana AI. Abhishekayya Salimath.">
+            <p><span className="welcome-line welcome-line-one">I'm happy to welcome you</span><span className="welcome-line welcome-line-two">on this journey with</span><em className="welcome-brand-word">Aahana AI.</em></p>
+            <strong>Abhishekayya Salimath</strong>
+          </div>}
           <div className="welcome-signal" aria-hidden="true">
             <span className="signal-orbit signal-orbit-one" />
             <span className="signal-orbit signal-orbit-two" />
@@ -1204,7 +1140,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                       </div>
                     )}
                   </div>
-                  {item.content ? <p>{renderAssistantContent(item.content)}</p> : busy && item.role === "assistant" ? <div className="thinking-indicator" role="status" aria-label="Aahana is thinking"><span /><span /><span /><small>Aahana is thinking</small></div> : null}
+                  {item.content ? <div className="assistant-message-content">{renderAssistantContent(item.content)}</div> : busy && item.role === "assistant" ? <div className="thinking-indicator" role="status" aria-label="Aahana is thinking"><span /><span /><span /><small>Aahana is thinking</small></div> : null}
                 </article>
               ))}
             </div>
@@ -1222,34 +1158,6 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
               </div>
             )}
             <div className="image-attach-row">
-              <select aria-label="Voice input language" value={voiceLanguage} onChange={(event) => setVoiceLanguage(event.target.value)} className="copy-message">{voiceLanguages.map(([code, label]) => {
-                const privateRecognition = voiceProviderCapabilities?.recognition?.enabled && voiceProviderCapabilities.recognition.supportedLocales.some((locale) => locale.toLowerCase() === code.toLowerCase());
-                const privateSynthesis = voiceProviderCapabilities?.synthesis?.enabled && voiceProviderCapabilities.synthesis.supportedLocales.some((locale) => locale.toLowerCase() === code.toLowerCase());
-                const deviceVoice = findBestSpeechVoice(speechVoices, code);
-                const suffix = privateRecognition && privateSynthesis ? " · Private two-way"
-                  : privateRecognition ? " · Private input"
-                  : privateSynthesis ? " · Private speech"
-                  : deviceVoice ? " · Device speech"
-                  : "";
-                return <option key={code} value={code}>{label}{suffix}</option>;
-              })}</select>
-              <button className="copy-message" type="button" onClick={startVoiceInput} disabled={listening || busy}>{listening ? "Listening…" : "Speak"}</button>
-              <button className="copy-message" type="button" onClick={providerRecording ? stopProviderRecording : startProviderRecording} disabled={busy || providerTranscribing || listening}>
-                {providerRecording ? `Stop recording · ${providerSeconds}s / 60s` : providerTranscribing ? "Transcribing…" : "Private voice"}
-              </button>
-              <label className="copy-message" style={{display:"inline-flex",alignItems:"center",gap:6}}>
-                <input type="checkbox" checked={voiceConsent} onChange={(event) => setVoiceConsent(event.target.checked)} disabled={providerRecording || providerTranscribing} />
-                Allow this recording to be sent to Aahana's configured private speech service
-              </label>
-              <span className="voice-capability-note" role="status">
-                Private input: {voiceProviderCapabilities?.recognition?.enabled ? (voiceProviderCapabilities.recognition.supportedLocales.some((locale) => locale.toLowerCase() === voiceLanguage.toLowerCase()) ? "available for selected language" : "not enabled for selected language") : "not configured"} ·
-                Private speech: {voiceProviderCapabilities?.synthesis?.enabled ? (voiceProviderCapabilities.synthesis.supportedLocales.some((locale) => locale.toLowerCase() === voiceLanguage.toLowerCase()) ? "available for selected language" : "not enabled for selected language") : "not configured"} ·
-                Device speech: {findBestSpeechVoice(speechVoices, voiceLanguage) ? "voice installed" : speechInputAvailable ? "language coverage unknown" : "unavailable"}
-              </span>
-              <label className="copy-message" style={{display:"inline-flex",alignItems:"center",gap:6}}>
-                <input type="checkbox" checked={autoSpeak} onChange={(event) => setAutoSpeak(event.target.checked)} />
-                Auto-read replies (text stays visible)
-              </label>
               <label className="image-attach">
                 + Add image
                 <input id="image-upload" type="file" accept="image/png,image/jpeg,image/webp" disabled={busy}
@@ -1263,6 +1171,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                     setImageFile(file);
                   }} />
               </label>
+              <button className="copy-message" type="button" onClick={startVoiceInput} disabled={listening || busy}>{listening ? "Listening…" : "Speak"}</button>
               {imageFile && <span className="image-attach-name">{imageFile.name} <button type="button" onClick={() => setImageFile(null)}>Remove</button></span>}
               <button className="copy-message" type="button" onClick={generateImage}
                 disabled={!prompt.trim() || imageGenerating || busy || Boolean(imageFile)}>
@@ -1272,7 +1181,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
             <label className="sr-only" htmlFor="prompt">What would you like to work on?</label>
             <textarea id="prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); } }}
-              placeholder={aiEnabled ? "What would you like to work on today?" : "Try a calculation, e.g. 2 + 2 (offline)"} rows={3} disabled={busy} />
+              placeholder={aiEnabled ? (modePlaceholders[mode] || "What would you like to work on today?") : "Try a calculation, e.g. 2 + 2 (offline)"} rows={3} disabled={busy} />
             <div className="composer-footer">
               <span className="composer-mode">{modes.find((item) => item.id === mode)?.hint} · Enter to send · Shift + Enter for a new line</span>
               <button className={`send send-orb${busy || imageGenerating ? " is-thinking" : ""}`} type="submit" disabled={(!prompt.trim() && !imageFile) || busy || imageGenerating || (!aiEnabled && !imageFile && !isImageGenerationRequest(prompt.trim()) && evaluateArithmetic(prompt.trim()) === null)} aria-label={busy || imageGenerating ? "Aahana is working" : "Launch your message"} title={busy || imageGenerating ? "Aahana is working" : "Launch your message"}><span className="send-orb-halo" aria-hidden="true" /><svg className="send-rocket" viewBox="0 0 32 32" aria-hidden="true"><path className="rocket-flame" d="M12 21.5c-2.1 1.2-3.3 3.2-3.4 5.1 2-.1 4-1.3 5.1-3.4" /><path className="rocket-body" d="M12.2 19.8c-1.3-4.9 1.1-11.1 8.8-15.6 1.3 8.8-1.8 14-6.6 16.5l-2.2-.9Z" /><path className="rocket-window" d="M18.7 10.1a2.1 2.1 0 1 0 0 4.2 2.1 2.1 0 0 0 0-4.2Z" /><path className="rocket-fin" d="m12.4 15.8-4.1 1.4 1.1 4.1 4.1-2.2m5.2-6.9 2.2-4.1 4.1 1.1-1.4 4.1" /></svg><span className="send-orb-thinking" aria-hidden="true"><i /><i /><i /></span></button>
@@ -1283,7 +1192,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
             <>
               <div className="notice">{aiEnabled ? "Your workspace is ready. Send a prompt to begin." : "Your workspace is ready. AI activation is pending billing and connection checks. Prompts are not sent yet."}</div>
               <div className="starter-grid">
-                {starters.map((item, index) => (
+                {activeStarters.map((item, index) => (
                   <button className="starter" type="button" key={item} onClick={() => setPrompt(item)}>
                     <span className="starter-icon">{["◇", "↗", "✎", "⌘"][index]}</span>
                     <span>{item}</span>

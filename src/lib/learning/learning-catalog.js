@@ -1,0 +1,70 @@
+export const learningCategories = [
+  { name: "Explore anything", subjects: ["Anything / explore", "Interdisciplinary studies", "Critical thinking", "Research skills"] },
+  { name: "Mathematics", subjects: ["Arithmetic", "Number systems", "Fractions and decimals", "Algebra", "Geometry", "Trigonometry", "Mensuration", "Statistics", "Probability", "Calculus", "Linear algebra", "Discrete mathematics", "Number theory", "Mathematical reasoning", "Financial mathematics"] },
+  { name: "Natural sciences", subjects: ["General science", "Physics", "Chemistry", "Biology", "Astronomy", "Earth science", "Environmental science", "Geology", "Meteorology", "Oceanography", "Ecology", "Genetics", "Microbiology", "Anatomy", "Physiology", "Botany", "Zoology", "Neuroscience", "Paleontology"] },
+  { name: "Engineering", subjects: ["Mechanical engineering", "Civil engineering", "Electrical engineering", "Electronics", "Chemical engineering", "Aerospace engineering", "Biomedical engineering", "Mechatronics", "Robotics", "Materials science", "Renewable energy", "Engineering design"] },
+  { name: "Computing & technology", subjects: ["Computer fundamentals", "Computer science", "Programming", "Web development", "App development", "Data structures and algorithms", "Databases", "Cybersecurity", "Networking", "Cloud computing", "Artificial intelligence", "Machine learning", "Data science", "Computer graphics", "Operating systems", "Internet of Things", "Blockchain", "Human-computer interaction"] },
+  { name: "Languages & communication", subjects: ["English", "Kannada", "Hindi", "Tamil", "Telugu", "Malayalam", "Marathi", "Bengali", "Gujarati", "Punjabi", "Urdu", "Sanskrit", "French", "Spanish", "German", "Japanese", "Korean", "Mandarin Chinese", "Arabic", "Sign languages", "Grammar", "Vocabulary", "Pronunciation", "Writing", "Public speaking", "Translation"] },
+  { name: "Humanities & social sciences", subjects: ["History", "World history", "Indian history", "Geography", "Civics", "Political science", "Sociology", "Psychology", "Philosophy", "Anthropology", "Archaeology", "International relations", "Cultural studies", "Religious studies", "Ethics", "Human rights"] },
+  { name: "Business & commerce", subjects: ["Business studies", "Economics", "Microeconomics", "Macroeconomics", "Accounting", "Finance", "Marketing", "Entrepreneurship", "Management", "Human resources", "Operations management", "Supply chain fundamentals", "Business analytics", "Project management", "Business law", "Personal finance", "Banking", "Taxation"] },
+  { name: "Health & wellbeing education", subjects: ["Human health", "Nutrition", "Fitness science", "Mental wellbeing", "First aid", "Public health", "Healthcare systems", "Sports science", "Sleep science", "Healthy habits"] },
+  { name: "Agriculture & food systems", subjects: ["Agriculture", "Organic farming", "Soil science", "Horticulture", "Agronomy", "Animal husbandry", "Dairy science", "Aquaculture", "Food science", "Food safety", "Gardening", "Sustainable farming"] },
+  { name: "Arts, design & creativity", subjects: ["Visual arts", "Drawing", "Painting", "Sculpture", "Graphic design", "UI/UX design", "Photography", "Film studies", "Animation", "Music theory", "Singing", "Instrument practice", "Dance", "Theatre", "Creative writing", "Fashion design", "Architecture", "Crafts"] },
+  { name: "Literature & media", subjects: ["World literature", "Indian literature", "Poetry", "Short stories", "Drama", "Reading comprehension", "Journalism", "Media studies", "Digital storytelling", "Screenwriting"] },
+  { name: "Law, society & citizenship", subjects: ["Legal literacy", "Constitution of India", "Fundamental rights and duties", "Criminal law fundamentals", "Consumer rights", "Civic participation", "Public policy", "Governance", "Digital citizenship", "Media literacy"] },
+  { name: "School learning", subjects: ["EVS", "General knowledge", "Moral science", "Value education", "Science projects", "Maths practice", "Reading", "Spelling", "Exam preparation", "Study skills", "Homework help"] },
+  { name: "Competitive exams", subjects: ["UPSC foundation", "KPSC foundation", "SSC", "Banking exams", "Railway exams", "CTET", "NEET preparation", "JEE preparation", "CUET preparation", "CAT preparation", "CLAT preparation", "GATE preparation", "IELTS", "TOEFL", "SAT", "GRE", "GMAT"] },
+  { name: "Vocational & professional skills", subjects: ["Communication skills", "Leadership", "Teamwork", "Customer service", "Retail operations", "Inventory management", "Auditing fundamentals", "Quality management", "Workplace safety", "Excel and spreadsheets", "Presentation skills", "Resume and interview skills", "Career exploration", "Digital productivity", "Financial literacy"] },
+  { name: "Practical life skills", subjects: ["Cooking", "Home management", "Basic repairs", "Personal safety", "Road safety", "Travel skills", "Time management", "Decision making", "Problem solving", "First-time technology use", "Sustainable living", "Gardening at home"] },
+  { name: "Nature, planet & exploration", subjects: ["Wildlife", "Marine life", "Forests", "Biodiversity", "Climate change", "Conservation", "Space exploration", "Solar System", "Stars and galaxies", "Dinosaurs", "Natural disasters", "Maps and navigation"] },
+  { name: "Sports & games", subjects: ["Sports science", "Cricket", "Football", "Basketball", "Badminton", "Chess", "Athletics", "Yoga", "Game design", "Strategy and logic games"] },
+  { name: "Global systems & world affairs", subjects: ["International relations", "Geopolitics", "Diplomacy", "Global governance", "United Nations and international organisations", "International law", "Global trade", "Migration and diaspora studies", "Development studies", "Comparative politics", "Conflict resolution and peace studies", "Human geography", "Globalisation"] },
+  { name: "Cultures & civilisations", subjects: ["World civilisations", "Ancient civilisations", "Indigenous knowledge systems", "Cultural heritage", "Folklore and mythology", "Comparative religion", "World festivals and traditions", "Languages and cultural change", "Ethnomusicology"] },
+  { name: "Earth systems & sustainability", subjects: ["Climate systems", "Climate adaptation", "Ocean currents", "Water resources", "Disaster risk reduction", "Circular economy", "Sustainable cities", "Biodiversity conservation", "Environmental policy", "Energy transitions"] },
+  { name: "Research & advanced learning", subjects: ["Scientific method", "Research methodology", "Academic writing", "Statistics for research", "Literature review", "Experimental design", "Data interpretation", "Advanced interdisciplinary topics"] },
+];
+
+export const allLearningSubjects = [...new Set(learningCategories.flatMap((category) => category.subjects))];
+
+
+/**
+ * Stable discovery records for the learning catalogue.
+ * These describe destinations, not a claim that every subject already has a
+ * fully authored lesson. Lesson availability is resolved by the learning flow.
+ */
+const normalizeLearningSearch = (value) => String(value || "")
+  .normalize("NFKD")
+  .replace(/[\u0300-\u036f]/g, "")
+  .toLowerCase()
+  .replace(/[^\p{L}\p{N}]+/gu, " ")
+  .trim();
+
+export const learningSubjectIndex = learningCategories.flatMap((category) =>
+  category.subjects.map((subject) => ({
+    id: normalizeLearningSearch(category.name + " " + subject).replace(/\s+/g, "-"),
+    category: category.name,
+    subject,
+    searchText: normalizeLearningSearch(category.name + " " + subject),
+    status: "discoverable",
+  }))
+);
+
+export function findLearningSubjects(query, limit = 12) {
+  const normalized = normalizeLearningSearch(query);
+  if (normalized.length < 2) return [];
+  const safeLimit = Number.isFinite(limit) ? Math.max(1, Math.min(50, Math.floor(limit))) : 12;
+  return learningSubjectIndex
+    .map((item) => {
+      const subjectText = normalizeLearningSearch(item.subject);
+      const categoryText = normalizeLearningSearch(item.category);
+      const score = subjectText.startsWith(normalized) ? 3
+        : subjectText.includes(normalized) ? 2
+        : categoryText.includes(normalized) ? 1
+        : 0;
+      return { item, score };
+    })
+    .filter((entry) => entry.score > 0)
+    .sort((a, b) => b.score - a.score || a.item.subject.localeCompare(b.item.subject))
+    .slice(0, safeLimit)
+    .map(({ item }) => ({ id: item.id, category: item.category, subject: item.subject, status: item.status }));
+}
