@@ -1122,7 +1122,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
           </div>
           <div className="eyebrow"><span /> YOUR THINKING SPACE</div>
           {!messages.length && <>
-            <h1>Welcome to Aahana<br /><em>your space.</em></h1>
+            <h1>Good ideas<br /><em>start somewhere.</em></h1>
             <p>Think freely. Explore ideas. Build something real.</p>
           </>}
 
