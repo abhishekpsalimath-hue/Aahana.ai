@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createImageScene, renderImageSceneSvg, validateImageScene } from "./image-engine.mjs";
+import { applyCubeLutToImageData, parseCubeLut } from "./cube-lut.mjs";
 
 test("creates a valid Aahana-native vector scene", () => {
   const scene = createImageScene({ title: "Solar system", subtitle: "Explore the planets" });
@@ -78,4 +79,46 @@ test("image studio applies selected colour grade to previews and exported genera
   assert.match(source, /context\.filter = gradeFilter/);
   assert.match(source, /aahana-graded-image\.png/);
   assert.match(source, /renderImageSceneSvg\(scene, colorGrade\)/);
+});
+
+
+test("parses a standard 2-point identity 3D .cube LUT", () => {
+  const cube = [
+    "TITLE \"Identity\"",
+    "LUT_3D_SIZE 2",
+    "DOMAIN_MIN 0 0 0",
+    "DOMAIN_MAX 1 1 1",
+    "0 0 0", "1 0 0", "0 1 0", "1 1 0",
+    "0 0 1", "1 0 1", "0 1 1", "1 1 1",
+  ].join("\\n");
+  const lut = parseCubeLut(cube);
+  assert.equal(lut.size, 2);
+  const imageData = { data: new Uint8ClampedArray([0, 128, 255, 255, 255, 0, 0, 64]) };
+  applyCubeLutToImageData(imageData, lut);
+  assert.deepEqual([...imageData.data], [0, 128, 255, 255, 255, 0, 0, 64]);
+});
+
+test("rejects malformed, oversized, incomplete and non-finite .cube LUT files", () => {
+  assert.equal(parseCubeLut("not a cube"), null);
+  assert.equal(parseCubeLut("LUT_3D_SIZE 65"), null);
+  assert.equal(parseCubeLut("LUT_3D_SIZE 2\\n0 0 0"), null);
+  assert.equal(parseCubeLut("LUT_3D_SIZE 2\\nDOMAIN_MAX 0 0 0"), null);
+  assert.equal(parseCubeLut("LUT_3D_SIZE 2\\nNaN 0 0"), null);
+  assert.equal(parseCubeLut("x".repeat(2_000_001)), null);
+});
+
+test("applies custom 3D LUT values while preserving image alpha", () => {
+  const cube = ["LUT_3D_SIZE 2", "0 0 0", "0.5 0 0", "0 0.5 0", "0.5 0.5 0", "0 0 0.5", "0.5 0 0.5", "0 0.5 0.5", "0.5 0.5 0.5"].join("\\n");
+  const lut = parseCubeLut(cube);
+  const imageData = { data: new Uint8ClampedArray([255, 255, 255, 77]) };
+  applyCubeLutToImageData(imageData, lut);
+  assert.deepEqual([...imageData.data], [128, 128, 128, 77]);
+});
+
+test("Image Studio exposes local custom LUT import and applies it to PNG export", async () => {
+  const source = await readFile(new URL("../../app/learn/native-image-studio.jsx", import.meta.url), "utf8");
+  assert.match(source, /accept="\.cube,text\/plain"/);
+  assert.match(source, /parseCubeLut\(await file\.text\(\)\)/);
+  assert.match(source, /applyCubeLutToImageData\(pixels, cubeLut\)/);
+  assert.match(source, /getImageData\(0, 0, canvas\.width, canvas\.height\)/);
 });
