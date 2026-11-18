@@ -1,5 +1,5 @@
-import { createStudioProject, validateStudioProject } from "@/lib/studio/project-engine.mjs";
-import { validateCreatorDraft } from "@/lib/learning/creator-studio-model.mjs";
+import { createStudioProject, validateStudioProject } from "../studio/project-engine.mjs";
+import { validateCreatorDraft } from "./creator-studio-model.mjs";
 
 export const CREATOR_WORKSPACE_SCHEMA = "aahana-creator-workspace/v1";
 
