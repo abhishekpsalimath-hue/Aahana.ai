@@ -695,3 +695,14 @@
 @keyframes quiz-placeholder-pulse{0%,100%{transform:scale(1);box-shadow:0 0 22px #b99be922}50%{transform:scale(1.06);box-shadow:0 0 38px #b99be955}}
 @media(max-width:760px){.learning-quiz-question-layout{grid-template-columns:1fr}.learning-quiz-visual-box{min-height:210px}.learning-quiz-visual-placeholder{min-height:150px}.learning-quiz-visual-box .learning-3d-inline canvas{height:190px}}
 @media(prefers-reduced-motion:reduce){.learning-quiz-visual-box:before,.learning-quiz-visual-placeholder>span{animation:none}}
+
+
+/* Richer motion-lesson VFX: layered atmosphere, light sweep and scene entrance. */
+.motion-stage{position:relative;isolation:isolate;box-shadow:inset 0 0 42px #8f72c51c,0 14px 34px #08061155;animation:motion-stage-arrive .7s cubic-bezier(.2,.8,.2,1) both}
+.motion-stage:before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background:radial-gradient(ellipse at 50% 45%,#b99be91b 0,transparent 58%),linear-gradient(115deg,transparent 15%,#d9c7ff0c 48%,transparent 76%);background-size:100% 100%,220% 100%;animation:motion-light-sweep 8s ease-in-out infinite}
+.motion-art{filter:drop-shadow(0 12px 25px #07050d99) drop-shadow(0 0 12px #a88be622);transform-origin:50% 50%;animation:motion-art-arrive .8s cubic-bezier(.2,.8,.2,1) both}
+.motion-stage .motion-stardust i{box-shadow:0 0 10px 3px #d7c2ffbb,0 0 22px 4px #8ecff733}
+@keyframes motion-stage-arrive{from{opacity:.65;transform:translateY(8px) scale(.99)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes motion-light-sweep{0%,100%{background-position:0 0,-130% 0}50%{background-position:0 0,130% 0}}
+@keyframes motion-art-arrive{from{opacity:.5;transform:scale(.96) translateY(5px)}to{opacity:1;transform:scale(1) translateY(0)}}
+@media(prefers-reduced-motion:reduce){.motion-stage,.motion-stage:before,.motion-art{animation:none!important}}
