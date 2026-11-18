@@ -177,44 +177,6 @@ export default function LearningStudio({ userEmail = "" }) {
   const [memoryError, setMemoryError] = useState("");
   const [memoryNotice, setMemoryNotice] = useState("");
 
-  const learningRoadmap = learningMemory.journeys.reduce((roadmap, item) => {
-    const journey = item.journey;
-    const revisit = (journey.scenes || [])
-      .filter((scene) => scene.alternateExplanationUsed)
-      .map((scene) => ({
-        title: scene.caption,
-        subject: journey.subject,
-        gradeBand: journey.gradeBand,
-        curriculum: journey.curriculum,
-        language: journey.language,
-        lessonTitle: journey.title,
-      }));
-    return {
-      revisit: [...roadmap.revisit, ...revisit],
-      latest: roadmap.latest || {
-        title: journey.title,
-        subject: journey.subject,
-        gradeBand: journey.gradeBand,
-        curriculum: journey.curriculum,
-        language: journey.language,
-      },
-    };
-  }, { revisit: [], latest: null });
-  const uniqueRevisitTopics = learningRoadmap.revisit.filter((topic, index, all) =>
-    all.findIndex((item) => item.title.toLowerCase() === topic.title.toLowerCase() && item.subject === topic.subject) === index
-  ).slice(0, 4);
-
-  function exploreRoadmapTopic(topic, revisit = false) {
-    setSubject(topic.subject);
-    setGradeBand(topic.gradeBand);
-    setCurriculum(topic.curriculum);
-    setLanguage(topic.language);
-    setQuestion(revisit
-      ? `Let's explore "${topic.title}" again with a fresh animated explanation and a different example.`
-      : `Let's continue exploring "${topic.title}" and connect it to a new idea.`);
-    setLearningMode("story");
-  }
-
   const loadLearningHistory = useCallback(async () => {
     setHistoryLoading(true);
     setHistoryError("");
