@@ -45,3 +45,13 @@ test("builds an original prompt from Pinterest-inspired notes without forwarding
   assert.match(prompt, /distinct and original/);
   assert.equal(buildPinterestInspiredPrompt({ notes: "   " }), "");
 });
+
+
+test("accepts only HTTPS Pinterest reference links", async () => {
+  const { sanitizePinterestReferenceUrl } = await import("./image-engine.mjs");
+  assert.equal(sanitizePinterestReferenceUrl("https://www.pinterest.com/pin/123/"), "https://www.pinterest.com/pin/123/");
+  assert.equal(sanitizePinterestReferenceUrl("https://pin.it/abc"), "https://pin.it/abc");
+  assert.equal(sanitizePinterestReferenceUrl("http://pinterest.com/pin/123"), "");
+  assert.equal(sanitizePinterestReferenceUrl("https://evil.example/pinterest.com"), "");
+  assert.equal(sanitizePinterestReferenceUrl("javascript:alert(1)"), "");
+});
