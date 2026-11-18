@@ -15,7 +15,7 @@ const DOCUMENT_MIME_TYPES = new Set([
 export const PROJECT_CODE_EXTENSIONS = Object.freeze([
   "html", "htm", "css", "scss", "sass", "less",
   "js", "jsx", "mjs", "cjs", "ts", "tsx",
-  "vue", "svelte", "astro", "mdx",
+  "vue", "svelte", "astro", "md", "mdx",
   "json", "jsonc", "json5", "xml", "yaml", "yml", "toml",
   "sql", "prisma", "graphql", "gql", "proto",
   "py", "pyi", "ipynb", "rb", "php", "go", "rs", "java",
