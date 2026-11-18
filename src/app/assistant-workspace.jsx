@@ -249,6 +249,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [showProjectForm, setShowProjectForm] = useState(false);
   const [projectName, setProjectName] = useState("");
   const [projectDescription, setProjectDescription] = useState("");
+  const [projectType, setProjectType] = useState("web");
   const [selectedProjectId, setSelectedProjectId] = useState(null);
   const [projectBusy, setProjectBusy] = useState(false);
   const [filesOpen, setFilesOpen] = useState(false);
@@ -711,7 +712,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       const response = await fetch("/api/projects", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: projectName.trim(), description: projectDescription.trim(), project_type: "other" }),
+        body: JSON.stringify({ name: projectName.trim(), description: projectDescription.trim(), project_type: projectType }),
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || "Could not create project.");
@@ -719,6 +720,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       setSelectedProjectId(result.project.id);
       setProjectName("");
       setProjectDescription("");
+      setProjectType("web");
       setShowProjectForm(false);
       setMessages([]);
       setConversationId(null);
@@ -1013,7 +1015,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
             {projects.map((project) => (
               <div className="project-row" key={project.id}>
                 <button className={selectedProjectId === project.id ? "project-entry selected" : "project-entry"} type="button" onClick={() => selectProject(project.id)}>
-                  <span>{project.name}</span><small>{project.status}</small>
+                  <span>{project.name}</span><small>{project.project_type || "other"} · {project.status}</small>{project.description && <small className="project-description" title={project.description}>{project.description}</small>}
                 </button>
                 <button className="project-archive" type="button" aria-label={`Archive ${project.name}`} onClick={() => archiveProject(project.id)}>×</button>
               </div>
@@ -1022,6 +1024,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
               <form className="project-create-form" onSubmit={createProject}>
                 <input value={projectName} onChange={(event) => setProjectName(event.target.value)} maxLength={80} placeholder="Project name" aria-label="Project name" required />
                 <textarea value={projectDescription} onChange={(event) => setProjectDescription(event.target.value)} maxLength={500} placeholder="Short description (optional)" aria-label="Project description" rows={2} />
+                <select value={projectType} onChange={(event) => setProjectType(event.target.value)} aria-label="Project type"><option value="web">Website</option><option value="app">App</option><option value="design">Design</option><option value="other">Other</option></select>
                 <div><button type="button" onClick={() => setShowProjectForm(false)}>Cancel</button><button type="submit" disabled={!projectName.trim() || projectBusy}>{projectBusy ? "Saving…" : "Create"}</button></div>
               </form>
             ) : (
