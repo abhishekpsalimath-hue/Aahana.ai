@@ -65,6 +65,7 @@ test("assistant routes attached-photo style conversions to image editing before 
   assert.match(source, /fetch\("\/api\/images\/edit"/);
   assert.match(source, /detectImageEditStyleFromPrompt\(text\)/);
   assert.match(source, /prepareImageForEditing\(sourceFile\)/);
+  assert.match(source, /setImageFile\(sourceFile\)/);
 });
 
 test("prepares photo input within the model's 512px reference-image limit", async () => {
