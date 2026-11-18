@@ -39,7 +39,7 @@ test("reopening a learning session restores its original mode and learner profil
   assert.ok(studio.includes("let resumedProfile = { gradeBand, schoolGrade, subject, curriculum, language, learningMode }"));
   assert.match(studio, /learningMode: resumedProfile\.learningMode/);
   assert.match(studio, /profile: resumedProfile/);
-  assert.ok(studio.includes('setLearningMode("story")'));
+  assert.equal(studio.includes("exploreRoadmapTopic"), false);
 });
 
 test("learning instructions are included in the actual model system prompt", () => {
