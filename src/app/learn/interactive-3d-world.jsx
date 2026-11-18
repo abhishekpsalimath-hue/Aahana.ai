@@ -752,12 +752,19 @@ function makeModel(id, ecosystem = {}) {
     return [...shell,...parts.flatMap((part)=>sphereMesh(part.r,8,12,focus === "all" || focus === part.role ? part.c : "#55566a").map((face)=>({...face,offset:part.p})))];
   }
   if (id === "heart") {
+    const stage = ecosystem.heartFlow || "body";
+    const chamberColors = {
+      body: ["#397fb5", "#397fb5", "#397fb5", "#397fb5"],
+      lungs: ["#397fb5", "#397fb5", "#c95e78", "#c95e78"],
+      return: ["#c95e78", "#c95e78", "#c95e78", "#c95e78"],
+    };
+    const colors = chamberColors[stage] || chamberColors.body;
     const parts = [
-      {p:[-.28,.18,0],r:.48,c:"#c95e78"},{p:[.28,.18,0],r:.48,c:"#d97786"},
-      {p:[-.22,-.34,.04],r:.38,c:"#b84d69"},{p:[.22,-.34,.04],r:.38,c:"#d05d70"},
+      {p:[-.28,.18,0],r:.48,c:colors[0]},{p:[.28,.18,0],r:.48,c:colors[1]},
+      {p:[-.22,-.34,.04],r:.38,c:colors[2]},{p:[.22,-.34,.04],r:.38,c:colors[3]},
       {p:[-.2,.78,-.08],r:.12,c:"#6b9dc7"},{p:[.22,.78,-.08],r:.12,c:"#c96a62"},
     ];
-    const vessels=[{a:[-.2,.68,-.08],b:[-.34,1.18,-.08],c:"#6b9dc7"},{a:[.22,.68,-.08],b:[.42,1.12,-.08],c:"#c96a62"}];
+    const vessels=[{a:[-.2,.68,-.08],b:[-.34,1.18,-.08],c:stage==="lungs"?"#c95e78":"#397fb5"},{a:[.22,.68,-.08],b:[.42,1.12,-.08],c:stage==="return"?"#397fb5":"#c96a62"}];
     return [...vessels.map(v=>({points:[v.a,v.b],rod:true,color:v.c})),...parts.flatMap(part=>sphereMesh(part.r,10,14,part.c).map(face=>({...face,offset:part.p})))];
   }
   if (id === "pyramid") {
@@ -1031,6 +1038,19 @@ export default function Interactive3DWorld({ selectedPlanet, onSelectedPlanetCha
             <button type="button" onClick={() => setEcosystem((value) => ({ ...value, orbitSpeed: 1 }))}>Reset orbital speed</button>
           </div>}
           {modelId === "solar-system" && <div className="learning-planet-picker" role="group" aria-label="Choose a planet">{solarPlanets.map((planet) => <button type="button" key={planet.id} className={selectedPlanet === planet.id ? "active" : ""} aria-pressed={selectedPlanet === planet.id} onClick={() => { onSelectedPlanetChange(planet.id); setRotation({ yaw: -.28, pitch: -.12 }); setZoom(1); }}>{planet.label}</button>)}</div>}
+          {modelId === "heart" && <div className="learning-3d-experiment" aria-label="Heart and circulation learning lab">
+            <span>FOLLOW THE CIRCULATION JOURNEY</span>
+            <p>Trace blood through the heart, lungs and body. Blue represents oxygen-poor blood and red represents oxygen-rich blood in this simplified teaching illustration.</p>
+            <div className="learning-3d-experiment-control"><strong>Choose a journey stage</strong><div role="group" aria-label="Blood circulation stage">
+              {[["body", "1 · From body"], ["lungs", "2 · To lungs"], ["return", "3 · From lungs"]].map(([value, label]) => <button type="button" key={value} className={(ecosystem.heartFlow || "body") === value ? "active" : ""} aria-pressed={(ecosystem.heartFlow || "body") === value} onClick={() => setEcosystem((current) => ({ ...current, heartFlow: value }))}>{label}</button>)}
+            </div></div>
+            <p className="learning-3d-experiment-observation" aria-live="polite">{({
+              body: "Oxygen-poor blood returns from the body to the right side of the heart. It is then pumped toward the lungs through the pulmonary arteries.",
+              lungs: "In the lungs, blood releases carbon dioxide and takes up oxygen. The pulmonary veins carry oxygen-rich blood back to the left side of the heart.",
+              return: "Oxygen-rich blood enters the left side of the heart and is pumped through the aorta to the body, where tissues use oxygen.",
+            })[ecosystem.heartFlow || "body"]}</p>
+            <button type="button" onClick={() => setEcosystem((current) => ({ ...current, heartFlow: "body" }))}>Restart circulation journey</button>
+          </div>}
           {(modelId === "cell" || modelId === "plant-cell") && <div className="learning-3d-experiment" aria-label="Interactive cell biology lab">
             <span>EXPLORE CELL STRUCTURES</span>
             <p>Switch between an animal cell and a plant cell. Highlight an organelle to discover its role. The structures are simplified teaching illustrations, not to scale.</p>
