@@ -939,7 +939,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     } catch (err) {
       if (err?.name === "AbortError") {
         setMessages((current) => current.map((item, index) => index === current.length - 1 && item.role === "assistant"
-          ? { ...item, content: item.content ? `${item.content}\\n\\nStopped.` : "Response stopped." }
+          ? { ...item, content: item.content ? `${item.content}\n\nStopped.` : "Response stopped." }
           : item));
         return;
       }
