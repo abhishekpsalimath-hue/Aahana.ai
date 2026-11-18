@@ -8,7 +8,7 @@ import {
 test("image prompt compiler preserves explicit constraints and exact text", () => {
   assert.match(IMAGE_PROMPT_COMPILER_INSTRUCTIONS, /Preserve the user's intended subject/);
   assert.match(IMAGE_PROMPT_COMPILER_INSTRUCTIONS, /spelling, punctuation, capitalization and language verbatim/);
-  assert.match(IMAGE_PROMPT_COMPILER_INSTRUCTIONS, /Do not invent extra text/);
+  assert.match(IMAGE_PROMPT_COMPILER_INSTRUCTIONS, /Never invent extra text/);
 });
 
 test("uses a useful compiled prompt and normalizes whitespace", () => {
