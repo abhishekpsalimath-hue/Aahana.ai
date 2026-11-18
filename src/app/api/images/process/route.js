@@ -120,7 +120,7 @@ export async function POST(request) {
     let result;
     if (action === "edit") {
       result = await runCloudflare(accountId, apiToken, EDIT_MODEL, {
-        prompt,
+        prompt: `Apply only the requested changes: ${prompt}\nPreserve the original subject identity, count, pose, framing, composition, background, lighting, colors, and all details not explicitly requested to change. Do not add text, objects, people, logos, or watermarks.`,
         images: [inputDataUrl],
         resolution: "1k",
       }, 32000);
