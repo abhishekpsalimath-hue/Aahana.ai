@@ -6,14 +6,19 @@ const studio = readFileSync(new URL("../../app/learn/learning-studio.jsx", impor
 const styles = readFileSync(new URL("../../app/learn/learning-studio.css", import.meta.url), "utf8");
 const chatRoute = readFileSync(new URL("../../app/api/chat/route.js", import.meta.url), "utf8");
 
-test("Student Mode presents the learning journey before the conversation", () => {
+test("Student Mode keeps its title card and orders the display, search and six modes beneath it", () => {
   const hero = studio.indexOf('className="learning-hero student-welcome"');
-  const discovery = studio.indexOf('className="learning-discovery"');
+  const display = studio.indexOf('className="student-display-screen"');
   const world = studio.indexOf("<Interactive3DWorld");
+  const search = studio.indexOf('className="student-search-section"');
+  const modes = studio.indexOf('className="learning-discovery student-mode-section"');
   const session = studio.indexOf('className="learning-session"');
-  assert.ok(hero >= 0 && discovery > hero && world > discovery && session > world);
+  assert.ok(hero >= 0 && display > hero && world > display && search > world && modes > search && session > modes);
   assert.match(studio, /Every question opens/);
-  assert.match(studio, /How would you like to explore/);
+  assert.match(studio, /a new adventure\./);
+  assert.match(studio, /Search or ask Aahana about any topic/);
+  assert.match(studio, /YOUR SIX LEARNING MODES/);
+  assert.match(studio, /Choose how you want to learn/);
 });
 
 test("all six agreed learning experiences remain available", () => {
