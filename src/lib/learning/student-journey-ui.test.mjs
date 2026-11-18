@@ -13,7 +13,7 @@ test("Student Mode keeps its title card and orders the display, search and six m
   const search = studio.indexOf('className="student-search-section"');
   const modes = studio.indexOf('className="learning-discovery student-mode-section"');
   const session = studio.indexOf('className="learning-session"');
-  assert.ok(hero >= 0 && display > hero && world > display && search > world && modes > search && session > modes);
+  assert.ok(hero >= 0 && display > hero && world > display && session > world && search > session && modes > search);
   assert.match(studio, /Every question opens/);
   assert.match(studio, /a new adventure\./);
   assert.match(studio, /Search or ask Aahana about any topic/);
