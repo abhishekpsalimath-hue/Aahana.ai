@@ -1217,6 +1217,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                 {imageGenerating ? "Creating image…" : "Generate image"}
               </button>
             </div>
+            <small className="image-edit-note">To transform a photo, attach it and ask: “Convert my image into a cartoon.” Image edits may use paid image credits.</small>
             <label className="sr-only" htmlFor="prompt">What would you like to work on?</label>
             <textarea id="prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); } }}
