@@ -576,3 +576,9 @@ html,body{font-family:'DM Sans',sans-serif;background:#09090d;color:#f3f0f8}
   .space-star{opacity:.35}
   .welcome-headline .headline-line,.founder-welcome-note{opacity:1;filter:none;transform:none}
 }
+
+
+/* Accessible stop control for an active assistant response. */
+.stop-generation{border:1px solid #6d587f;border-radius:8px;background:#211b2d;color:#e8ddff;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer}
+.stop-generation:hover{border-color:#c4a7ff;background:#2a2038}
+.stop-generation:focus-visible{outline:2px solid #c4a7ff;outline-offset:3px}
