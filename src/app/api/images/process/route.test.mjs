@@ -35,7 +35,7 @@ test("image editing and 4K enhancement use separate provider models", () => {
 });
 
 test("image processing selects the correct Cloudflare API format for built-in and third-party models", () => {
-  assert.match(route, /model\\.startsWith\("@cf\/"\)/);
+  assert.ok(route.includes('model.startsWith("@cf/")'));
   assert.ok(route.includes("JSON.stringify(isBuiltInModel ? input : { model, input })"));
   assert.ok(route.includes("/ai/run/${model}"));
   assert.ok(route.includes("/ai/run`"));
