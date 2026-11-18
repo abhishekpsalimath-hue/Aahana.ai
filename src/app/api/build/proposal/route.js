@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { validateChangeProposal } from "@/lib/build/change-proposal-policy.mjs";
+import { toProposalSnapshotPath } from "@/lib/build/proposal-snapshot-policy.mjs";
 
 export const runtime = "nodejs";
 
@@ -92,8 +93,13 @@ export async function POST(request) {
   const usedPaths = new Set();
   let totalBytes = 0;
   for (const file of rows || []) {
-    const path = toWorkspacePath(file.original_filename);
-    if (!path || !SOURCE_MIME_TYPES.has(file.mime_type) && !SOURCE_EXTENSIONS.test(path.split(".").at(-1))) continue;
+    let path;
+    try {
+      path = toProposalSnapshotPath(file.original_filename);
+    } catch {
+      return NextResponse.json({ error: "A project source filename is not a safe relative path. Refresh the project files and resolve unsafe paths before proposing edits." }, { status: 409 });
+    }
+    if (!path) continue;
     if (file.bucket_id !== "aahana-private" ||
         typeof file.object_path !== "string" ||
         !file.object_path.startsWith(user.id + "/" + projectId + "/") ||
