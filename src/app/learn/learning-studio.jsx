@@ -77,7 +77,8 @@ function InteractiveQuiz({ quiz }) {
       conceptId: `question-${index + 1}`,
       correct,
       misconceptionId: correct ? null : `question-${index + 1}-choice-${optionIndex}`,
-      attempt,
+      attempt: Math.min(attempt, 10),
+      hintUsed: attempt > 1,
     }]);
     if (correct) {
       setAnswers((current) => ({ ...current, [index]: optionIndex }));
@@ -91,7 +92,6 @@ function InteractiveQuiz({ quiz }) {
       <div className="learning-quiz-heading"><strong>{quiz.title}</strong><span>{completed ? "Challenge complete!" : `${score}/${quiz.questions.length} discovered`}</span></div>
       <div className="learning-quiz-progress" aria-label={`${score} of ${quiz.questions.length} questions solved`}><span style={{ width: `${(score / quiz.questions.length) * 100}%` }} /></div>
       {progress?.concepts.some((item) => item.status === "needs-review") && <p role="status">Let’s revisit one idea with a different explanation. Repeated choices help Aahana spot where another example may help.</p>}
-      {progress?.concepts.length > 0 && progress.concepts.every((item) => item.status === "secure") && <p role="status">You’re showing strong understanding. Ready for a slightly harder challenge?</p>}
       {quiz.questions.map((item, index) => {
         const selected = answers[index];
         const selectedOption = selectedOptions[index];
