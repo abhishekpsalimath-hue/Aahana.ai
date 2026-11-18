@@ -947,7 +947,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     <main className="shell">
       <aside className="sidebar">
         <a className="brand" href="/" aria-label="Aahana AI home">
-          <span className="brand-word">Aahana</span><span className="brand-ai">AI</span>
+          <span className="brand-word">Aahana</span><span className="brand-ai">ai</span>
         </a>
         <button className="new-chat" type="button" onClick={newConversation}>
           <span aria-hidden="true">＋</span> New conversation
@@ -1186,7 +1186,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
           </div>
           <div className="eyebrow"><span /> YOUR THINKING SPACE</div>
           {!messages.length && <>
-            <h1>Good ideas<br /><em>start somewhere.</em></h1>
+            <h1 className="welcome-headline"><span className="headline-line headline-line-one">Good ideas</span><em className="headline-line headline-line-two">start somewhere.</em></h1>
             <p>Think freely. Explore ideas. Build something real.</p>
           </>}
 
