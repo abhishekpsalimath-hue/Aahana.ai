@@ -439,12 +439,12 @@ export default function LearningStudio({ userEmail = "" }) {
           })}
         </div>}
         <form className="learning-composer" onSubmit={startLearning}>
-          <label htmlFor="learning-question">What would you like me to help you understand?</label>
-          <textarea id="learning-question" value={question} onChange={(event) => setQuestion(event.target.value)} rows={3} maxLength={8000} disabled={busy} placeholder="Ask Aahana anything you are curious about… Why does the Moon change shape? How do birds fly? Can you show me fractions?" />
+          <label htmlFor="learning-question">Search or ask Aahana about any topic</label>
+          <textarea id="learning-question" value={question} onChange={(event) => setQuestion(event.target.value)} rows={3} maxLength={8000} disabled={busy} placeholder="Search any topic or ask a question… Why does the Moon change shape? How do birds fly? How does AI work?" />
           <div><span>Aahana will choose the best way to explain it.</span><button type="submit" disabled={!question.trim() || busy}>{busy ? "Learning…" : "Start learning"}</button></div>
         </form>
         {error && <p className="learning-error" role="alert">{error}</p>}
-        <p className="learning-note">You only need to ask. Aahana can choose a simple explanation, example, diagram or interactive lesson when that capability is available.</p>
+        <p className="learning-note">Explore beyond a fixed subject list: school subjects, advanced ideas, science, technology, history, arts, cultures and everyday questions. Aahana adapts the explanation to your level.</p>
       </section>
       <Interactive3DWorld selectedPlanet={selectedPlanet} onSelectedPlanetChange={setSelectedPlanet} />
       <SpaceFunQuiz />
