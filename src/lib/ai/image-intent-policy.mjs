@@ -30,3 +30,11 @@ export function isImageGenerationRequest(value) {
   const hasVisualSubject = /\b(?:city|metropolis|landscape|ocean|underwater|space station|planet|portrait|character|architecture|skyscraper|forest|mountain|vehicle|spaceship|animal|interior|exterior|scene|coral|submarine|building)\b/i.test(text);
   return text.length >= 100 && markerCount >= 2 && hasVisualSubject;
 }
+
+/** Detect edit instructions; callers must also verify that an image is attached. */
+export function isImageEditRequest(value) {
+  const text = String(value || "").normalize("NFKC").trim();
+  if (!text || text.length > 2000) return false;
+  return /\\b(?:edit|modify|retouch|remove|erase|replace|change| recolou?r| recolor| recolour|add|insert|crop|resize|brighten|darken|sharpen|restore|clean up|make it|turn it into|transform)\\b/i.test(text)
+    && /\\b(?:background|colour|color|dress|shirt|hair|sky|object|person|face|lighting|light|shadow|text|logo|image|photo|picture|style|remove|add|replace|change|it|this)\\b/i.test(text);
+}
