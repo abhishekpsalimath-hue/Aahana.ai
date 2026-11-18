@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { validateChangeProposal } from "@/lib/build/change-proposal-policy.mjs";
+import { prepareIsolatedProposalWorkspace } from "@/lib/build/proposal-workspace-policy.mjs";
 import { toProposalSnapshotPath } from "@/lib/build/proposal-snapshot-policy.mjs";
 
 export const runtime = "nodejs";
@@ -110,8 +111,16 @@ export async function POST(request) {
 
   try {
     const proposal = validateChangeProposal({ currentFiles, changes: body.changes });
+    const workspacePreview = prepareIsolatedProposalWorkspace({ currentFiles, proposal });
     return NextResponse.json({
       ...proposal,
+      workspacePreview: {
+        fileCount: workspacePreview.fileCount,
+        totalBytes: workspacePreview.totalBytes,
+        writesPerformed: workspacePreview.writesPerformed,
+        sandboxStarted: workspacePreview.sandboxStarted,
+        contractCheck: workspacePreview.contractCheck,
+      },
       projectId,
       snapshotFileCount: currentFiles.length,
       snapshotBytes: totalBytes,
