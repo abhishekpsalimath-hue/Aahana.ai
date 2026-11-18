@@ -30,3 +30,8 @@ test("image generation uses the built-in Workers AI model endpoint", () => {
   assert.ok(route.includes("/ai/run/${MODEL}"));
   assert.ok(route.includes("body: JSON.stringify({ prompt: finalPrompt, steps: 8 })"));
 });
+
+test("image safety checks use the built-in Workers AI model endpoint", () => {
+  assert.ok(route.includes("/ai/run/${model}"));
+  assert.ok(route.includes("body: JSON.stringify(input)"));
+});
