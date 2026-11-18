@@ -6,6 +6,7 @@ import Link from "next/link";
 import "./learning-studio.css";
 import AnimatedLesson, { AnimatedVisual, readMotionLesson } from "./animated-lesson";
 import { learningCategories, allLearningSubjects } from "@/lib/learning/learning-catalog";
+import { summarizeLearningProgress } from "@/lib/learning/learner-progress-policy.mjs";
 const Interactive3DWorld = dynamic(() => import("./interactive-3d-world"), { ssr: false, loading: () => <div role="status">Preparing interactive 3D learning…</div> });
 const Mini3DModel = dynamic(() => import("./interactive-3d-world").then((module) => module.Mini3DModel), { ssr: false });
 
@@ -62,13 +63,23 @@ function InteractiveQuiz({ quiz }) {
   const [answers, setAnswers] = useState({});
   const [selectedOptions, setSelectedOptions] = useState({});
   const [attempts, setAttempts] = useState({});
+  const [outcomes, setOutcomes] = useState([]);
+  const progress = summarizeLearningProgress(outcomes);
   const completed = quiz.questions.every((_, index) => answers[index] === quiz.questions[index].correctIndex);
   const score = quiz.questions.reduce((total, item, index) => total + (answers[index] === item.correctIndex ? 1 : 0), 0);
   function choose(index, optionIndex) {
     if (Number.isInteger(answers[index])) return;
     setSelectedOptions((current) => ({ ...current, [index]: optionIndex }));
-    setAttempts((current) => ({ ...current, [index]: (current[index] || 0) + 1 }));
-    if (optionIndex === quiz.questions[index].correctIndex) {
+    const attempt = (attempts[index] || 0) + 1;
+    setAttempts((current) => ({ ...current, [index]: attempt }));
+    const correct = optionIndex === quiz.questions[index].correctIndex;
+    setOutcomes((current) => [...current, {
+      conceptId: `question-${index + 1}`,
+      correct,
+      misconceptionId: correct ? null : `question-${index + 1}-choice-${optionIndex}`,
+      attempt,
+    }]);
+    if (correct) {
       setAnswers((current) => ({ ...current, [index]: optionIndex }));
     }
   }
@@ -79,6 +90,8 @@ function InteractiveQuiz({ quiz }) {
     <div className="learning-quiz">
       <div className="learning-quiz-heading"><strong>{quiz.title}</strong><span>{completed ? "Challenge complete!" : `${score}/${quiz.questions.length} discovered`}</span></div>
       <div className="learning-quiz-progress" aria-label={`${score} of ${quiz.questions.length} questions solved`}><span style={{ width: `${(score / quiz.questions.length) * 100}%` }} /></div>
+      {progress?.concepts.some((item) => item.status === "needs-review") && <p role="status">Let’s revisit one idea with a different explanation. Repeated choices help Aahana spot where another example may help.</p>}
+      {progress?.concepts.length > 0 && progress.concepts.every((item) => item.status === "secure") && <p role="status">You’re showing strong understanding. Ready for a slightly harder challenge?</p>}
       {quiz.questions.map((item, index) => {
         const selected = answers[index];
         const selectedOption = selectedOptions[index];
@@ -106,7 +119,7 @@ function InteractiveQuiz({ quiz }) {
           </div>
         </section>;
       })}
-      {completed && <div className="learning-quiz-finish"><span className="learning-celebration" aria-hidden="true">✦ ✧ ★ ✧ ✦</span><strong>You did it! You solved all {quiz.questions.length} challenges.</strong><button type="button" onClick={() => { setAnswers({}); setSelectedOptions({}); setAttempts({}); }}>Play again</button></div>}
+      {completed && <div className="learning-quiz-finish"><span className="learning-celebration" aria-hidden="true">✦ ✧ ★ ✧ ✦</span><strong>You did it! You solved all {quiz.questions.length} challenges.</strong><button type="button" onClick={() => { setAnswers({}); setSelectedOptions({}); setAttempts({}); setOutcomes([]); }}>Play again</button></div>}
     </div>
   );
 }
