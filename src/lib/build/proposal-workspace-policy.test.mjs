@@ -38,10 +38,10 @@ test("rejects a merged snapshot that exceeds the sandbox total-byte limit", () =
   const proposal = validateChangeProposal({
     currentFiles,
     changes: [{
-      path: "src/file-0.js",
-      action: "update",
-      baseSha256: hash(currentFiles[0].content),
-      content: "export const updated = true;",
+      path: "src/new.js",
+      action: "create",
+      baseSha256: null,
+      content: "export const added = true;",
     }],
   });
   assert.throws(() => prepareIsolatedProposalWorkspace({ currentFiles, proposal }), /3 MB/);
