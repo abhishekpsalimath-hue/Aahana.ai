@@ -425,7 +425,50 @@ export default function LearningStudio({ userEmail = "" }) {
       {/* The existing welcome title card above stays exactly as it is. */}
       <section className="student-display-screen" aria-label="Interactive learning display">
         <Interactive3DWorld selectedPlanet={selectedPlanet} onSelectedPlanetChange={setSelectedPlanet} />
+      <section className="learning-session">
+        {messages.length > 0 && <div className="learning-section-heading"><div><span>YOUR JOURNEY</span><h2>Keep exploring with Aahana</h2></div><span className="learning-session-status">{busy ? "Aahana is creating your next discovery…" : "Your adventure is underway"}</span></div> }
+        {messages.length > 0 && <div className="learning-conversation" aria-live="polite">
+          {messages.map((item, index) => {
+            const messageMode = item.learningMode || learningMode;
+            return <article className={item.role === "user" ? "learning-message learner" : "learning-message tutor"} key={index}>
+              <small>{item.role === "user" ? "YOU" : "AAHANA"}</small>
+              {item.content ? (messageMode === "play" && item.role === "assistant" && readQuizPayload(item.content)
+                ? <InteractiveQuiz
+                    quiz={readQuizPayload(item.content)}
+                    profile={item.profile || { gradeBand, subject, curriculum, language }}
+                    memoryEnabled={learningMemory.enabled}
+                    onSaveProgress={saveQuizProgress}
+                  />
+                : item.role === "assistant" && busy && index === messages.length - 1
+                  ? <div className="learning-thinking"><i /><i /><i /> {messageMode === "play" ? "Building your quiz" : "Building your interactive lesson"}</div>
+                  : item.role === "assistant" && messageMode === "play" && looksLikeIncompleteQuizPayload(item.content)
+                    ? <div className="learning-quiz-feedback encouraging" role="status">
+                        <strong>I couldn’t build a complete quiz this time.</strong>
+                        <p>Your quiz needs at least 10 valid questions. Nothing incomplete will be shown as a finished quiz.</p>
+                        <button type="button" disabled={busy} onClick={() => {
+                          const previousQuestion = messages.slice(0, index).reverse().find((message) => message.role === "user")?.content;
+                          if (previousQuestion) startLearning(null, `Regenerate a complete Play & Solve quiz for this exact topic: ${previousQuestion}. The previous response was incomplete. Return exactly 10 complete, distinct questions in the required aahana_quiz_v1 JSON format. Include four distinct options, one correct answer, a concise explanation, one hint and a relevant visual for every question. Do not return a partial quiz.`, false, item.profile || { gradeBand, subject, curriculum, language, learningMode: messageMode });
+                        }}>Try generating the quiz again</button>
+                      </div>
+                  : item.role === "assistant" && messageMode !== "play"
+                    ? <AnimatedLesson
+                        content={item.content}
+                        topic={messages.slice(0, index).reverse().find((message) => message.role === "user")?.content || ""}
+                        memoryEnabled={learningMemory.enabled}
+                        onSaveJourney={(journey) => saveLearningJourney(journey, item.profile)}
+                        onRetry={() => {
+                          const previousQuestion = messages.slice(0, index).reverse().find((message) => message.role === "user")?.content;
+                          if (previousQuestion) startLearning(null, previousQuestion, false, item.profile || { gradeBand, subject, curriculum, language, learningMode: messageMode });
+                        }}
+                      />
+                    : <p>{item.content}</p>) : <div className="learning-thinking"><i /><i /><i /> Preparing your lesson</div>}
+            </article>;
+          })}
+        </div>}
+
+        <p className="learning-note">Explore beyond a fixed subject list: school subjects, advanced ideas, science, technology, history, arts, cultures and everyday questions. Aahana adapts the explanation to your level.</p>
       </section>
+            </section>
 
       <section className="student-search-section" aria-label="Search and ask Aahana">
         <form className="learning-composer" onSubmit={startLearning}>
@@ -473,49 +516,6 @@ export default function LearningStudio({ userEmail = "" }) {
 
 
 
-      <section className="learning-session">
-        {messages.length > 0 && <div className="learning-section-heading"><div><span>YOUR JOURNEY</span><h2>Keep exploring with Aahana</h2></div><span className="learning-session-status">{busy ? "Aahana is creating your next discovery…" : "Your adventure is underway"}</span></div> }
-        {messages.length > 0 && <div className="learning-conversation" aria-live="polite">
-          {messages.map((item, index) => {
-            const messageMode = item.learningMode || learningMode;
-            return <article className={item.role === "user" ? "learning-message learner" : "learning-message tutor"} key={index}>
-              <small>{item.role === "user" ? "YOU" : "AAHANA"}</small>
-              {item.content ? (messageMode === "play" && item.role === "assistant" && readQuizPayload(item.content)
-                ? <InteractiveQuiz
-                    quiz={readQuizPayload(item.content)}
-                    profile={item.profile || { gradeBand, subject, curriculum, language }}
-                    memoryEnabled={learningMemory.enabled}
-                    onSaveProgress={saveQuizProgress}
-                  />
-                : item.role === "assistant" && busy && index === messages.length - 1
-                  ? <div className="learning-thinking"><i /><i /><i /> {messageMode === "play" ? "Building your quiz" : "Building your interactive lesson"}</div>
-                  : item.role === "assistant" && messageMode === "play" && looksLikeIncompleteQuizPayload(item.content)
-                    ? <div className="learning-quiz-feedback encouraging" role="status">
-                        <strong>I couldn’t build a complete quiz this time.</strong>
-                        <p>Your quiz needs at least 10 valid questions. Nothing incomplete will be shown as a finished quiz.</p>
-                        <button type="button" disabled={busy} onClick={() => {
-                          const previousQuestion = messages.slice(0, index).reverse().find((message) => message.role === "user")?.content;
-                          if (previousQuestion) startLearning(null, `Regenerate a complete Play & Solve quiz for this exact topic: ${previousQuestion}. The previous response was incomplete. Return exactly 10 complete, distinct questions in the required aahana_quiz_v1 JSON format. Include four distinct options, one correct answer, a concise explanation, one hint and a relevant visual for every question. Do not return a partial quiz.`, false, item.profile || { gradeBand, subject, curriculum, language, learningMode: messageMode });
-                        }}>Try generating the quiz again</button>
-                      </div>
-                  : item.role === "assistant" && messageMode !== "play"
-                    ? <AnimatedLesson
-                        content={item.content}
-                        topic={messages.slice(0, index).reverse().find((message) => message.role === "user")?.content || ""}
-                        memoryEnabled={learningMemory.enabled}
-                        onSaveJourney={(journey) => saveLearningJourney(journey, item.profile)}
-                        onRetry={() => {
-                          const previousQuestion = messages.slice(0, index).reverse().find((message) => message.role === "user")?.content;
-                          if (previousQuestion) startLearning(null, previousQuestion, false, item.profile || { gradeBand, subject, curriculum, language, learningMode: messageMode });
-                        }}
-                      />
-                    : <p>{item.content}</p>) : <div className="learning-thinking"><i /><i /><i /> Preparing your lesson</div>}
-            </article>;
-          })}
-        </div>}
-
-        <p className="learning-note">Explore beyond a fixed subject list: school subjects, advanced ideas, science, technology, history, arts, cultures and everyday questions. Aahana adapts the explanation to your level.</p>
-      </section>
       <section className="learning-memory-panel" aria-labelledby="learning-memory-title">
         <div className="learning-section-heading"><div><span>YOUR CHOICE</span><h2 id="learning-memory-title">Private learning memory</h2></div>
           <button type="button" disabled={memoryLoading || memoryBusy} onClick={updateLearningMemoryConsent}>
