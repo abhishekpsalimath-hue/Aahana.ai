@@ -973,3 +973,42 @@
   .motion-stage:before{animation:none}
   .motion-prediction-options button,.motion-controls button{transition:none}
 }
+
+
+/* Student Mode screen order: display first, then search, then the six learning paths. */
+.student-display-screen {
+  max-width: 1160px;
+  margin: 0 auto 24px;
+  position: relative;
+}
+.student-display-screen .learning-3d-lab {
+  margin-top: 0;
+}
+.student-search-section {
+  max-width: 1160px;
+  margin: 0 auto 22px;
+  padding: 18px;
+  border: 1px solid #b99be944;
+  border-radius: 20px;
+  background: linear-gradient(145deg, #1a1726, #100e18 78%);
+  box-shadow: 0 14px 42px #00000020;
+}
+.student-search-section .learning-composer {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.student-topic-selects {
+  margin-top: 14px;
+}
+.student-mode-section {
+  max-width: 1160px;
+}
+.student-mode-section .learning-discovery-heading {
+  margin-bottom: 18px;
+}
+@media (max-width: 760px) {
+  .student-display-screen { margin-bottom: 18px; }
+  .student-search-section { margin: 0 0 18px; padding: 14px; border-radius: 17px; }
+  .student-mode-section { margin-top: 0; }
+}
