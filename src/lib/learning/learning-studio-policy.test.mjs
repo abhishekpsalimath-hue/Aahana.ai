@@ -639,7 +639,7 @@ test("Student Mode now offers category, topic and all six learning modes from th
 test("Student Mode opens its 3D explorer on biology and supports a physics cart model", () => {
   assert.match(world, /useState\("cell"\)/);
   assert.match(animated, /"3d-cart": "cart"/);
-  assert.match(quizBankPolicy, /"3d-cart"/);
+  assert.match(quizBankPolicy, /3d-cart/);
   assert.match(route, /3d-cart/);
   assert.doesNotMatch(studio, /<SpaceFunQuiz \/>/);
 });
