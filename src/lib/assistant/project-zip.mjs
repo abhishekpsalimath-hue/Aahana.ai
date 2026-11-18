@@ -21,7 +21,7 @@ export function extractProjectFiles(source) {
   const fence = String.fromCharCode(96).repeat(3);
   const pattern = new RegExp(fence + "([^\\n]*)\\n([\\s\\S]*?)" + fence, "g");
   let match;
-  while ((match = pattern.exec(String(source || "")) !== null) {
+  while ((match = pattern.exec(String(source || ""))) !== null) {
     const path = getSafeCodeFilePath(match[1].trim());
     if (!path || seen.has(path)) continue;
     seen.add(path);
