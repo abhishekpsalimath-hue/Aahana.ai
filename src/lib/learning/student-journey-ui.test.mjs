@@ -85,3 +85,15 @@ test("physics cart experiment connects force, opposing force and mass through Ne
   assert.match(world, /a = Fnet ÷ m/);
   assert.match(world, /not a time-based motion prediction/);
 });
+
+test("forest habitat experiment exposes continuous rainfall and pollution controls with qualitative guidance", () => {
+  const world = readFileSync(new URL("../../app/learn/interactive-3d-world.jsx", import.meta.url), "utf8");
+  assert.match(world, /const rainfall = clamp\(Number\(ecosystem\.rainfall \?\? 70\), 0, 100\)/);
+  assert.match(world, /const pollution = clamp\(Number\(ecosystem\.pollution \?\? 15\), 0, 100\)/);
+  assert.match(world, /id="habitat-rainfall"/);
+  assert.match(world, /id="habitat-pollution"/);
+  assert.match(world, /aria-label="Forest habitat experiment"/);
+  assert.match(world, /not a measured ecological forecast/);
+  assert.match(world, /Freshwater stream/);
+  assert.match(world, /Reset experiment/);
+});
