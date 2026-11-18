@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { getFounderSession } from "@/lib/auth/founder-session.js";
+
 
 export const runtime = "nodejs";
 
@@ -7,11 +8,8 @@ const ROLES = new Set(["ceo", "cto", "coo", "cmo"]);
 const PRIORITIES = new Set(["low", "normal", "high", "urgent"]);
 
 export async function GET() {
-  const supabase = await createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) {
-    return NextResponse.json({ error: "Please sign in." }, { status: 401 });
-  }
+  const { supabase, user, response: accessResponse } = await getFounderSession();
+  if (accessResponse) return accessResponse;
 
   const [tasksResult, eventsResult] = await Promise.all([
     supabase.from("aahana_ops_tasks")
@@ -41,11 +39,8 @@ export async function GET() {
 }
 
 export async function POST(request) {
-  const supabase = await createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) {
-    return NextResponse.json({ error: "Please sign in." }, { status: 401 });
-  }
+  const { supabase, user, response: accessResponse } = await getFounderSession();
+  if (accessResponse) return accessResponse;
 
   let body;
   try {
@@ -85,11 +80,8 @@ export async function POST(request) {
 }
 
 export async function PATCH(request) {
-  const supabase = await createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) {
-    return NextResponse.json({ error: "Please sign in." }, { status: 401 });
-  }
+  const { supabase, user, response: accessResponse } = await getFounderSession();
+  if (accessResponse) return accessResponse;
 
   let body;
   try { body = await request.json(); } catch {
