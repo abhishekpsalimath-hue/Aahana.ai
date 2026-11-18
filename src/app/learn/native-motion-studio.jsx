@@ -189,6 +189,16 @@ export default function NativeMotionStudio() {
       context.globalAlpha = orbOpacity; context.fillStyle = orb; context.beginPath(); context.arc(x, y, orbRadius, 0, Math.PI * 2); context.fill();
       context.fillStyle = "rgba(255,255,255,.28)"; context.beginPath(); context.arc(x - orbRadius * .38, y - orbRadius * .4, Math.max(5, orbRadius * .18), 0, Math.PI * 2); context.fill();
       context.globalAlpha = 1;
+      if (textLayerEnabled) {
+        const overlayX = value("x", 500, 1) / 1000 * canvas.width;
+        const overlayY = value("y", 190, 1) / 360 * canvas.height;
+        const overlayOpacity = Math.max(0, Math.min(1, value("opacity", 1, 1)));
+        context.globalAlpha = overlayOpacity;
+        context.fillStyle = "#fff"; context.textAlign = "center";
+        context.font = `600 ${Math.round(textSize * 1.4)}px ${textFont}`;
+        context.fillText(textLayer.slice(0, 80), overlayX, overlayY);
+        context.textAlign = "left"; context.globalAlpha = 1;
+      }
       context.fillStyle = "#eee5fa"; context.font = "bold 26px system-ui"; context.fillText("Aahana Motion Preview", 70, 75);
       context.fillStyle = "#b8a9c9"; context.font = "16px system-ui"; context.fillText("Original keyframed animation", 70, 108);
     };
@@ -226,13 +236,16 @@ export default function NativeMotionStudio() {
   return (
     <section className="native-motion-studio" aria-label="Aahana native motion studio">
       <div className="native-motion-heading"><div><span>AAHANA-NATIVE MOTION ENGINE</span><h3>Motion & Animation Studio</h3><p>Build keyframed movement and preview it live, locally in your browser.</p></div><div className="native-motion-export-actions"><button type="button" onClick={exportWebM} disabled={exporting}>{exporting ? "Rendering video…" : "Export WebM video"}</button><button type="button" onClick={exportTimeline}>Export timeline</button></div></div>
-      <canvas ref={exportCanvasRef} width="1280" height="720" hidden aria-hidden="true" />\n      <div className="native-motion-layer-editor"><div className="native-motion-track-title"><strong>Visual layers</strong><button type="button" onClick={addTextLayer} disabled={textLayerEnabled}>+ Add text layer</button></div>{textLayerEnabled && <div className="native-motion-keyframe"><label>Text content<input type="text" maxLength="80" value={textLayer} onChange={(event) => setTextLayer(event.target.value)} /></label><label>Typeface<select value={textFont} onChange={(event) => setTextFont(event.target.value)}><option value="system-ui">Modern sans</option><option value="Caveat, cursive">Script · Caveat</option><option value="Georgia, serif">Editorial serif</option><option value="monospace">Technical mono</option></select></label><label>Text size<input type="range" min="16" max="48" value={textSize} onChange={(event) => setTextSize(Number(event.target.value))} /></label><span>Layer 2 · animated position, fade, typeface and size</span><button type="button" onClick={() => { setTimeline((current) => ({ ...current, tracks: current.tracks.filter((track) => track.layerIndex !== 1) })); setTextLayerEnabled(false); setStatus("Text layer removed."); }}>Remove text layer</button></div>}</div>\n      <div className="native-motion-stage">
+      <canvas ref={exportCanvasRef} width="1280" height="720" hidden aria-hidden="true" />
+      <div className="native-motion-layer-editor"><div className="native-motion-track-title"><strong>Visual layers</strong><button type="button" onClick={addTextLayer} disabled={textLayerEnabled}>+ Add text layer</button></div>{textLayerEnabled && <div className="native-motion-keyframe"><label>Text content<input type="text" maxLength="80" value={textLayer} onChange={(event) => setTextLayer(event.target.value)} /></label><label>Typeface<select value={textFont} onChange={(event) => setTextFont(event.target.value)}><option value="system-ui">Modern sans</option><option value="Caveat, cursive">Script · Caveat</option><option value="Georgia, serif">Editorial serif</option><option value="monospace">Technical mono</option></select></label><label>Text size<input type="range" min="16" max="48" value={textSize} onChange={(event) => setTextSize(Number(event.target.value))} /></label><span>Layer 2 · animated position, fade, typeface and size</span><button type="button" onClick={() => { setTimeline((current) => ({ ...current, tracks: current.tracks.filter((track) => track.layerIndex !== 1) })); setTextLayerEnabled(false); setStatus("Text layer removed."); }}>Remove text layer</button></div>}</div>
+      <div className="native-motion-stage">
         <svg viewBox="0 0 1000 360" role="img" aria-label="Animated preview of a lavender sphere moving across a stage">
           <defs><linearGradient id="aahana-motion-bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#282038"/><stop offset="1" stopColor="#171421"/></linearGradient><radialGradient id="aahana-motion-ball"><stop offset="0" stopColor="#f4eafa"/><stop offset=".45" stopColor="#c7a8ed"/><stop offset="1" stopColor="#8064ae"/></radialGradient></defs>
           <rect width="1000" height="360" rx="16" fill="url(#aahana-motion-bg)"/>
           <path d="M70 285H930" stroke="#79678f" strokeWidth="2" strokeDasharray="5 9"/>
           <circle cx={x} cy={y} r={radius} fill="url(#aahana-motion-ball)" opacity={opacity}/>
-          <circle cx={x - radius * .31} cy={y - radius * .36} r={Math.max(4, radius * .18)} fill="#fff" opacity={opacity * .28}/>\n          {textLayerEnabled && <text x={textX} y={textY} textAnchor="middle" fill="#fff" opacity={textOpacity} fontSize={textSize} fontWeight="600" fontFamily={textFont}>{textLayer}</text> }
+          <circle cx={x - radius * .31} cy={y - radius * .36} r={Math.max(4, radius * .18)} fill="#fff" opacity={opacity * .28}/>
+          {textLayerEnabled && <text x={textX} y={textY} textAnchor="middle" fill="#fff" opacity={textOpacity} fontSize={textSize} fontWeight="600" fontFamily={textFont}>{textLayer}</text> }
           <text x="70" y="65" fill="#eee5fa" fontSize="20" fontFamily="system-ui">Aahana Motion Preview</text>
           <text x="70" y="95" fill="#b8a9c9" fontSize="12" fontFamily="system-ui">Keyframed position · smooth interpolation</text>
         </svg>
