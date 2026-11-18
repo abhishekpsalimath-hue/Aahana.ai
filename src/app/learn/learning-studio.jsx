@@ -430,7 +430,7 @@ export default function LearningStudio({ userEmail = "" }) {
       <section className="student-search-section" aria-label="Search and ask Aahana">
         <form className="learning-composer" onSubmit={startLearning}>
           <label htmlFor="learning-question">Search or ask Aahana about any topic</label>
-          <textarea id="learning-question" value={question} onChange={(event) => setQuestion(event.target.value)} rows={2} maxLength={8000} disabled={busy} placeholder="What would you like to discover today?" />
+          <textarea id="learning-question" value={question} onChange={(event) => setQuestion(event.target.value)} rows={2} maxLength={8000} disabled={busy} placeholder="Search any topic or ask a question… What would you like to discover today?" />
           <div><span>Aahana will choose the best way to explain it.</span><button type="submit" disabled={!question.trim() || busy}>{busy ? "Learning…" : "Search / Start learning"}</button></div>
         </form>
         {error && <p className="learning-error" role="alert">{error}</p>}
