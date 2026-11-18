@@ -48,7 +48,7 @@ export function isImageEditRequest(value, hasImage = false) {
   if (!hasImage) return false;
   const text = String(value || "").trim();
   if (!text) return false;
-  const transformation = /\b(?:convert|transform|turn|make|change|cartooni[sz]e|stylize|style|redraw|illustrate|paint)\b/i.test(text);
+  const transformation = /\b(?:convert|transform|turn|make|create|generate|change|cartooni[sz]e|stylize|style|redraw|illustrate|paint)\b/i.test(text);
   const targetStyle = /\b(?:cartoon|cartoonish|anime|manga|comic|illustration|illustrated|painting|watercolou?r|sketch|drawing|3d animated|animated film|art style)\b/i.test(text);
   return transformation && targetStyle;
 }
