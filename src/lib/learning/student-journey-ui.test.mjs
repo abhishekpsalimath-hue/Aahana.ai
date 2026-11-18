@@ -62,3 +62,14 @@ test("interactive 3D renderer uses adaptive quality, cinematic three-point light
   assert.match(world, /new THREE\.PointLight\(0x6f9fff/);
   assert.match(world, /accentLight\.intensity/);
 });
+
+test("3D learning animation pauses for hidden tabs and respects reduced-motion preferences", () => {
+  const world = readFileSync(new URL("../../app/learn/interactive-3d-world.jsx", import.meta.url), "utf8");
+  assert.match(world, /prefers-reduced-motion: reduce/);
+  assert.match(world, /document\.visibilityState !== "hidden"/);
+  assert.match(world, /document\.addEventListener\("visibilitychange", onVisibilityChange\)/);
+  assert.match(world, /motionQuery\?\.addEventListener\?\.\("change", onMotionChange\)/);
+  assert.match(world, /if \(reducedMotion\) drawOnce\(\)/);
+  assert.match(world, /cancelAnimationFrame\(frame\)/);
+  assert.match(world, /removeEventListener\("visibilitychange", onVisibilityChange\)/);
+});
