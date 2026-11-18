@@ -140,7 +140,7 @@ function SpaceFunQuiz() {
             <div className="space-quiz-track"><span style={{ width: `${((questionIndex + (selected !== null ? 1 : 0)) / spaceQuizQuestions.length) * 100}%` }} /></div>
             <h3>{current.question}</h3>
             <div className="space-quiz-options">
-              {current.options.map((option, index) => <button type="button" key={option} onClick={() => choose(index)} disabled={selected !== null} className={selected === index ? (index === current.answer ? "correct" : "incorrect") : selected !== null && index === current.answer ? "correct" : ""}>{String.fromCharCode(65 + index)} <span>{option}</span></button>)}
+              {current.options.map((option, index) => <button type="button" key={option} onClick={() => choose(index)} disabled={selected !== null} className={selected === index ? (index === current.answer ? "correct" : "retry") : selected !== null && index === current.answer ? "correct" : ""}>{String.fromCharCode(65 + index)} <span>{option}</span></button>)}
             </div>
             {selected !== null && <div className={selected === current.answer ? "space-quiz-feedback correct" : "space-quiz-feedback"} role="status"><strong>{selected === current.answer ? "Nice shot!" : "Not quite—keep exploring!"}</strong><p>{current.explanation}</p><button type="button" onClick={next}>{questionIndex === spaceQuizQuestions.length - 1 ? "See my score" : "Next question"}</button></div>}
           </>}
