@@ -280,6 +280,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [buildStatusLoading, setBuildStatusLoading] = useState(true);
   const [error, setError] = useState("");
   const [history, setHistory] = useState([]);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState("");
@@ -905,11 +906,14 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   }
 
   return (
-    <main className="shell">
-      <aside className="sidebar">
-        <a className="brand" href="/" aria-label="Aahana AI home">
-          <span className="brand-word">Aahana</span><span className="brand-ai">AI</span>
-        </a>
+    <main className={sidebarOpen ? "shell sidebar-expanded" : "shell sidebar-collapsed"}>
+      <aside id="aahana-sidebar" className={sidebarOpen ? "sidebar sidebar-visible" : "sidebar sidebar-hidden"}>
+        <div className="sidebar-heading">
+          <a className="brand" href="/" aria-label="Aahana AI home">
+            <span className="brand-word">Aahana</span><span className="brand-ai">AI</span>
+          </a>
+          <button className="sidebar-close" type="button" onClick={() => setSidebarOpen(false)} aria-label="Hide navigation">×</button>
+        </div>
         <button className="new-chat" type="button" onClick={newConversation}>
           <span aria-hidden="true">＋</span> New conversation
         </button>
@@ -1042,7 +1046,12 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
           ))}
         </div>
         <header className="topbar">
-          <div className="breadcrumb">Workspace <span>/</span> {selectedProjectId ? (projects.find((item) => item.id === selectedProjectId)?.name || "Project") : "Assistant"}</div>
+          <div className="topbar-leading">
+            <button className="menu-toggle" type="button" onClick={() => setSidebarOpen((value) => !value)} aria-label={sidebarOpen ? "Hide navigation" : "Show navigation"} aria-expanded={sidebarOpen} aria-controls="aahana-sidebar">
+              <span /><span /><span />
+            </button>
+            <div className="breadcrumb">Workspace <span>/</span> {selectedProjectId ? (projects.find((item) => item.id === selectedProjectId)?.name || "Project") : "Assistant"}</div>
+          </div>
           <div className="top-actions"><button className="mobile-history-toggle" type="button" onClick={toggleProjects}>Projects</button><button className="mobile-history-toggle" type="button" onClick={toggleHistory}>History</button><button className="mobile-history-toggle" type="button" onClick={toggleFiles}>Files</button><button className="mobile-history-toggle" type="button" onClick={toggleMemoryPanel}>Memory</button><span>Private workspace</span></div>
         </header>
         {projectsOpen && (
