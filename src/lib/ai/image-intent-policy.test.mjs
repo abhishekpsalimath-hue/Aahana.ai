@@ -23,6 +23,18 @@ test("recognizes short image requests without requiring the word image", () => {
   ]) assert.equal(isImageGenerationRequest(prompt), true, prompt);
 });
 
+test("recognizes common Kannada and Hindi image requests", () => {
+  for (const prompt of [
+    "Ondu bekku chitra maadu",
+    "Nanna mane photo maadi",
+    "Ek billi ki tasveer banao",
+    "Mujhe ek phool ki tasveer bana do",
+    "ಚಿತ್ರ ಮಾಡಿ",
+    "ಚಿತ್ರವನ್ನು ರಚಿಸು",
+    "तस्वीर बनाओ",
+  ]) assert.equal(isImageGenerationRequest(prompt), true, prompt);
+});
+
 test("does not mistake ordinary planning requests for image generation", () => {
   for (const prompt of [
     "Create a study plan for my exams",
