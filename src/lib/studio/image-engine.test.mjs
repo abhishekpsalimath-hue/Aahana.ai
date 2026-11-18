@@ -76,7 +76,7 @@ test("exports cinematic colour grading presets in vector SVG output", async () =
 test("image studio applies selected colour grade to previews and exported generated images", async () => {
   const source = await readFile(new URL("../../app/learn/native-image-studio.jsx", import.meta.url), "utf8");
   assert.match(source, /style=\{\{ filter: generatedImage \? gradeFilter : "none" \}\}/);
-  assert.match(source, /context\.filter = gradeFilter/);
+  assert.match(source, /context\.filter = cubeLut \? "none" : gradeFilter/);
   assert.match(source, /aahana-graded-image\.png/);
   assert.match(source, /renderImageSceneSvg\(scene, colorGrade\)/);
 });
