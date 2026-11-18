@@ -122,7 +122,7 @@ test("rejects package install lifecycle scripts", () => {
   }
 });
 
-test("accepts workspaces without package dependencies", () => {
+test("accepts projects without package dependencies", () => {
   const result = validatePackageManifest([{
     path: "package.json",
     content: JSON.stringify({ scripts: { build: "node build.js" } }),
