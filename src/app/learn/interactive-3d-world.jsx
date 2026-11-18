@@ -772,8 +772,10 @@ function makeModel(id, ecosystem = {}) {
   }
   if (id === "ecosystem") {
     const ground = [], n = 10;
-    const dry = ecosystem.rainfall === "low";
-    const polluted = Boolean(ecosystem.pollution);
+    const rainfall = clamp(Number(ecosystem.rainfall ?? 70), 0, 100);
+    const pollution = clamp(Number(ecosystem.pollution ?? 15), 0, 100);
+    const dry = rainfall < 35;
+    const polluted = pollution >= 60;
     const waterPresent = ecosystem.waterSource !== false;
     for (let z=0;z<n;z++) for(let x=0;x<n;x++){const x0=(x/n-.5)*2.8,x1=((x+1)/n-.5)*2.8,z0=(z/n-.5)*2.2,z1=((z+1)/n-.5)*2.2,y=-.62+.06*Math.sin(x0*3)*Math.cos(z0*2);ground.push({points:[[x0,y,z0],[x1,y,z0],[x1,y,z1],[x0,y,z1]],color:dry?((x+z)%2?"#9a8058":"#a88d61"):((x+z)%2?"#537e57":"#638d5d"),solid:true});}
     const trees=[[-.9,.1,-.45],[-.35,.12,-.65],[.48,.08,-.55],[.95,.08,.1],[-.7,.08,.55],[.25,.1,.58]];
@@ -957,7 +959,7 @@ export default function Interactive3DWorld({ selectedPlanet, onSelectedPlanetCha
   const [rotation, setRotation] = useState({ yaw: -.55, pitch: -.22 });
   const [zoom, setZoom] = useState(1);
   const [conceptIndex, setConceptIndex] = useState(0);
-  const [ecosystem, setEcosystem] = useState({ rainfall: "regular", waterSource: true, pollution: false, engineCycle: "intake", physicsForce: 6, physicsFriction: 2, physicsMass: 2, chemistryMolecule: "water", chemistryFocus: "all", chemistryShowBonds: true, cellFocus: "all", bridgeLoad: "center" });
+  const [ecosystem, setEcosystem] = useState({ rainfall: 70, waterSource: true, pollution: 15, engineCycle: "intake", physicsForce: 6, physicsFriction: 2, physicsMass: 2, chemistryMolecule: "water", chemistryFocus: "all", chemistryShowBonds: true, cellFocus: "all", bridgeLoad: "center" });
   const canvasRef = useRef(null);
   const dragRef = useRef(null);
   const model = models.find((item) => item.id === modelId) || models[0];
@@ -1126,13 +1128,29 @@ export default function Interactive3DWorld({ selectedPlanet, onSelectedPlanetCha
             <button type="button" onClick={() => setEcosystem((current) => ({ ...current, engineCycle: "intake" }))}>Restart cycle</button>
           </div>}
           {modelId === "ecosystem" && <div className="learning-3d-experiment" aria-label="Forest habitat experiment">
-            <span>TRY A HABITAT EXPERIMENT</span>
-            <p>Change one condition and observe the illustrative habitat. These are qualitative teaching outcomes, not measured ecological predictions.</p>
-            <div className="learning-3d-experiment-control"><strong>Rainfall</strong><div role="group" aria-label="Rainfall level"><button type="button" className={ecosystem.rainfall === "regular" ? "active" : ""} aria-pressed={ecosystem.rainfall === "regular"} onClick={() => setEcosystem((value) => ({ ...value, rainfall: "regular" }))}>Regular</button><button type="button" className={ecosystem.rainfall === "low" ? "active" : ""} aria-pressed={ecosystem.rainfall === "low"} onClick={() => setEcosystem((value) => ({ ...value, rainfall: "low" }))}>Low</button></div></div>
-            <div className="learning-3d-experiment-control"><strong>Water source</strong><button type="button" className={ecosystem.waterSource ? "active" : ""} aria-pressed={ecosystem.waterSource} onClick={() => setEcosystem((value) => ({ ...value, waterSource: !value.waterSource }))}>{ecosystem.waterSource ? "Present" : "Removed"}</button></div>
-            <div className="learning-3d-experiment-control"><strong>Air pollution</strong><button type="button" className={ecosystem.pollution ? "active" : ""} aria-pressed={ecosystem.pollution} onClick={() => setEcosystem((value) => ({ ...value, pollution: !value.pollution }))}>{ecosystem.pollution ? "Higher" : "Lower"}</button></div>
-            <p className="learning-3d-experiment-observation" aria-live="polite">{ecosystem.waterSource && ecosystem.rainfall === "regular" && !ecosystem.pollution ? "Balanced starting scene: the stream is present and foliage is shown as healthy." : `${!ecosystem.waterSource ? "The stream is removed. " : ""}${ecosystem.rainfall === "low" ? "Lower rainfall changes the ground and foliage colours. " : ""}${ecosystem.pollution ? "A visible haze represents an added pollution pressure. " : ""}Discuss which organisms may be affected and why.`}</p>
-            <button type="button" onClick={() => setEcosystem({ rainfall: "regular", waterSource: true, pollution: false })}>Reset experiment</button>
+            <span>INVESTIGATE A CHANGING HABITAT</span>
+            <p>Adjust rainfall and air pollution, then observe how the illustrated habitat responds. This is a qualitative learning model, not a measured ecological forecast.</p>
+            <div className="learning-3d-experiment-control"><label htmlFor="habitat-rainfall">Rainfall level: {ecosystem.rainfall}%</label>
+              <input id="habitat-rainfall" type="range" min="0" max="100" step="5" value={ecosystem.rainfall} onChange={(event) => setEcosystem((value) => ({ ...value, rainfall: Number(event.target.value) }))} />
+            </div>
+            <div className="learning-3d-experiment-control"><strong>Freshwater stream</strong>
+              <button type="button" className={ecosystem.waterSource ? "active" : ""} aria-pressed={ecosystem.waterSource} onClick={() => setEcosystem((value) => ({ ...value, waterSource: !value.waterSource }))}>{ecosystem.waterSource ? "Present" : "Removed"}</button>
+            </div>
+            <div className="learning-3d-experiment-control"><label htmlFor="habitat-pollution">Air pollution level: {ecosystem.pollution}%</label>
+              <input id="habitat-pollution" type="range" min="0" max="100" step="5" value={ecosystem.pollution} onChange={(event) => setEcosystem((value) => ({ ...value, pollution: Number(event.target.value) }))} />
+            </div>
+            <p className="learning-3d-experiment-observation" aria-live="polite">
+              {ecosystem.rainfall < 35
+                ? "Low rainfall: the scene shows drier ground and stressed-looking foliage. Water availability can limit plant growth and affect animals that depend on plants or freshwater."
+                : "Rainfall is not in the low range of this illustration. Compare the habitat as you reduce water availability."}
+              {" "}
+              {!ecosystem.waterSource ? "The stream is absent, removing a visible freshwater source from this habitat. " : "The stream remains available in the scene. "}
+              {ecosystem.pollution >= 60
+                ? "Higher pollution pressure is represented by muted foliage. Air pollutants can harm plants, animals and people."
+                : "Pollution is below the high-pressure visual threshold in this illustration."}
+              {" "}Look for links between water, plants and animals in the habitat.
+            </p>
+            <button type="button" onClick={() => setEcosystem((value) => ({ ...value, rainfall: 70, waterSource: true, pollution: 15 }))}>Reset experiment</button>
           </div>}
           <div className="learning-3d-concept-panel" aria-live="polite">
             <span>DISCOVERY GUIDE</span>
