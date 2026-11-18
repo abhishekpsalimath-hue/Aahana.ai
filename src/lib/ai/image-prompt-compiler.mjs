@@ -15,7 +15,7 @@ export function selectCompiledImagePrompt(candidate, original) {
   const fallback = typeof original === "string" ? original.normalize("NFKC").trim() : "";
   const compiled = typeof candidate === "string" ? candidate.normalize("NFKC").trim() : "";
   if (!fallback) return "";
-  if (!compiled || compiled.length < 8 || compiled.length > 4000) return fallback;
+  if (!compiled || compiled.length < 8 || compiled.length > 2048) return fallback;
   if (compiled.length < Math.min(24, Math.floor(fallback.length * 0.35))) return fallback;
   return compiled;
 }
