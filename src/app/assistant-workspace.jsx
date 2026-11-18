@@ -1331,7 +1331,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
               <button className="copy-message" type="button" onClick={startVoiceInput} disabled={listening || busy}>{listening ? "Listening…" : "Speak"}</button>
               <label className="image-attach">
                 + Add image
-                <input id="image-upload" type="file" accept="image/png,image/jpeg,image/webp" disabled={busy}
+                <input id="image-upload" type="file" accept="image/png,image/jpeg,image/webp" disabled={busy || imageProcessing}
                   onChange={(event) => {
                     const file = event.target.files?.[0] || null;
                     event.target.value = "";
