@@ -6,7 +6,7 @@ const MAX_LABEL = 80;
 
 export function normalizeLearningSubject(input) {
   if (typeof input !== "string") return "";
-  return input.normalize("NFKC").trim().replace(/\\s+/g, " ").slice(0, MAX_SUBJECT);
+  return input.normalize("NFKC").trim().replace(/\s+/g, " ").slice(0, MAX_SUBJECT);
 }
 
 export function validateLearningJourney(input) {
