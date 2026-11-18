@@ -25,6 +25,7 @@ on:
       - "feat/aahana-voice-runtime-adapters"
       - "feat/aahana-learning-studio"
       - "feat/aahana-safe-build-engine"
+      - "feat/aahana-assistant-core"
     paths:
       - "services/sravaani-asr/**"
       - ".github/workflows/sravaani-guards.yml"
