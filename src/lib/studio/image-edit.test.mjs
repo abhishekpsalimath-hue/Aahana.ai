@@ -1,13 +1,20 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { buildImageEditPrompt, detectImageEditStyleFromPrompt, IMAGE_EDIT_STYLES, isImageEditRequest, parseImageEditInput } from "./image-edit.mjs";
+import {
+  buildImageEditPrompt,
+  detectImageEditStyleFromPrompt,
+  IMAGE_EDIT_STYLES,
+  isImageEditRequest,
+  parseImageEditInput,
+} from "./image-edit.mjs";
 
-test("offers explicit image-to-image visual styles", () => {
+test("offers explicit image-to-image visual styles and identity-preserving prompts", () => {
   assert.deepEqual(IMAGE_EDIT_STYLES.map((style) => style.id), ["cartoon", "anime", "comic", "3d-animation", "watercolor"]);
   assert.match(buildImageEditPrompt("cartoon"), /exact same person or people/);
   assert.match(buildImageEditPrompt("cartoon"), /full-frame image transformation/);
   assert.match(buildImageEditPrompt("cartoon"), /not a sticker/);
+  assert.match(buildImageEditPrompt("cartoon"), /input_image_0/);
   assert.equal(buildImageEditPrompt("unknown"), null);
 });
 
@@ -25,8 +32,8 @@ test("validates data URL MIME type and image size before provider upload", () =>
 test("image edit API uses FLUX.2 Klein multipart photo input", async () => {
   const source = await readFile(new URL("../../app/api/images/edit/route.js", import.meta.url), "utf8");
   assert.match(source, /flux-2-klein-9b/);
-  assert.match(source, /image_b64: image\.base64/);
-  assert.match(source, /strength,/);
+  assert.match(source, /input_image_0/);
+  assert.match(source, /new FormData\(\)/);
   assert.match(source, /buildImageEditPrompt\(style\)/);
   assert.match(source, /auth\.getUser\(\)/);
 });
@@ -56,13 +63,14 @@ test("assistant routes attached-photo style conversions to image editing before 
   assert.ok(editIndex >= 0 && generationIndex > editIndex);
   assert.match(source, /fetch\("\/api\/images\/edit"/);
   assert.match(source, /detectImageEditStyleFromPrompt\(text\)/);
+  assert.match(source, /prepareImageForEditing\(sourceFile\)/);
 });
 
-test("prepares image input to the model's 512px reference-image limit", async () => {
+test("prepares photo input within the model's 512px reference-image limit", async () => {
   const source = await readFile(new URL("./image-edit.mjs", import.meta.url), "utf8");
   assert.match(source, /maxDimension = 512/);
   assert.match(source, /createElement\("canvas"\)/);
   assert.match(source, /drawImage\(image, 0, 0, width, height\)/);
   assert.match(source, /toBlob\(resolve, "image\/jpeg", 0\.9\)/);
-  assert.match(source, /input_image_0/);
-});\n  assert.match(source, /new FormData\\(\\)/);
+  assert.match(source, /outputScale = 1024/);
+});
