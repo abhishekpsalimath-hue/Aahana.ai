@@ -19,7 +19,7 @@ function coreFileScore(filename) {
   if (/^(?:next|vite|astro|svelte|vitest|jest)\.config\.(?:js|mjs|cjs|ts)$/.test(basename) ||
       /^eslint\.config\.(?:js|mjs|cjs|ts)$/.test(basename)) return 90;
   if (basename === "index.html") return 85;
-  if (/^(?:src\/)?(?:app|pages)\/(?:page|layout|index)\.(?:js|jsx|ts|tsx)$/.test(normalized)) return 85;
+  if (/^(?:src\/)?(?:app|pages)\/(?:page|layout|index)\.(?:js|jsx|ts|tsx)$/.test(normalized)) return 65;
   if (/^(?:src\/)?(?:main|index)\.(?:js|jsx|ts|tsx)$/.test(normalized)) return 75;
   if (/(?:^|\/)readme\.md$/.test(normalized)) return 2;
   return 0;
