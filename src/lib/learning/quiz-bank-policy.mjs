@@ -87,7 +87,7 @@ export const supportedQuizVisuals = Object.freeze([
   "concept-map", "timeline", "bar-chart", "anatomy", "circuit", "code-flow",
   "sound-wave", "map", "3d-solar-system", "3d-planet", "3d-molecule", "3d-atom",
   "3d-dna", "3d-geometry", "3d-terrain", "3d-plant-cell", "3d-heart",
-  "3d-pyramid", "3d-ecosystem", "3d-engine", "3d-cart",
+  "3d-pyramid", "3d-ecosystem", "3d-engine", "3d-cart, 3d-bridge",
 ]);
 
 /**
