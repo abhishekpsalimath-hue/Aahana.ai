@@ -389,7 +389,7 @@ test("student 3D scenes use a real Three.js WebGL renderer with subject-specific
   assert.match(threeD, /new THREE\.FogExp2/);
   assert.match(threeD, /new THREE\.PointLight/);
   assert.match(threeD, /new THREE\.HemisphereLight/);
-  assert.match(threeD, /function makeSceneModel\(group,id,selectedPlanet=null,heartFlow="body"\)/);
+  assert.match(threeD, /function makeSceneModel\(group,id,selectedPlanet=null,heartFlow="body",labState=\{\}\)/);
   assert.match(threeD, /function makeEarthTexture\(\)/);
   assert.match(threeD, /new THREE\.CanvasTexture/);
   assert.match(threeD, /new THREE\.TubeGeometry/);
