@@ -58,8 +58,8 @@ test("learning instructions are included in the actual model system prompt", () 
 });
 
 test("Student Mode starts with a child-led question instead of a compulsory grade-selection screen", () => {
-  assert.match(studio, /What would you like me to help you understand\\?/);
-  assert.match(studio, /Ask Aahana anything you are curious about/);
+  assert.match(studio, /Search or ask Aahana about any topic/);
+  assert.match(studio, /Search any topic or ask a question/);
   assert.match(studio, /Aahana will choose the best way to explain it/);
   assert.doesNotMatch(studio, /Choose your school grade/);
   assert.doesNotMatch(studio, /Which grade are you in/);
@@ -613,4 +613,11 @@ test("Student Mode motion lessons receive layered VFX while respecting reduced-m
   assert.match(styles, /motion-art-arrive/);
   assert.match(styles, /quiz-visual-aura/);
   assert.match(styles, /prefers-reduced-motion:reduce/);
+});
+
+test("Student Mode invites open-ended topic discovery beyond its suggested catalogue", () => {
+  assert.match(studio, /Search or ask Aahana about any topic/);
+  assert.match(studio, /Explore beyond a fixed subject list/);
+  assert.match(route, /OPEN-ENDED STUDENT DISCOVERY/);
+  assert.match(route, /Treat the catalogue as suggestions, never a boundary/);
 });
