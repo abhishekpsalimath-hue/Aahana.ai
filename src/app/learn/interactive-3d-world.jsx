@@ -782,9 +782,14 @@ function makeModel(id, ecosystem = {}) {
     return [...ground,...stream,...forest];
   }
   if (id === "cart") {
-    const force = clamp(Number(ecosystem.physicsForce ?? 3), 0, 5);
-    const friction = clamp(Number(ecosystem.physicsFriction ?? 1), 0, 5);
-    const displacement = clamp((force - friction) * .16, -0.7, 0.7);
+    const force = clamp(Number(ecosystem.physicsForce ?? 6), 0, 10);
+    const friction = clamp(Number(ecosystem.physicsFriction ?? 2), 0, 10);
+    const mass = clamp(Number(ecosystem.physicsMass ?? 2), 1, 5);
+    const netForce = force - friction;
+    const acceleration = netForce / mass;
+    // The cart's offset is an illustrative response to acceleration, not a
+    // time-based motion prediction or a measured physical experiment.
+    const displacement = clamp(acceleration * .12, -0.7, 0.7);
     const x = displacement;
     const body = [
       { points: [[x-.55,-.12,-.18],[x+.55,-.12,-.18],[x+.55,.25,-.18],[x-.55,.25,-.18]], color: "#d89a5b", solid: true },
@@ -952,7 +957,7 @@ export default function Interactive3DWorld({ selectedPlanet, onSelectedPlanetCha
   const [rotation, setRotation] = useState({ yaw: -.55, pitch: -.22 });
   const [zoom, setZoom] = useState(1);
   const [conceptIndex, setConceptIndex] = useState(0);
-  const [ecosystem, setEcosystem] = useState({ rainfall: "regular", waterSource: true, pollution: false, engineCycle: "intake", physicsForce: 3, physicsFriction: 1, chemistryMolecule: "water", chemistryFocus: "all", chemistryShowBonds: true, cellFocus: "all", bridgeLoad: "center" });
+  const [ecosystem, setEcosystem] = useState({ rainfall: "regular", waterSource: true, pollution: false, engineCycle: "intake", physicsForce: 6, physicsFriction: 2, physicsMass: 2, chemistryMolecule: "water", chemistryFocus: "all", chemistryShowBonds: true, cellFocus: "all", bridgeLoad: "center" });
   const canvasRef = useRef(null);
   const dragRef = useRef(null);
   const model = models.find((item) => item.id === modelId) || models[0];
@@ -1063,17 +1068,30 @@ export default function Interactive3DWorld({ selectedPlanet, onSelectedPlanetCha
             })[ecosystem.chemistryMolecule]}</p>
             <button type="button" onClick={() => setEcosystem((current) => ({ ...current, chemistryMolecule: "water", chemistryFocus: "all", chemistryShowBonds: true }))}>Reset molecule lab</button>
           </div>}
-          {modelId === "cart" && <div className="learning-3d-experiment" aria-label="Force and friction experiment">
-            <span>TRY A FORCE & FRICTION EXPERIMENT</span>
-            <p>Change the push and surface friction. Watch the cart shift to explore the idea of net force. This is a qualitative illustration, not a measured prediction.</p>
-            <div className="learning-3d-experiment-control"><label htmlFor="physics-force">Applied push: {ecosystem.physicsForce}/5</label>
-              <input id="physics-force" type="range" min="0" max="5" step="1" value={ecosystem.physicsForce} onChange={(event) => setEcosystem((current) => ({ ...current, physicsForce: Number(event.target.value) }))} />
+          {modelId === "cart" && <div className="learning-3d-experiment" aria-label="Force and acceleration experiment">
+            <span>INVESTIGATE NEWTON'S SECOND LAW</span>
+            <p>Change the applied force, opposing force and cart mass. Compare the net force and acceleration. The 3D cart position is an illustration of the calculated acceleration, not a time-based motion prediction.</p>
+            <div className="learning-3d-experiment-control"><label htmlFor="physics-force">Applied force: {ecosystem.physicsForce} N</label>
+              <input id="physics-force" type="range" min="0" max="10" step="1" value={ecosystem.physicsForce} onChange={(event) => setEcosystem((current) => ({ ...current, physicsForce: Number(event.target.value) }))} />
             </div>
-            <div className="learning-3d-experiment-control"><label htmlFor="physics-friction">Surface friction: {ecosystem.physicsFriction}/5</label>
-              <input id="physics-friction" type="range" min="0" max="5" step="1" value={ecosystem.physicsFriction} onChange={(event) => setEcosystem((current) => ({ ...current, physicsFriction: Number(event.target.value) }))} />
+            <div className="learning-3d-experiment-control"><label htmlFor="physics-friction">Opposing force: {ecosystem.physicsFriction} N</label>
+              <input id="physics-friction" type="range" min="0" max="10" step="1" value={ecosystem.physicsFriction} onChange={(event) => setEcosystem((current) => ({ ...current, physicsFriction: Number(event.target.value) }))} />
             </div>
-            <p className="learning-3d-experiment-observation" aria-live="polite">{ecosystem.physicsForce === ecosystem.physicsFriction ? "Balanced forces: the net force is zero in this simplified comparison. Acceleration is zero." : ecosystem.physicsForce > ecosystem.physicsFriction ? "The push is greater than the opposing friction in this illustration, so the cart shifts in the push direction." : "Friction is greater than the push in this illustration, so the net force points opposite the push."}</p>
-            <button type="button" onClick={() => setEcosystem((current) => ({ ...current, physicsForce: 3, physicsFriction: 1 }))}>Reset experiment</button>
+            <div className="learning-3d-experiment-control"><label htmlFor="physics-mass">Cart mass: {ecosystem.physicsMass} kg</label>
+              <input id="physics-mass" type="range" min="1" max="5" step="1" value={ecosystem.physicsMass} onChange={(event) => setEcosystem((current) => ({ ...current, physicsMass: Number(event.target.value) }))} />
+            </div>
+            <p className="learning-3d-experiment-observation" aria-live="polite">
+              Net force = {ecosystem.physicsForce - ecosystem.physicsFriction} N ·
+              Acceleration = {(ecosystem.physicsForce - ecosystem.physicsFriction) / ecosystem.physicsMass} m/s²
+              {" — "}
+              {ecosystem.physicsForce === ecosystem.physicsFriction
+                ? "Balanced forces: net force is zero, so acceleration is zero."
+                : ecosystem.physicsForce > ecosystem.physicsFriction
+                  ? "The net force points in the direction of the applied push."
+                  : "The net force points opposite to the applied push."}
+              {" "}Using Newton's second law: a = Fnet ÷ m.
+            </p>
+            <button type="button" onClick={() => setEcosystem((current) => ({ ...current, physicsForce: 6, physicsFriction: 2, physicsMass: 2 }))}>Reset experiment</button>
           </div>}
           {modelId === "bridge" && <div className="learning-3d-experiment" aria-label="Bridge load path exploration">
             <span>EXPLORE HOW A BRIDGE CARRIES LOADS</span>
