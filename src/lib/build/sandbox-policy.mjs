@@ -3,7 +3,7 @@ const BLOCKED_SEGMENTS = new Set([
 ]);
 
 const BLOCKED_FILE_NAMES = new Set([
-  ".env", ".env.local", ".env.production", ".npmrc", ".pypirc",
+  ".env", ".env.local", ".env.production", ".npmrc", ".pypirc", "npm-shrinkwrap.json",
 ]);
 
 const ALLOWED_EXECUTABLES = new Set(["node", "npm", "python3"]);
@@ -86,7 +86,7 @@ export function validateWorkspaceFiles(files) {
     const bytes = new TextEncoder().encode(file.content).byteLength;
     if (bytes > MAX_FILE_BYTES) throw new Error("Each workspace file must be 1 MB or smaller.");
     totalBytes += bytes;
-    if (totalBytes > MAX_TOTAL_FILE_BYTES) throw new Error("A workspace submission cannot exceed 10 MB.");
+    if (totalBytes > MAX_TOTAL_FILE_BYTES) throw new Error("A workspace submission cannot exceed 3 MB.");
     return Object.freeze({ path, content: file.content, bytes });
   });
 
@@ -147,6 +147,10 @@ export function validatePackageManifest(files) {
     if (Object.hasOwn(scripts, hook)) {
       throw new Error("Install lifecycle scripts are not permitted in the isolated build workspace.");
     }
+  }
+
+  if (manifest.overrides || manifest.workspaces) {
+    throw new Error("Package overrides and workspaces are not permitted in the isolated build workspace.");
   }
 
   let dependencyCount = 0;
