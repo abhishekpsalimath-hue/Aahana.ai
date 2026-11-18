@@ -636,7 +636,8 @@ test("Student Mode now offers category, topic and all six learning modes from th
   assert.match(studio, /Start a 20-question quiz/);
   assert.match(studio, /Explore \{subject\}/);
   assert.match(quizBankPolicy, /value\.questions\.length > maxQuestions/);
-  assert.match(route, /exactly 20 fresh multiple-choice questions/);
+  assert.match(route, /exactly 10 fresh multiple-choice questions by default/);
+  assert.match(route, /10 by default; 15 or 20 only when explicitly requested/);
   assert.match(route, /10,000\+ quiz sets/);
 });
 
