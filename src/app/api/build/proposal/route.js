@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { validateChangeProposal } from "@/lib/build/change-proposal-policy.mjs";
 import { prepareIsolatedProposalWorkspace } from "@/lib/build/proposal-workspace-policy.mjs";
 import { toProposalSnapshotPath } from "@/lib/build/proposal-snapshot-policy.mjs";
+import { createWorkspaceDigest } from "@/lib/build/workspace-approval-policy.mjs";
 
 export const runtime = "nodejs";
 
@@ -121,6 +122,7 @@ export async function POST(request) {
         sandboxStarted: workspacePreview.sandboxStarted,
         contractCheck: workspacePreview.contractCheck,
         checkPlan: workspacePreview.checkPlan,
+        workspaceDigest: createWorkspaceDigest(workspacePreview.files),
       },
       projectId,
       snapshotFileCount: currentFiles.length,
