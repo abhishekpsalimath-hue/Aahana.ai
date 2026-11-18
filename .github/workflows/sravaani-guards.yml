@@ -33,6 +33,7 @@ on:
       - "src/app/api/chat/route.js"
       - "src/app/learn/**"
       - "src/lib/learning/**"
+      - "src/lib/build/**"
       - "src/lib/voice/audio-wav.*"
       - "src/lib/voice/locale-detection.*"
       - "src/lib/voice/locale-support.*"
