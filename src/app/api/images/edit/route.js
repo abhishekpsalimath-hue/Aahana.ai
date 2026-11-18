@@ -33,7 +33,10 @@ export async function POST(request) {
     return NextResponse.json({ error: "Upload a PNG, JPEG or WebP image smaller than 4 MB." }, { status: 400 });
   }
   const style = STYLES.has(body?.style) ? body.style : "cartoon";
-  const prompt = buildImageEditPrompt(style);
+  const prompt = buildImageEditPrompt(style, {
+    change: body?.changeRequest,
+    preserve: body?.preserveRequest,
+  });
   const outputWidth = Number.isInteger(body?.width) ? Math.max(256, Math.min(1920, body.width)) : 1024;
   const outputHeight = Number.isInteger(body?.height) ? Math.max(256, Math.min(1920, body.height)) : 768;
 
