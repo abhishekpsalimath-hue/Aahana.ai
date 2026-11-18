@@ -5,6 +5,7 @@ import { buildResearchQuery, rankAndDedupeResearchResults } from "@/lib/research
 import { getGradeLearningCurriculum } from "@/lib/learning/curriculum-engine.js";
 import { selectRelevantProjectFiles } from "@/lib/learning/project-source-policy.mjs";
 import { normalizeLearningSubject } from "@/lib/learning/learning-memory.js";
+import { allLearningSubjects } from "@/lib/learning/learning-catalog";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
