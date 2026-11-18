@@ -85,6 +85,9 @@ export async function POST(request) {
     }
     body = JSON.parse(new TextDecoder().decode(rawBody));
   } catch {
+    if (request.signal.aborted) {
+      return NextResponse.json({ error: "Request cancelled." }, { status: 499 });
+    }
     return NextResponse.json({ error: "Invalid request." }, { status: 400 });
   } finally {
     requestReader.releaseLock();
