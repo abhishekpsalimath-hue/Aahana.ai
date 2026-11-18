@@ -725,19 +725,25 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     setFilesError("");
     try {
       const allowed = ["application/pdf", "text/plain", "text/markdown", "text/csv", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "image/png", "image/jpeg", "image/webp"];
-      if (!allowed.includes(file.type)) throw new Error("This file type is not supported.");
+      const extension = file.name.toLowerCase().split(".").pop();
+      const codeExtensions = new Set(["html", "htm", "css", "js", "jsx", "ts", "tsx", "mjs", "cjs", "json", "xml", "yaml", "yml", "toml", "sql", "py", "sh", "md", "txt"]);
+      const isCodeFile = codeExtensions.has(extension);
+      if (!allowed.includes(file.type) && !isCodeFile) throw new Error("This file type is not supported.");
       if (file.size < 1 || file.size > 10 * 1024 * 1024) throw new Error("Files must be between 1 byte and 10 MB.");
+      const upload = isCodeFile && !["text/plain", "text/markdown"].includes(file.type)
+        ? new File([await file.text()], file.name, { type: "text/plain" })
+        : file;
       const supabase = createClient();
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError || !user) throw new Error("Please sign in again.");
       const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-100) || "upload";
       const folder = selectedProjectId || "personal";
       const objectPath = `${user.id}/${folder}/${crypto.randomUUID()}-${safeName}`;
-      const { error: storageError } = await supabase.storage.from("aahana-private").upload(objectPath, file, { contentType: file.type, upsert: false });
+      const { error: storageError } = await supabase.storage.from("aahana-private").upload(objectPath, upload, { contentType: upload.type, upsert: false });
       if (storageError) throw new Error("Upload failed. Please try again.");
       const response = await fetch("/api/files", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ objectPath, originalFilename: file.name, mimeType: file.type, sizeBytes: file.size, projectId: selectedProjectId }),
+        body: JSON.stringify({ objectPath, originalFilename: file.name, mimeType: upload.type, sizeBytes: upload.size, projectId: selectedProjectId }),
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) {
@@ -1123,7 +1129,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
             ))}
             <label className="project-add">
               {fileBusy ? "Uploading…" : "＋ Upload file"}
-              <input type="file" hidden disabled={fileBusy} onChange={uploadFile} accept=".pdf,.txt,.md,.csv,.docx,.xlsx,.png,.jpg,.jpeg,.webp" />
+              <input type="file" hidden disabled={fileBusy} onChange={uploadFile} accept=".pdf,.txt,.md,.csv,.docx,.xlsx,.png,.jpg,.jpeg,.webp,.html,.htm,.css,.js,.jsx,.ts,.tsx,.mjs,.cjs,.json,.xml,.yaml,.yml,.toml,.sql,.py,.sh" />
             </label>
           </div>
         )}
