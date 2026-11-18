@@ -519,6 +519,8 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       setHistory([]);
       setMode(result.conversation.mode || "solve");
       setMessages((result.messages || []).map(({ role, content }) => ({ role, content })));
+      setGeneratedImage(null);
+      setImageFile(null);
       setPrompt("");
       setError("");
       setHistoryOpen(false);
@@ -1332,6 +1334,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                     if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) { setError("Choose a PNG, JPEG or WebP image."); return; }
                     if (file.size > 2 * 1024 * 1024) { setError("Images must be 2 MB or smaller."); return; }
                     setError("");
+                    setGeneratedImage(null);
                     setImageFile(file);
                   }} />
               </label>
