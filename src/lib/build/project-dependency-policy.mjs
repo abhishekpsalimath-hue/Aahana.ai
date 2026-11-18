@@ -260,7 +260,7 @@ export function analyzeProjectContracts(files) {
     const exports = collectExportedSymbols(file.content);
     const imports = collectImportedBindings(file.content);
     const propTypes = [];
-    const propPattern = /\\b(?:function|const|let)\\s+([A-Za-z_$][\\w$]*)[\\s\\S]{0,180}?\\(\\s*\\{[^}]*\\}\\s*:\\s*([A-Za-z_$][\\w$]*(?:\\.[A-Za-z_$][\\w$]*)*)/g;
+    const propPattern = /\b(?:function|const|let)\s+([A-Za-z_$][\w$]*)[\s\S]{0,180}?\(\s*\{[^}]*\}\s*:\s*([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*)/g;
     for (const match of stripComments(file.content).matchAll(propPattern)) {
       propTypes.push({ component: match[1], typeName: match[2] });
     }
