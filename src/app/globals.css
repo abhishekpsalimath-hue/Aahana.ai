@@ -650,3 +650,25 @@ button,input,textarea,select{font-family:var(--font-ui)}
 .assistant-code-actions{display:flex;align-items:center;gap:6px;flex-shrink:0}
 .assistant-code-block pre{margin:0;padding:14px;max-height:560px;overflow:auto;color:#e9e4f0;font:12px/1.65 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre}
 .assistant-code-block code{font:inherit}
+
+
+/* Aahana typography system: clear reading, expressive display, restrained script accents. */
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&family=Syne:wght@500;600;700;800&family=Unbounded:wght@400;500;600;700&display=swap');
+
+:root {
+  --font-reading: 'DM Sans', system-ui, sans-serif;
+  --font-display: 'Space Grotesk', 'DM Sans', sans-serif;
+  --font-brand: 'Syne', 'Space Grotesk', sans-serif;
+  --font-script: 'Caveat', cursive;
+  --font-technical: 'DM Mono', ui-monospace, monospace;
+  --font-editorial: 'Unbounded', 'Space Grotesk', sans-serif;
+}
+
+html, body { font-family: var(--font-reading); }
+button, input, textarea, select { font-family: inherit; }
+.brand, .auth-brand { font-family: var(--font-brand); }
+.brand-mark { font-family: var(--font-brand); }
+h1, h2, h3, h4, .auth-card h1 { font-family: var(--font-display); }
+.eyebrow, .side-label, .message-role, .footer span:first-child { font-family: var(--font-technical); }
+.script-accent, [data-font="script"] { font-family: var(--font-script); font-weight: 600; }
+.editorial-display, [data-font="editorial"] { font-family: var(--font-editorial); }
