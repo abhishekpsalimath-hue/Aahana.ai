@@ -303,6 +303,8 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [analyzingFileId, setAnalyzingFileId] = useState(null);
   const [imageGenerating, setImageGenerating] = useState(false);
   const [generatedImage, setGeneratedImage] = useState(null);
+  const [imageProcessing, setImageProcessing] = useState(false);
+  const [processedImage, setProcessedImage] = useState(null);
   const [memoryOpen, setMemoryOpen] = useState(false);
   const [memoryEnabled, setMemoryEnabled] = useState(false);
   const [memories, setMemories] = useState([]);
@@ -641,6 +643,44 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       setError(err.message || "Image generation failed.");
     } finally {
       setImageGenerating(false);
+    }
+  }
+
+  async function processUploadedImage(action) {
+    if (!imageFile || imageProcessing || busy) return;
+    if (action === "edit" && !prompt.trim()) {
+      setError("Describe the change you want Aahana to make first.");
+      return;
+    }
+    setImageProcessing(true);
+    setError("");
+    try {
+      const imageDataUrl = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => typeof reader.result === "string" ? resolve(reader.result) : reject(new Error("Could not read the selected image."));
+        reader.onerror = () => reject(new Error("Could not read the selected image."));
+        reader.readAsDataURL(imageFile);
+      });
+      const response = await fetch("/api/images/process", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, imageDataUrl, prompt: action === "edit" ? prompt.trim() : "" }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Image processing failed.");
+      if (typeof result.imageDataUrl !== "string" || !result.imageDataUrl.startsWith("data:image/")) {
+        throw new Error("The image service returned an invalid result.");
+      }
+      setProcessedImage({
+        dataUrl: result.imageDataUrl,
+        action,
+        filename: imageFile.name,
+        originalPreserved: result.originalPreserved === true,
+      });
+    } catch (err) {
+      setError(err.message || "Image processing failed.");
+    } finally {
+      setImageProcessing(false);
     }
   }
 
@@ -1259,6 +1299,18 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                 </div>
               </div>
             )}
+            {processedImage && (
+              <div className="generated-image-preview">
+                <img src={processedImage.dataUrl} alt={processedImage.action === "enhance" ? "Enhanced image" : "Edited image"} style={{ display: "block", width: "100%", maxWidth: "640px", borderRadius: "14px" }} />
+                <small className="image-prompt-status">
+                  {processedImage.action === "enhance" ? "Enhanced copy · 4K-width output target · original preserved" : "Edited copy · original preserved"}
+                </small>
+                <div className="message-actions">
+                  <a className="copy-message" href={processedImage.dataUrl} download={processedImage.action === "enhance" ? "aahana-enhanced-4k.jpg" : "aahana-edited-image.jpg"}>Download copy</a>
+                  <button className="copy-message" type="button" onClick={() => setProcessedImage(null)}>Remove</button>
+                </div>
+              </div>
+            )}
             <div className="image-attach-row">
               <select aria-label="Voice language" value={voiceLanguage} onChange={(event) => setVoiceLanguage(event.target.value)} className="copy-message">{voiceLanguages.map(([code, label]) => <option key={code} value={code}>{label}</option>)}</select>
               <button className="copy-message" type="button" onClick={startVoiceInput} disabled={listening || busy}>{listening ? "Listening…" : "Speak"}</button>
@@ -1275,7 +1327,19 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                     setImageFile(file);
                   }} />
               </label>
-              {imageFile && <span className="image-attach-name">{imageFile.name} <button type="button" onClick={() => setImageFile(null)}>Remove</button></span>}
+              {imageFile && (
+                <>
+                  <span className="image-attach-name">{imageFile.name} <button type="button" onClick={() => setImageFile(null)}>Remove</button></span>
+                  <button className="copy-message" type="button" onClick={() => processUploadedImage("edit")}
+                    disabled={!prompt.trim() || imageProcessing || busy}>
+                    {imageProcessing ? "Processing…" : "Edit image"}
+                  </button>
+                  <button className="copy-message" type="button" onClick={() => processUploadedImage("enhance")}
+                    disabled={imageProcessing || busy}>
+                    {imageProcessing ? "Processing…" : "Enhance to 4K"}
+                  </button>
+                </>
+              )}
               <button className="copy-message" type="button" onClick={generateImage}
                 disabled={!prompt.trim() || imageGenerating || busy || Boolean(imageFile)}>
                 {imageGenerating ? "Creating image…" : "Generate image"}
