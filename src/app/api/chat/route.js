@@ -498,6 +498,14 @@ export async function POST(request) {
     },
     async cancel() {
       await reader.cancel().catch(() => {});
+      if (fullReply.trim()) {
+        const { error: saveError } = await supabase.rpc("save_ai_reply", {
+          p_conversation_id: conversationId,
+          p_content: fullReply.slice(0, 16000),
+        });
+        await supabase.from("conversations").update({ updated_at: new Date().toISOString() }).eq("id", conversationId);
+        if (saveError) console.error("Aahana stopped reply persistence failed:", saveError.message);
+      }
     },
   });
 
