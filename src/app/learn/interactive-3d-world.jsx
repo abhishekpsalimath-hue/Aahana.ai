@@ -953,7 +953,7 @@ function animateScene(canvas, render) {
   };
 }
 
-export function Mini3DModel({ modelId = "planet" }) {
+export function Mini3DModel({ modelId = "planet", paused = false }) {
   const [rotation, setRotation] = useState({ yaw: -.55, pitch: -.22 });
   const [zoom, setZoom] = useState(1);
   const canvasRef = useRef(null);
@@ -962,11 +962,12 @@ export function Mini3DModel({ modelId = "planet" }) {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const render = (time = 0) => drawScene(canvas, modelId, rotation.yaw, rotation.pitch, zoom, {}, time);
-    const stopAnimation = animateScene(canvas, render);
+    // Pause the actual WebGL animation loop while a learner studies a frame.
+    const stopAnimation = paused ? (render(0), () => {}) : animateScene(canvas, render);
     const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(() => render()) : null;
     observer?.observe(canvas);
     return () => { stopAnimation(); observer?.disconnect(); disposeThreeScene(canvas); };
-  }, [modelId, rotation, zoom]);
+  }, [modelId, rotation, zoom, paused]);
   function pointerDown(event) {
     dragRef.current = { x: event.clientX, y: event.clientY, yaw: rotation.yaw, pitch: rotation.pitch };
     event.currentTarget.setPointerCapture(event.pointerId);
