@@ -32,31 +32,25 @@ export async function POST(request) {
   if (!image) {
     return NextResponse.json({ error: "Upload a PNG, JPEG or WebP image smaller than 4 MB." }, { status: 400 });
   }
-
   const style = STYLES.has(body?.style) ? body.style : "cartoon";
-  const requestedStrength = Number(body?.strength);
-  const strength = Number.isFinite(requestedStrength)
-    ? Math.max(0.2, Math.min(0.65, requestedStrength))
-    : 0.38;
-  const prompt = buildImageEditPrompt(style);\n  const outputWidth = Number.isInteger(body?.width) ? Math.max(256, Math.min(1920, body.width)) : 1024;\n  const outputHeight = Number.isInteger(body?.height) ? Math.max(256, Math.min(1920, body.height)) : 768;
+  const prompt = buildImageEditPrompt(style);
+  const outputWidth = Number.isInteger(body?.width) ? Math.max(256, Math.min(1920, body.width)) : 1024;
+  const outputHeight = Number.isInteger(body?.height) ? Math.max(256, Math.min(1920, body.height)) : 768;
 
   try {
+    const form = new FormData();
+    form.set("prompt", prompt);
+    form.set("input_image_0", new Blob([Buffer.from(image.base64, "base64")], { type: image.mimeType }), "source-photo.jpg");
+    form.set("width", String(outputWidth));
+    form.set("height", String(outputHeight));
+    form.set("guidance", "4");
+
     const response = await fetch(
       `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/ai/run/${MODEL}`,
       {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          prompt,
-          negative_prompt: "sticker, die-cut sticker, white outline, emoji, chibi, mascot, avatar, different person, different face, face swap, altered identity, extra person, extra limbs, distorted face, text, watermark, logo, blurry, low quality",
-          image_b64: image.base64,
-          strength,
-          num_steps: 20,
-          guidance: 7.5,
-        }),
+        headers: { Authorization: `Bearer ${apiToken}` },
+        body: form,
         cache: "no-store",
         signal: AbortSignal.timeout(55000),
       }
@@ -80,7 +74,7 @@ export async function POST(request) {
     }
 
     return NextResponse.json(
-      { imageDataUrl: `data:image/png;base64,${outputImage}`, model: MODEL, style, strength, width: outputWidth, height: outputHeight },
+      { imageDataUrl: `data:image/png;base64,${outputImage}`, model: MODEL, style, width: outputWidth, height: outputHeight },
       { headers: { "Cache-Control": "no-store" } }
     );
   } catch (error) {
