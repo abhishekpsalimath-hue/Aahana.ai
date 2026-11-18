@@ -1,0 +1,83 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {
+  analyzeProjectDependencies,
+  selectProjectFilesWithDependencies,
+} from "./project-dependency-policy.mjs";
+
+const projectFiles = [
+  {
+    path: "src/app/page.jsx",
+    content: 'import ProfileCard from "../components/profile-card";\nimport { getProfile } from "../lib/profile-service.js";\nexport default function Page() { return <ProfileCard data={getProfile()} />; }',
+  },
+  {
+    path: "src/components/profile-card.jsx",
+    content: 'import React from "react";\nexport default function ProfileCard({ data }) { return <div>{data.name}</div>; }',
+  },
+  {
+    path: "src/lib/profile-service.js",
+    content: 'import { normalizeName } from "./normalize.js";\nexport function getProfile() { return { name: normalizeName("Ada") }; }',
+  },
+  {
+    path: "src/lib/normalize.js",
+    content: 'export function normalizeName(value) { return value.trim(); }',
+  },
+  {
+    path: "src/components/unrelated.jsx",
+    content: 'export default function Unrelated() { return null; }',
+  },
+  {
+    path: "src/app/api/profile/route.js",
+    content: 'import { getProfile } from "../../../lib/profile-service.js";\nexport async function GET() { return Response.json(getProfile()); }',
+  },
+];
+
+test("detects relative imports and reverse dependents across source extensions", () => {
+  const graph = analyzeProjectDependencies(projectFiles);
+  assert.ok(graph.dependencies.get("src/app/page.jsx").has("src/components/profile-card.jsx"));
+  assert.ok(graph.dependencies.get("src/app/page.jsx").has("src/lib/profile-service.js"));
+  assert.ok(graph.dependencies.get("src/lib/profile-service.js").has("src/lib/normalize.js"));
+  assert.ok(graph.dependents.get("src/lib/profile-service.js").has("src/app/page.jsx"));
+  assert.ok(graph.dependents.get("src/lib/profile-service.js").has("src/app/api/profile/route.js"));
+});
+
+test("collects external package references without treating them as project files", () => {
+  const graph = analyzeProjectDependencies(projectFiles);
+  assert.ok(graph.external.some((item) => item.from === "src/components/profile-card.jsx" && item.packageName === "react"));
+});
+
+test("expands prompt matches to connected imports and callers within the file cap", () => {
+  const result = selectProjectFilesWithDependencies("change the profile card component", projectFiles, 8, 2);
+  const paths = result.files.map((file) => file.path);
+  assert.ok(paths.includes("src/components/profile-card.jsx"));
+  assert.ok(paths.includes("src/app/page.jsx"));
+  assert.ok(paths.includes("src/lib/profile-service.js"));
+  assert.ok(result.relationships.some((edge) => edge.from === "src/app/page.jsx" && edge.to === "src/components/profile-card.jsx"));
+  assert.ok(paths.length <= 8);
+});
+
+test("does not invent unresolved relative paths or resolve package aliases by guessing", () => {
+  const files = [{
+    path: "src/page.js",
+    content: 'import Missing from "./missing";\nimport Alias from "@/components/alias";\nimport React from "react";',
+  }];
+  const graph = analyzeProjectDependencies(files);
+  assert.equal(graph.dependencies.get("src/page.js").size, 0);
+  assert.ok(graph.unresolved.some((item) => item.specifier === "./missing"));
+  assert.ok(graph.unresolved.some((item) => item.specifier === "@/components/alias"));
+  assert.ok(graph.external.some((item) => item.packageName === "react"));
+});
+
+test("handles side-effect, dynamic and CommonJS imports", () => {
+  const files = [
+    { path: "src/main.js", content: 'import "./setup.js";\nconst lazy = import("./lazy.js");\nconst util = require("./util.cjs");' },
+    { path: "src/setup.js", content: "export {};" },
+    { path: "src/lazy.js", content: "export default 1;" },
+    { path: "src/util.cjs", content: "module.exports = {};" },
+  ];
+  const graph = analyzeProjectDependencies(files);
+  const dependencies = graph.dependencies.get("src/main.js");
+  assert.ok(dependencies.has("src/setup.js"));
+  assert.ok(dependencies.has("src/lazy.js"));
+  assert.ok(dependencies.has("src/util.cjs"));
+});
