@@ -51,7 +51,7 @@ function fingerprintText(value) {
 }
 
 export function createQuizPackFingerprint(questions) {
-  if (!Array.isArray(questions) || questions.length < 1 || questions.length > 10) return null;
+  if (!Array.isArray(questions) || questions.length < 10 || questions.length > 20) return null;
   const normalized = questions.map((question) => {
     const stem = normalizeQuestionText(question?.question ?? question?.prompt ?? question?.text);
     const options = Array.isArray(question?.options)
@@ -99,7 +99,7 @@ export const supportedQuizVisuals = Object.freeze([
  * Validate untrusted model output before it reaches the interactive quiz UI.
  * Invalid packs fail closed; this does not certify factual correctness.
  */
-export function validateQuizPack(value, { minQuestions = 5, maxQuestions = 10 } = {}) {
+export function validateQuizPack(value, { minQuestions = 10, maxQuestions = 20 } = {}) {
   if (!value || typeof value !== "object" || Array.isArray(value) || value.type !== "aahana_quiz_v1") return null;
   if (!Array.isArray(value.questions) || value.questions.length < minQuestions || value.questions.length > maxQuestions) return null;
   const title = cleanField(value.title, "A little challenge");
