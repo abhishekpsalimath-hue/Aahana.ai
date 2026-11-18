@@ -414,7 +414,7 @@ test("Learning Studio enforces visual quality, truthful renderer claims and scie
   assert.match(route, /VISUAL ART DIRECTION AND TEACHING FIT/);
   assert.match(route, /premium cinematic science-documentary experience/);
   assert.match(route, /physically plausible key\/fill\/rim lighting/);
-  assert.match(route, /Never describe a visual as photorealistic, high-resolution, generated or interactive unless the rendered application actually provides those properties/);
+  assert.match(route, /never describe a visual as photorealistic, high-resolution, generated or interactive unless the rendered application actually provides those properties/i);
   assert.match(route, /MISCONCEPTION AND ACCURACY CHECK/);
   assert.match(route, /every number, unit, label, causal claim, sequence, comparison and answer key agrees/);
 });
