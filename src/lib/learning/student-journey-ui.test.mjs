@@ -37,6 +37,12 @@ test("Play & Solve keeps a complete 10-question default and optional 15 or 20 qu
   assert.match(studio, /Create a fresh 10-question Play & Solve journey/);
 });
 
+test("learning prompts pair cinematic visual direction with evidence-based exam mastery", () => {
+  for (const phrase of ["CINEMATIC VISUAL DIRECTION", "camera movement", "key light", "colour grading", "ACADEMIC MASTERY AND EXAM TRANSFER", "active recall", "mark-point structure", "ASSESSMENT QUALITY"]) {
+    assert.ok(chatRoute.includes(phrase), "Missing learning-quality guidance: " + phrase);
+  }
+});
+
 test("journey styling remains responsive and respects reduced-motion preferences", () => {
   assert.match(styles, /\.student-welcome/);
   assert.match(styles, /@media \(max-width: 760px\)/);
