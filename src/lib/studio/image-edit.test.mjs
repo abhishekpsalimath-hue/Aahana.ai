@@ -22,7 +22,7 @@ test("validates data URL MIME type and image size before provider upload", () =>
   assert.equal(parseImageEditInput(`data:image/jpeg;base64,${tooLarge}`), null);
 });
 
-test("image edit API uses the img2img model and sends the uploaded image with bounded strength", async () => {
+test("image edit API uses FLUX.2 Klein multipart photo input", async () => {
   const source = await readFile(new URL("../../app/api/images/edit/route.js", import.meta.url), "utf8");
   assert.match(source, /flux-2-klein-9b/);
   assert.match(source, /image_b64: image\.base64/);
@@ -65,4 +65,4 @@ test("prepares image input to the model's 512px reference-image limit", async ()
   assert.match(source, /drawImage\(image, 0, 0, width, height\)/);
   assert.match(source, /toBlob\(resolve, "image\/jpeg", 0\.9\)/);
   assert.match(source, /input_image_0/);
-});
+});\n  assert.match(source, /new FormData\\(\\)/);
