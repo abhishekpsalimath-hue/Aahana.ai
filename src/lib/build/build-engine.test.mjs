@@ -149,3 +149,44 @@ test("keeps the sandbox disposable and closes it after a failed project command"
   assert.equal(fake.calls.at(-1).type, "stop");
   assert.equal(fake.calls.filter((call) => call.type === "update").at(-1).options.networkPolicy, "deny-all");
 });
+
+
+test("stops the disposable sandbox when registry egress cannot be enabled", async () => {
+  const calls = [];
+  const sandbox = {
+    async writeFiles(files) { calls.push({ type: "writeFiles", files }); },
+    async update(options) {
+      calls.push({ type: "update", options });
+      if (options.networkPolicy && typeof options.networkPolicy === "object") {
+        throw new Error("registry egress policy unavailable");
+      }
+    },
+    async runCommand(options) {
+      calls.push({ type: "runCommand", options });
+      return { exitCode: 0, async stdout() { return ""; }, async stderr() { return ""; } };
+    },
+    async stop() { calls.push({ type: "stop" }); },
+  };
+  const SandboxClient = { async create(options) {
+    calls.push({ type: "create", options });
+    return sandbox;
+  } };
+
+  await assert.rejects(() => executeBuildTask({
+    files: [
+      { path: "package.json", content: JSON.stringify({
+        dependencies: { react: "^19.1.0" },
+        scripts: { build: "node build.js" },
+      }) },
+      { path: "build.js", content: "console.log('must not run')" },
+    ],
+    operation: "build",
+    projectId: "prj_12345678",
+    sandboxName: "aahana-build-egress-123",
+    SandboxClient,
+  }), /registry egress policy unavailable/);
+
+  assert.equal(calls.filter((call) => call.type === "runCommand").length, 0);
+  assert.equal(calls.filter((call) => call.type === "stop").length, 1);
+  assert.equal(calls.at(-1).type, "stop");
+});
