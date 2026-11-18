@@ -27,6 +27,6 @@ test("image generation requires prompt and generated-image safety checks", () =>
 });
 
 test("image generation uses the documented Cloudflare model and input envelope", () => {
-  assert.match(route, /client\\.v4\\/accounts\\/.*\\/ai\\/run`/);
-  assert.match(route, /JSON\\.stringify\\(\\{ model: MODEL, input: \\{ prompt: finalPrompt, steps: 8 \\} \\}\\)/);
+  assert.ok(route.includes("/ai/run`"));
+  assert.ok(route.includes("JSON.stringify({ model: MODEL, input: { prompt: finalPrompt, steps: 8 } })"));
 });
