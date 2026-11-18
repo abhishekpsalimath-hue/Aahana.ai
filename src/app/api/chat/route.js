@@ -305,6 +305,9 @@ export async function POST(request) {
           console.error("Aahana live research provider returned:", searchResponse.status);
         }
       } catch (researchError) {
+        if (request.signal.aborted || researchError?.name === "AbortError") {
+          return new Response(null, { status: 499 });
+        }
         console.error("Aahana live research failed:", researchError?.message || "unknown error");
       }
     }
