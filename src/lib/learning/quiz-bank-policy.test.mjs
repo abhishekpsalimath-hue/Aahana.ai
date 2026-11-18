@@ -78,6 +78,22 @@ test("quiz validator accepts a complete 5-question pack and attaches a fingerpri
   assert.match(result?.fingerprint || "", /^[a-f0-9]{16}$/);
 });
 
+test("quiz validator preserves full teaching explanations and rejects oversized fields", () => {
+  const pack = validPack();
+  const explanation = "A detailed explanation. ".repeat(18);
+  pack.questions[0].explanation = explanation;
+  const result = validateQuizPack(pack);
+  assert.equal(result?.questions[0].explanation, explanation.replace(/\\s+/g, " ").trim());
+
+  const oversized = validPack();
+  oversized.questions[0].explanation = "x".repeat(1201);
+  assert.equal(validateQuizPack(oversized), null);
+
+  const oversizedHint = validPack();
+  oversizedHint.questions[0].hint = "x".repeat(301);
+  assert.equal(validateQuizPack(oversizedHint), null);
+});
+
 test("quiz validator rejects too few or too many questions", () => {
   assert.equal(validateQuizPack(validPack(4)), null);
   assert.equal(validateQuizPack(validPack(11)), null);
