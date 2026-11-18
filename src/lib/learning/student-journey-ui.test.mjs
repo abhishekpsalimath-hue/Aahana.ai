@@ -97,3 +97,13 @@ test("forest habitat experiment exposes continuous rainfall and pollution contro
   assert.match(world, /Freshwater stream/);
   assert.match(world, /Reset experiment/);
 });
+
+test("solar system experiment lets learners pause and adjust illustrative orbital motion", () => {
+  const world = readFileSync(new URL("../../app/learn/interactive-3d-world.jsx", import.meta.url), "utf8");
+  assert.match(world, /orbitSpeedMultiplier = 1/);
+  assert.match(world, /orbitSpeed \?\? 1/);
+  assert.match(world, /child\.userData\.orbitSpeed \* orbitSpeedMultiplier/);
+  assert.match(world, /id="orbit-speed"/);
+  assert.match(world, /EXPERIMENT WITH ORBITAL MOTION/);
+  assert.match(world, /not a real-time scale model of orbital periods/);
+});
