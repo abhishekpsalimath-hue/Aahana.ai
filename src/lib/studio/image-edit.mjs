@@ -14,7 +14,13 @@ const STYLE_DIRECTIONS = Object.freeze({
   watercolor: "Transform the photograph into a carefully painted watercolour portrait, preserving the person's face, expression, hairstyle and clothing.",
 });
 
-export function buildImageEditPrompt(style = "cartoon") {
+function cleanEditInstruction(value) {
+  return typeof value === "string"
+    ? value.replace(/[\\u0000-\\u001f\\u007f]/g, " ").replace(/\\s+/g, " ").trim().slice(0, 400)
+    : "";
+}
+
+export function buildImageEditPrompt(style = "cartoon", instructions = {}) {
   const direction = STYLE_DIRECTIONS[style];
   if (!direction) return null;
   return [
@@ -22,7 +28,10 @@ export function buildImageEditPrompt(style = "cartoon") {
     direction,
     "IDENTITY AND CONTENT PRESERVATION ARE THE HIGHEST PRIORITY: depict the exact same person or people from the input photograph. Preserve recognisable identity, facial geometry, eyes, nose, mouth, skin tone, age, hairstyle, expression, clothing, accessories, body proportions, pose and orientation. If multiple people are present, preserve every person and their relative positions. Keep the original camera framing, crop, perspective, scene layout and background unless a change is essential to the selected art medium.",
     "Apply the requested art treatment to the whole photograph, including the background. This is a full-frame image transformation, not a sticker, emoji, avatar, mascot, cut-out, isolated headshot, character sheet or replacement portrait. Do not add a white sticker outline, die-cut border, transparent sticker background, text, logo, extra people, props or decorative elements.",
-    "Keep the result compositionally close to the source. Do not change the subject's gender presentation, ethnicity, apparent age or identity. No generic stock character. Output one finished image.",
+    "Keep source details unchanged unless the user explicitly requests a specific edit. Never change the subject's identity, facial geometry, age, skin tone or number of people. No generic stock character.",
+    cleanEditInstruction(instructions.change) ? `USER-REQUESTED CHANGE: ${cleanEditInstruction(instructions.change)}.` : "No additional content change was requested; apply only the selected artistic treatment.",
+    cleanEditInstruction(instructions.preserve) ? `USER-REQUESTED PRESERVATION: ${cleanEditInstruction(instructions.preserve)}.` : "Preserve the original pose, framing, clothing, accessories and background unless the selected art treatment requires minor rendering changes.",
+    "Output one finished full-frame image.",
   ].join(" ");
 }
 
