@@ -1,3 +1,5 @@
+import { getColorGradeFilter } from "./color-grading.mjs";
+
 const COLOR = /^#[0-9a-fA-F]{6}$/;
 const MAX_LAYERS = 100;
 const MAX_DIMENSION = 4096;
@@ -35,7 +37,7 @@ export function validateImageScene(input) {
   return { width, height, background, layers };
 }
 
-export function renderImageSceneSvg(input) {
+export function renderImageSceneSvg(input, grade = "none") {
   const scene = validateImageScene(input);
   if (!scene) throw new TypeError("Invalid Aahana image scene.");
   const elements = scene.layers.map((layer) => {
@@ -45,7 +47,8 @@ export function renderImageSceneSvg(input) {
     if (layer.type === "line") return `<line x1="${layer.x1}" y1="${layer.y1}" x2="${layer.x2}" y2="${layer.y2}" ${style}/>`;
     return `<text x="${layer.x}" y="${layer.y}" font-family="system-ui,sans-serif" font-size="${layer.size}" font-weight="${layer.weight}" text-anchor="${layer.anchor}" ${style}>${layer.text}</text>`;
   }).join("");
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${scene.width}" height="${scene.height}" viewBox="0 0 ${scene.width} ${scene.height}" role="img"><rect width="100%" height="100%" fill="${scene.background}"/>${elements}</svg>`;
+  const filter = getColorGradeFilter(grade);
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${scene.width}" height="${scene.height}" viewBox="0 0 ${scene.width} ${scene.height}" role="img"><g style="filter:${filter}"><rect width="100%" height="100%" fill="${scene.background}"/>${elements}</g></svg>`;
 }
 
 export function createImageScene({ title = "Aahana Studio", subtitle = "Ideas, made visible", width = 1200, height = 675 } = {}) {
