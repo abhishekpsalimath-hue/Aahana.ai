@@ -30,9 +30,10 @@ test("validates prompt, duration, resolution and audio settings", () => {
   assert.deepEqual(validateVideoGenerationInput({ prompt: " A calm ocean ", duration: 10, resolution: "fhd" }), {
     prompt: "A calm ocean", duration: 10, resolution: "fhd", generateAudio: true,
   });
+  assert.equal(validateVideoGenerationInput({ prompt: "A", duration: 7 }).duration, 7);
   assert.throws(() => validateVideoGenerationInput({ prompt: "", duration: 5 }));
-  assert.throws(() => validateVideoGenerationInput({ prompt: "A", duration: 7 }));
-  assert.throws(() => validateVideoGenerationInput({ prompt: "A", duration: 30 }));
+  assert.throws(() => validateVideoGenerationInput({ prompt: "A", duration: 4 }));
+  assert.throws(() => validateVideoGenerationInput({ prompt: "A", duration: 21 }));
   assert.throws(() => validateVideoGenerationInput({ prompt: "A", resolution: "4k" }));
   assert.throws(() => validateVideoGenerationInput({ prompt: "A", generateAudio: "yes" }));
 });
