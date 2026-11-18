@@ -18,3 +18,10 @@ test("image generation uses a bounded Groq prompt compiler with original-prompt 
   assert.match(route, /prompt: finalPrompt, steps: 8/);
   assert.match(route, /promptRefined: refined/);
 });
+
+test("image generation requires prompt and generated-image safety checks", () => {
+  assert.match(route, /AAHANA_IMAGE_SAFETY_ENABLED !== "true"/);
+  assert.match(route, /await moderateImagePrompt\(accountId, apiToken, prompt\)/);
+  assert.match(route, /await moderateGeneratedImage\(accountId, apiToken, imageDataUrl\)/);
+  assert.match(route, /safetyChecked: true/);
+});
