@@ -45,7 +45,7 @@ async function moderatePrompt(accountId, apiToken, prompt) {
     messages: [{ role: "user", content: prompt }],
     temperature: 0,
     max_tokens: 128,
-  }, 9000);
+  }, 8000);
   const verdict = parseGuardVerdict(result.response || result.result || result);
   if (!verdict) throw new Error("Prompt safety could not be verified.");
   if (!verdict.safe) throw Object.assign(new Error("This image request is not allowed by Aahana's image safety rules."), { status: 400 });
@@ -65,7 +65,7 @@ async function moderateImage(accountId, apiToken, imageDataUrl) {
     }],
     temperature: 0,
     max_tokens: 160,
-  }, 11000);
+  }, 8000);
   const verdict = parseVisualSafetyVerdict(result.response || result.result || "");
   if (!verdict) throw new Error("Image safety could not be verified.");
   if (!verdict.safe) throw Object.assign(new Error("This image cannot be processed because it did not pass Aahana's image safety check."), { status: 400 });
@@ -73,14 +73,32 @@ async function moderateImage(accountId, apiToken, imageDataUrl) {
 
 async function getProviderImageDataUrl(url) {
   if (!isSafeProviderImageUrl(url)) throw new Error("The image provider returned an untrusted image URL.");
-  const response = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(20000) });
+  const response = await fetch(url, { cache: "no-store", redirect: "error", signal: AbortSignal.timeout(10000) });
   if (!response.ok) throw new Error("The processed image could not be retrieved.");
   const contentType = response.headers.get("content-type")?.split(";")[0]?.toLowerCase();
   if (!["image/jpeg", "image/png", "image/webp"].includes(contentType)) throw new Error("The image provider returned an unsupported format.");
   const declaredLength = Number(response.headers.get("content-length") || 0);
   if (declaredLength > IMAGE_WORKFLOW_LIMITS.outputMaxBytes) throw new Error("The processed image is too large to return.");
-  const bytes = Buffer.from(await response.arrayBuffer());
-  if (!bytes.length || bytes.length > IMAGE_WORKFLOW_LIMITS.outputMaxBytes) throw new Error("The processed image is too large to return.");
+  if (!response.body) throw new Error("The processed image could not be retrieved.");
+  const reader = response.body.getReader();
+  const chunks = [];
+  let totalBytes = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      totalBytes += value.byteLength;
+      if (totalBytes > IMAGE_WORKFLOW_LIMITS.outputMaxBytes) {
+        await reader.cancel();
+        throw new Error("The processed image is too large to return.");
+      }
+      chunks.push(Buffer.from(value));
+    }
+  } finally {
+    reader.releaseLock();
+  }
+  if (!totalBytes) throw new Error("The processed image could not be retrieved.");
+  const bytes = Buffer.concat(chunks, totalBytes);
   return `data:${contentType};base64,${bytes.toString("base64")}`;
 }
 
@@ -127,7 +145,7 @@ export async function POST(request) {
         prompt: `Apply only the requested changes: ${prompt}\nPreserve the original subject identity, count, pose, framing, composition, background, lighting, colors, and all details not explicitly requested to change. Do not add text, objects, people, logos, or watermarks.`,
         images: [inputDataUrl],
         resolution: "1k",
-      }, 32000);
+      }, 26000);
     } else {
       result = await runCloudflare(accountId, apiToken, UPSCALE_MODEL, {
         image: inputDataUrl,
