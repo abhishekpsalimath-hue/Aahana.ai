@@ -120,6 +120,7 @@ export async function POST(request) {
         writesPerformed: workspacePreview.writesPerformed,
         sandboxStarted: workspacePreview.sandboxStarted,
         contractCheck: workspacePreview.contractCheck,
+        checkPlan: workspacePreview.checkPlan,
       },
       projectId,
       snapshotFileCount: currentFiles.length,
