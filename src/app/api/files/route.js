@@ -90,7 +90,8 @@ export async function DELETE(request) {
 
   const ownedPaths = (rows || []).map((row) => row.object_path);
   if (ownedPaths.length) {
-    const { error: storageError } = await supabase.storage.from(BUCKET).remove(paths);
+    // Only remove paths backed by this user's verified metadata records; never trust unverified client paths.
+    const { error: storageError } = await supabase.storage.from(BUCKET).remove(ownedPaths);
     if (storageError) return NextResponse.json({ error: "Could not clean up uploaded files." }, { status: 500 });
     const { error: deleteError } = await supabase.from("user_files").delete().eq("user_id", user.id).in("object_path", ownedPaths);
     if (deleteError) return NextResponse.json({ error: "Files were removed from storage but metadata cleanup failed." }, { status: 500 });
