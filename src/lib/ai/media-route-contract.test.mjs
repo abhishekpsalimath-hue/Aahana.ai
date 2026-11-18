@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 const route = readFileSync(new URL("../../app/api/videos/generate/route.js", import.meta.url), "utf8");
+const downloadRoute = readFileSync(new URL("../../app/api/videos/download/route.js", import.meta.url), "utf8");
 const workspace = readFileSync(new URL("../../app/assistant-workspace.jsx", import.meta.url), "utf8");
 const styles = readFileSync(new URL("../../app/globals.css", import.meta.url), "utf8");
 
@@ -23,12 +24,23 @@ test("video endpoint extracts the signed URL from supported Cloudflare response 
   assert.match(route, /payload\?\.video/);
 });
 
-test("assistant exposes video creation, quality and duration controls", () => {
+test("video downloads require authentication, a trusted host and block redirects", () => {
+  const auth = downloadRoute.indexOf("supabase.auth.getUser()");
+  const provider = downloadRoute.indexOf("await fetch(");
+  assert.ok(auth >= 0 && provider > auth);
+  assert.match(downloadRoute, /isTrustedGeneratedVideoUrl/);
+  assert.match(downloadRoute, /redirect:\s*"error"/);
+  assert.match(downloadRoute, /Content-Disposition/);
+  assert.match(downloadRoute, /AbortSignal.timeout/);
+});
+
+test("assistant exposes video creation, quality, duration and download controls", () => {
   assert.match(workspace, /isVideoGenerationRequest/);
   assert.match(workspace, /Generate video/);
   assert.match(workspace, /value="fhd"/);
   assert.match(workspace, /videoDuration/);
   assert.match(workspace, /generatedVideo/);
+  assert.match(workspace, /api\/videos\/download/);
 });
 
 test("Aahana typography uses the distinctive display and interface font pair", () => {
