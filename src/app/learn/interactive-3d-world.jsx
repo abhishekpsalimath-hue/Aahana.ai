@@ -429,7 +429,8 @@ function createThreeScene(canvas,id,selectedPlanet=null,heartFlow="body",labStat
   camera.position.set(0, 0, environment.cameraZ);
 
   // Subject-specific three-point lighting: warm key, calibrated fill and rim.
-  scene.add(new THREE.HemisphereLight(environment.sky, environment.ground, environment.hemisphere));
+  const hemisphere = new THREE.HemisphereLight(environment.sky, environment.ground, environment.hemisphere);
+  scene.add(hemisphere);
   const key = new THREE.DirectionalLight(environment.key, environment.keyIntensity);
   key.position.set(-3.5, 4.5, 5);
   key.castShadow = !compactDevice;
@@ -453,12 +454,13 @@ function createThreeScene(canvas,id,selectedPlanet=null,heartFlow="body",labStat
   const accent = new THREE.PointLight(environment.accent, environment.accentIntensity, 18, 2);
   accent.position.set(-4, -1, 3);
   scene.add(accent);
-  const stars = environment.stars ? addStars(scene) : null;
+  const stars = addStars(scene);
+  stars.visible = environment.stars;
   const group = new THREE.Group();
   scene.add(group);
   makeSceneModel(group, id, selectedPlanet, heartFlow, labState);
   const labModelKey = id === "molecule" ? JSON.stringify([labState.chemistryMolecule, labState.chemistryFocus, labState.chemistryShowBonds]) : (id === "cell" || id === "plant-cell") ? String(labState.cellFocus || "all") : id === "heart" ? String(heartFlow) : "";
-  const state = { renderer, scene, camera, group, id, selectedPlanet, heartFlow, labModelKey, stars, environment, width: 0, height: 0 };
+  const state = { renderer, scene, camera, group, id, selectedPlanet, heartFlow, labModelKey, stars, environment, hemisphere, key, fill, rim, accent, width: 0, height: 0 };
   threeScenes.set(canvas,state);return state;
 }
 function clearSceneGroup(group) {
@@ -482,6 +484,24 @@ function renderThreeScene(canvas, id, yaw, pitch, zoom, time = 0, selectedPlanet
       }
       return;
     }
+  }
+  const environment = getSceneEnvironment(id);
+  if (state.environment !== environment) {
+    state.environment = environment;
+    state.scene.background = new THREE.Color(environment.background);
+    state.scene.fog = new THREE.FogExp2(environment.fog, environment.fogDensity);
+    state.hemisphere.color.setHex(environment.sky);
+    state.hemisphere.groundColor.setHex(environment.ground);
+    state.hemisphere.intensity = environment.hemisphere;
+    state.key.color.setHex(environment.key);
+    state.key.intensity = environment.keyIntensity;
+    state.fill.color.setHex(environment.fill);
+    state.fill.intensity = environment.fillIntensity;
+    state.rim.color.setHex(environment.rim);
+    state.rim.intensity = environment.rimIntensity;
+    state.accent.color.setHex(environment.accent);
+    state.accent.intensity = environment.accentIntensity;
+    state.stars.visible = environment.stars;
   }
   const labModelKey = id === "molecule" ? JSON.stringify([labState.chemistryMolecule, labState.chemistryFocus, labState.chemistryShowBonds]) : (id === "cell" || id === "plant-cell") ? String(labState.cellFocus || "all") : id === "heart" ? String(heartFlow) : "";
   if (state.id !== id || state.selectedPlanet !== selectedPlanet || state.labModelKey !== labModelKey) {
