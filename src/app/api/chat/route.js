@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { logSystemEvent, recordUserOpsEvent } from "@/lib/operations/server";
 import { buildResearchQuery, rankAndDedupeResearchResults } from "@/lib/research/research-policy.mjs";
 import { getGradeLearningCurriculum } from "@/lib/learning/curriculum-engine.js";
+import { selectRelevantProjectFiles } from "@/lib/learning/project-source-policy.mjs";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -256,9 +257,10 @@ export async function POST(request) {
         const textFiles = projectFiles.filter((file) =>
           ["text/plain", "text/markdown", "text/csv"].includes(file.mime_type)
         );
+        const selectedTextFiles = selectRelevantProjectFiles(prompt, textFiles, 8);
         const sourceParts = [];
         let totalCharacters = 0;
-        for (const file of textFiles.slice(0, 8)) {
+        for (const file of selectedTextFiles) {
           if (totalCharacters >= 60000) break;
           if (file.bucket_id !== "aahana-private" ||
               typeof file.object_path !== "string" ||
@@ -284,7 +286,7 @@ export async function POST(request) {
           const manifest = [
             `Text files successfully loaded: ${sourceParts.length} of ${textFiles.length} eligible text files.`,
             `Total project files listed: ${projectFiles.length}. Non-text or unsupported files were not read: ${projectFiles.length - textFiles.length}.`,
-            `Limits: newest 8 eligible text files, up to 20,000 characters per file and 60,000 characters overall. A file may be truncated.`,
+            `Limits: 8 most relevant eligible text files (filename matches first; recent upload order breaks ties), up to 20,000 characters per file and 60,000 characters overall. A file may be truncated.`,
             "Loaded file manifest:",
             ...sourceParts.map((file) => `- ${file.filename} (${file.mimeType}, ${file.sizeBytes} bytes, ${file.content.length} characters loaded)`),
           ];
