@@ -28,7 +28,7 @@ export async function executeBuildTask({
   entrypoint,
   projectId,
   sandboxName,
-  SandboxClient = Sandbox,
+  SandboxClient,
 }) {
   const workspaceFiles = validateWorkspaceFiles(files);
   const { manifest, hasDependencies } = validatePackageManifest(workspaceFiles);
@@ -60,7 +60,7 @@ export async function executeBuildTask({
     } else {
       throw new Error("Only JavaScript and Python entrypoints are supported.");
     }
-    args = [safeEntrypoint];
+    args = ["--", safeEntrypoint];
   }
 
   const Client = SandboxClient || (await import("@vercel/sandbox")).Sandbox;
