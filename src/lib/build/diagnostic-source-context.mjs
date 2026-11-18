@@ -26,7 +26,7 @@ export function attachDiagnosticSourceContext(diagnostics, files) {
     const path = normalizePath(item?.file);
     const source = path ? sourceByPath.get(path) : null;
     const line = Number.isInteger(item?.line) && item.line > 0 ? item.line : null;
-    if (source === null || line === null) return Object.freeze({ ...item, sourceContext: null });
+    if (source == null || line === null) return Object.freeze({ ...item, sourceContext: null });
 
     const lines = source.split(/\r?\n/);
     if (line > lines.length) return Object.freeze({ ...item, sourceContext: null });
