@@ -142,3 +142,16 @@ test("3D chemistry and cell updates preserve selected lab state across renderer 
   assert.match(world, /offsets=\[-\.055,\.055\]/);
   assert.match(world, /p:\[\.72,\.72,\.72\]/);
 });
+
+
+test("chemistry 3D lab includes molecule-specific retrieval checks and retry hints", () => {
+  const world = readFileSync(new URL("../../app/learn/interactive-3d-world.jsx", import.meta.url), "utf8");
+  assert.match(world, /const chemistryChecks = \{/);
+  for (const molecule of ["water", "carbonDioxide", "methane", "ammonia"]) {
+    assert.match(world, new RegExp(molecule + ": \\{[\\s\\S]*?question:"));
+  }
+  assert.match(world, /Quick knowledge check/);
+  assert.match(world, /activeChemistryCheck\.hint/);
+  assert.match(world, /activeChemistryCheck\.explanation/);
+  assert.match(world, /setLabCheckAnswer\(null\)/);
+});
