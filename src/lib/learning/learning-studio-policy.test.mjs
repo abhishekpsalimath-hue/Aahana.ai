@@ -281,23 +281,15 @@ test("animated lessons include a friendly companion that celebrates discovery wi
 });
 
  
-test("interactive Solar System explorer offers eight selectable worlds, facts, orbit times and accessible controls", () => {
-  assert.match(studio, /function SpaceExplorer\(\{ selectedPlanet, onSelectPlanet \}\)/);
-  assert.match(studio, /const spaceWorlds = \[/);
-  assert.match(studio, /role="group" aria-label="Choose a planet"/);
-  assert.match(studio, /aria-pressed=\{selected === planet\.id\}/);
-  assert.match(studio, /const \[selectedPlanet, setSelectedPlanet\] = useState\(null\)/);
-  assert.equal(studio.includes("<SpaceExplorer selectedPlanet="), false);
-  assert.equal(studio.includes("<Interactive3DWorld selectedPlanet="), false);
-  assert.match(studio, /aria-live="polite"/);
-  assert.match(studio, /onSelectPlanet\(id\)/);
-  for (const planet of ["Mercury", "Venus", "Earth", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune"]) {
-    assert.ok(studio.includes('name: "' + planet + '"'), "Missing Solar System destination: " + planet);
-  }
-  assert.match(studio, /not a scale model/);
-  assert.match(styles, /\.space-planet-choice\.active/);
-  assert.match(styles, /@keyframes space-sun-pulse/);
-  assert.match(styles, /prefers-reduced-motion:reduce/);
+test("Student Mode mounts the interactive 3D Solar System as part of the learning experience", () => {
+  assert.match(studio, /const \[selectedPlanet, setSelectedPlanet\] = useState\("earth"\)/);
+  assert.match(studio, /<Interactive3DWorld selectedPlanet=\{selectedPlanet\}/);
+  assert.equal(studio.includes("<SpaceExplorer"), false);
+  assert.match(world, /function pickSolarSystemPlanet\(/);
+  assert.match(world, /new THREE\.Raycaster\(\)/);
+  assert.match(world, /onSelectedPlanetChange\(planetId\)/);
+  assert.match(world, /learning-planet-picker/);
+  for (const planet of ["mercury", "venus", "earth", "mars", "jupiter", "saturn", "uranus", "neptune"]) assert.ok(world.includes(`id: "${planet}"`));
 });
 
 
