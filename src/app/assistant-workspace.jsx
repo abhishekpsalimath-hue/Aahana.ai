@@ -33,6 +33,54 @@ const spaceStars = [
   { startX: "48px", startY: "-56px", endX: "43vw", endY: "-50vh", delay: "-2s", size: "2px" },
   { startX: "-76px", startY: "22px", endX: "-61vw", endY: "23vh", delay: "-11s", size: "2px" },
   { startX: "74px", startY: "-24px", endX: "62vw", endY: "-20vh", delay: "-12s", size: "3px" },
+  { startX: "-156px", startY: "-92px", endX: "-76vw", endY: "-58vh", delay: "-0.8s", size: "2px" },
+  { startX: "158px", startY: "94px", endX: "78vw", endY: "60vh", delay: "-2.8s", size: "2px" },
+  { startX: "-118px", startY: "138px", endX: "-58vw", endY: "72vh", delay: "-4.8s", size: "3px" },
+  { startX: "120px", startY: "-140px", endX: "60vw", endY: "-74vh", delay: "-6.8s", size: "2px" },
+  { startX: "-176px", startY: "18px", endX: "-82vw", endY: "12vh", delay: "-8.8s", size: "2px" },
+  { startX: "178px", startY: "-20px", endX: "84vw", endY: "-14vh", delay: "-10.8s", size: "3px" },
+  { startX: "-48px", startY: "-158px", endX: "-24vw", endY: "-78vh", delay: "-1.8s", size: "2px" },
+  { startX: "50px", startY: "160px", endX: "26vw", endY: "80vh", delay: "-3.8s", size: "2px" },
+  { startX: "-188px", startY: "-58px", endX: "-86vw", endY: "-38vh", delay: "-5.8s", size: "2px" },
+  { startX: "190px", startY: "60px", endX: "88vw", endY: "40vh", delay: "-7.8s", size: "3px" },
+  { startX: "-98px", startY: "166px", endX: "-48vw", endY: "82vh", delay: "-9.8s", size: "2px" },
+  { startX: "100px", startY: "-168px", endX: "50vw", endY: "-84vh", delay: "-11.8s", size: "2px" },
+  { startX: "-204px", startY: "86px", endX: "-92vw", endY: "54vh", delay: "-0.4s", size: "2px" },
+  { startX: "206px", startY: "-88px", endX: "94vw", endY: "-56vh", delay: "-2.4s", size: "3px" },
+  { startX: "-12px", startY: "-184px", endX: "-6vw", endY: "-88vh", delay: "-4.4s", size: "2px" },
+  { startX: "14px", startY: "186px", endX: "8vw", endY: "90vh", delay: "-6.4s", size: "2px" },
+  { startX: "-164px", startY: "-126px", endX: "-78vw", endY: "-72vh", delay: "-8.4s", size: "3px" },
+  { startX: "166px", startY: "128px", endX: "80vw", endY: "74vh", delay: "-10.4s", size: "2px" },
+  { startX: "-216px", startY: "-8px", endX: "-96vw", endY: "-4vh", delay: "-1.4s", size: "2px" },
+  { startX: "218px", startY: "10px", endX: "98vw", endY: "6vh", delay: "-3.4s", size: "2px" },
+  { startX: "-72px", startY: "192px", endX: "-34vw", endY: "92vh", delay: "-5.4s", size: "3px" },
+  { startX: "74px", startY: "-194px", endX: "36vw", endY: "-94vh", delay: "-7.4s", size: "2px" },
+  { startX: "-194px", startY: "116px", endX: "-90vw", endY: "68vh", delay: "-9.4s", size: "2px" },
+  { startX: "196px", startY: "-118px", endX: "92vw", endY: "-70vh", delay: "-11.4s", size: "3px" },
+  { startX: "-90px", startY: "-44px", endX: "-48vw", endY: "-55vh", delay: "-2.5s", size: "2px" },
+  { startX: "96px", startY: "48px", endX: "57vw", endY: "54vh", delay: "-4.5s", size: "2px" },
+  { startX: "-38px", startY: "82px", endX: "-34vw", endY: "58vh", delay: "-6.5s", size: "2px" },
+  { startX: "42px", startY: "-88px", endX: "28vw", endY: "-58vh", delay: "-8.5s", size: "3px" },
+  { startX: "-104px", startY: "4px", endX: "-64vw", endY: "4vh", delay: "-10.5s", size: "2px" },
+  { startX: "108px", startY: "-6px", endX: "66vw", endY: "-6vh", delay: "-1.5s", size: "2px" },
+  { startX: "-58px", startY: "-96px", endX: "-22vw", endY: "-60vh", delay: "-3.5s", size: "2px" },
+  { startX: "66px", startY: "96px", endX: "22vw", endY: "62vh", delay: "-5.5s", size: "3px" },
+  { startX: "-112px", startY: "62px", endX: "-62vw", endY: "40vh", delay: "-7.5s", size: "2px" },
+  { startX: "116px", startY: "-62px", endX: "64vw", endY: "-40vh", delay: "-9.5s", size: "2px" },
+  { startX: "-4px", startY: "-108px", endX: "-4vw", endY: "-62vh", delay: "-11.5s", size: "3px" },
+  { startX: "6px", startY: "112px", endX: "6vw", endY: "64vh", delay: "-2.2s", size: "2px" },
+  { startX: "-126px", startY: "-26px", endX: "-68vw", endY: "-18vh", delay: "-4.2s", size: "2px" },
+  { startX: "128px", startY: "26px", endX: "68vw", endY: "18vh", delay: "-6.2s", size: "2px" },
+  { startX: "-82px", startY: "112px", endX: "-42vw", endY: "64vh", delay: "-8.2s", size: "3px" },
+  { startX: "84px", startY: "-114px", endX: "42vw", endY: "-64vh", delay: "-10.2s", size: "2px" },
+  { startX: "-138px", startY: "-74px", endX: "-70vw", endY: "-48vh", delay: "-1.2s", size: "2px" },
+  { startX: "140px", startY: "74px", endX: "70vw", endY: "48vh", delay: "-3.2s", size: "3px" },
+  { startX: "-28px", startY: "132px", endX: "-14vw", endY: "68vh", delay: "-5.2s", size: "2px" },
+  { startX: "30px", startY: "-134px", endX: "14vw", endY: "-68vh", delay: "-7.2s", size: "2px" },
+  { startX: "-148px", startY: "32px", endX: "-72vw", endY: "22vh", delay: "-9.2s", size: "2px" },
+  { startX: "150px", startY: "-32px", endX: "72vw", endY: "-22vh", delay: "-11.2s", size: "3px" },
+  { startX: "-72px", startY: "-142px", endX: "-36vw", endY: "-70vh", delay: "-2.8s", size: "2px" },
+  { startX: "74px", startY: "144px", endX: "36vw", endY: "70vh", delay: "-4.8s", size: "2px" },
 ];
 
 function renderInlineMarkdown(value, prefix) {
@@ -245,10 +293,18 @@ function evaluateArithmetic(input) {
 export default function Home({ userEmail = "", aiEnabled = false }) {
   const router = useRouter();
   const conversationEndRef = useRef(null);
+  const activeChatRequestRef = useRef(null);
   const [mode, setMode] = useState("solve");
   const [prompt, setPrompt] = useState("");
   const [imageFile, setImageFile] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [showLoginWelcome, setShowLoginWelcome] = useState(true);
+  const [dissolvingLoginWelcome, setDissolvingLoginWelcome] = useState(false);
+  useEffect(() => {
+    const dissolveTimer = window.setTimeout(() => setDissolvingLoginWelcome(true), 3000);
+    const removeTimer = window.setTimeout(() => setShowLoginWelcome(false), 3900);
+    return () => { window.clearTimeout(dissolveTimer); window.clearTimeout(removeTimer); };
+  }, []);
   useEffect(() => {
     if (messages.length) conversationEndRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
   }, [messages]);
@@ -751,6 +807,10 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     printWindow.document.close();
   }
 
+  function stopGeneration() {
+    activeChatRequestRef.current?.abort();
+  }
+
   async function submitPrompt(event) {
     event.preventDefault();
     const text = prompt.trim();
@@ -827,11 +887,14 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     setImageFile(null);
     setMessages((current) => [...current, userMessage, assistantMessage]);
 
+    const controller = new AbortController();
+    activeChatRequestRef.current = controller;
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: text || "Please identify and describe this image in detail.", image: imageDataUrl ? { dataUrl: imageDataUrl } : null, mode, conversationId, projectId: selectedProjectId }),
+        signal: controller.signal,
       });
 
       if (!response.ok) {
@@ -874,6 +937,12 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       ));
       setHistory([]);
     } catch (err) {
+      if (err?.name === "AbortError") {
+        setMessages((current) => current.map((item, index) => index === current.length - 1 && item.role === "assistant"
+          ? { ...item, content: item.content ? `${item.content}\n\nStopped.` : "Response stopped." }
+          : item));
+        return;
+      }
       setMessages((current) => {
         const last = current[current.length - 1];
         if (last?.role !== "assistant") return current;
@@ -884,6 +953,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       });
       setError(err.message || "Something went wrong. Please try again.");
     } finally {
+      if (activeChatRequestRef.current === controller) activeChatRequestRef.current = null;
       setBusy(false);
     }
   }
@@ -892,7 +962,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     <main className="shell">
       <aside className="sidebar">
         <a className="brand" href="/" aria-label="Aahana AI home">
-          <span className="brand-word">Aahana</span><span className="brand-ai">AI</span>
+          <span className="brand-word">Aahana</span><span className="brand-ai" aria-label="AI">ai</span>
         </a>
         <button className="new-chat" type="button" onClick={newConversation}>
           <span aria-hidden="true">＋</span> New conversation
@@ -1084,33 +1154,13 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         )}
 
         <div className="welcome">
-          {!messages.length && (
-            <div className="astronaut-float" aria-hidden="true">
-              <svg viewBox="0 0 180 180" role="presentation">
-                <defs>
-                  <linearGradient id="astronautSuit" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#fffaff" /><stop offset="1" stopColor="#b9a6d8" /></linearGradient>
-                  <linearGradient id="astronautGlass" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#51466f" /><stop offset="1" stopColor="#171426" /></linearGradient>
-                </defs>
-                <ellipse cx="91" cy="151" rx="42" ry="8" fill="#b89bfa" opacity=".14" />
-                <g transform="rotate(-22 90 88)">
-                  <path d="M56 83 38 96 29 116 39 121 57 105" fill="url(#astronautSuit)" stroke="#a994c7" strokeWidth="3" strokeLinejoin="round" />
-                  <path d="M119 84 139 93 151 111 142 118 121 104" fill="url(#astronautSuit)" stroke="#a994c7" strokeWidth="3" strokeLinejoin="round" />
-                  <rect x="117" y="75" width="23" height="48" rx="9" fill="#a58cc9" stroke="#e9ddff" strokeWidth="2" />
-                  <path d="M67 111 61 137 76 141 91 119" fill="url(#astronautSuit)" stroke="#a994c7" strokeWidth="3" strokeLinejoin="round" />
-                  <path d="M98 116 107 140 124 137 119 108" fill="url(#astronautSuit)" stroke="#a994c7" strokeWidth="3" strokeLinejoin="round" />
-                  <path d="M60 77 Q58 62 70 54 L111 54 Q124 64 121 83 L117 116 Q90 130 63 113Z" fill="url(#astronautSuit)" stroke="#a994c7" strokeWidth="3" />
-                  <rect x="70" y="86" width="39" height="17" rx="8" fill="#8e72bb" opacity=".9" />
-                  <circle cx="90" cy="58" r="35" fill="url(#astronautSuit)" stroke="#f4ecff" strokeWidth="4" />
-                  <circle cx="90" cy="58" r="27" fill="url(#astronautGlass)" stroke="#8f7bb4" strokeWidth="3" />
-                  <path d="M73 47 Q83 31 104 39" fill="none" stroke="#d8caff" strokeWidth="4" strokeLinecap="round" opacity=".75" />
-                  <circle cx="108" cy="68" r="3" fill="#c7b2ff" opacity=".85" />
-                  <path d="M31 117 42 120 38 129 27 126Z M141 116 151 111 157 121 147 128Z" fill="#d7c9ec" stroke="#9c86bd" strokeWidth="2" />
-                  <path d="M72 141 81 143 80 149 67 149Z M108 140 120 137 127 145 112 149Z" fill="#d9c9ef" stroke="#9c86bd" strokeWidth="2" />
-                  <circle cx="72" cy="90" r="3" fill="#c7aaff" /><circle cx="105" cy="90" r="3" fill="#c7aaff" />
-                </g>
-                <path d="M25 55l3 7 7 3-7 3-3 7-3-7-7-3 7-3Z M148 42l2 5 5 2-5 2-2 5-2-5-5-2 5-2Z" fill="#d8c5ff" />
-                <circle cx="143" cy="142" r="3" fill="#c7aaff" /><circle cx="38" cy="39" r="2" fill="#fff" />
-              </svg>
+          {showLoginWelcome && !messages.length && (
+            <div className={dissolvingLoginWelcome ? "founder-welcome-note is-dissolving" : "founder-welcome-note"} role="status" aria-live="polite" aria-label="I'm happy to welcome you on this journey, Abhishekayya Salimath.">
+              <p>
+                <span className="welcome-line welcome-line-one">I'm happy to welcome you</span>
+                <span className="welcome-line welcome-line-two">on this journey,</span>
+              </p>
+              <strong>Abhishekayya Salimath</strong>
             </div>
           )}
           <div className="welcome-signal" aria-hidden="true">
@@ -1122,8 +1172,8 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
           </div>
           <div className="eyebrow"><span /> YOUR THINKING SPACE</div>
           {!messages.length && <>
-            <h1>Welcome to Aahana<br /><em>your space.</em></h1>
-            <p>Think freely. Explore ideas. Build something real.</p>
+            <h1 className="welcome-headline"><span className="headline-line headline-line-one">Good ideas</span><em className="headline-line headline-line-two">start somewhere.</em></h1>
+            <p>Meet <strong>Aahana AI</strong> — a personal project built around curiosity, creativity, and the belief that every good idea deserves room to grow.</p>
           </>}
 
           <div className="mode-row" role="tablist" aria-label="Choose a mode">
@@ -1230,6 +1280,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
               placeholder={aiEnabled ? "What would you like to work on today?" : "Try a calculation, e.g. 2 + 2 (offline)"} rows={3} disabled={busy} />
             <div className="composer-footer">
               <span className="composer-mode">{modes.find((item) => item.id === mode)?.hint} · Enter to send · Shift + Enter for a new line</span>
+              {busy && activeChatRequestRef.current && <button className="copy-message stop-generation" type="button" onClick={stopGeneration} aria-label="Stop Aahana's response" title="Stop response">Stop</button>}
               <button className={`send send-orb${busy || imageGenerating ? " is-thinking" : ""}`} type="submit" disabled={(!prompt.trim() && !imageFile) || busy || imageGenerating || (!aiEnabled && !imageFile && !isImageGenerationRequest(prompt.trim()) && evaluateArithmetic(prompt.trim()) === null)} aria-label={busy || imageGenerating ? "Aahana is working" : "Launch your message"} title={busy || imageGenerating ? "Aahana is working" : "Launch your message"}><span className="send-orb-halo" aria-hidden="true" /><svg className="send-rocket" viewBox="0 0 32 32" aria-hidden="true"><path className="rocket-flame" d="M12 21.5c-2.1 1.2-3.3 3.2-3.4 5.1 2-.1 4-1.3 5.1-3.4" /><path className="rocket-body" d="M12.2 19.8c-1.3-4.9 1.1-11.1 8.8-15.6 1.3 8.8-1.8 14-6.6 16.5l-2.2-.9Z" /><path className="rocket-window" d="M18.7 10.1a2.1 2.1 0 1 0 0 4.2 2.1 2.1 0 0 0 0-4.2Z" /><path className="rocket-fin" d="m12.4 15.8-4.1 1.4 1.1 4.1 4.1-2.2m5.2-6.9 2.2-4.1 4.1 1.1-1.4 4.1" /></svg><span className="send-orb-thinking" aria-hidden="true"><i /><i /><i /></span></button>
             </div>
           </form>
