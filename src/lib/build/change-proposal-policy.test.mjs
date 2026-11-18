@@ -134,6 +134,29 @@ test("rejects binaries, unsupported files and credential-like filenames", () => 
   }
 });
 
+test("rejects case-colliding paths across snapshots and proposals", () => {
+  assert.throws(() => validateChangeProposal({
+    currentFiles: [
+      { path: "src/App.js", content: "one" },
+      { path: "src/app.js", content: "two" },
+    ],
+    changes: [{ path: "src/other.js", action: "create", baseSha256: null, content: "x" }],
+  }), /case-colliding paths/);
+
+  assert.throws(() => validateChangeProposal({
+    currentFiles: [{ path: "src/app.js", content: "one" }],
+    changes: [{ path: "src/App.js", action: "create", baseSha256: null, content: "two" }],
+  }), /conflicts by path case/);
+
+  assert.throws(() => validateChangeProposal({
+    currentFiles: [],
+    changes: [
+      { path: "src/App.js", action: "create", baseSha256: null, content: "one" },
+      { path: "src/app.js", action: "create", baseSha256: null, content: "two" },
+    ],
+  }), /case-colliding paths/);
+});
+
 test("rejects duplicate paths in the supplied project snapshot", () => {
   assert.throws(() => validateChangeProposal({
     currentFiles: [
