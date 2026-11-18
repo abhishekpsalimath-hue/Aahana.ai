@@ -29,9 +29,15 @@ export function selectRelevantProjectFiles(prompt, files, limit = 8) {
   const ranked = (Array.isArray(files) ? files : []).map((file, index) => {
     const filename = String(file?.original_filename || "");
     const filenameTokens = tokens(filename);
+    const contentTokens = tokens(String(file?.content || "").slice(0, 40000));
     let score = coreFileScore(filename);
+    let contentMatches = 0;
     for (const token of promptTokens) {
       if (filenameTokens.has(token)) score += 40;
+      else if (contentMatches < 10 && contentTokens.has(token)) {
+        score += 2;
+        contentMatches += 1;
+      }
     }
     return { file, index, score };
   });
