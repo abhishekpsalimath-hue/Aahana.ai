@@ -12,7 +12,6 @@ on:
       - "src/app/api/chat/route.js"
       - "src/app/api/build/**"
       - "src/app/api/files/**"
-      - "src/app/api/build/**"
       - "src/app/assistant-workspace.jsx"
       - "src/app/learn/**"
       - "src/lib/learning/**"
@@ -37,6 +36,8 @@ on:
       - "src/app/api/voice/speech/route.js"
       - "src/app/api/voice/capabilities/route.js"
       - "src/app/api/chat/route.js"
+      - "src/app/api/build/**"
+      - "src/app/api/files/**"
       - "src/app/learn/**"
       - "src/lib/learning/**"
       - "src/lib/build/**"
@@ -81,6 +82,8 @@ jobs:
         run: node --test ../../src/lib/learning/learning-studio-policy.test.mjs
       - name: Test private learning journey memory
         run: node --test ../../src/lib/learning/learning-memory.test.mjs
+      - name: Test relevant project source selection
+        run: node --test ../../src/lib/learning/project-source-policy.test.mjs
       - name: Test unified Creator Studio cloud workspace
         run: node --test ../../src/lib/learning/creator-workspace-model.test.mjs ../../src/lib/studio/project-engine.test.mjs
       - name: Syntax-check authenticated learning journey API
@@ -109,6 +112,8 @@ jobs:
         run: node --check ../../src/app/api/build/proposal/route.js
       - name: Syntax-check authenticated AI proposal draft route
         run: node --check ../../src/app/api/build/draft/route.js
+      - name: Syntax-check project source selection policy
+        run: node --check ../../src/lib/learning/project-source-policy.mjs
       - name: Syntax-check authenticated Build Engine status route
         run: node --check ../../src/app/api/build/status/route.js
       - name: Syntax-check authenticated file API
