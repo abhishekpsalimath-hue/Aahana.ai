@@ -25,7 +25,9 @@ on:
       - "src/app/api/images/edit/route.js"
       - "src/app/learn/native-motion-studio.jsx"
       - "src/lib/studio/motion-engine.*"
-      - "src/lib/studio/native-motion-studio.test.mjs src/lib/learning/project-upload-policy.test.mjs src/lib/assistant/code-file-policy.test.mjs"
+      - "src/lib/studio/native-motion-studio.test.mjs"
+      - "src/lib/learning/project-upload-policy.*"
+      - "src/lib/assistant/code-file-policy.*"
       - ".github/workflows/student-quiz-guards.yml"
   pull_request:
     paths:
@@ -45,6 +47,8 @@ on:
       - "src/lib/learning/learning-studio-policy.test.mjs"
       - "src/lib/learning/student-journey-ui.test.mjs"
       - "src/lib/studio/native-motion-studio.test.mjs"
+      - "src/lib/learning/project-upload-policy.*"
+      - "src/lib/assistant/code-file-policy.*"
       - ".github/workflows/student-quiz-guards.yml"
   workflow_dispatch:
 
@@ -62,6 +66,6 @@ jobs:
         with:
           node-version: 22
       - name: Run Student Mode journey and quiz tests
-        run: node --test src/lib/learning/learning-studio-policy.test.mjs src/lib/learning/quiz-bank-policy.test.mjs src/lib/learning/student-journey-ui.test.mjs src/lib/learning/student-cinematic-exam-readiness.test.mjs src/lib/studio/image-engine.test.mjs src/lib/studio/image-edit.test.mjs src/lib/studio/motion-engine.test.mjs src/lib/studio/native-motion-studio.test.mjs
+        run: node --test src/lib/learning/learning-studio-policy.test.mjs src/lib/learning/quiz-bank-policy.test.mjs src/lib/learning/student-journey-ui.test.mjs src/lib/learning/student-cinematic-exam-readiness.test.mjs src/lib/studio/image-engine.test.mjs src/lib/studio/image-edit.test.mjs src/lib/studio/motion-engine.test.mjs src/lib/studio/native-motion-studio.test.mjs src/lib/learning/project-upload-policy.test.mjs src/lib/assistant/code-file-policy.test.mjs
       - name: Syntax-check learning and image-edit APIs
         run: node --check src/app/api/chat/route.js && node --check src/app/api/images/edit/route.js
