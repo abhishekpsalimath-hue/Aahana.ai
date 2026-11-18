@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { prepareChangeProposalDraft } from "@/lib/build/proposal-draft-policy.mjs";
-import { validateChangeProposal } from "@/lib/build/change-proposal-policy.mjs";
+import { prepareValidatedProposal } from "@/lib/build/proposal-generation-policy.mjs";
 import { toProposalSnapshotPath } from "@/lib/build/proposal-snapshot-policy.mjs";
 import { selectRelevantProjectFiles } from "@/lib/learning/project-source-policy.mjs";
 
@@ -157,6 +156,9 @@ export async function POST(request) {
   }
 
   const provider = (process.env.AAHANA_AI_PROVIDER || "groq").toLowerCase();
+  if (!["groq", "vercel"].includes(provider)) {
+    return NextResponse.json({ error: "The configured AI provider is not supported for code proposals." }, { status: 503 });
+  }
   const isGroq = provider === "groq";
   // Provider credentials must come only from server configuration, never request headers.
   const providerKey = isGroq
@@ -253,23 +255,13 @@ export async function POST(request) {
 
   try {
     const draft = JSON.parse(modelContent);
-    if (Array.isArray(draft?.changes)) {
-      for (const change of draft.changes) {
-        if (change?.action === "update" || change?.action === "delete") {
-          if (!modelVisiblePaths.has(change.path)) {
-            throw new Error("Aahana cannot safely update a file whose complete source was not included in the proposal context: " + String(change.path || "unknown path"));
-          }
-        }
-      }
-    }
-    const normalizedDraft = prepareChangeProposalDraft({ currentFiles, draft });
-    const proposal = validateChangeProposal({
+    const proposal = prepareValidatedProposal({
       currentFiles,
-      changes: normalizedDraft.changes,
+      modelVisiblePaths,
+      draft,
     });
     return NextResponse.json({
       ...proposal,
-      summary: normalizedDraft.summary,
       projectId,
       snapshotFileCount: currentFiles.length,
       snapshotBytes: totalBytes,
