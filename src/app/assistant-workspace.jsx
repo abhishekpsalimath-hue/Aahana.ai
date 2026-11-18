@@ -102,11 +102,34 @@ function renderAssistantContent(content) {
     if (match.index > lastIndex) appendProse(source.slice(lastIndex, match.index));
     const code = match[2].replace(/\n$/, "");
     const label = match[1].trim() || "Code";
+    const filePath = label.split(/\s+/).slice(1).join(" ");
+    const safeFilePath = filePath
+      && !filePath.startsWith("/")
+      && !filePath.split("/").some((part) => !part || part === "." || part === "..")
+      && /^[A-Za-z0-9._/-]+$/.test(filePath)
+      ? filePath
+      : null;
     nodes.push(
       <section className="assistant-code-block" key={key++}>
         <div className="assistant-code-heading">
           <span>{label}</span>
-          <button type="button" onClick={() => navigator.clipboard?.writeText(code).catch(() => {})}>Copy code</button>
+          <div className="assistant-code-actions">
+            {safeFilePath && (
+              <button type="button" onClick={() => {
+                const blob = new Blob([code], { type: "text/plain;charset=utf-8" });
+                const url = URL.createObjectURL(blob);
+                const anchor = document.createElement("a");
+                anchor.href = url;
+                anchor.download = safeFilePath.split("/").pop();
+                anchor.rel = "noopener";
+                document.body.appendChild(anchor);
+                anchor.click();
+                anchor.remove();
+                window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+              }}>Download file</button>
+            )}
+            <button type="button" onClick={() => navigator.clipboard?.writeText(code).catch(() => {})}>Copy code</button>
+          </div>
         </div>
         <pre><code>{code}</code></pre>
       </section>
