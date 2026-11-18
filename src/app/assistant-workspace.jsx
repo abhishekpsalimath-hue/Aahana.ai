@@ -294,6 +294,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [generatedVideo, setGeneratedVideo] = useState(null);
   const [videoDuration, setVideoDuration] = useState(5);
   const [videoResolution, setVideoResolution] = useState("fhd");
+  const [videoAspectRatio, setVideoAspectRatio] = useState("16:9");
   const [videoGenerateAudio, setVideoGenerateAudio] = useState(true);
   const [memoryOpen, setMemoryOpen] = useState(false);
   const [memoryEnabled, setMemoryEnabled] = useState(false);
@@ -771,7 +772,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       const response = await fetch("/api/videos/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: videoPrompt, duration: videoDuration, resolution: videoResolution, generateAudio: videoGenerateAudio }),
+        body: JSON.stringify({ prompt: videoPrompt, duration: videoDuration, resolution: videoResolution, aspectRatio: videoAspectRatio, generateAudio: videoGenerateAudio }),
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || "Could not generate the video.");
@@ -1287,6 +1288,13 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                 <select aria-label="Video quality" value={videoResolution} onChange={(event) => setVideoResolution(event.target.value)} disabled={videoGenerating || busy}>
                   <option value="hd">HD</option>
                   <option value="fhd">Full HD</option>
+                </select>
+              </label>
+              <label className="video-setting">Format
+                <select aria-label="Video aspect ratio" value={videoAspectRatio} onChange={(event) => setVideoAspectRatio(event.target.value)} disabled={videoGenerating || busy}>
+                  <option value="16:9">Landscape · 16:9</option>
+                  <option value="9:16">Portrait · 9:16</option>
+                  <option value="1:1">Square · 1:1</option>
                 </select>
               </label>
               <label className="video-audio-setting">
