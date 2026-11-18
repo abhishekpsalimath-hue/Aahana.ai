@@ -16,6 +16,7 @@ const label = (value = "") => value.replaceAll("_", " ").replace(/\b\w/g, (c) =>
 export default function OperationsPage() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [accessError, setAccessError] = useState("");
   const [busy, setBusy] = useState(false);
   const [runningTaskId, setRunningTaskId] = useState("");
   const [error, setError] = useState("");
@@ -51,6 +52,14 @@ export default function OperationsPage() {
       return;
     }
     setUser(currentUser);
+    const accessResponse = await fetch("/api/founder-access", { cache: "no-store" });
+    const accessPayload = await accessResponse.json().catch(() => ({}));
+    if (!accessResponse.ok || accessPayload.allowed !== true) {
+      setAccessError(accessPayload.error || "This workspace is private to its founder.");
+      setLoading(false);
+      return;
+    }
+    setAccessError("");
     const [response, briefResponse, projectResponse] = await Promise.all([
       fetch("/api/operations", { cache: "no-store" }),
       fetch("/api/executives/brief", { cache: "no-store" }),
@@ -191,7 +200,8 @@ export default function OperationsPage() {
   }
 
   if (loading) return <main className="ops-page"><div className="ops-loading">Loading Aahana Operations…</div></main>;
-  if (!user) return <main className="ops-page"><section className="ops-auth"><div className="ops-eyebrow">AAHANA / OPERATIONS</div><h1>Your executive workspace</h1><p>Sign in to view your private operations workspace.</p><Link href="/login" className="ops-primary">Sign in</Link></section></main>;
+  if (!user) return <main className="ops-page"><section className="ops-auth"><div className="ops-eyebrow">PRIVATE FOUNDER WORKSPACE</div><h1>Your executive workspace</h1><p>Sign in to access your private founder command centre.</p><Link href="/login" className="ops-primary">Sign in</Link></section></main>;
+  if (accessError) return <main className="ops-page"><section className="ops-auth"><div className="ops-eyebrow">PRIVATE / FOUNDER ONLY</div><h1>Access restricted</h1><p>{accessError}</p><Link href="/" className="ops-primary">Back to Aahana</Link></section></main>;
 
   return (
     <main className="ops-page">
