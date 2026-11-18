@@ -53,7 +53,8 @@ export default function NativeImageStudio() {
       return;
     }
     setReferenceImage(file);
-    setGeneratedImage("");\n    setStatus("Photo loaded locally. It will only be sent for editing when you press Transform my photo.");
+    setGeneratedImage("");
+    setStatus("Photo loaded locally. It will only be sent for editing when you press Transform my photo.");
   }
 
   const safePinterestUrl = (() => { try { const url = new URL(referenceUrl); return ["pinterest.com", "www.pinterest.com", "pin.it"].includes(url.hostname) && url.protocol === "https:" ? url.href : ""; } catch { return ""; } })();
@@ -72,13 +73,27 @@ export default function NativeImageStudio() {
     } catch (error) { setStatus(error?.message || "Could not read this LUT file."); }
   }
 
-  async function transformReferenceImage() {\n    if (!referenceImage || editing || generating) return;\n    setEditing(true);\n    setStatus("Transforming your uploaded photo while preserving the original person and composition…");\n    try {\n      const prepared = await prepareImageForEditing(referenceImage);
+  async function transformReferenceImage() {
+    if (!referenceImage || editing || generating) return;
+    setEditing(true);
+    setStatus("Transforming your uploaded photo while preserving the original person and composition…");
+    try {
+      const prepared = await prepareImageForEditing(referenceImage);
       const response = await fetch("/api/images/edit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...prepared, style: editStyle }),
       });
-      const result = await response.json().catch(() => ({}));\n      if (!response.ok || !result.imageDataUrl) throw new Error(result.error || "Photo transformation is unavailable right now.");\n      setGeneratedImage(result.imageDataUrl);\n      setStatus("Your photo has been transformed from the uploaded image. The source photo, identity and composition were supplied to the image-edit model.");\n    } catch (error) {\n      setStatus(error?.message || "Could not transform this photo. Your original upload remains unchanged.");\n    } finally { setEditing(false); }\n  }\n\n  async function generateInspiredImage() {
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || !result.imageDataUrl) throw new Error(result.error || "Photo transformation is unavailable right now.");
+      setGeneratedImage(result.imageDataUrl);
+      setStatus("Your photo has been transformed from the uploaded image. The source photo, identity and composition were supplied to the image-edit model.");
+    } catch (error) {
+      setStatus(error?.message || "Could not transform this photo. Your original upload remains unchanged.");
+    } finally { setEditing(false); }
+  }
+
+  async function generateInspiredImage() {
     const prompt = buildPinterestInspiredPrompt({ title: scene.layers.find((layer) => layer.type === "text")?.text || "Original creative", notes: visualNotes, style: visualStyle });
     if (!prompt) { setStatus("Describe the visual direction you want Aahana to create."); return; }
     setGenerating(true);
@@ -143,7 +158,9 @@ export default function NativeImageStudio() {
         <div className="native-image-canvas"><img src={generatedImage || previewUrl} style={{ filter: generatedImage ? gradeFilter : "none" }} alt={generatedImage ? "AI-generated or image-edited result" : "Live preview of your editable vector composition"} /></div>
         <div className="native-image-controls">
           <div className="native-image-inspiration"><strong>Pinterest inspiration</strong><label>Reference link (optional)<input type="url" value={referenceUrl} onChange={(event) => setReferenceUrl(event.target.value)} placeholder="Paste a Pinterest pin URL" /></label>{safePinterestUrl && <a href={safePinterestUrl} target="_blank" rel="noopener noreferrer">Open Pinterest reference</a>}{referenceUrl && !safePinterestUrl && <small>Enter a valid HTTPS Pinterest or pin.it link.</small>}<label>Upload your photo<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => chooseReferenceImage(event.target.files?.[0])} /></label>{referencePreview && <div className="native-image-reference-preview"><img src={referencePreview} alt="Your original photo, kept unchanged" /><button type="button" onClick={() => { setReferenceImage(null); setGeneratedImage(""); }}>Remove photo</button></div>}<div className="native-image-edit-panel"><strong>Transform your actual photo</strong><p>Keep the same person, face, pose and scene. Change only the artistic treatment.</p><label>Transformation style<select value={editStyle} onChange={(event) => setEditStyle(event.target.value)}><option value="cartoon">Full-frame cartoon illustration</option><option value="anime">Anime illustration</option><option value="comic">Comic-book art</option><option value="3d-animation">3D animated-film look</option><option value="watercolor">Watercolour painting</option></select></label><button type="button" onClick={transformReferenceImage} disabled={!referenceImage || editing || generating}>{editing ? "Transforming photo…" : "Transform my photo"}</button><small>Uses image-to-image editing. It is not the same as generating a new cartoon character or sticker. The photo is resized to a maximum 512px input for the editor and sent only when you press the button. Each edit may incur Cloudflare Workers AI usage charges.</small></div><label>Creative direction<select value={visualStyle} onChange={(event) => setVisualStyle(event.target.value)}><option value="editorial">Editorial & premium</option><option value="education">Education & learning</option><option value="cinematic">Cinematic & dramatic</option><option value="minimal">Minimal & clean</option><option value="playful">Playful illustration</option><option value="product">Product & brand campaign</option><option value="social">Social media poster</option></select></label><label>What do you like about it?<textarea value={visualNotes} onChange={(event) => setVisualNotes(event.target.value)} maxLength={1200} placeholder="Describe colours, layout, typography, lighting, mood and subject. Aahana creates an original design from these notes." /></label><button type="button" onClick={generateInspiredImage} disabled={generating || editing || !visualNotes.trim()}>{generating ? "Creating…" : "Generate original image"}</button><small>The current image model receives only your written direction. Links and uploaded images stay in this browser and are not visually analysed yet. Use references you have permission to use.</small>{generatedImage && <button type="button" onClick={exportGeneratedImage}>Export generated image</button>}</div>
-          <label>Colour grade<select value={colorGrade} onChange={(event) => setColorGrade(event.target.value)}>{COLOR_GRADES.map((grade) => <option key={grade.id} value={grade.id}>{grade.label}</option>)}</select></label>\n          <label>Import 3D LUT (.cube)<input type="file" accept=".cube,text/plain" onChange={(event) => loadCubeLut(event.target.files?.[0])} /></label>\n          {cubeLut && <div className="native-image-lut-status"><span>{cubeLut.name} · {cubeLut.size}³</span><button type="button" onClick={() => { setCubeLut(null); setStatus("Custom LUT removed."); }}>Remove LUT</button></div>}
+          <label>Colour grade<select value={colorGrade} onChange={(event) => setColorGrade(event.target.value)}>{COLOR_GRADES.map((grade) => <option key={grade.id} value={grade.id}>{grade.label}</option>)}</select></label>
+          <label>Import 3D LUT (.cube)<input type="file" accept=".cube,text/plain" onChange={(event) => loadCubeLut(event.target.files?.[0])} /></label>
+          {cubeLut && <div className="native-image-lut-status"><span>{cubeLut.name} · {cubeLut.size}³</span><button type="button" onClick={() => { setCubeLut(null); setStatus("Custom LUT removed."); }}>Remove LUT</button></div>}
           <label>Canvas background<input type="color" value={scene.background} onChange={(event) => setScene((current) => ({ ...current, background: event.target.value }))} /></label>
           <div className="native-image-add"><button type="button" onClick={() => addLayer("text")}>+ Text</button><button type="button" onClick={() => addLayer("circle")}>+ Circle</button><button type="button" onClick={() => addLayer("rect")}>+ Shape</button></div>
           <strong>Layers · {scene.layers.length}/100</strong>
