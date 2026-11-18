@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import * as THREE from "three";
-import { getSceneEnvironment } from "../../../lib/learning/scene-environment.mjs";
+import { getSceneEnvironment } from "../../lib/learning/scene-environment.mjs";
 import worldTopology from "world-atlas/countries-110m.json";
 import { feature } from "topojson-client";
 
