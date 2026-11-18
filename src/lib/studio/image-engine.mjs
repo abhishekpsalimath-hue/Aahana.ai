@@ -61,18 +61,29 @@ export function createImageScene({ title = "Aahana Studio", subtitle = "Ideas, m
 }
 
 
-export function buildPinterestInspiredPrompt({ title = "Original creative", notes = "" } = {}) {
+const VISUAL_STYLE_GUIDANCE = {
+  editorial: "premium editorial art direction, confident typography hierarchy, refined negative space, art-book composition",
+  education: "clear educational infographic design, memorable visual metaphors, readable hierarchy, accurate subject-focused illustration",
+  cinematic: "cinematic lighting, atmospheric depth, dramatic framing, rich but controlled contrast",
+  minimal: "minimalist composition, generous whitespace, restrained palette, precise alignment",
+  playful: "playful contemporary illustration, friendly shapes, expressive colour, approachable visual storytelling",
+  product: "premium product campaign art direction, polished studio lighting, clear product focus, refined brand presentation",
+  social: "high-impact social poster composition, strong focal point, mobile-first readability, bold visual hierarchy"
+};
+
+export function buildPinterestInspiredPrompt({ title = "Original creative", notes = "", style = "editorial" } = {}) {
   const cleanTitle = String(title).trim().slice(0, 160);
   const cleanNotes = String(notes).trim().replace(/https?:\/\/\S+/gi, "").slice(0, 1200);
   if (!cleanNotes) return "";
+  const styleGuidance = VISUAL_STYLE_GUIDANCE[style] || VISUAL_STYLE_GUIDANCE.editorial;
   return [
     "Create an original, polished visual design. Do not reproduce or imitate any existing artwork, logo, character, or exact composition.",
     `Creative subject: ${cleanTitle || "Original creative"}.`,
     `Art direction supplied by the user: ${cleanNotes}`,
+    `Creative direction: ${styleGuidance}.`,
     "Use the reference only as high-level inspiration for mood, colour relationships, visual hierarchy and general design sensibility. Make the layout, details and artwork distinct and original. No watermarks, no copied branding, no fake text; leave clean space for typography where appropriate."
   ].join("\n");
 }
-
 
 export function sanitizePinterestReferenceUrl(value = "") {
   try {
