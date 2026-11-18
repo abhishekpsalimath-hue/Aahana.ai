@@ -86,7 +86,7 @@ test("resolves tsconfig paths aliases and baseUrl imports conservatively", () =>
       'import exact from "@exact";',
       'import helper from "lib/helper";',
       'import external from "react";',
-    ].join("\\n") },
+    ].join("\n") },
     { path: "src/components/card.tsx", content: "export default function Card() {}" },
     { path: "src/components/button/index.tsx", content: "export default function Button() {}" },
     { path: "src/lib/exact.js", content: "export default 1;" },
@@ -106,7 +106,7 @@ test("resolves tsconfig paths aliases and baseUrl imports conservatively", () =>
 test("uses jsconfig when tsconfig is absent and leaves unknown aliases unresolved", () => {
   const files = [
     { path: "jsconfig.json", content: JSON.stringify({ compilerOptions: { baseUrl: ".", paths: { "~/*": ["app/*"] } } }) },
-    { path: "src/page.js", content: 'import Known from "~/known";\\nimport Unknown from "~/missing";' },
+    { path: "src/page.js", content: 'import Known from "~/known";\nimport Unknown from "~/missing";' },
     { path: "app/known.js", content: "export default 1;" },
   ];
   const graph = analyzeProjectDependencies(files);
