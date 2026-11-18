@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import * as THREE from "three";
+import { getSceneEnvironment } from "../../../lib/learning/scene-environment.mjs";
 import worldTopology from "world-atlas/countries-110m.json";
 import { feature } from "topojson-client";
 
@@ -420,15 +421,16 @@ function createThreeScene(canvas,id,selectedPlanet=null,heartFlow="body",labStat
   renderer.shadowMap.enabled = !compactDevice;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
+  const environment = getSceneEnvironment(id);
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x090d19);
-  scene.fog = new THREE.FogExp2(0x090d19, 0.0085);
+  scene.background = new THREE.Color(environment.background);
+  scene.fog = new THREE.FogExp2(environment.fog, environment.fogDensity);
   const camera = new THREE.PerspectiveCamera(36, 1, .1, 100);
-  camera.position.set(0, 0, 5.8);
+  camera.position.set(0, 0, environment.cameraZ);
 
-  // Three-point documentary lighting: warm key, cool fill and a clean rim.
-  scene.add(new THREE.HemisphereLight(0xc7ddff, 0x171321, 1.65));
-  const key = new THREE.DirectionalLight(0xffe6c8, 3.15);
+  // Subject-specific three-point lighting: warm key, calibrated fill and rim.
+  scene.add(new THREE.HemisphereLight(environment.sky, environment.ground, environment.hemisphere));
+  const key = new THREE.DirectionalLight(environment.key, environment.keyIntensity);
   key.position.set(-3.5, 4.5, 5);
   key.castShadow = !compactDevice;
   key.shadow.mapSize.set(1024, 1024);
@@ -442,21 +444,21 @@ function createThreeScene(canvas,id,selectedPlanet=null,heartFlow="body",labStat
   key.shadow.normalBias = .025;
   scene.add(key);
 
-  const fill = new THREE.DirectionalLight(0x8dbbff, 1.05);
+  const fill = new THREE.DirectionalLight(environment.fill, environment.fillIntensity);
   fill.position.set(4, 1.5, 4);
   scene.add(fill);
-  const rim = new THREE.DirectionalLight(0x8b91ff, 2.25);
+  const rim = new THREE.DirectionalLight(environment.rim, environment.rimIntensity);
   rim.position.set(4, -2, -4);
   scene.add(rim);
-  const accent = new THREE.PointLight(0x6f9fff, .7, 18, 2);
+  const accent = new THREE.PointLight(environment.accent, environment.accentIntensity, 18, 2);
   accent.position.set(-4, -1, 3);
   scene.add(accent);
-  const stars = addStars(scene);
+  const stars = environment.stars ? addStars(scene) : null;
   const group = new THREE.Group();
   scene.add(group);
   makeSceneModel(group, id, selectedPlanet, heartFlow, labState);
   const labModelKey = id === "molecule" ? JSON.stringify([labState.chemistryMolecule, labState.chemistryFocus, labState.chemistryShowBonds]) : (id === "cell" || id === "plant-cell") ? String(labState.cellFocus || "all") : id === "heart" ? String(heartFlow) : "";
-  const state = { renderer, scene, camera, group, id, selectedPlanet, heartFlow, labModelKey, stars, width: 0, height: 0 };
+  const state = { renderer, scene, camera, group, id, selectedPlanet, heartFlow, labModelKey, stars, environment, width: 0, height: 0 };
   threeScenes.set(canvas,state);return state;
 }
 function clearSceneGroup(group) {
@@ -506,7 +508,7 @@ function renderThreeScene(canvas, id, yaw, pitch, zoom, time = 0, selectedPlanet
   }
 
   state.group.rotation.set(pitch, yaw + (id === "solar-system" ? time * .000025 : time * .000012), 0);
-  state.stars.rotation.y = time * .000008;
+  if (state.stars) state.stars.rotation.y = time * .000008;
   // A very restrained moving accent keeps the scene alive without distracting
   // from the concept or changing the learner's camera orientation.
   const accentLight = state.scene.children.find((child) => child.isPointLight);
@@ -526,8 +528,8 @@ function renderThreeScene(canvas, id, yaw, pitch, zoom, time = 0, selectedPlanet
   });
 
   const baseCamera = id === "solar-system"
-    ? selectedPlanet ? 4.25 : Math.max(5.8, 11.8 / Math.max(state.camera.aspect, .65))
-    : 5.8;
+    ? selectedPlanet ? 4.25 : Math.max(state.environment.cameraZ, 11.8 / Math.max(state.camera.aspect, .65))
+    : state.environment.cameraZ;
   state.camera.position.z = baseCamera / zoom;
   state.camera.updateProjectionMatrix();
   state.scene.updateMatrixWorld(true);
