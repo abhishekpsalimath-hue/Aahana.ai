@@ -47,7 +47,7 @@ test("Image Studio exposes a dedicated photo transformation action", async () =>
 });
 
 test("recognises attached-photo cartoon requests without misclassifying normal chat", () => {
-  assert.equal(isImageEditRequest("convert my image into cartoon", true), true);
+  assert.equal(isImageEditRequest("convert my image into cartoon", true), true);\n  assert.equal(isImageEditRequest("create a cartoon from this photo", true), true);
   assert.equal(isImageEditRequest("turn this photo into an anime illustration", true), true);
   assert.equal(isImageEditRequest("what is in this photo?", true), false);
   assert.equal(isImageEditRequest("convert my image into cartoon", false), false);
