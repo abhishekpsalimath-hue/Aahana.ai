@@ -141,5 +141,6 @@ test("Image Studio offers a local original-photo colour-grade export without an 
   const localExport = source.slice(source.indexOf("async function exportOriginalPhotoWithLocalGrade"), source.indexOf("function exportSvg"));
   assert.match(localExport, /URL\.createObjectURL\(referenceImage\)/);
   assert.match(localExport, /applyCubeLutToImageData/);
+  assert.match(localExport, /setTimeout\(\(\) => URL\.revokeObjectURL\(downloadUrl\), 1000\)/);
   assert.doesNotMatch(localExport, /fetch\(/);
 });
