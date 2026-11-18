@@ -45,3 +45,14 @@ test("the agreed six learning paths remain unchanged", () => {
     assert.ok(studio.includes("id: " + mode), "Missing path " + mode);
   }
 });
+
+
+test("Play & Solve gives each learner a personalised revision list and spaced-practice steps", () => {
+  assert.match(studio, /const firstTryCorrect =/);
+  assert.match(studio, /const reviewQuestions =/);
+  assert.match(studio, /Personal revision guide/);
+  assert.match(studio, /Your next discoveries to strengthen/);
+  assert.match(studio, /Tomorrow/);
+  assert.match(studio, /In 3 days/);
+  assert.match(studio, /In 7 days/);
+});
