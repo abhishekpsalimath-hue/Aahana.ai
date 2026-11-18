@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { executeBuildTask } from "@/lib/build/build-engine.mjs";
 import { validateWorkspaceFiles } from "@/lib/build/sandbox-policy.mjs";
+import { authorizeWorkspaceExecution, createWorkspaceDigest } from "@/lib/build/workspace-approval-policy.mjs";
 
 export const runtime = "nodejs";
 export const maxDuration = 180;
@@ -91,6 +92,29 @@ export async function POST(request) {
     if (!files.some((file) => file.path === "package.json")) {
       return NextResponse.json({ error: "This project needs a package.json file before Aahana can run its build or tests." }, { status: 400 });
     }
+
+    if (!body?.approval) {
+      return NextResponse.json({
+        approvalRequired: true,
+        projectId,
+        operation,
+        workspaceDigest: createWorkspaceDigest(files),
+        sourceFileCount: files.length,
+        sourceBytes: totalBytes,
+        message: "Review this exact source snapshot and explicitly approve before Aahana starts the isolated Sandbox.",
+      }, { status: 409, headers: { "Cache-Control": "private, no-store" } });
+    }
+
+    authorizeWorkspaceExecution({
+      userId: user.id,
+      projectOwnerId: user.id,
+      projectId,
+      approval: body.approval,
+      files,
+      operation,
+      entrypoint: undefined,
+    });
+
     const result = await executeBuildTask({
       files,
       operation,
