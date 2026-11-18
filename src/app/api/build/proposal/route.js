@@ -20,6 +20,28 @@ function toWorkspacePath(filename) {
   return SOURCE_EXTENSIONS.test(extension) ? path : null;
 }
 
+async function readJsonBody(request, maxBytes) {
+  const reader = request.body?.getReader();
+  if (!reader) throw new Error("Invalid proposal request.");
+  const decoder = new TextDecoder();
+  let bodyText = "";
+  let bytesRead = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    bytesRead += value.byteLength;
+    if (bytesRead > maxBytes) {
+      await reader.cancel().catch(() => {});
+      const error = new Error("Proposal requests must be 4 MB or smaller.");
+      error.status = 413;
+      throw error;
+    }
+    bodyText += decoder.decode(value, { stream: true });
+  }
+  bodyText += decoder.decode();
+  return JSON.parse(bodyText);
+}
+
 export async function POST(request) {
   const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -33,8 +55,11 @@ export async function POST(request) {
   }
 
   let body;
-  try { body = await request.json(); } catch {
-    return NextResponse.json({ error: "Invalid proposal request." }, { status: 400 });
+  try { body = await readJsonBody(request, MAX_REQUEST_BYTES); } catch (error) {
+    return NextResponse.json(
+      { error: error?.status === 413 ? error.message : "Invalid proposal request." },
+      { status: error?.status || 400 },
+    );
   }
 
   const projectId = typeof body?.projectId === "string" ? body.projectId : "";
