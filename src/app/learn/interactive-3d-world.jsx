@@ -444,7 +444,7 @@ function clearSceneGroup(group) {
     if(object.material){const materials=Array.isArray(object.material)?object.material:[object.material];materials.forEach(material=>{material.map?.dispose();material.dispose();});}
   });
 }
-function renderThreeScene(canvas, id, yaw, pitch, zoom, time = 0, selectedPlanet = null) {
+function renderThreeScene(canvas, id, yaw, pitch, zoom, time = 0, selectedPlanet = null, orbitSpeedMultiplier = 1) {
   let state = threeScenes.get(canvas);
   if (!state) {
     state = createThreeScene(canvas, id, selectedPlanet);
@@ -493,7 +493,7 @@ function renderThreeScene(canvas, id, yaw, pitch, zoom, time = 0, selectedPlanet
   }
   state.group.children.forEach((child) => {
     if (typeof child.userData?.orbitSpeed === "number") {
-      child.rotation.y = time * child.userData.orbitSpeed + child.userData.orbitPhase;
+      child.rotation.y = time * child.userData.orbitSpeed * orbitSpeedMultiplier + child.userData.orbitPhase;
     }
     if (child.userData?.isSunCore) {
       const pulse = 1 + Math.sin(time * .0015) * .035;
@@ -871,7 +871,7 @@ function illuminateFace(color, brightness) {
 }
 
 function drawScene(canvas, modelId, yaw, pitch, zoom, ecosystem = {}, time = 0, selectedPlanet = null) {
-  renderThreeScene(canvas, modelId, yaw, pitch, zoom, time, selectedPlanet);
+  renderThreeScene(canvas, modelId, yaw, pitch, zoom, time, selectedPlanet, ecosystem.orbitSpeed ?? 1);
 }
 
 function animateScene(canvas, render) {
@@ -959,7 +959,7 @@ export default function Interactive3DWorld({ selectedPlanet, onSelectedPlanetCha
   const [rotation, setRotation] = useState({ yaw: -.55, pitch: -.22 });
   const [zoom, setZoom] = useState(1);
   const [conceptIndex, setConceptIndex] = useState(0);
-  const [ecosystem, setEcosystem] = useState({ rainfall: 70, waterSource: true, pollution: 15, engineCycle: "intake", physicsForce: 6, physicsFriction: 2, physicsMass: 2, chemistryMolecule: "water", chemistryFocus: "all", chemistryShowBonds: true, cellFocus: "all", bridgeLoad: "center" });
+  const [ecosystem, setEcosystem] = useState({ rainfall: 70, waterSource: true, pollution: 15, engineCycle: "intake", physicsForce: 6, physicsFriction: 2, physicsMass: 2, chemistryMolecule: "water", chemistryFocus: "all", chemistryShowBonds: true, orbitSpeed: 1, cellFocus: "all", bridgeLoad: "center" });
   const canvasRef = useRef(null);
   const dragRef = useRef(null);
   const model = models.find((item) => item.id === modelId) || models[0];
@@ -1021,6 +1021,15 @@ export default function Interactive3DWorld({ selectedPlanet, onSelectedPlanetCha
           {selectedPlanetInfo && <p className="learning-planet-stats">Diameter <strong>{selectedPlanetInfo.diameter}</strong><span>·</span> Average solar distance <strong>{selectedPlanetInfo.orbit}</strong></p>}
           {selectedPlanetInfo && <button type="button" className="learning-planet-back" onClick={() => { onSelectedPlanetChange(null); setRotation({ yaw: -.55, pitch: -.22 }); setZoom(1); }}>← Back to all eight planets</button>}
           {modelId === "solar-system" && !selectedPlanetInfo && <p className="learning-planet-instruction">Tap any planet in the 3D scene or choose its name below to enter its world.</p>}
+          {modelId === "solar-system" && !selectedPlanetInfo && <div className="learning-3d-experiment" aria-label="Planetary orbit experiment">
+            <span>EXPERIMENT WITH ORBITAL MOTION</span>
+            <p>Change the animation speed to compare how the planets move along their paths. This is an educational animation, not a real-time scale model of orbital periods.</p>
+            <div className="learning-3d-experiment-control"><label htmlFor="orbit-speed">Orbit animation: {ecosystem.orbitSpeed === 0 ? "Paused" : ecosystem.orbitSpeed.toFixed(1) + "× speed"}</label>
+              <input id="orbit-speed" type="range" min="0" max="3" step="0.5" value={ecosystem.orbitSpeed} onChange={(event) => setEcosystem((value) => ({ ...value, orbitSpeed: Number(event.target.value) }))} />
+            </div>
+            <p className="learning-3d-experiment-observation" aria-live="polite">{ecosystem.orbitSpeed === 0 ? "The orbital animation is paused. Notice how each planet stays on its orbital path." : "The animation is running. Inner planets complete their illustrated paths more quickly than outer planets, showing the difference in orbital periods."}</p>
+            <button type="button" onClick={() => setEcosystem((value) => ({ ...value, orbitSpeed: 1 }))}>Reset orbital speed</button>
+          </div>}
           {modelId === "solar-system" && <div className="learning-planet-picker" role="group" aria-label="Choose a planet">{solarPlanets.map((planet) => <button type="button" key={planet.id} className={selectedPlanet === planet.id ? "active" : ""} aria-pressed={selectedPlanet === planet.id} onClick={() => { onSelectedPlanetChange(planet.id); setRotation({ yaw: -.28, pitch: -.12 }); setZoom(1); }}>{planet.label}</button>)}</div>}
           {(modelId === "cell" || modelId === "plant-cell") && <div className="learning-3d-experiment" aria-label="Interactive cell biology lab">
             <span>EXPLORE CELL STRUCTURES</span>
