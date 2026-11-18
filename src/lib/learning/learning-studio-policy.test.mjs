@@ -318,6 +318,10 @@ test("Student Mode offers topic discovery and a multi-subject interactive 3D mod
   assert.match(world, /Choose a 3D model/);
   assert.match(world, /label: "Animal cell"/);
   assert.match(world, /label: "Force & motion cart"/);
+  assert.match(world, /ammonia: \{/);
+  assert.match(world, /Ammonia · NH₃/);
+  assert.match(world, /trigonal pyramidal/);
+  assert.match(world, /\["nitrogen", "Nitrogen"\]/);
 });
 
 test("the interactive 3D model lab remains available as a separately implemented component", () => {
