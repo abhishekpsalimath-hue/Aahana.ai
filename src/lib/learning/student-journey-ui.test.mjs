@@ -62,9 +62,13 @@ test("interactive 3D renderer uses adaptive quality, cinematic three-point light
   assert.match(world, /THREE\.PCFSoftShadowMap/);
   assert.match(world, /new THREE\.FogExp2/);
   assert.match(world, /new THREE\.HemisphereLight/);
-  assert.match(world, /new THREE\.DirectionalLight\(0xffe6c8/);
-  assert.match(world, /new THREE\.DirectionalLight\(0x8dbbff/);
-  assert.match(world, /new THREE\.PointLight\(0x6f9fff/);
+  assert.match(world, /getSceneEnvironment\(id\)/);
+  assert.match(world, /new THREE\.DirectionalLight\(environment\.key, environment\.keyIntensity\)/);
+  assert.match(world, /new THREE\.DirectionalLight\(environment\.fill, environment\.fillIntensity\)/);
+  assert.match(world, /new THREE\.DirectionalLight\(environment\.rim, environment\.rimIntensity\)/);
+  assert.match(world, /new THREE\.PointLight\(environment\.accent, environment\.accentIntensity/);
+  assert.match(world, /state\.scene\.background = new THREE\.Color\(environment\.background\)/);
+  assert.match(world, /state\.stars\.visible = environment\.stars/);
   assert.match(world, /accentLight\.intensity/);
 });
 
