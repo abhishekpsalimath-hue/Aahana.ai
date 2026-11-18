@@ -12,6 +12,7 @@ import {
 test("image workflow accepts only bounded base64 raster data URLs", () => {
   const encoded = Buffer.from("image-bytes").toString("base64");
   assert.equal(parseImageDataUrl("data:image/jpeg;base64," + encoded).mimeType, "image/jpeg");
+  assert.equal(parseImageDataUrl("data:image/webp;base64," + encoded), null);
   assert.equal(parseImageDataUrl("data:image/svg+xml;base64," + encoded), null);
   assert.equal(parseImageDataUrl("https://example.com/image.jpg"), null);
   assert.equal(parseImageDataUrl("data:image/jpeg;base64,%%%"), null);
