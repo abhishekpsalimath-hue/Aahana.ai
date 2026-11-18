@@ -11,17 +11,17 @@ function tokens(value) {
     String(value || "")
       .toLowerCase()
       .normalize("NFKC")
-      .match(/[\\p{L}\\p{N}]{2,}/gu)
+      .match(/[\p{L}\p{N}]{2,}/gu)
       ?.filter((token) => !STOP_WORDS.has(token)) || []
   );
 }
 
 function coreFileScore(filename) {
-  const normalized = String(filename || "").toLowerCase().replace(/\\\\/g, "/");
+  const normalized = String(filename || "").toLowerCase().replace(/\\/g, "/");
   const basename = normalized.split("/").pop();
   if (CORE_PROJECT_FILES.has(basename)) return 100;
-  if (/^(?:src\\/)?(?:app|pages)\\/(?:page|layout|index)\\.(?:js|jsx|ts|tsx)$/.test(normalized)) return 80;
-  if (/^(?:src\\/)?(?:main|index)\\.(?:js|jsx|ts|tsx)$/.test(normalized)) return 70;
+  if (/^(?:src\/)?(?:app|pages)\/(?:page|layout|index)\.(?:js|jsx|ts|tsx)$/.test(normalized)) return 80;
+  if (/^(?:src\/)?(?:main|index)\.(?:js|jsx|ts|tsx)$/.test(normalized)) return 70;
   return 0;
 }
 
