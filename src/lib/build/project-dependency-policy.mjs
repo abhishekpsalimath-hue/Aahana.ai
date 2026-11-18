@@ -224,11 +224,11 @@ function collectApiHandlerContracts(source, exports) {
     .filter((item) => methods.has(item.name))
     .map((item) => ({
       method: item.name,
-      readsJsonBody: /\\brequest\\s*\\.\\s*json\\s*\\(/.test(text),
-      readsFormData: /\\brequest\\s*\\.\\s*formData\\s*\\(/.test(text),
-      readsSearchParams: /\\b(?:request\\s*\\.\\s*nextUrl\\s*\\.\\s*searchParams|url\\s*\\.\\s*searchParams)/.test(text),
-      returnsJson: /\\b(?:NextResponse|Response)\\s*\\.\\s*json\\s*\\(/.test(text),
-      usesNextResponse: /\\bNextResponse\\s*\\.\\s*json\\s*\\(/.test(text),
+      readsJsonBody: /\brequest\s*\.\s*json\s*\(/.test(text),
+      readsFormData: /\brequest\s*\.\s*formData\s*\(/.test(text),
+      readsSearchParams: /\b(?:request\s*\.\s*nextUrl\s*\.\s*searchParams|url\s*\.\s*searchParams)/.test(text),
+      returnsJson: /\b(?:NextResponse|Response)\s*\.\s*json\s*\(/.test(text),
+      usesNextResponse: /\bNextResponse\s*\.\s*json\s*\(/.test(text),
     }));
 }
 
