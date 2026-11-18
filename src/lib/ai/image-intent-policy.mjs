@@ -16,7 +16,7 @@ const MULTILINGUAL_IMAGE_REQUEST = /(?:\b(?:tasveer|tasvir|chitra|chitram|billi|
 export function isWebsiteBuildRequest(value) {
   const text = String(value || "").normalize("NFKC").trim();
   if (!text || text.length > 8000) return false;
-  if (NON_BUILDING_CONTEXT.test(text) && !/\b(?:build|create|develop|implement|code)\\b/i.test(text)) return false;
+  if (NON_BUILDING_CONTEXT.test(text) && !/\b(?:build|create|develop|implement|code)\b/i.test(text)) return false;
   const directBuildRequest = WEBSITE_BUILD_ACTION.test(text) && WEBSITE_OBJECT.test(text);
   const statedNeed = /\b(?:i need|i want)\b/i.test(text) && WEBSITE_OBJECT.test(text);
   return directBuildRequest || statedNeed;
