@@ -805,8 +805,9 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
           index === current.length - 1 ? { ...item, content: "Your photo transformation is ready. The result was created from your uploaded image, not from a new character prompt." } : item
         ));
       } catch (err) {
+        setImageFile(sourceFile);
         setMessages((current) => current.map((item, index) =>
-          index === current.length - 1 ? { ...item, content: "I couldn't transform your uploaded photo. Your original image remains unchanged." } : item
+          index === current.length - 1 ? { ...item, content: "I couldn't transform your uploaded photo. Your original image is still attached so you can retry." } : item
         ));
         setError(err.message || "Image editing failed.");
       } finally {
