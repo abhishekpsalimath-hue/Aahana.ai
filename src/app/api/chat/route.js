@@ -335,7 +335,7 @@ export async function POST(request) {
           : "";
         let retrievedPages = [];
         try {
-          const wantsSiteDiscovery = Boolean(requestedUrl) && /\b(?:website|web site|whole site|entire site|all pages|all (?:of )?(?:the )?(?:website|site)|deep dive|deep-dive|explore|inspect|audit|documentation|docs|site structure|discover the site)\b/i.test(prompt);
+          const wantsSiteDiscovery = Boolean(requestedUrl) && /\b(?:website|web site|whole site|entire site|all pages|all (?:of )?(?:the )?(?:website|site)|deep dive|deep-dive|explore|inspect|audit|research|analy[sz]e|review|documentation|docs|site structure|discover the site)\b/i.test(prompt);
           if (wantsSiteDiscovery) {
             const parsedUrl = new URL(requestedUrl);
             if (parsedUrl.protocol !== "https:") throw new Error("Website research requires an HTTPS URL");
