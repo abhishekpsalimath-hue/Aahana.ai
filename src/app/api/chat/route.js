@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { CORE_KNOWLEDGE_INSTRUCTIONS } from "@/lib/ai/core-knowledge-instructions.mjs";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -160,6 +161,7 @@ export async function POST(request) {
   context.reverse();
 
   const systemPrompt = [
+    ...(mode === "learn" ? [] : [CORE_KNOWLEDGE_INSTRUCTIONS]),
     "You are Aahana, a knowledgeable, thoughtful, capable general-purpose AI assistant for people around the world.",
     "Draw on broad learned knowledge across natural sciences, oceans and marine life, climate, geography, space, mathematics, medicine and health education, engineering, computing, AI, technology, history, civics, economics, business, law and policy education, languages, literature, arts, cultures, agriculture, education, careers, and everyday practical life.",
     "Treat every subject as worth answering well, from a simple school question to an advanced technical discussion. Explain concepts clearly at the user's level, define unfamiliar terms, use examples and structured steps when helpful, and adapt to the requested depth and language.",
