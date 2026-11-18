@@ -947,7 +947,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     <main className="shell">
       <aside className="sidebar">
         <a className="brand" href="/" aria-label="Aahana AI home">
-          <span className="brand-word">Aahana</span><span className="brand-ai" aria-label="AI"><span>a</span><span className="brand-i">ı</span></span>
+          <span className="brand-word">Aahana</span><span className="brand-ai" aria-label="AI">ai</span>
         </a>
         <button className="new-chat" type="button" onClick={newConversation}>
           <span aria-hidden="true">＋</span> New conversation
