@@ -43,6 +43,19 @@ test("represents deletion as a reviewable diff and never as a write", () => {
   assert.equal(result.writesPerformed, false);
 });
 
+test("rejects no-op updates that would not change the project", () => {
+  const content = "const value = 1;\\n";
+  assert.throws(() => validateChangeProposal({
+    currentFiles: [{ path: "src/app.js", content }],
+    changes: [{
+      path: "src/app.js",
+      action: "update",
+      baseSha256: hash(content),
+      content,
+    }],
+  }), /must change the file content/);
+});
+
 test("rejects stale base hashes so proposals cannot overwrite newer user edits", () => {
   assert.throws(() => validateChangeProposal({
     currentFiles: [{ path: "src/app.js", content: "new user version" }],
