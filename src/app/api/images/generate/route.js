@@ -14,7 +14,7 @@ const VISION_MODEL = "@cf/meta/llama-4-scout-17b-16e-instruct";
 
 async function runSafetyModel(accountId, apiToken, model, input, timeoutMs) {
   const response = await fetch(
-    `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/ai/run/${MODEL}`,
+    `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/ai/run/${model}`,
     {
       method: "POST",
       headers: { Authorization: `Bearer ${apiToken}`, "Content-Type": "application/json" },
@@ -130,7 +130,7 @@ export async function POST(request) {
     await moderateImagePrompt(accountId, apiToken, prompt);
     const { prompt: finalPrompt, refined } = await refineImagePrompt(prompt);
     const response = await fetch(
-      `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/ai/run/${model}`,
+      `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/ai/run/${MODEL}`,
       {
         method: "POST",
         headers: {
