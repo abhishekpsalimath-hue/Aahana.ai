@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { createImageScene, renderImageSceneSvg, buildPinterestInspiredPrompt } from "@/lib/studio/image-engine.mjs";
+import { COLOR_GRADES, getColorGradeFilter } from "@/lib/studio/color-grading.mjs";
 
 const PALETTE = ["#342c35", "#b9a5d4", "#e9a8c2", "#dce8c8", "#f6b98e", "#ffffff"];
 
@@ -12,11 +13,13 @@ export default function NativeImageStudio() {
   const [referenceUrl, setReferenceUrl] = useState("");
   const [visualNotes, setVisualNotes] = useState("");
   const [visualStyle, setVisualStyle] = useState("editorial");
+  const [colorGrade, setColorGrade] = useState("none");
   const [generating, setGenerating] = useState(false);
   const [generatedImage, setGeneratedImage] = useState("");
   const [referenceImage, setReferenceImage] = useState(null);
   const [referencePreview, setReferencePreview] = useState("");
-  const svg = useMemo(() => renderImageSceneSvg(scene), [scene]);
+  const svg = useMemo(() => renderImageSceneSvg(scene, colorGrade), [scene, colorGrade]);
+  const gradeFilter = getColorGradeFilter(colorGrade);
   const previewUrl = useMemo(() => `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`, [svg]);
   useEffect(() => {
     if (!referenceImage) { setReferencePreview(""); return; }
@@ -79,7 +82,7 @@ export default function NativeImageStudio() {
     anchor.download = "aahana-creation.svg";
     anchor.click();
     URL.revokeObjectURL(url);
-    setStatus("SVG exported. This is an editable vector graphic, not an AI-generated photograph.");
+    setStatus(`SVG exported with ${COLOR_GRADES.find((grade) => grade.id === colorGrade)?.label || "Original"} grade. This is an editable vector graphic, not an AI-generated photograph.`);
   }
 
   const active = scene.layers[selected];
@@ -87,9 +90,10 @@ export default function NativeImageStudio() {
     <section className="native-image-studio" aria-label="Aahana native image studio">
       <div className="native-image-heading"><div><span>AAHANA CREATIVE ENGINE</span><h3>Image & Graphics Studio</h3><p>Build editable graphics or generate original artwork from a visual direction.</p></div><button type="button" onClick={exportSvg}>Export SVG</button></div>
       <div className="native-image-layout">
-        <div className="native-image-canvas"><img src={generatedImage || previewUrl} alt={generatedImage ? "AI-generated original image inspired by your written visual direction" : "Live preview of your editable vector composition"} /></div>
+        <div className="native-image-canvas"><img src={generatedImage || previewUrl} style={{ filter: generatedImage ? gradeFilter : "none" }} alt={generatedImage ? "AI-generated original image inspired by your written visual direction" : "Live preview of your editable vector composition"} /></div>
         <div className="native-image-controls">
           <div className="native-image-inspiration"><strong>Pinterest inspiration</strong><label>Reference link (optional)<input type="url" value={referenceUrl} onChange={(event) => setReferenceUrl(event.target.value)} placeholder="Paste a Pinterest pin URL" /></label>{safePinterestUrl && <a href={safePinterestUrl} target="_blank" rel="noopener noreferrer">Open Pinterest reference</a>}{referenceUrl && !safePinterestUrl && <small>Enter a valid HTTPS Pinterest or pin.it link.</small>}<label>Upload a reference image<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => chooseReferenceImage(event.target.files?.[0])} /></label>{referencePreview && <div className="native-image-reference-preview"><img src={referencePreview} alt="Your locally selected visual reference" /><button type="button" onClick={() => setReferenceImage(null)}>Remove reference</button></div>}<label>Creative direction<select value={visualStyle} onChange={(event) => setVisualStyle(event.target.value)}><option value="editorial">Editorial & premium</option><option value="education">Education & learning</option><option value="cinematic">Cinematic & dramatic</option><option value="minimal">Minimal & clean</option><option value="playful">Playful illustration</option><option value="product">Product & brand campaign</option><option value="social">Social media poster</option></select></label><label>What do you like about it?<textarea value={visualNotes} onChange={(event) => setVisualNotes(event.target.value)} maxLength={1200} placeholder="Describe colours, layout, typography, lighting, mood and subject. Aahana creates an original design from these notes." /></label><button type="button" onClick={generateInspiredImage} disabled={generating || !visualNotes.trim()}>{generating ? "Creating…" : "Generate original image"}</button><small>The current image model receives only your written direction. Links and uploaded images stay in this browser and are not visually analysed yet. Use references you have permission to use.</small>{generatedImage && <button type="button" onClick={exportGeneratedImage}>Export generated image</button>}</div>
+          <label>Colour grade<select value={colorGrade} onChange={(event) => setColorGrade(event.target.value)}>{COLOR_GRADES.map((grade) => <option key={grade.id} value={grade.id}>{grade.label}</option>)}</select></label>
           <label>Canvas background<input type="color" value={scene.background} onChange={(event) => setScene((current) => ({ ...current, background: event.target.value }))} /></label>
           <div className="native-image-add"><button type="button" onClick={() => addLayer("text")}>+ Text</button><button type="button" onClick={() => addLayer("circle")}>+ Circle</button><button type="button" onClick={() => addLayer("rect")}>+ Shape</button></div>
           <strong>Layers · {scene.layers.length}/100</strong>
