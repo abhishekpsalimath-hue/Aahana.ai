@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   analyzeProjectDependencies,
+  analyzeProjectContracts,
   selectProjectFilesWithDependencies,
 } from "./project-dependency-policy.mjs";
 
@@ -144,6 +145,43 @@ test("does not guess when the project alias configuration is invalid JSON", () =
   assert.equal(graph.dependencies.get("src/page.js").size, 0);
   assert.ok(graph.unresolved.some((item) => item.specifier === "@/components/alias"));
   assert.equal(graph.aliasConfig.invalid, true);
+});
+
+test("maps imported bindings to target exports and flags missing named exports", () => {
+  const files = [
+    { path: "src/page.tsx", content: [
+      'import Card, { type CardProps, formatName as format } from "@/components/card";',
+      'import { missingExport } from "@/components/card";',
+      'import * as utils from "@/lib/utils";',
+    ].join("\n") },
+    { path: "src/components/card.tsx", content: [
+      'export interface CardProps { title: string }',
+      'export function formatName(value: string) { return value; }',
+      'export default function Card({ title }: CardProps) { return title; }',
+    ].join("\n") },
+    { path: "src/lib/utils.ts", content: 'export const safe = true;' },
+    { path: "tsconfig.json", content: JSON.stringify({ compilerOptions: { baseUrl: ".", paths: { "@/*": ["src/*"] } } }) },
+  ];
+  const result = analyzeProjectContracts(files);
+  assert.ok(result.bindingRelationships.some((edge) => edge.imported === "default" && edge.to === "src/components/card.tsx"));
+  assert.ok(result.bindingRelationships.some((edge) => edge.imported === "CardProps" && edge.status === "matched"));
+  assert.ok(result.bindingRelationships.some((edge) => edge.imported === "formatName" && edge.local === "format"));
+  assert.ok(result.bindingRelationships.some((edge) => edge.imported === "*" && edge.to === "src/lib/utils.ts"));
+  assert.ok(result.unresolvedBindings.some((edge) => edge.imported === "missingExport"));
+  const card = result.modules.find((module) => module.path === "src/components/card.tsx");
+  assert.ok(card.exports.some((item) => item.name === "CardProps" && item.kind === "interface"));
+  assert.ok(card.propTypes.some((item) => item.component === "Card" && item.typeName === "CardProps"));
+});
+
+test("reports route handler exports and avoids inventing bindings for absent source files", () => {
+  const result = analyzeProjectContracts([
+    { path: "src/app/api/items/route.js", content: 'export async function GET() {}\\nexport async function POST() {}' },
+    { path: "src/client.js", content: 'import { GET } from "./app/api/items/route.js";' },
+  ]);
+  const route = result.modules.find((module) => module.path.endsWith("/route.js"));
+  assert.ok(route.exports.some((item) => item.name === "GET"));
+  assert.ok(route.exports.some((item) => item.name === "POST"));
+  assert.ok(result.bindingRelationships.some((edge) => edge.imported === "GET" && edge.status === "matched"));
 });
 
 test("handles side-effect, dynamic and CommonJS imports", () => {
