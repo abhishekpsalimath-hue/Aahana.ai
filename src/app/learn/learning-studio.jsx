@@ -434,6 +434,8 @@ export default function LearningStudio({ userEmail = "" }) {
       </section>
 
 
+      <Interactive3DWorld selectedPlanet={selectedPlanet} onSelectedPlanetChange={setSelectedPlanet} />
+
         <section className="learning-discovery" aria-label="Choose a learning topic and mode">
           <div className="learning-discovery-heading"><span>CHOOSE YOUR PATH</span><h3>How would you like to explore?</h3><p>Pick a learning adventure. Follow a story, step into an animated world, solve a challenge, talk it through or try an experiment.</p></div>
           <div className="learning-discovery-selects">
@@ -466,10 +468,6 @@ export default function LearningStudio({ userEmail = "" }) {
             </button>
           </div>
         </section>
-
-      <Interactive3DWorld selectedPlanet={selectedPlanet} onSelectedPlanetChange={setSelectedPlanet} />
-
-
 
       <section className="learning-session">
         {messages.length > 0 && <div className="learning-section-heading"><div><span>YOUR JOURNEY</span><h2>Keep exploring with Aahana</h2></div><span className="learning-session-status">{busy ? "Aahana is creating your next discovery…" : "Your adventure is underway"}</span></div> }
