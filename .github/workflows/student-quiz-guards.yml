@@ -1,0 +1,38 @@
+name: Aahana Student Mode quiz guards
+
+on:
+  push:
+    branches:
+      - "fix/aahana-student-quiz-reliability"
+    paths:
+      - "src/app/api/chat/route.js"
+      - "src/app/learn/learning-studio.jsx"
+      - "src/lib/learning/quiz-bank-policy.*"
+      - ".github/workflows/student-quiz-guards.yml"
+  pull_request:
+    paths:
+      - "src/app/api/chat/route.js"
+      - "src/app/learn/learning-studio.jsx"
+      - "src/lib/learning/quiz-bank-policy.*"
+      - ".github/workflows/student-quiz-guards.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  student-quiz-guards:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm ci
+      - name: Run policy and regression tests
+        run: npm test
+      - name: Syntax-check learning API
+        run: node --check src/app/api/chat/route.js
