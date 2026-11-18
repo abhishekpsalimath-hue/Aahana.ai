@@ -1,0 +1,168 @@
+const SOURCE_EXTENSIONS = [".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs", ".json"];
+const SOURCE_SUFFIXES = ["", ...SOURCE_EXTENSIONS, ...SOURCE_EXTENSIONS.map((extension) => "/index" + extension)];
+
+function normalizePath(value) {
+  const parts = [];
+  for (const part of String(value || "").replace(/\\/g, "/").split("/")) {
+    if (!part || part === ".") continue;
+    if (part === "..") {
+      if (parts.length) parts.pop();
+      else return null;
+    } else {
+      parts.push(part);
+    }
+  }
+  return parts.join("/");
+}
+
+function stripComments(source) {
+  return String(source || "")
+    .replace(/\/\*[\s\S]*?\*\//g, " ")
+    .replace(/^\s*\/\/.*$/gm, " ");
+}
+
+function collectSpecifiers(source) {
+  const text = stripComments(source);
+  const patterns = [
+    /\b(?:import|export)\s+(?:[\s\S]*?\s+from\s*)?["']([^"']+)["']/g,
+    /\bimport\s*\(\s*["']([^"']+)["']\s*\)/g,
+    /\brequire\s*\(\s*["']([^"']+)["']\s*\)/g,
+  ];
+  const found = new Set();
+  for (const pattern of patterns) {
+    for (const match of text.matchAll(pattern)) found.add(match[1]);
+  }
+  return [...found];
+}
+
+function resolveLocalImport(importer, specifier, knownPaths) {
+  if (!specifier.startsWith(".") && !specifier.startsWith("/")) return null;
+  const base = specifier.startsWith("/")
+    ? normalizePath(specifier.slice(1))
+    : normalizePath(importer.split("/").slice(0, -1).concat(specifier.split("/")).join("/"));
+  if (!base) return null;
+  for (const suffix of SOURCE_SUFFIXES) {
+    const candidate = base + suffix;
+    if (knownPaths.has(candidate)) return candidate;
+  }
+  return null;
+}
+
+function packageName(specifier) {
+  if (specifier.startsWith(".") || specifier.startsWith("/")) return null;
+  if (specifier.startsWith("@/") || specifier.startsWith("~/")) return null;
+  const parts = specifier.split("/");
+  return specifier.startsWith("@") ? parts.slice(0, 2).join("/") : parts[0];
+}
+
+/**
+ * Builds a conservative static import graph from the supplied source snapshot.
+ * It never executes source code and does not resolve package aliases by guessing.
+ */
+export function analyzeProjectDependencies(files) {
+  const records = Array.isArray(files) ? files : [];
+  const byPath = new Map();
+  for (const file of records) {
+    const path = normalizePath(file?.path || file?.original_filename);
+    if (path && typeof file?.content === "string" && !byPath.has(path)) byPath.set(path, file);
+  }
+  const knownPaths = new Set(byPath.keys());
+  const dependencies = new Map();
+  const dependents = new Map();
+  const external = [];
+  const unresolved = [];
+
+  for (const [path, file] of byPath) {
+    const local = new Set();
+    for (const specifier of collectSpecifiers(file.content)) {
+      const resolved = resolveLocalImport(path, specifier, knownPaths);
+      if (resolved) {
+        local.add(resolved);
+        if (!dependents.has(resolved)) dependents.set(resolved, new Set());
+        dependents.get(resolved).add(path);
+      } else if (specifier.startsWith(".") || specifier.startsWith("/")) {
+        unresolved.push({ from: path, specifier });
+      } else {
+        const name = packageName(specifier);
+        if (name) external.push({ from: path, specifier, packageName: name });
+        else unresolved.push({ from: path, specifier });
+      }
+    }
+    dependencies.set(path, local);
+  }
+
+  return Object.freeze({
+    fileCount: byPath.size,
+    dependencies,
+    dependents,
+    external: Object.freeze(external),
+    unresolved: Object.freeze(unresolved),
+  });
+}
+
+/**
+ * Starts from the strongest prompt matches, then adds connected imports and
+ * reverse dependents so visible callers/contracts travel together.
+ */
+export function selectProjectFilesWithDependencies(prompt, files, limit = 8, seedLimit = 4) {
+  const records = Array.isArray(files) ? files : [];
+  const graph = analyzeProjectDependencies(records);
+  const safeLimit = Math.max(0, Math.min(8, Number.isInteger(limit) ? limit : 8));
+  const safeSeedLimit = Math.max(0, Math.min(safeLimit, Number.isInteger(seedLimit) ? seedLimit : 4));
+  const seeds = selectRelevant(prompt, records, safeSeedLimit);
+  const selected = new Set(seeds.map((file) => normalizePath(file?.path || file?.original_filename)).filter(Boolean));
+  const distance = new Map([...selected].map((path) => [path, 0]));
+  const queue = [...selected];
+
+  while (queue.length && selected.size < safeLimit) {
+    const current = queue.shift();
+    const neighbors = [
+      ...(graph.dependencies.get(current) || []),
+      ...(graph.dependents.get(current) || []),
+    ];
+    for (const neighbor of neighbors) {
+      if (!distance.has(neighbor)) {
+        distance.set(neighbor, distance.get(current) + 1);
+        selected.add(neighbor);
+        queue.push(neighbor);
+        if (selected.size >= safeLimit) break;
+      }
+    }
+  }
+
+  const orderedPaths = [...selected].sort((a, b) =>
+    (distance.get(a) ?? 99) - (distance.get(b) ?? 99) || a.localeCompare(b)
+  );
+  const fileByPath = new Map(records.map((file) => [normalizePath(file?.path || file?.original_filename), file]));
+  const relationships = [];
+  for (const from of orderedPaths) {
+    for (const to of graph.dependencies.get(from) || []) {
+      if (selected.has(to)) relationships.push({ from, to, kind: "imports" });
+    }
+  }
+  return Object.freeze({
+    files: orderedPaths.map((path) => fileByPath.get(path)).filter(Boolean),
+    seedPaths: Object.freeze([...seeds.map((file) => normalizePath(file?.path || file?.original_filename)).filter(Boolean)]),
+    relationships: Object.freeze(relationships),
+    external: graph.external.filter((item) => selected.has(item.from)),
+    unresolved: graph.unresolved.filter((item) => selected.has(item.from)),
+  });
+}
+
+function selectRelevant(prompt, files, limit) {
+  // Kept local to avoid coupling the dependency graph to the ranking module's internals.
+  const words = new Set(String(prompt || "").normalize("NFKC").toLowerCase().match(/[\p{L}\p{N}]{2,}/gu) || []);
+  const ranked = files.map((file, index) => {
+    const path = String(file?.path || file?.original_filename || "");
+    const content = String(file?.content || "").slice(0, 40000).toLowerCase();
+    const pathText = path.toLowerCase();
+    let score = pathText.endsWith("package.json") ? 100 : 0;
+    for (const word of words) {
+      if (pathText.includes(word)) score += 30;
+      else if (content.includes(word)) score += 1;
+    }
+    return { file, index, score };
+  });
+  ranked.sort((a, b) => b.score - a.score || a.index - b.index);
+  return ranked.slice(0, limit).map(({ file }) => file);
+}
