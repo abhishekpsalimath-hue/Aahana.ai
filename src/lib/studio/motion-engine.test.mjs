@@ -26,3 +26,19 @@ test("rejects unsafe properties, unordered keyframes and oversized timelines", (
   assert.equal(validateMotionTimeline({ tracks: Array(51).fill({}) }), null);
   assert.throws(() => sampleMotionTimeline({ tracks: [{ layerIndex: 0, property: "style", keyframes: [] }] }, 0), /Invalid Aahana motion timeline/);
 });
+
+
+test("samples independent position, scale and opacity tracks at the same playhead", () => {
+  const timeline = {
+    duration: 4000,
+    fps: 30,
+    tracks: [
+      { id: "x", layerIndex: 0, property: "cx", keyframes: [{ time: 0, value: 100 }, { time: 4000, value: 900 }] },
+      { id: "y", layerIndex: 0, property: "cy", keyframes: [{ time: 0, value: 80 }, { time: 4000, value: 280 }] },
+      { id: "fade", layerIndex: 0, property: "opacity", keyframes: [{ time: 0, value: 1 }, { time: 4000, value: 0 }] },
+    ],
+  };
+  assert.deepEqual(sampleMotionTimeline(timeline, 2000).map(({ property, value }) => [property, value]), [
+    ["cx", 500], ["cy", 180], ["opacity", 0.5],
+  ]);
+});
