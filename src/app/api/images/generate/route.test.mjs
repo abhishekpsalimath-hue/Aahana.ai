@@ -12,7 +12,7 @@ test("image generation authenticates before optional prompt refinement and provi
 });
 
 test("image generation uses a bounded Groq prompt compiler with original-prompt fallback", () => {
-  assert.match(route, /AbortSignal.timeout\(4500\)/);
+  assert.match(route, /AbortSignal.timeout\(3500\)/);
   assert.match(route, /selectCompiledImagePrompt\(candidate, originalPrompt\)/);
   assert.match(route, /return \{ prompt: originalPrompt, refined: false \}/);
   assert.match(route, /prompt: finalPrompt, steps: 4/);
