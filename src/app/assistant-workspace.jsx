@@ -4,8 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { createClient } from "@/lib/supabase/client";
-import { findBestSpeechVoice, getBrowserVoiceCapabilities } from "@/lib/voice/browser-capabilities.mjs";
-import { encodeMonoPcm16Wav } from "@/lib/voice/audio-wav.mjs";
+import { findBestSpeechVoice } from "@/lib/voice/browser-capabilities.mjs";
 import { inferSpeechLocale } from "@/lib/voice/locale-detection.mjs";
 import { shouldFallbackToDeviceSpeech } from "@/lib/voice/speech-fallback-policy.mjs";
 import CreatorStudio from "./learn/creator-studio";
@@ -269,55 +268,14 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [memoryBusy, setMemoryBusy] = useState(false);
   const [memoryError, setMemoryError] = useState("");
   const [voiceLanguage] = useState("en-IN");
-  const [autoSpeak] = useState(false);
   const [listening, setListening] = useState(false);
   const [speakingMessage, setSpeakingMessage] = useState(null);
   const [speechVoices, setSpeechVoices] = useState([]);
-  const [speechInputAvailable, setSpeechInputAvailable] = useState(false);
-  const [voiceProviderCapabilities, setVoiceProviderCapabilities] = useState(null);
-  const [voiceConsent, setVoiceConsent] = useState(false);
-  const [providerRecording, setProviderRecording] = useState(false);
-  const [providerTranscribing, setProviderTranscribing] = useState(false);
-  const [providerSeconds, setProviderSeconds] = useState(0);
-  const mediaRecorderRef = useRef(null);
-  const mediaStreamRef = useRef(null);
-  const recordingChunksRef = useRef([]);
-  const recordingTimerRef = useRef(null);
-  const recordingStartedAtRef = useRef(0);
   const audioPlaybackRef = useRef(null);
   const audioObjectUrlRef = useRef(null);
-  // Recognition and speech use the browser/device language packs. This list covers
-  // major Indian regional languages and widely used international locales.
   const voiceLanguages = [
-    ["kn-IN","ಕನ್ನಡ (Kannada)"],["hi-IN","हिन्दी (Hindi)"],["ta-IN","தமிழ் (Tamil)"],["te-IN","తెలుగు (Telugu)"],["ml-IN","മലയാളം (Malayalam)"],["mr-IN","मराठी (Marathi)"],["bn-IN","বাংলা (Bengali)"],["gu-IN","ગુજરાતી (Gujarati)"],["pa-IN","ਪੰਜਾਬੀ (Punjabi)"],["ur-IN","اردو (Urdu)"],["or-IN","ଓଡ଼ିଆ (Odia)"],["as-IN","অসমীয়া (Assamese)"],["ne-NP","नेपाली (Nepali)"],["sa-IN","संस्कृत (Sanskrit)"],["ks-IN","Kashmiri"],["sd-IN","Sindhi"],["kok-IN","Konkani"],["doi-IN","Dogri"],["mni-IN","Manipuri"],["brx-IN","Bodo"],
-    ["en-IN","English (India)"],["en-US","English (US)"],["en-GB","English (UK)"],["en-AU","English (Australia)"],["en-CA","English (Canada)"],["es-ES","Español (Spanish)"],["es-MX","Spanish (Mexico)"],["fr-FR","Français (French)"],["fr-CA","French (Canada)"],["de-DE","Deutsch (German)"],["pt-BR","Português (Brazil)"],["pt-PT","Portuguese (Portugal)"],["ar-SA","العربية (Arabic)"],["ar-EG","Arabic (Egypt)"],["zh-CN","中文 (Mandarin)"],["zh-TW","Chinese (Traditional)"],["yue-HK","Cantonese"],["ja-JP","日本語 (Japanese)"],["ko-KR","한국어 (Korean)"],["ru-RU","Русский (Russian)"],["it-IT","Italiano (Italian)"],["nl-NL","Nederlands (Dutch)"],["sv-SE","Swedish"],["no-NO","Norwegian"],["da-DK","Danish"],["fi-FI","Finnish"],["is-IS","Icelandic"],["pl-PL","Polish"],["cs-CZ","Czech"],["sk-SK","Slovak"],["hu-HU","Hungarian"],["ro-RO","Romanian"],["bg-BG","Bulgarian"],["el-GR","Greek"],["tr-TR","Türkçe (Turkish)"],["he-IL","עברית (Hebrew)"],["th-TH","ไทย (Thai)"],["vi-VN","Tiếng Việt (Vietnamese)"],["id-ID","Bahasa Indonesia"],["ms-MY","Bahasa Melayu"],["fil-PH","Filipino"],["sw-KE","Swahili"],["af-ZA","Afrikaans"],["uk-UA","Ukrainian"],["hr-HR","Croatian"],["sr-RS","Serbian"],["sl-SI","Slovenian"],["lt-LT","Lithuanian"],["lv-LV","Latvian"],["et-EE","Estonian"],["fa-IR","Persian"],["am-ET","Amharic"]
+    ["en-IN","English (India)"],["kn-IN","ಕನ್ನಡ (Kannada)"],["hi-IN","हिन्दी (Hindi)"],["ta-IN","தமிழ் (Tamil)"],["te-IN","తెలుగు (Telugu)"],["ml-IN","മലയാളം (Malayalam)"],
   ];
-
-  useEffect(() => {
-    let active = true;
-    fetch("/api/voice/capabilities", { cache: "no-store" })
-      .then(async (response) => {
-        if (!response.ok) throw new Error("Voice capability status unavailable");
-        return response.json();
-      })
-      .then((result) => { if (active) setVoiceProviderCapabilities(result); })
-      .catch(() => { if (active) setVoiceProviderCapabilities(null); });
-    return () => { active = false; };
-  }, []);
-
-  useEffect(() => {
-    const refreshCapabilities = () => {
-      const recognitionAvailable = Boolean(window.SpeechRecognition || window.webkitSpeechRecognition);
-      const synthesisAvailable = Boolean(window.speechSynthesis);
-      const voices = synthesisAvailable ? window.speechSynthesis.getVoices() : [];
-      const capabilities = getBrowserVoiceCapabilities({ recognitionAvailable, synthesisAvailable, voices });
-      setSpeechInputAvailable(capabilities.inputAvailable);
-      setSpeechVoices(voices);
-    };
-    refreshCapabilities();
-    window.speechSynthesis?.addEventListener?.("voiceschanged", refreshCapabilities);
-    return () => window.speechSynthesis?.removeEventListener?.("voiceschanged", refreshCapabilities);
-  }, []);
 
   function startVoiceInput() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -350,97 +308,9 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   }
 
   useEffect(() => () => {
-    if (recordingTimerRef.current) window.clearInterval(recordingTimerRef.current);
-    mediaRecorderRef.current?.stop?.();
-    mediaStreamRef.current?.getTracks?.().forEach((track) => track.stop());
     audioPlaybackRef.current?.pause?.();
     if (audioObjectUrlRef.current) URL.revokeObjectURL(audioObjectUrlRef.current);
   }, []);
-
-  async function startProviderRecording() {
-    if (!voiceConsent) {
-      setError("Please confirm that you agree to send this recording to Aahana's configured private speech service.");
-      return;
-    }
-    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
-      setError("Private multilingual recording is not supported by this browser. You can still use the browser Speak option or type.");
-      return;
-    }
-    try {
-      setError("");
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true } });
-      mediaStreamRef.current = stream;
-      const preferredType = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"].find((type) => MediaRecorder.isTypeSupported?.(type));
-      const recorder = preferredType ? new MediaRecorder(stream, { mimeType: preferredType }) : new MediaRecorder(stream);
-      recordingChunksRef.current = [];
-      recorder.ondataavailable = (event) => { if (event.data?.size) recordingChunksRef.current.push(event.data); };
-      recorder.onerror = () => {
-        setError("The microphone recording failed. Check microphone permission and try again.");
-        setProviderRecording(false);
-        stream.getTracks().forEach((track) => track.stop());
-      };
-      recorder.onstop = async () => {
-        if (recordingTimerRef.current) window.clearInterval(recordingTimerRef.current);
-        setProviderRecording(false);
-        stream.getTracks().forEach((track) => track.stop());
-        mediaStreamRef.current = null;
-        const recording = new Blob(recordingChunksRef.current, { type: recorder.mimeType || "audio/webm" });
-        recordingChunksRef.current = [];
-        if (!recording.size) { setError("No audio was recorded. Please try again."); return; }
-        setProviderTranscribing(true);
-        let audioContext;
-        try {
-          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-          if (!AudioContextClass) throw new Error("Audio conversion is not supported in this browser.");
-          audioContext = new AudioContextClass();
-          const decoded = await audioContext.decodeAudioData(await recording.arrayBuffer());
-          const mono = new Float32Array(decoded.length);
-          for (let channel = 0; channel < decoded.numberOfChannels; channel++) {
-            const samples = decoded.getChannelData(channel);
-            for (let i = 0; i < samples.length; i++) mono[i] += samples[i] / decoded.numberOfChannels;
-          }
-          const wav = encodeMonoPcm16Wav(mono, decoded.sampleRate);
-          if (wav.size > 15 * 1024 * 1024) throw new Error("This recording is larger than the 15 MB voice upload limit.");
-          const form = new FormData();
-          form.append("file", wav, "aahana-recording.wav");
-          form.append("locale", voiceLanguage);
-          form.append("consent", "true");
-          const response = await fetch("/api/voice/transcribe", { method: "POST", body: form });
-          const result = await response.json().catch(() => ({}));
-          if (!response.ok) throw new Error(result.error || "The private speech service is unavailable or not configured yet.");
-          const transcript = String(result.text || "").trim();
-          if (!transcript) throw new Error("The speech service returned an empty transcript.");
-          setPrompt((current) => current ? current + " " + transcript : transcript);
-          setError("");
-        } catch (err) {
-          setError(err.message || "Could not transcribe this recording. You can use browser Speak or type instead.");
-        } finally {
-          await audioContext?.close?.().catch(() => {});
-          setProviderTranscribing(false);
-        }
-      };
-      mediaRecorderRef.current = recorder;
-      recordingStartedAtRef.current = Date.now();
-      setProviderSeconds(0);
-      recorder.start(500);
-      setProviderRecording(true);
-      recordingTimerRef.current = window.setInterval(() => {
-        const elapsed = Math.floor((Date.now() - recordingStartedAtRef.current) / 1000);
-        setProviderSeconds(elapsed);
-        if (elapsed >= 60 && mediaRecorderRef.current?.state === "recording") mediaRecorderRef.current.stop();
-      }, 500);
-    } catch (err) {
-      mediaStreamRef.current?.getTracks?.().forEach((track) => track.stop());
-      mediaStreamRef.current = null;
-      setError(err.name === "NotAllowedError"
-        ? "Microphone permission was denied. Allow microphone access and try again."
-        : err.message || "Could not start microphone recording.");
-    }
-  }
-
-  function stopProviderRecording() {
-    if (mediaRecorderRef.current?.state === "recording") mediaRecorderRef.current.stop();
-  }
 
   async function speakResponse(text, index) {
     const spokenText = String(text || "").trim();
@@ -1024,7 +894,6 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       setMessages((current) => current.map((item, index) =>
         index === current.length - 1 ? { ...item, content: answer || "I couldn't generate a response. Please try again." } : item
       ));
-      if (autoSpeak && answer.trim()) speakResponse(answer, messages.length + 1);
       setHistory([]);
     } catch (err) {
       setMessages((current) => {
