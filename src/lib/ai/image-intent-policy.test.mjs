@@ -1,6 +1,26 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { isImageEditRequest, isImageGenerationRequest } from "./image-intent-policy.mjs";
+import { isImageEditRequest, isImageGenerationRequest, isWebsiteBuildRequest } from "./image-intent-policy.mjs";
+
+test("recognizes requests to build actual websites and applications", () => {
+  for (const prompt of [
+    "Build me a website for my bakery",
+    "Create an e-commerce website with customer login",
+    "Develop a dashboard for inventory tracking",
+    "I need a mobile app for booking cabs",
+    "Code a landing page for my startup",
+  ]) assert.equal(isWebsiteBuildRequest(prompt), true, prompt);
+});
+
+test("does not confuse website discussions with build requests", () => {
+  for (const prompt of [
+    "Explain how websites work",
+    "What is a landing page?",
+    "Give me ideas for an e-commerce website",
+    "Compare these website builders",
+    "Write about dashboard design principles",
+  ]) assert.equal(isWebsiteBuildRequest(prompt), false, prompt);
+});
 
 test("recognizes direct image requests in everyday language", () => {
   for (const prompt of [
