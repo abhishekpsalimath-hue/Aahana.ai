@@ -19,7 +19,9 @@ on:
       - "src/lib/studio/image-engine.*"
       - "src/lib/studio/cube-lut.mjs"
       - "src/lib/studio/color-grading.mjs"
-      - "src/lib/studio/cube-lut.mjs"
+      - "src/lib/studio/image-edit.mjs"
+      - "src/lib/studio/image-edit.test.mjs"
+      - "src/app/api/images/edit/route.js"
       - "src/app/learn/native-motion-studio.jsx"
       - "src/lib/studio/motion-engine.*"
       - "src/lib/studio/native-motion-studio.test.mjs"
@@ -33,6 +35,9 @@ on:
       - "src/app/learn/native-image-studio.jsx"
       - "src/app/learn/creator-studio.css"
       - "src/lib/studio/image-engine.*"
+      - "src/lib/studio/image-edit.mjs"
+      - "src/lib/studio/image-edit.test.mjs"
+      - "src/app/api/images/edit/route.js"
       - "src/app/learn/native-motion-studio.jsx"
       - "src/lib/studio/motion-engine.*"
       - "src/lib/learning/learning-studio-policy.test.mjs"
@@ -55,6 +60,6 @@ jobs:
         with:
           node-version: 22
       - name: Run Student Mode journey and quiz tests
-        run: node --test src/lib/learning/learning-studio-policy.test.mjs src/lib/learning/quiz-bank-policy.test.mjs src/lib/learning/student-journey-ui.test.mjs src/lib/learning/student-cinematic-exam-readiness.test.mjs src/lib/studio/image-engine.test.mjs src/lib/studio/motion-engine.test.mjs src/lib/studio/native-motion-studio.test.mjs
-      - name: Syntax-check learning API
-        run: node --check src/app/api/chat/route.js
+        run: node --test src/lib/learning/learning-studio-policy.test.mjs src/lib/learning/quiz-bank-policy.test.mjs src/lib/learning/student-journey-ui.test.mjs src/lib/learning/student-cinematic-exam-readiness.test.mjs src/lib/studio/image-engine.test.mjs src/lib/studio/image-edit.test.mjs src/lib/studio/motion-engine.test.mjs src/lib/studio/native-motion-studio.test.mjs
+      - name: Syntax-check learning and image-edit APIs
+        run: node --check src/app/api/chat/route.js && node --check src/app/api/images/edit/route.js
