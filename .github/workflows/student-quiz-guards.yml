@@ -12,6 +12,7 @@ on:
       - "src/lib/learning/student-cinematic-exam-readiness.test.mjs"
       - "src/app/learn/learning-studio.css"
       - "src/lib/learning/student-journey-ui.test.mjs"
+      - "src/lib/learning/learning-studio-policy.test.mjs"
       - "src/lib/learning/quiz-bank-policy.*"
       - ".github/workflows/student-quiz-guards.yml"
   pull_request:
