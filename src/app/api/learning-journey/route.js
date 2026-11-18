@@ -44,14 +44,47 @@ export async function GET() {
   }
 }
 
+async function readBoundedJson(request, maxBytes = 64 * 1024) {
+  const declaredLength = Number(request.headers.get("content-length") || 0);
+  if (declaredLength > maxBytes) {
+    const error = new Error("Learning progress payload is too large.");
+    error.status = 413;
+    throw error;
+  }
+  const reader = request.body?.getReader();
+  if (!reader) throw new Error("Invalid request.");
+  const decoder = new TextDecoder();
+  let text = "";
+  let bytes = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    bytes += value.byteLength;
+    if (bytes > maxBytes) {
+      await reader.cancel().catch(() => {});
+      const error = new Error("Learning progress payload is too large.");
+      error.status = 413;
+      throw error;
+    }
+    text += decoder.decode(value, { stream: true });
+  }
+  text += decoder.decode();
+  return JSON.parse(text);
+}
+
 export async function POST(request) {
   const supabase = await createClient();
   const user = await getSignedInUser(supabase);
   if (!user) return NextResponse.json({ error: "Please sign in." }, { status: 401 });
 
   let body;
-  try { body = await request.json(); } catch {
-    return NextResponse.json({ error: "Invalid request." }, { status: 400 });
+  try {
+    body = await readBoundedJson(request);
+  } catch (error) {
+    return NextResponse.json(
+      { error: error?.status === 413 ? error.message : "Invalid request." },
+      { status: error?.status || 400 },
+    );
   }
 
   try {
