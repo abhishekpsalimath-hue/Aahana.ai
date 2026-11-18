@@ -18,7 +18,7 @@ export function buildImageEditPrompt(style = "cartoon") {
   const direction = STYLE_DIRECTIONS[style];
   if (!direction) return null;
   return [
-    "IMAGE-TO-IMAGE EDIT. The supplied photograph is the source image and must be transformed directly; do not invent a new subject.",
+    "IMAGE-TO-IMAGE EDIT. Use input_image_0 as the source photograph and transform that exact image directly; do not invent a new subject.",
     direction,
     "IDENTITY AND CONTENT PRESERVATION ARE THE HIGHEST PRIORITY: depict the exact same person or people from the input photograph. Preserve recognisable identity, facial geometry, eyes, nose, mouth, skin tone, age, hairstyle, expression, clothing, accessories, body proportions, pose and orientation. If multiple people are present, preserve every person and their relative positions. Keep the original camera framing, crop, perspective, scene layout and background unless a change is essential to the selected art medium.",
     "Apply the requested art treatment to the whole photograph, including the background. This is a full-frame image transformation, not a sticker, emoji, avatar, mascot, cut-out, isolated headshot, character sheet or replacement portrait. Do not add a white sticker outline, die-cut border, transparent sticker background, text, logo, extra people, props or decorative elements.",
