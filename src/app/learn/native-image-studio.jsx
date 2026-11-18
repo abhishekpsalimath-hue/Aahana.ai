@@ -96,9 +96,14 @@ export default function NativeImageStudio() {
       canvas.height = image.naturalHeight;
       const context = canvas.getContext("2d");
       if (!context) throw new Error("Image export canvas is unavailable.");
-      context.filter = gradeFilter;
+      context.filter = cubeLut ? "none" : gradeFilter;
       context.drawImage(image, 0, 0);
       context.filter = "none";
+      if (cubeLut) {
+        const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
+        applyCubeLutToImageData(pixels, cubeLut);
+        context.putImageData(pixels, 0, 0);
+      }
       const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
       if (!blob) throw new Error("The graded image could not be encoded.");
       const url = URL.createObjectURL(blob);
