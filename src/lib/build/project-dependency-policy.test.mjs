@@ -152,6 +152,8 @@ test("maps imported bindings to target exports and flags missing named exports",
     { path: "src/page.tsx", content: [
       'import Card, { type CardProps, formatName as format } from "@/components/card";',
       'import { missingExport } from "@/components/card";',
+      'import type { CardProps as ReadonlyCardProps } from "@/components/card";',
+      'import type DefaultCard from "@/components/card";',
       'import * as utils from "@/lib/utils";',
     ].join("\n") },
     { path: "src/components/card.tsx", content: [
@@ -166,6 +168,8 @@ test("maps imported bindings to target exports and flags missing named exports",
   assert.ok(result.bindingRelationships.some((edge) => edge.imported === "default" && edge.to === "src/components/card.tsx"));
   assert.ok(result.bindingRelationships.some((edge) => edge.imported === "CardProps" && edge.status === "matched"));
   assert.ok(result.bindingRelationships.some((edge) => edge.imported === "formatName" && edge.local === "format"));
+  assert.ok(result.bindingRelationships.some((edge) => edge.imported === "CardProps" && edge.local === "ReadonlyCardProps"));
+  assert.ok(result.bindingRelationships.some((edge) => edge.imported === "default" && edge.local === "DefaultCard"));
   assert.ok(result.bindingRelationships.some((edge) => edge.imported === "*" && edge.to === "src/lib/utils.ts"));
   assert.ok(result.unresolvedBindings.some((edge) => edge.imported === "missingExport"));
   const card = result.modules.find((module) => module.path === "src/components/card.tsx");
