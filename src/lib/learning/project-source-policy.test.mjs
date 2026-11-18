@@ -53,3 +53,36 @@ test("uses bounded source-content matches when filenames are generic", () => {
   const result = selectRelevantProjectFiles("calculate invoice tax", genericFiles, 2);
   assert.equal(result[0].original_filename, "src/lib/second.js");
 });
+
+
+test("prioritizes relevant regression tests when the request asks to fix a bug", () => {
+  const candidates = [
+    { original_filename: "src/lib/profile.js", content: "profile state" },
+    { original_filename: "src/lib/profile.test.js", content: "profile state regression" },
+    { original_filename: "README.md", content: "profile notes" },
+  ];
+  const result = selectRelevantProjectFiles("fix the profile bug and add regression tests", candidates, 3);
+  assert.equal(result[0].original_filename, "src/lib/profile.test.js");
+});
+
+test("prioritizes API route files for backend and endpoint requests", () => {
+  const candidates = [
+    { original_filename: "src/app/page.jsx", content: "page" },
+    { original_filename: "src/app/api/orders/route.js", content: "orders endpoint" },
+    { original_filename: "src/components/orders.jsx", content: "orders view" },
+  ];
+  const result = selectRelevantProjectFiles("fix the orders API endpoint", candidates, 3);
+  assert.equal(result[0].original_filename, "src/app/api/orders/route.js");
+});
+
+test("retains project manifests and recognizes modern test configuration", () => {
+  const candidates = [
+    { original_filename: "src/feature.js", content: "feature" },
+    { original_filename: "vitest.config.ts", content: "test config" },
+    { original_filename: "package.json", content: "{}" },
+  ];
+  const result = selectRelevantProjectFiles("update test setup", candidates, 3);
+  const names = result.map((file) => file.original_filename);
+  assert.ok(names.indexOf("package.json") < names.indexOf("src/feature.js"));
+  assert.ok(names.indexOf("vitest.config.ts") < names.indexOf("src/feature.js"));
+});
