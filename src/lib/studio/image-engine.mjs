@@ -59,3 +59,16 @@ export function createImageScene({ title = "Aahana Studio", subtitle = "Ideas, m
     ],
   };
 }
+
+
+export function buildPinterestInspiredPrompt({ title = "Original creative", notes = "" } = {}) {
+  const cleanTitle = String(title).trim().slice(0, 160);
+  const cleanNotes = String(notes).trim().replace(/https?:\\/\\/\\S+/gi, "").slice(0, 1200);
+  if (!cleanNotes) return "";
+  return [
+    "Create an original, polished visual design. Do not reproduce or imitate any existing artwork, logo, character, or exact composition.",
+    `Creative subject: ${cleanTitle || "Original creative"}.`,
+    `Art direction supplied by the user: ${cleanNotes}`,
+    "Use the reference only as high-level inspiration for mood, colour relationships, visual hierarchy and general design sensibility. Make the layout, details and artwork distinct and original. No watermarks, no copied branding, no fake text; leave clean space for typography where appropriate."
+  ].join("\\n");
+}
