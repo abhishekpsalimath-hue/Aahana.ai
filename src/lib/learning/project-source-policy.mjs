@@ -6,36 +6,36 @@ function tokens(value) {
       .normalize("NFKC")
       .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
       .toLowerCase()
-      .match(/[\\p{L}\\p{N}]{2,}/gu)
+      .match(/[\p{L}\p{N}]{2,}/gu)
       ?.filter((token) => !STOP_WORDS.has(token)) || []
   );
 }
 
 function coreFileScore(filename) {
-  const normalized = String(filename || "").toLowerCase().replace(/\\\\/g, "/");
+  const normalized = String(filename || "").toLowerCase().replace(/\\/g, "/");
   const basename = normalized.split("/").pop();
   if (basename === "package.json") return 120;
   if (["tsconfig.json", "jsconfig.json"].includes(basename)) return 100;
-  if (/^(?:next|vite|astro|svelte|vitest|jest)\\.config\\.(?:js|mjs|cjs|ts)$/.test(basename) ||
-      /^eslint\\.config\\.(?:js|mjs|cjs|ts)$/.test(basename)) return 90;
+  if (/^(?:next|vite|astro|svelte|vitest|jest)\.config\.(?:js|mjs|cjs|ts)$/.test(basename) ||
+      /^eslint\.config\.(?:js|mjs|cjs|ts)$/.test(basename)) return 90;
   if (basename === "index.html") return 85;
-  if (/^(?:src\\/)?(?:app|pages)\\/(?:page|layout|index)\\.(?:js|jsx|ts|tsx)$/.test(normalized)) return 85;
-  if (/^(?:src\\/)?(?:main|index)\\.(?:js|jsx|ts|tsx)$/.test(normalized)) return 75;
-  if (/(?:^|\\/)readme\\.md$/.test(normalized)) return 2;
+  if (/^(?:src\/)?(?:app|pages)\/(?:page|layout|index)\.(?:js|jsx|ts|tsx)$/.test(normalized)) return 85;
+  if (/^(?:src\/)?(?:main|index)\.(?:js|jsx|ts|tsx)$/.test(normalized)) return 75;
+  if (/(?:^|\/)readme\.md$/.test(normalized)) return 2;
   return 0;
 }
 
 function contextualFileScore(filename, promptTokens) {
-  const normalized = String(filename || "").toLowerCase().replace(/\\\\/g, "/");
+  const normalized = String(filename || "").toLowerCase().replace(/\\/g, "/");
   const basename = normalized.split("/").pop();
   let score = 0;
   const asksForTests = ["test", "tests", "spec", "coverage", "regression", "bug", "failing"].some((word) => promptTokens.has(word));
-  const isTestFile = /(?:\\.test|\\.spec)\\.[cm]?[jt]sx?$/.test(basename) ||
-    /(?:^|\\/)__tests__(?:\\/|$)/.test(normalized) ||
-    /(?:^|\\/)(?:tests?|spec)(?:\\/|$)/.test(normalized);
+  const isTestFile = /(?:\.test|\.spec)\.[cm]?[jt]sx?$/.test(basename) ||
+    /(?:^|\/)__tests__(?:\/|$)/.test(normalized) ||
+    /(?:^|\/)(?:tests?|spec)(?:\/|$)/.test(normalized);
   if (asksForTests && isTestFile) score += 65;
-  if (/(?:^|\\/)app\\/api\\//.test(normalized) && ["api", "endpoint", "route", "backend", "server"].some((word) => promptTokens.has(word))) score += 55;
-  if (/\\.(?:d\\.ts|types\\.[jt]sx?)$/.test(basename) && ["type", "types", "interface", "schema", "contract"].some((word) => promptTokens.has(word))) score += 45;
+  if (/(?:^|\/)app\/api\//.test(normalized) && ["api", "endpoint", "route", "backend", "server"].some((word) => promptTokens.has(word))) score += 55;
+  if (/\.(?:d\.ts|types\.[jt]sx?)$/.test(basename) && ["type", "types", "interface", "schema", "contract"].some((word) => promptTokens.has(word))) score += 45;
   return score;
 }
 
