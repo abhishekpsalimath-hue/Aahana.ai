@@ -87,7 +87,7 @@ test("learner preferences are saved per conversation and restored when resuming 
   assert.match(studio, /localStorage\.getItem\("aahana:learning-profile:" \+ result\.conversation\.id/);
   assert.match(studio, /setGradeBand\(resumedProfile\.gradeBand\)/);
   assert.match(studio, /setSubject\(resumedProfile\.subject\)/);
-  assert.ok(studio.includes('setLearningMode("story")'));
+  assert.equal(studio.includes("exploreRoadmapTopic"), false);
 });
 
 test("curriculum selection is restored with the learner profile and handled cautiously by the tutor", () => {
@@ -202,15 +202,13 @@ test("learning memory API reports the actual consent setting", () => {
   assert.doesNotMatch(learningMemoryRoute, /return NextResponse\.json\(\{ enabled: true, journeys \}\)/);
 });
 
-test("learning revisit suggestions are derived only from saved journeys and use the learner's chosen topic", () => {
-  assert.ok(studio.includes("const learningRoadmap = learningMemory.journeys.reduce"));
-  assert.ok(studio.includes("scene.alternateExplanationUsed"));
-  assert.ok(studio.includes("function exploreRoadmapTopic(topic, revisit = false)"));
-  assert.match(studio, /Let's explore/);
-  assert.match(studio, /with a fresh animated explanation and a different example/);
-  assert.match(studio, /Let's continue exploring/);
-  assert.ok(studio.includes('setLearningMode("story")'));
-});test("animated lesson renderer validates scene data and provides subject-specific visuals", () => {
+test("the old learning pathway and revisit panel logic are removed", () => {
+  assert.equal(studio.includes("const learningRoadmap = learningMemory.journeys.reduce"), false);
+  assert.equal(studio.includes("exploreRoadmapTopic"), false);
+  assert.equal(studio.includes("uniqueRevisitTopics"), false);
+});
+
+test("animated lesson renderer validates scene data and provides subject-specific visuals", () => {
   assert.match(animated, /function readMotionLesson\(content\)/);
   assert.match(animated, /value\?\.type !== "aahana_motion_lesson_v1"/);
   assert.match(animated, /value\.scenes\.length < 2/);
