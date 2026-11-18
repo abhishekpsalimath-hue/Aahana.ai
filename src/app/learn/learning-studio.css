@@ -662,3 +662,13 @@
     width: 100%;
   }
 }
+
+.space-fun-quiz{margin:34px auto 76px;max-width:1120px;padding:28px;border:1px solid rgba(167,151,205,.2);border-radius:24px;background:linear-gradient(135deg,rgba(30,25,48,.96),rgba(17,25,48,.96));color:#f7f3ff}
+.space-fun-quiz-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:24px;align-items:center}
+.space-fun-quiz-model{min-width:0}.space-fun-quiz-model .learning-3d-inline canvas{width:100%;height:300px;display:block}.space-fun-quiz-model>p{color:#c8c1d8;font-size:13px;text-align:center}
+.space-fun-quiz-play{padding:22px;border:1px solid rgba(196,181,232,.2);border-radius:18px;background:rgba(255,255,255,.035)}
+.space-quiz-meta{display:flex;justify-content:space-between;gap:12px;color:#cfc4ed;font-size:11px;font-weight:800;letter-spacing:.1em}
+.space-quiz-track{height:6px;margin:12px 0 22px;background:rgba(255,255,255,.12);border-radius:99px;overflow:hidden}.space-quiz-track span{display:block;height:100%;background:#bca6ef;transition:width .25s}
+.space-fun-quiz-play h3{font-size:clamp(19px,2.4vw,26px);line-height:1.25;margin:0 0 18px}
+.space-quiz-options{display:grid;grid-template-columns:1fr 1fr;gap:10px}.space-quiz-options button{display:flex;align-items:center;gap:10px;text-align:left;padding:12px;border:1px solid rgba(210,197,239,.24);border-radius:12px;background:rgba(255,255,255,.055);color:#f7f3ff;cursor:pointer}.space-quiz-options button:disabled{cursor:default;opacity:.8}.space-quiz-options button.correct{border-color:#83d6ad;background:rgba(65,166,119,.18)}.space-quiz-options button.incorrect{border-color:#e49a9a;background:rgba(185,75,75,.15)}.space-quiz-options button>span{font-weight:650}.space-quiz-feedback{margin-top:16px;padding:14px;border-radius:12px;background:rgba(210,170,100,.1);color:#f5dfb8}.space-quiz-feedback.correct{background:rgba(65,166,119,.14);color:#bdebd2}.space-quiz-feedback p,.space-fun-quiz-play>p{font-size:14px;line-height:1.55}.space-quiz-feedback button,.space-fun-quiz-play>button{margin-top:8px;padding:10px 16px;border:0;border-radius:999px;background:#d8c8ff;color:#211a31;font-weight:750;cursor:pointer}.space-quiz-eyebrow{display:block;margin-bottom:12px;color:#cdb9ff;font-size:11px;font-weight:800;letter-spacing:.12em}
+@media(max-width:760px){.space-fun-quiz{margin:24px 14px 50px;padding:18px}.space-fun-quiz-layout{grid-template-columns:1fr}.space-fun-quiz-model .learning-3d-inline canvas{height:230px}.space-quiz-options{grid-template-columns:1fr}}
