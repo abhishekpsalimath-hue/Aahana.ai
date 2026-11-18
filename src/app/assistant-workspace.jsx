@@ -816,8 +816,8 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     }
   }
 
-  async function draftProjectChanges() {
-    const requestText = prompt.trim();
+  async function draftProjectChanges(requestTextOverride) {
+    const requestText = typeof requestTextOverride === "string" ? requestTextOverride.trim() : prompt.trim();
     if (!selectedProjectId || !requestText || buildBusy || busy || imageGenerating) return;
     setBuildBusy(true);
     setError("");
@@ -920,6 +920,12 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       } finally {
         setImageGenerating(false);
       }
+      return;
+    }
+
+    if (aiEnabled && isWebsiteBuildRequest(text) && selectedProjectId) {
+      setMode("build");
+      await draftProjectChanges(text);
       return;
     }
 
