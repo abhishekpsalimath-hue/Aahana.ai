@@ -1,6 +1,6 @@
 const IMAGE_NOUN = /\b(?:image|picture|photo|photograph|illustration|artwork|art|portrait|wallpaper|logo|poster|cover|banner|icon|thumbnail|scene|landscape|cityscape|character|diagram|infographic|drawing|sketch)\b/i;
 const VISUAL_ACTION = /\b(?:generate|create|draw|sketch|paint|illustrate|render|design|make|show|visuali[sz]e)\b/i;
-const NON_VISUAL_OBJECT = /^(?:a |an |the )?(?:conclusion|inference|comparison|plan|lesson|decision|argument|salary|boundary|attention|assumption|recommendation)\b/i;
+const NON_VISUAL_OBJECT = /^(?:a |an |the )?(?:conclusion|inference|comparison|plan|lesson|decision|argument|salary|boundary|attention|assumption|recommendation|business plan|study plan|lesson plan|project schedule|schedule|roadmap|strategy)\b/i;
 const COMMON_VISUAL_SUBJECT = /\b(?:cat|dog|puppy|kitten|tiger|lion|elephant|bird|butterfly|dragon|robot|alien|astronaut|person|woman|man|child|family|tree|flower|rose|garden|forest|mountain|beach|ocean|waterfall|river|house|home|building|car|bike|motorcycle|airplane|ship|spaceship|planet|galaxy|castle|cafe|restaurant|cake|food|burger|pizza|coffee cup|product|mascot|character|dinosaur|unicorn|logo|poster|card|invitation|flyer|sticker)\b/i;
 
 /**
