@@ -15,7 +15,7 @@ function formatBytes(value) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export default function CreatorCloudAssets() {
+export default function CreatorCloudAssets({ projectId = null, onAssetUploaded, onAssetDeleted }) {
   const [assets, setAssets] = useState([]);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("Your private cloud library is ready.");
@@ -41,7 +41,10 @@ export default function CreatorCloudAssets() {
     if (!files.length) return;
     setBusy(true);
     try {
-      for (const file of files) await uploadCloudStudioAsset(file);
+      for (const file of files) {
+        const uploaded = await uploadCloudStudioAsset(file, { projectId });
+        onAssetUploaded?.(uploaded);
+      }
       setStatus(`${files.length} asset${files.length === 1 ? "" : "s"} uploaded to your private cloud library.`);
       await refresh();
     } catch (error) {
@@ -56,6 +59,7 @@ export default function CreatorCloudAssets() {
     setBusy(true);
     try {
       await deleteCloudStudioAsset(asset);
+      onAssetDeleted?.(asset);
       setAssets((current) => current.filter((item) => item.id !== asset.id));
       setStatus("Asset deleted from your private cloud library.");
     } catch (error) {
