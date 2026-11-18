@@ -230,6 +230,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [copiedMessage, setCopiedMessage] = useState(null);
   const [conversationId, setConversationId] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [buildBusy, setBuildBusy] = useState(false);
   const [error, setError] = useState("");
   const [history, setHistory] = useState([]);
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -771,6 +772,44 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     printWindow.document.close();
   }
 
+  async function runProjectCheck(operation) {
+    if (!selectedProjectId || buildBusy || busy) return;
+    const label = operation === "test" ? "Run isolated project tests" : "Run isolated project build";
+    setBuildBusy(true);
+    setError("");
+    setMessages((current) => [...current,
+      { role: "user", content: label },
+      { role: "assistant", content: "Preparing the latest uploaded project source for an isolated check…" },
+    ]);
+    try {
+      const response = await fetch("/api/build/project", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ projectId: selectedProjectId, operation }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "The isolated project check could not start.");
+      const output = [
+        result.status === "passed" ? "Isolated check passed." : "Isolated check failed.",
+        `Operation: ${result.operation}`,
+        `Source files: ${result.sourceFileCount}`,
+        result.exitCode !== undefined ? `Exit code: ${result.exitCode}` : "",
+        result.stdout ? `\nOutput:\n${result.stdout}` : "",
+        result.stderr ? `\nDiagnostics:\n${result.stderr}` : "",
+        "\nNo project files were changed and nothing was deployed.",
+      ].filter(Boolean).join("\n");
+      setMessages((current) => current.map((item, index) =>
+        index === current.length - 1 ? { ...item, content: output } : item
+      ));
+    } catch (err) {
+      setMessages((current) => current.map((item, index) =>
+        index === current.length - 1 ? { ...item, content: err.message || "The isolated project check failed." } : item
+      ));
+    } finally {
+      setBuildBusy(false);
+    }
+  }
+
   async function submitPrompt(event) {
     event.preventDefault();
     const text = prompt.trim();
@@ -1146,6 +1185,18 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
             </div>
           )}
 
+          {mode === "build" && (
+            <div className="message-actions" style={{ justifyContent: "flex-start", gap: "8px", margin: "12px 0" }}>
+              <span className="message-role">PROJECT CHECKS</span>
+              <button className="copy-message" type="button" disabled={!selectedProjectId || buildBusy || busy} onClick={() => runProjectCheck("build")}>
+                {buildBusy ? "Running…" : "Run isolated build"}
+              </button>
+              <button className="copy-message" type="button" disabled={!selectedProjectId || buildBusy || busy} onClick={() => runProjectCheck("test")}>
+                Run isolated tests
+              </button>
+              <small>{selectedProjectId ? "Uses the latest source files uploaded to this project. No saved files are changed or deployed." : "Select a project and upload its source files to enable checks."}</small>
+            </div>
+          )}
           <form className="composer" onSubmit={submitPrompt}>
             <label className="sr-only" htmlFor="image-upload">Attach an image for Aahana to identify or analyse</label>
             {generatedImage && (
