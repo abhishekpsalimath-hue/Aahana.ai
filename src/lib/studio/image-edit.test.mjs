@@ -23,6 +23,21 @@ test("offers explicit image-to-image styles and user edit constraints", () => {
   assert.equal(buildImageEditPrompt("unknown"), null);
 });
 
+test("all photo styles demand a cohesive full-frame edit instead of a replacement portrait or sticker", () => {
+  for (const style of IMAGE_EDIT_STYLES) {
+    const prompt = buildImageEditPrompt(style.id);
+    assert.match(prompt, /input_image_0 is the photograph to edit/);
+    assert.match(prompt, /complete source photograph/);
+    assert.match(prompt, /entire image, edge to edge/);
+    assert.match(prompt, /same overall photograph/);
+    assert.match(prompt, /Do not: create a sticker/);
+    assert.match(prompt, /preserve the source content and composition/);
+  }
+  assert.match(buildImageEditPrompt("cartoon"), /Cartoonise the people, objects and background together/);
+  assert.match(buildImageEditPrompt("anime"), /complete source photograph as one cohesive anime-style scene/);
+  assert.match(buildImageEditPrompt("watercolor"), /do not crop to a portrait/);
+});
+
 test("validates data URL MIME type and image size before provider upload", () => {
   assert.deepEqual(parseImageEditInput("data:image/png;base64,YWJj"), { mimeType: "image/png", base64: "YWJj", estimatedBytes: 3 });
   assert.equal(parseImageEditInput("https://example.com/photo.png"), null);
