@@ -4,6 +4,7 @@ import {
   assertHumanApprovalRequired,
   createSafeSandboxOptions,
   validateSandboxCommand,
+  validateWorkspaceFiles,
   validateWorkspacePath,
 } from "./sandbox-policy.mjs";
 
@@ -41,6 +42,18 @@ test("rejects invalid sandbox identifiers", () => {
   assert.throws(() => createSafeSandboxOptions({ name: "aahana-build-123456", projectId: "production" }));
 });
 
+test("bounds workspace files and rejects duplicates or oversized content", () => {
+  const files = validateWorkspaceFiles([{ path: "src/main.js", content: "console.log('safe')" }]);
+  assert.equal(files.length, 1);
+  assert.equal(files[0].path, "src/main.js");
+  assert.throws(() => validateWorkspaceFiles([
+    { path: "src/main.js", content: "a" },
+    { path: "src/main.js", content: "b" },
+  ]));
+  assert.throws(() => validateWorkspaceFiles([{ path: "large.txt", content: "x".repeat(1024 * 1024 + 1) }]));
+  assert.throws(() => validateWorkspaceFiles(Array.from({ length: 101 }, (_, i) => ({ path: `src/${i}.js`, content: "" }))));
+});
+
 test("allows bounded read/build commands", () => {
   assert.deepEqual(
     validateSandboxCommand({ command: "npm", args: ["install", "--ignore-scripts"] }),
@@ -63,4 +76,6 @@ test("protected release actions always require owner approval", () => {
     assert.throws(() => assertHumanApprovalRequired(action));
   }
   assert.equal(assertHumanApprovalRequired("create-preview"), true);
+  assert.throws(() => assertHumanApprovalRequired("unknown-action"));
+  assert.throws(() => assertHumanApprovalRequired("git-push"));
 });
