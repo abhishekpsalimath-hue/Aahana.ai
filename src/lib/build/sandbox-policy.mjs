@@ -11,6 +11,17 @@ const ALLOWED_NPM_COMMANDS = new Set(["install", "ci", "run", "test", "exec", "l
 const MAX_ARGUMENTS = 40;
 const MAX_ARGUMENT_LENGTH = 1000;
 const MAX_TIMEOUT_MS = 120_000;
+const MAX_FILES = 100;
+const MAX_FILE_BYTES = 1 * 1024 * 1024;
+const MAX_TOTAL_FILE_BYTES = 10 * 1024 * 1024;
+const AUTOMATED_ACTIONS = new Set([
+  "create-preview",
+  "write-sandbox-files",
+  "run-build",
+  "run-tests",
+  "read-diff",
+  "discard-sandbox",
+]);
 
 export function validateWorkspacePath(input) {
   if (typeof input !== "string" || input.length < 1 || input.length > 240) {
@@ -59,7 +70,29 @@ export function createSafeSandboxOptions({ name, projectId }) {
   });
 }
 
-export function validateSandboxCommand({ command, args = [], timeout = MAX_TIMEOUT_MS }) {
+export function validateWorkspaceFiles(files) {
+  if (!Array.isArray(files) || files.length < 1 || files.length > MAX_FILES) {
+    throw new Error("A workspace submission must contain 1–100 files.");
+  }
+
+  const seen = new Set();
+  let totalBytes = 0;
+  const validated = files.map((file) => {
+    const path = validateWorkspacePath(file?.path);
+    if (seen.has(path)) throw new Error("A workspace submission cannot contain duplicate paths.");
+    seen.add(path);
+    if (typeof file?.content !== "string") throw new Error("Workspace file content must be text.");
+    const bytes = new TextEncoder().encode(file.content).byteLength;
+    if (bytes > MAX_FILE_BYTES) throw new Error("Each workspace file must be 1 MB or smaller.");
+    totalBytes += bytes;
+    if (totalBytes > MAX_TOTAL_FILE_BYTES) throw new Error("A workspace submission cannot exceed 10 MB.");
+    return Object.freeze({ path, content: file.content, bytes });
+  });
+
+  return Object.freeze(validated);
+}
+
+export function validateSandboxCommand({ command, args = [], timeout = MAX_TIMEOUT_MS })
   if (typeof command !== "string" || !ALLOWED_EXECUTABLES.has(command)) {
     throw new Error("This executable is not allowed in Aahana's build workspace.");
   }
@@ -82,16 +115,7 @@ export function validateSandboxCommand({ command, args = [], timeout = MAX_TIMEO
 }
 
 export function assertHumanApprovalRequired(action) {
-  const protectedActions = new Set([
-    "merge",
-    "production-deploy",
-    "database-migration",
-    "secret-change",
-    "auth-policy-change",
-    "security-policy-change",
-    "release-permission-change",
-  ]);
-  if (protectedActions.has(action)) {
+  if (!AUTOMATED_ACTIONS.has(action)) {
     throw new Error("This action requires owner approval outside the sandbox.");
   }
   return true;
