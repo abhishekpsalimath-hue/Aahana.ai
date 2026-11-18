@@ -103,6 +103,26 @@ test("resolves tsconfig paths aliases and baseUrl imports conservatively", () =>
   assert.equal(graph.aliasConfig.pathMappings, 3);
 });
 
+test("parses JSONC tsconfig comments and trailing commas without corrupting string values", () => {
+  const files = [
+    { path: "tsconfig.json", content: `{
+      // project aliases
+      "compilerOptions": {
+        "baseUrl": ".",
+        "paths": {
+          "@/*": ["src/*"],
+        },
+      },
+      "note": "https://example.com/a//b",
+    }` },
+    { path: "src/page.ts", content: 'import Card from "@/components/card";' },
+    { path: "src/components/card.ts", content: "export default 1;" },
+  ];
+  const graph = analyzeProjectDependencies(files);
+  assert.ok(graph.dependencies.get("src/page.ts").has("src/components/card.ts"));
+  assert.equal(graph.aliasConfig.invalid, false);
+});
+
 test("uses jsconfig when tsconfig is absent and leaves unknown aliases unresolved", () => {
   const files = [
     { path: "jsconfig.json", content: JSON.stringify({ compilerOptions: { baseUrl: ".", paths: { "~/*": ["app/*"] } } }) },
