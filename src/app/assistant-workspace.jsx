@@ -33,6 +33,54 @@ const spaceStars = [
   { startX: "48px", startY: "-56px", endX: "43vw", endY: "-50vh", delay: "-2s", size: "2px" },
   { startX: "-76px", startY: "22px", endX: "-61vw", endY: "23vh", delay: "-11s", size: "2px" },
   { startX: "74px", startY: "-24px", endX: "62vw", endY: "-20vh", delay: "-12s", size: "3px" },
+  { startX: "-156px", startY: "-92px", endX: "-76vw", endY: "-58vh", delay: "-0.8s", size: "2px" },
+  { startX: "158px", startY: "94px", endX: "78vw", endY: "60vh", delay: "-2.8s", size: "2px" },
+  { startX: "-118px", startY: "138px", endX: "-58vw", endY: "72vh", delay: "-4.8s", size: "3px" },
+  { startX: "120px", startY: "-140px", endX: "60vw", endY: "-74vh", delay: "-6.8s", size: "2px" },
+  { startX: "-176px", startY: "18px", endX: "-82vw", endY: "12vh", delay: "-8.8s", size: "2px" },
+  { startX: "178px", startY: "-20px", endX: "84vw", endY: "-14vh", delay: "-10.8s", size: "3px" },
+  { startX: "-48px", startY: "-158px", endX: "-24vw", endY: "-78vh", delay: "-1.8s", size: "2px" },
+  { startX: "50px", startY: "160px", endX: "26vw", endY: "80vh", delay: "-3.8s", size: "2px" },
+  { startX: "-188px", startY: "-58px", endX: "-86vw", endY: "-38vh", delay: "-5.8s", size: "2px" },
+  { startX: "190px", startY: "60px", endX: "88vw", endY: "40vh", delay: "-7.8s", size: "3px" },
+  { startX: "-98px", startY: "166px", endX: "-48vw", endY: "82vh", delay: "-9.8s", size: "2px" },
+  { startX: "100px", startY: "-168px", endX: "50vw", endY: "-84vh", delay: "-11.8s", size: "2px" },
+  { startX: "-204px", startY: "86px", endX: "-92vw", endY: "54vh", delay: "-0.4s", size: "2px" },
+  { startX: "206px", startY: "-88px", endX: "94vw", endY: "-56vh", delay: "-2.4s", size: "3px" },
+  { startX: "-12px", startY: "-184px", endX: "-6vw", endY: "-88vh", delay: "-4.4s", size: "2px" },
+  { startX: "14px", startY: "186px", endX: "8vw", endY: "90vh", delay: "-6.4s", size: "2px" },
+  { startX: "-164px", startY: "-126px", endX: "-78vw", endY: "-72vh", delay: "-8.4s", size: "3px" },
+  { startX: "166px", startY: "128px", endX: "80vw", endY: "74vh", delay: "-10.4s", size: "2px" },
+  { startX: "-216px", startY: "-8px", endX: "-96vw", endY: "-4vh", delay: "-1.4s", size: "2px" },
+  { startX: "218px", startY: "10px", endX: "98vw", endY: "6vh", delay: "-3.4s", size: "2px" },
+  { startX: "-72px", startY: "192px", endX: "-34vw", endY: "92vh", delay: "-5.4s", size: "3px" },
+  { startX: "74px", startY: "-194px", endX: "36vw", endY: "-94vh", delay: "-7.4s", size: "2px" },
+  { startX: "-194px", startY: "116px", endX: "-90vw", endY: "68vh", delay: "-9.4s", size: "2px" },
+  { startX: "196px", startY: "-118px", endX: "92vw", endY: "-70vh", delay: "-11.4s", size: "3px" },
+  { startX: "-90px", startY: "-44px", endX: "-48vw", endY: "-55vh", delay: "-2.5s", size: "2px" },
+  { startX: "96px", startY: "48px", endX: "57vw", endY: "54vh", delay: "-4.5s", size: "2px" },
+  { startX: "-38px", startY: "82px", endX: "-34vw", endY: "58vh", delay: "-6.5s", size: "2px" },
+  { startX: "42px", startY: "-88px", endX: "28vw", endY: "-58vh", delay: "-8.5s", size: "3px" },
+  { startX: "-104px", startY: "4px", endX: "-64vw", endY: "4vh", delay: "-10.5s", size: "2px" },
+  { startX: "108px", startY: "-6px", endX: "66vw", endY: "-6vh", delay: "-1.5s", size: "2px" },
+  { startX: "-58px", startY: "-96px", endX: "-22vw", endY: "-60vh", delay: "-3.5s", size: "2px" },
+  { startX: "66px", startY: "96px", endX: "22vw", endY: "62vh", delay: "-5.5s", size: "3px" },
+  { startX: "-112px", startY: "62px", endX: "-62vw", endY: "40vh", delay: "-7.5s", size: "2px" },
+  { startX: "116px", startY: "-62px", endX: "64vw", endY: "-40vh", delay: "-9.5s", size: "2px" },
+  { startX: "-4px", startY: "-108px", endX: "-4vw", endY: "-62vh", delay: "-11.5s", size: "3px" },
+  { startX: "6px", startY: "112px", endX: "6vw", endY: "64vh", delay: "-2.2s", size: "2px" },
+  { startX: "-126px", startY: "-26px", endX: "-68vw", endY: "-18vh", delay: "-4.2s", size: "2px" },
+  { startX: "128px", startY: "26px", endX: "68vw", endY: "18vh", delay: "-6.2s", size: "2px" },
+  { startX: "-82px", startY: "112px", endX: "-42vw", endY: "64vh", delay: "-8.2s", size: "3px" },
+  { startX: "84px", startY: "-114px", endX: "42vw", endY: "-64vh", delay: "-10.2s", size: "2px" },
+  { startX: "-138px", startY: "-74px", endX: "-70vw", endY: "-48vh", delay: "-1.2s", size: "2px" },
+  { startX: "140px", startY: "74px", endX: "70vw", endY: "48vh", delay: "-3.2s", size: "3px" },
+  { startX: "-28px", startY: "132px", endX: "-14vw", endY: "68vh", delay: "-5.2s", size: "2px" },
+  { startX: "30px", startY: "-134px", endX: "14vw", endY: "-68vh", delay: "-7.2s", size: "2px" },
+  { startX: "-148px", startY: "32px", endX: "-72vw", endY: "22vh", delay: "-9.2s", size: "2px" },
+  { startX: "150px", startY: "-32px", endX: "72vw", endY: "-22vh", delay: "-11.2s", size: "3px" },
+  { startX: "-72px", startY: "-142px", endX: "-36vw", endY: "-70vh", delay: "-2.8s", size: "2px" },
+  { startX: "74px", startY: "144px", endX: "36vw", endY: "70vh", delay: "-4.8s", size: "2px" },
 ];
 
 function renderInlineMarkdown(value, prefix) {
@@ -249,6 +297,13 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [prompt, setPrompt] = useState("");
   const [imageFile, setImageFile] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [showLoginWelcome, setShowLoginWelcome] = useState(true);
+  const [dissolvingLoginWelcome, setDissolvingLoginWelcome] = useState(false);
+  useEffect(() => {
+    const dissolveTimer = window.setTimeout(() => setDissolvingLoginWelcome(true), 3000);
+    const removeTimer = window.setTimeout(() => setShowLoginWelcome(false), 3900);
+    return () => { window.clearTimeout(dissolveTimer); window.clearTimeout(removeTimer); };
+  }, []);
   useEffect(() => {
     if (messages.length) conversationEndRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
   }, [messages]);
@@ -892,7 +947,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     <main className="shell">
       <aside className="sidebar">
         <a className="brand" href="/" aria-label="Aahana AI home">
-          <span className="brand-word">Aahana</span><span className="brand-ai">AI</span>
+          <span className="brand-word">Aahana</span><span className="brand-ai">ai</span>
         </a>
         <button className="new-chat" type="button" onClick={newConversation}>
           <span aria-hidden="true">＋</span> New conversation
@@ -1084,6 +1139,15 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         )}
 
         <div className="welcome">
+          {showLoginWelcome && !messages.length && (
+            <div className={dissolvingLoginWelcome ? "founder-welcome-note is-dissolving" : "founder-welcome-note"} role="status" aria-live="polite" aria-label="I'm happy to welcome you on this journey, Abhishekayya Salimath.">
+              <p>
+                <span className="welcome-line welcome-line-one">I'm happy to welcome you</span>
+                <span className="welcome-line welcome-line-two">on this journey,</span>
+              </p>
+              <strong>Abhishekayya Salimath</strong>
+            </div>
+          )}
           {!messages.length && (
             <div className="astronaut-float" aria-hidden="true">
               <svg viewBox="0 0 180 180" role="presentation">
@@ -1122,7 +1186,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
           </div>
           <div className="eyebrow"><span /> YOUR THINKING SPACE</div>
           {!messages.length && <>
-            <h1>Welcome to Aahana<br /><em>your space.</em></h1>
+            <h1 className="welcome-headline"><span className="headline-line headline-line-one">Good ideas</span><em className="headline-line headline-line-two">start somewhere.</em></h1>
             <p>Think freely. Explore ideas. Build something real.</p>
           </>}
 
