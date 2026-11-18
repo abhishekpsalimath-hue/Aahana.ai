@@ -46,6 +46,18 @@ test("serializes and parses only marked learning journey records", () => {
   assert.equal(parseLearningJourney(LEARNING_MEMORY_PREFIX + "{broken"), null);
 });
 
+test("supports open-ended learning subjects up to 80 characters", () => {
+  const longSubject = "Advanced interdisciplinary systems and applied computational research";
+  assert.equal(longSubject.length <= 80, true);
+  assert.equal(validateLearningJourney({ ...sample, subject: longSubject }).subject, longSubject);
+  assert.equal(validateLearningJourney({ ...sample, subject: "x".repeat(81) }).subject.length, 80);
+});
+
+test("normalizes Unicode and whitespace in custom learning subjects", () => {
+  const result = validateLearningJourney({ ...sample, subject: "  AI   &   Robotics  " });
+  assert.equal(result.subject, "AI & Robotics");
+});
+
 test("does not treat arbitrary or malformed JSON as a journey", () => {
   assert.equal(parseLearningJourney(LEARNING_MEMORY_PREFIX + JSON.stringify({ title: "Only a title" })), null);
 });
