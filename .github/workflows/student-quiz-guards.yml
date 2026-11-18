@@ -29,6 +29,8 @@ on:
       - "src/app/learn/native-image-studio.jsx"
       - "src/app/learn/creator-studio.css"
       - "src/lib/studio/image-engine.*"
+      - "src/app/learn/native-motion-studio.jsx"
+      - "src/lib/studio/motion-engine.*"
       - "src/lib/learning/learning-studio-policy.test.mjs"
       - "src/lib/learning/student-journey-ui.test.mjs"
       - ".github/workflows/student-quiz-guards.yml"
