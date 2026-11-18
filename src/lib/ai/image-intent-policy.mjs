@@ -1,6 +1,7 @@
 const IMAGE_NOUN = /\b(?:image|picture|photo|photograph|illustration|artwork|art|portrait|wallpaper|logo|poster|cover|banner|icon|thumbnail|scene|landscape|cityscape|character|diagram|infographic|drawing|sketch)\b/i;
 const VISUAL_ACTION = /\b(?:generate|create|draw|sketch|paint|illustrate|render|design|make|show|visuali[sz]e)\b/i;
 const NON_VISUAL_OBJECT = /^(?:a |an |the )?(?:conclusion|inference|comparison|plan|lesson|decision|argument|salary|boundary|attention|assumption|recommendation)\b/i;
+const COMMON_VISUAL_SUBJECT = /\b(?:cat|dog|puppy|kitten|tiger|lion|elephant|bird|butterfly|dragon|robot|alien|astronaut|person|woman|man|child|family|tree|flower|rose|garden|forest|mountain|beach|ocean|waterfall|river|house|home|building|car|bike|motorcycle|airplane|ship|spaceship|planet|galaxy|castle|cafe|restaurant|cake|food|burger|pizza|coffee cup|product|mascot|character|dinosaur|unicorn|logo|poster|card|invitation|flyer|sticker)\b/i;
 
 /**
  * Conservative natural-language intent detection for the assistant composer.
@@ -12,6 +13,9 @@ export function isImageGenerationRequest(value) {
   if (!text || text.length > 8000) return false;
 
   if (IMAGE_NOUN.test(text) && VISUAL_ACTION.test(text)) return true;
+  if (/\b(?:generate|create|make|render|design|visualise|visualize)\s+(?:me\s+)?(?:a |an |the )?/i.test(text)
+    && COMMON_VISUAL_SUBJECT.test(text)
+    && !NON_VISUAL_OBJECT.test(text.replace(/^.*?\b(?:generate|create|make|render|design|visualise|visualize)\s+/i, ""))) return true;
   if (/\b(?:i want|i need|make me|show me|give me)\b[\s\S]{0,100}\b(?:a |an |the )?(?:logo|picture|image|drawing|poster|wallpaper|portrait|illustration|icon|banner)\b/i.test(text)) return true;
   if (/\b(?:draw|sketch|paint|illustrate)\s+(?:me\s+)?(?:a |an |the )?([a-z][a-z-]{1,30})\b/i.test(text)
     && !NON_VISUAL_OBJECT.test(text.replace(/^.*?\b(?:draw|sketch|paint|illustrate)\s+/i, ""))) return true;
