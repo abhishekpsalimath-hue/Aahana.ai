@@ -375,8 +375,8 @@ button:focus-visible,a:focus-visible{outline-color:#c4a7ff}
 .brand-word{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;letter-spacing:-1.05px}
 .brand-ai{
   position:relative;display:inline-flex;align-items:center;justify-content:center;gap:1px;
-  min-width:27px;height:20px;padding:0 8px;border:1px solid #bda4f4aa;
-  border-radius:999px;background:linear-gradient(135deg,#bfa5f522,#8e70c933);
+  min-width:23px;height:17px;padding:0 5px;border:1px solid #bda4f4aa;
+  border-radius:5px;background:linear-gradient(135deg,#bfa5f522,#8e70c933);
   color:#dfd0ff;font:700 10px/1 'Plus Jakarta Sans',sans-serif;
   letter-spacing:.04em;text-transform:lowercase;
   box-shadow:0 0 14px #b99aff22,inset 0 1px #ffffff18;
