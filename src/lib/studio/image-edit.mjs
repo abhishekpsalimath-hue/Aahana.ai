@@ -52,3 +52,45 @@ export function isImageEditRequest(value, hasImage = false) {
   const targetStyle = /\b(?:cartoon|cartoonish|anime|manga|comic|illustration|illustrated|painting|watercolou?r|sketch|drawing|3d animated|animated film|art style)\b/i.test(text);
   return transformation && targetStyle;
 }
+
+export async function prepareImageForEditing(file, maxDimension = 512) {
+  if (typeof window === "undefined" || typeof document === "undefined" || typeof Image === "undefined") {
+    throw new Error("Photo preparation is available in the browser only.");
+  }
+  const objectUrl = URL.createObjectURL(file);
+  try {
+    const image = new Image();
+    image.src = objectUrl;
+    await new Promise((resolve, reject) => {
+      image.onload = resolve;
+      image.onerror = () => reject(new Error("The selected photo could not be opened."));
+    });
+    const sourceWidth = image.naturalWidth;
+    const sourceHeight = image.naturalHeight;
+    const scale = Math.min(1, maxDimension / Math.max(sourceWidth, sourceHeight));
+    const width = Math.max(1, Math.round(sourceWidth * scale));
+    const height = Math.max(1, Math.round(sourceHeight * scale));
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("Could not prepare the photo for editing.");
+    context.fillStyle = "#ffffff";
+    context.fillRect(0, 0, width, height);
+    context.drawImage(image, 0, 0, width, height);
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.9));
+    if (!blob) throw new Error("Could not prepare the photo for editing.");
+    const imageDataUrl = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => typeof reader.result === "string" ? resolve(reader.result) : reject(new Error("Could not encode the photo."));
+      reader.onerror = () => reject(new Error("Could not encode the photo."));
+      reader.readAsDataURL(blob);
+    });
+    const outputScale = 1024 / Math.max(sourceWidth, sourceHeight);
+    const outputWidth = Math.max(256, Math.min(1920, Math.round(sourceWidth * outputScale)));
+    const outputHeight = Math.max(256, Math.min(1920, Math.round(sourceHeight * outputScale)));
+    return { imageDataUrl, width: outputWidth, height: outputHeight };
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
