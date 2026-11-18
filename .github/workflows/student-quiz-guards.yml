@@ -8,6 +8,8 @@ on:
       - "src/app/api/chat/route.js"
       - "src/app/learn/learning-studio.jsx"
       - "src/app/learn/learning-studio.css"
+      - "src/app/learn/interactive-3d-world.jsx"
+      - "src/lib/learning/scene-environment.*"
       - "src/lib/learning/student-journey-ui.test.mjs"
       - "src/lib/learning/quiz-bank-policy.*"
       - ".github/workflows/student-quiz-guards.yml"
