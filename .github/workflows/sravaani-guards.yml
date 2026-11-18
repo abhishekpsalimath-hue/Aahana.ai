@@ -107,6 +107,8 @@ jobs:
         run: node --check ../../src/app/api/build/project/route.js
       - name: Syntax-check authenticated proposal review route
         run: node --check ../../src/app/api/build/proposal/route.js
+      - name: Syntax-check authenticated AI proposal draft route
+        run: node --check ../../src/app/api/build/draft/route.js
       - name: Syntax-check authenticated Build Engine status route
         run: node --check ../../src/app/api/build/status/route.js
       - name: Syntax-check authenticated file API
