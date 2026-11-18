@@ -25,7 +25,9 @@ export function isWebsiteBuildRequest(value) {
 export function isImageGenerationRequest(value) {
   const text = String(value || "").normalize("NFKC").trim();
   if (!text || text.length > 8000) return false;
-  if (/\b(?:upload|attach|send|share)\b/i.test(text)) return false;
+  const isUploadOrShareInput = /^\s*(?:please\s+)?(?:upload|attach|send|share)\b/i.test(text)
+    || /\b(?:image|photo|picture)\s+(?:upload|attach|send|share)\b/i.test(text);
+  if (isUploadOrShareInput) return false;
 
   if (IMAGE_NOUN.test(text) && VISUAL_ACTION.test(text)) return true;
   if (MULTILINGUAL_IMAGE_REQUEST.test(text)) return true;
@@ -58,5 +60,6 @@ export function isImageEditRequest(value) {
   const editAction = /\b(?:edit|modify|retouch|remove|erase|replace|change|recolou?r|recolor|recolour|add|insert|crop|resize|brighten|darken|sharpen|restore|clean up|make it|turn it into|transform|hatao|hataiye|badlo|badal do|karo|kar do|maadi|maadu|madi)\b/i.test(text)
     || /\bmake\s+(?:the\s+)?(?:background|dress|shirt|hair|sky|lighting|photo|picture)\b/i.test(text);
   const visualTarget = /\b(?:background|colour|color|dress|shirt|hair|sky|object|person|face|lighting|light|shadow|text|logo|image|photo|picture|style|brightness|brighter|darker|contrast|saturation|exposure|watercolou?r|painting|cartoon|anime|realistic|transparent|blue|red|green|black|white|pink|purple|golden|warm|cool)\b/i.test(text);
-  return editAction && visualTarget;
+  const nativeScriptEdit = /(?:पृष्ठभूमि|बैकग्राउंड)\s*(?:हटाओ|हटाइए|हटा दो|हटा दीजिए)|(?:रंग|कलर)\s*(?:नीला|लाल|हरा|काला|सफेद|गुलाबी|बैंगनी)\s*(?:करो|कर दीजिए)|आकाश\s*(?:बदलो|बदलें|बदल दीजिए)|(?:ಹಿನ್ನೆಲೆ)\s*(?:ತೆಗೆದುಹಾಕಿ|ತೆಗೆದುಹಾಕು|ತೆಗೆದುಬಿಡಿ)|(?:ಬಣ್ಣ|ಕಲರ್)\s*(?:ನೀಲಿ|ಕೆಂಪು|ಹಸಿರು|ಕಪ್ಪು|ಬಿಳಿ|ಗುಲಾಬಿ)\s*(?:ಮಾಡಿ|ಮಾಡು)|ಆಕಾಶ\s*(?:ಬದಲಿಸಿ|ಬದಲಿಸು)/u.test(text);
+  return nativeScriptEdit || (editAction && visualTarget);
 }
