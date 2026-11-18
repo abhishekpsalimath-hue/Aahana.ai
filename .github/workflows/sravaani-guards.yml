@@ -74,6 +74,8 @@ jobs:
         run: node --test ../../src/lib/learning/learning-studio-policy.test.mjs
       - name: Test private learning journey memory
         run: node --test ../../src/lib/learning/learning-memory.test.mjs
+      - name: Test unified Creator Studio cloud workspace
+        run: node --test ../../src/lib/learning/creator-workspace-model.test.mjs ../../src/lib/studio/project-engine.test.mjs
       - name: Syntax-check authenticated learning journey API
         run: node --check ../../src/app/api/learning-journey/route.js
       - name: Syntax-check authenticated transcription route
