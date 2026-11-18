@@ -48,6 +48,6 @@ jobs:
         with:
           node-version: 22
       - name: Run Student Mode journey and quiz tests
-        run: node --test src/lib/learning/learning-studio-policy.test.mjs src/lib/learning/quiz-bank-policy.test.mjs src/lib/learning/student-journey-ui.test.mjs src/lib/learning/student-cinematic-exam-readiness.test.mjs src/lib/studio/image-engine.test.mjs
+        run: node --test src/lib/learning/learning-studio-policy.test.mjs src/lib/learning/quiz-bank-policy.test.mjs src/lib/learning/student-journey-ui.test.mjs src/lib/learning/student-cinematic-exam-readiness.test.mjs src/lib/studio/image-engine.test.mjs src/lib/studio/motion-engine.test.mjs
       - name: Syntax-check learning API
         run: node --check src/app/api/chat/route.js
