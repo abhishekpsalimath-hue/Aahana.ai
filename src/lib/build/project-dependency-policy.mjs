@@ -119,7 +119,7 @@ function parseJsonConfig(source) {
       json += char;
     } else if (char === ",") {
       let lookahead = index + 1;
-      while (/\\s/.test(uncommented[lookahead] || "")) lookahead += 1;
+      while (/\s/.test(uncommented[lookahead] || "")) lookahead += 1;
       if (uncommented[lookahead] !== "}" && uncommented[lookahead] !== "]") json += char;
     } else {
       json += char;
@@ -260,9 +260,15 @@ export function analyzeProjectContracts(files) {
     const exports = collectExportedSymbols(file.content);
     const imports = collectImportedBindings(file.content);
     const propTypes = [];
-    const propPattern = /\b(?:function|const|let)\s+([A-Za-z_$][\w$]*)[\s\S]{0,180}?\(\s*\{[^}]*\}\s*:\s*([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*)/g;
-    for (const match of stripComments(file.content).matchAll(propPattern)) {
-      propTypes.push({ component: match[1], typeName: match[2] });
+    const sourceText = stripComments(file.content);
+    const propPatterns = [
+      /\bfunction\s+([A-Za-z_$][\w$]*)\s*\(\s*\{[^}]*\}\s*:\s*([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*)/g,
+      /\b(?:const|let)\s+([A-Za-z_$][\w$]*)\s*=\s*\(\s*\{[^}]*\}\s*:\s*([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*)/g,
+    ];
+    for (const pattern of propPatterns) {
+      for (const match of sourceText.matchAll(pattern)) {
+        propTypes.push({ component: match[1], typeName: match[2] });
+      }
     }
     modules.push({ path, exports, imports, propTypes });
 
