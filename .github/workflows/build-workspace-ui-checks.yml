@@ -6,6 +6,8 @@ on:
       - feat/experience-lab-build-workspace
     paths:
       - "src/app/experience-lab/**"
+      - "src/app/api/files/**"
+      - "src/lib/build/source-file-policy.mjs"
       - ".github/workflows/build-workspace-ui-checks.yml"
       - "package.json"
   pull_request:
