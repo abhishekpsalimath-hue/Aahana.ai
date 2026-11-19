@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - feat/aahana-voice-preferences
+      - feat/aahana-voice-runtime-adapters
     paths:
       - "src/app/api/voice/**"
       - "src/lib/voice/**"
