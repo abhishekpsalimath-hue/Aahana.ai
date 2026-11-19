@@ -1,0 +1,38 @@
+name: Aahana agent worker Phase B checks
+on:
+  pull_request:
+    branches:
+      - main
+      - feat/aahana-autonomous-cycle-phase-a
+    paths:
+      - "src/app/api/internal/agent-*"
+      - "src/lib/operations/agent-worker.*"
+      - "supabase/migrations/*agent_worker*"
+      - "vercel.json"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/agent-worker-phase-b.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aahana-agent-worker-phase-b-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Run automated tests
+        run: npm test
+      - name: Build application
+        run: npm run build
