@@ -13,6 +13,7 @@ on:
     branches:
       - work/isolated-workspace-v2
       - fix/build-engine-abort-before-upload
+      - fix/build-engine-abort-before-execution
     paths:
       - "src/app/api/build/**"
       - "src/lib/build/**"
