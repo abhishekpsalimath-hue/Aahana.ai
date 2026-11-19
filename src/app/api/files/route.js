@@ -56,7 +56,15 @@ export async function POST(request) {
   }
 
   const parts = objectPath.split("/");
-  if (parts.length !== 3 || !parts[2] || parts[1] !== (projectId || "personal")) return NextResponse.json({ error: "Invalid storage path." }, { status: 400 });
+  const expectedPrefix = `${user.id}/${projectId || "personal"}`;
+  const unsafePath = objectPath.length > 1024 || objectPath.includes("%") || objectPath.includes("\\\\") ||
+    /[\\u0000-\\u001f\\u007f]/u.test(objectPath) ||
+    parts.some((segment) => !segment || segment === "." || segment === "..");
+  if (unsafePath || parts.length !== 3 || parts[0] !== user.id ||
+      parts[1] !== (projectId || "personal") || !parts[2] ||
+      !objectPath.startsWith(expectedPrefix + "/")) {
+    return NextResponse.json({ error: "Invalid storage path." }, { status: 400 });
+  }
   const { data: objects, error: listError } = await supabase.storage.from(BUCKET)
     .list(`${parts[0]}/${parts[1]}`, { search: parts[2], limit: 10 });
   const storedObject = objects?.find((item) => item.name === parts[2]);
