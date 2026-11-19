@@ -36,5 +36,18 @@ jobs:
           node-version: 22
       - run: npm install --no-audit --no-fund
       - run: node --test src/lib/ai/video-generation-policy.test.mjs src/lib/ai/media-route-contract.test.mjs
+      # The flat ESLint config lands with the Stage 2 workspace foundation.
+      # Supply the same config temporarily so this parallel branch can lint independently.
+      - name: Prepare shared ESLint config for verification
+        run: |
+          cat > eslint.config.mjs <<'EOF'
+          import { defineConfig, globalIgnores } from "eslint/config";
+          import nextVitals from "eslint-config-next/core-web-vitals";
+
+          export default defineConfig([
+            ...nextVitals,
+            globalIgnores([".next/**", "out/**", "build/**", "next-env.d.ts", "src/app/learn/**"]),
+          ]);
+          EOF
       - run: npm run lint
       - run: npm run build
