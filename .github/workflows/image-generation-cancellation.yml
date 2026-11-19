@@ -1,0 +1,35 @@
+name: Image generation cancellation guards
+
+on:
+  push:
+    branches:
+      - fix/image-generation-request-cancellation
+    paths:
+      - "src/app/api/images/generate/**"
+      - ".github/workflows/image-generation-cancellation.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "src/app/api/images/generate/**"
+      - ".github/workflows/image-generation-cancellation.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install
+      - name: Run image cancellation regression tests
+        run: node --test src/app/api/images/generate/route.test.mjs
+      - name: Run full test suite
+        run: npm test
+      - name: Build production bundle
+        run: npx next build
