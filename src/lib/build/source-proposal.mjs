@@ -12,6 +12,7 @@ export function validateSourceProposal(raw, { fileName, version }) {
   catch { throw new Error("Aahana's proposal was not valid JSON. Ask again or edit the source manually."); }
 
   if (!proposal || typeof proposal !== "object" || Array.isArray(proposal) ||
+      Object.keys(proposal).sort().join(",") !== "baseVersion,fileName,summary,updatedContent" ||
       proposal.fileName !== fileName || proposal.baseVersion !== version ||
       typeof proposal.summary !== "string" || !proposal.summary.trim() ||
       proposal.summary.length > 500 || typeof proposal.updatedContent !== "string") {
