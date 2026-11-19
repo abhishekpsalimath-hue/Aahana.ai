@@ -213,3 +213,58 @@ test("stops the sandbox when workspace upload fails before any command can run",
   assert.deepEqual(calls, ["create", "writeFiles", "update", "stop"]);
   assert.equal(calls.includes("runCommand"), false);
 });
+
+
+test("aborts and stops the isolated sandbox when the caller disconnects", async () => {
+  const controller = new AbortController();
+  let signalRunStarted;
+  const runStarted = new Promise((resolve) => { signalRunStarted = resolve; });
+  let stopCount = 0;
+  const sandbox = {
+    async writeFiles() {},
+    async update() {},
+    async runCommand() {
+      signalRunStarted();
+      return new Promise((resolve, reject) => {
+        controller.signal.addEventListener("abort", () => reject(new Error("sandbox command aborted")), { once: true });
+      });
+    },
+    async stop() {
+      stopCount += 1;
+      controller.abort();
+    },
+  };
+  const SandboxClient = { async create() { return sandbox; } };
+  const task = executeBuildTask({
+    files: [{ path: "src/main.js", content: "console.log('hello')" }],
+    operation: "run",
+    entrypoint: "src/main.js",
+    projectId: "prj_12345678",
+    sandboxName: "aahana-build-cancel-123",
+    SandboxClient,
+    signal: controller.signal,
+  });
+
+  await runStarted;
+  controller.abort();
+  await assert.rejects(task, /sandbox command aborted/);
+  assert.equal(stopCount, 1);
+});
+
+test("does not create a sandbox when the caller is already disconnected", async () => {
+  const controller = new AbortController();
+  controller.abort();
+  let createCount = 0;
+  const SandboxClient = { async create() { createCount += 1; throw new Error("must not create"); } };
+
+  await assert.rejects(() => executeBuildTask({
+    files: [{ path: "src/main.js", content: "console.log('hello')" }],
+    operation: "run",
+    entrypoint: "src/main.js",
+    projectId: "prj_12345678",
+    sandboxName: "aahana-build-cancel-456",
+    SandboxClient,
+    signal: controller.signal,
+  }), /Build cancelled before sandbox creation/);
+  assert.equal(createCount, 0);
+});
