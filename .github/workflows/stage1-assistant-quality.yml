@@ -1,0 +1,34 @@
+name: Stage 1 assistant quality checks
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/lib/ai/assistant-evaluation.*"
+      - "docs/stage-1-assistant-quality-foundation.md"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/stage1-assistant-quality.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: stage1-assistant-quality-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Run complete automated test suite
+        run: npm test
+      - name: Build application
+        run: npm run build
