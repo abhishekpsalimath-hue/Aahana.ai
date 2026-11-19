@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { createSseDeltaParser } from "./stream-parser.mjs";
 
-const frame = (content) => \`data: \${JSON.stringify({ choices: [{ delta: { content } }] })}\`;
+const frame = (content) => "data: " + JSON.stringify({ choices: [{ delta: { content } }] });
 
 test("parses frames split across arbitrary network chunks", () => {
   const output = [];
