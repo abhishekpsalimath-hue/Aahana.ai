@@ -103,3 +103,19 @@ test("rejects malformed provider responses", async () => {
     { code: "EMPTY_TRANSCRIPT" },
   );
 });
+
+test("maps an upstream request deadline to PROVIDER_TIMEOUT", async () => {
+  const provider = createSraVaaniAsrProvider({
+    baseUrl: "https://asr.example.com",
+    authorizationToken: token,
+    supportedLocales: locale,
+    timeoutMs: 5,
+    fetchImpl: async (_url, { signal }) => new Promise((_, reject) => {
+      signal.addEventListener("abort", () => reject(signal.reason), { once: true });
+    }),
+  });
+  await assert.rejects(
+    provider.transcribe({ audio: wavBytes(), locale: "kn-IN" }),
+    { code: "PROVIDER_TIMEOUT" },
+  );
+});
