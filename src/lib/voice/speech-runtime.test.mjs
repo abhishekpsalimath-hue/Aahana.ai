@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createSpeechRuntime, SpeechProviderError, normalizeLocale } from "./speech-runtime.mjs";
+import { createSpeechRuntime, SpeechProviderError, normalizeLocale, createProviderRequestSignal, isProviderTimeout } from "./speech-runtime.mjs";
 
 test("runtime starts disabled until providers are explicitly injected", () => {
   const runtime = createSpeechRuntime();
@@ -85,4 +85,25 @@ test("validates missing input and empty provider output", async () => {
 test("canonicalizes valid locales and rejects malformed locales", () => {
   assert.equal(normalizeLocale("en-in"), "en-IN");
   assert.throws(() => normalizeLocale("not_a_locale"), { code: "INVALID_LOCALE" });
+});
+
+test("provider request deadline combines caller cancellation and bounded timeout", async () => {
+  const caller = new AbortController();
+  const requestSignal = createProviderRequestSignal(caller.signal, 5);
+  assert.notEqual(requestSignal, caller.signal);
+  await new Promise((resolve) => requestSignal.addEventListener("abort", resolve, { once: true }));
+  assert.equal(isProviderTimeout({ name: "AbortError" }, requestSignal, caller.signal), true);
+  assert.equal(caller.signal.aborted, false);
+});
+
+test("caller cancellation is not misclassified as a provider timeout", () => {
+  const caller = new AbortController();
+  const requestSignal = createProviderRequestSignal(caller.signal, 10_000);
+  caller.abort();
+  assert.equal(isProviderTimeout({ name: "AbortError" }, requestSignal, caller.signal), false);
+});
+
+test("provider timeout bounds are validated", () => {
+  assert.throws(() => createProviderRequestSignal(undefined, 0), { code: "INVALID_PROVIDER_TIMEOUT" });
+  assert.throws(() => createProviderRequestSignal(undefined, 120_001), { code: "INVALID_PROVIDER_TIMEOUT" });
 });
