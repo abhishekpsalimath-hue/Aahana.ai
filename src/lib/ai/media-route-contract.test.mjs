@@ -12,7 +12,9 @@ test("video endpoint authenticates before provider calls and bounds execution", 
   const provider = route.indexOf("await fetch(");
   assert.ok(auth >= 0 && provider > auth);
   assert.match(route, /validateVideoGenerationInput/);
-  assert.match(route, /AbortSignal.timeout\(165000\)/);
+  assert.match(route, /AbortSignal.any\(\[request.signal, AbortSignal.timeout\(165000\)\]\)/);
+  assert.match(route, /request.signal.aborted/);
+  assert.match(route, /status: 499/);
   assert.match(route, /isTrustedGeneratedVideoUrl/);
   assert.match(route, /Cache-Control/);
   assert.match(route, /black-forest-labs\/flux-3-video/);
@@ -31,7 +33,9 @@ test("video downloads require authentication, a trusted host and block redirects
   assert.match(downloadRoute, /isTrustedGeneratedVideoUrl/);
   assert.match(downloadRoute, /redirect:\s*"error"/);
   assert.match(downloadRoute, /Content-Disposition/);
-  assert.match(downloadRoute, /AbortSignal.timeout/);
+  assert.match(downloadRoute, /AbortSignal.any\(\[request.signal, AbortSignal.timeout\(150000\)\]\)/);
+  assert.match(downloadRoute, /request.signal.aborted/);
+  assert.match(downloadRoute, /status: 499/);
 });
 
 test("assistant exposes video creation, quality, duration and download controls", () => {
