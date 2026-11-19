@@ -472,10 +472,10 @@ export async function POST(request) {
     onError: (error) => console.error("Aahana reply persistence failed:", error?.message || "unknown error"),
   });
 
+  let streamCancelled = false;
   const stream = new ReadableStream({
     async start(controller) {
       let buffer = "";
-      let finished = false;
       const handleLine = (line) => {
         if (!line.startsWith("data:")) return;
         const data = line.slice(5).trim();
@@ -485,35 +485,38 @@ export async function POST(request) {
           const delta = payload.choices?.[0]?.delta?.content;
           if (typeof delta === "string" && delta) {
             fullReply += delta;
-            controller.enqueue(encoder.encode(delta));
+            if (!streamCancelled) controller.enqueue(encoder.encode(delta));
           }
         } catch {
           // Ignore non-JSON keepalive or metadata frames.
         }
       };
       try {
-        while (true) {
+        while (!streamCancelled) {
           const { value, done } = await reader.read();
-          if (done) break;
+          if (done || streamCancelled) break;
           buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split("\\n");
+          const lines = buffer.split("\n");
           buffer = lines.pop() ?? "";
-          for (const line of lines) handleLine(line.replace(/\\r$/, ""));
+          for (const line of lines) handleLine(line.replace(/\r$/, ""));
         }
-        buffer += decoder.decode();
-        if (buffer) handleLine(buffer.replace(/\\r$/, ""));
-        finished = true;
-        await persistReply();
-        controller.close();
+        if (!streamCancelled) {
+          buffer += decoder.decode();
+          if (buffer) handleLine(buffer.replace(/\r$/, ""));
+          await persistReply();
+          if (!streamCancelled) controller.close();
+        }
       } catch (error) {
-        console.error("Aahana stream failed:", error?.message || "unknown error");
-        if (!finished) controller.error(error);
+        if (!streamCancelled) {
+          console.error("Aahana stream failed:", error?.message || "unknown error");
+          controller.error(error);
+        }
       } finally {
         reader.releaseLock();
       }
     },
     async cancel() {
-      // Cancel upstream consumption immediately and save any partial answer once.
+      streamCancelled = true;
       await reader.cancel().catch(() => {});
       await persistReply();
     },
