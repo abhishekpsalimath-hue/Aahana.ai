@@ -85,3 +85,14 @@ test("AI source proposals are version-bound, reviewed as a diff, and never auto-
   assert.match(page, /proposalRequest\.current\?\.abort\(\)/);
   assert.match(page, /Stop proposal/);
 });
+
+
+test("Build workspace assembly fails closed instead of silently omitting source files", () => {
+  assert.match(buildRoute, /MAX_PROJECT_FILE_ROWS \+ 1/);
+  assert.match(buildRoute, /eligible\.length > MAX_SOURCE_FILES/);
+  assert.match(buildRoute, /invalid or duplicate workspace path/);
+  assert.match(buildRoute, /No partial build was started/);
+  assert.match(buildRoute, /new TextDecoder\("utf-8", \{ fatal: true \}\)/);
+  assert.match(buildRoute, /bytes !== file\.size_bytes/);
+  assert.match(buildRoute, /Project source files exceed the 3 MB build workspace limit/);
+});
