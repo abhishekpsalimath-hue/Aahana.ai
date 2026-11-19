@@ -80,4 +80,8 @@ test("AI source proposals are version-bound, reviewed as a diff, and never auto-
   assert.match(page, /AI proposals are limited to source files up to 5 KB/);
   assert.match(page, /instruction\.length > 8000/);
   assert.match(page, /MAX_PROPOSAL_SOURCE_BYTES/);
+  assert.match(page, /new AbortController\(\)/);
+  assert.match(page, /signal: controller\.signal/);
+  assert.match(page, /proposalRequest\.current\?\.abort\(\)/);
+  assert.match(page, /Stop proposal/);
 });
