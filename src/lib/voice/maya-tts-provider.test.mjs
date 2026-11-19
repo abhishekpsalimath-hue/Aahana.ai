@@ -114,9 +114,11 @@ test("maps an upstream request deadline to PROVIDER_TIMEOUT", async () => {
   const provider = createMayaTtsProvider({
     baseUrl: "https://speech.example.com",
     timeoutMs: 5,
-    fetchImpl: async (_url, { signal }) => new Promise((_, reject) => {
-      signal.addEventListener("abort", () => reject(signal.reason), { once: true });
-    }),
+    fetchImpl: async (_url, { signal }) => {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      if (signal.aborted) throw signal.reason;
+      return mockResponse();
+    },
   });
   await assert.rejects(
     provider.synthesize({ text: "hello", locale: "en-IN" }),
