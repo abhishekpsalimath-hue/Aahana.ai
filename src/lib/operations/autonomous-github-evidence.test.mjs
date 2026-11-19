@@ -1,0 +1,107 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { evaluateTrustedPullRequest } from "./autonomous-github-evidence.mjs";
+
+const baseSha = "a".repeat(40);
+const headSha = "b".repeat(40);
+const task = {
+  sourceSha: baseSha,
+  risk: "low",
+  allowedPaths: ["src/features/demo/**"],
+  acceptanceCriteria: [{ id: "unit-tests", requiredCheckName: "Unit tests" }],
+};
+function makeGithub(overrides = {}) {
+  return {
+    async getPullRequest() {
+      return { state: "open", merged: false, base: { sha: baseSha }, head: { sha: headSha }, ...(overrides.pr || {}) };
+    },
+    async listPullRequestFiles() {
+      return { complete: true, files: [{
+        filename: "src/features/demo/hello.mjs", patch: "+export const hello = true;",
+        additions: 1, deletions: 0,
+      }], ...(overrides.files || {}) };
+    },
+    async getCommitCheckRuns() {
+      return { complete: true, checkRuns: [{
+        name: "Unit tests", status: "completed", conclusion: "success",
+        headSha, url: "https://github.com/example/repo/actions/runs/1",
+      }], ...(overrides.checks || {}) };
+    },
+    async getCommitTree({ sha }) {
+      return {
+        complete: true, truncated: false,
+        entries: sha === baseSha ? [] : [{ path: "src/features/demo/hello.mjs", mode: "100644" }],
+        ...(overrides[sha === baseSha ? "baseTree" : "headTree"] || {}),
+      };
+    },
+  };
+}
+
+test("accepts only a PR whose base, diff, trees and CI checks are verified", async () => {
+  const result = await evaluateTrustedPullRequest({
+    github: makeGithub(), task, pullRequestNumber: 12,
+  });
+  assert.equal(result.ok, true, result.errors.join("; "));
+  assert.equal(result.evidence.headSha, headSha);
+});
+
+test("rejects a PR based on a different source SHA", async () => {
+  const result = await evaluateTrustedPullRequest({
+    github: makeGithub({ pr: { base: { sha: "c".repeat(40) } } }),
+    task, pullRequestNumber: 12,
+  });
+  assert.equal(result.ok, false);
+  assert.ok(result.errors.some((error) => error.includes("base")));
+});
+
+test("rejects incomplete pagination and truncated Git trees", async () => {
+  const incompleteFiles = await evaluateTrustedPullRequest({
+    github: makeGithub({ files: { complete: false } }), task, pullRequestNumber: 12,
+  });
+  assert.equal(incompleteFiles.ok, false);
+  const truncatedTree = await evaluateTrustedPullRequest({
+    github: makeGithub({ headTree: { truncated: true } }), task, pullRequestNumber: 12,
+  });
+  assert.equal(truncatedTree.ok, false);
+});
+
+test("rejects pending or failed checks", async () => {
+  for (const check of [
+    { name: "Unit tests", status: "in_progress", conclusion: null, headSha },
+    { name: "Unit tests", status: "completed", conclusion: "failure", headSha },
+  ]) {
+    const result = await evaluateTrustedPullRequest({
+      github: makeGithub({ checks: { checkRuns: [check] } }), task, pullRequestNumber: 12,
+    });
+    assert.equal(result.ok, false);
+  }
+});
+
+test("rejects symlink changes", async () => {
+  const result = await evaluateTrustedPullRequest({
+    github: makeGithub({ headTree: { entries: [{ path: "src/features/demo/hello.mjs", mode: "120000" }] } }),
+    task, pullRequestNumber: 12,
+  });
+  assert.equal(result.ok, false);
+});
+
+test("rejects missing patches and acceptance-check mappings", async () => {
+  const noPatch = await evaluateTrustedPullRequest({
+    github: makeGithub({ files: { files: [{ filename: "src/features/demo/hello.mjs", additions: 1, deletions: 0 }] } }),
+    task, pullRequestNumber: 12,
+  });
+  assert.equal(noPatch.ok, false);
+  const noCriteria = await evaluateTrustedPullRequest({
+    github: makeGithub(), task: { ...task, acceptanceCriteria: [] }, pullRequestNumber: 12,
+  });
+  assert.equal(noCriteria.ok, false);
+});
+
+test("rejects merged or closed pull requests", async () => {
+  for (const pr of [{ state: "closed", merged: false }, { state: "closed", merged: true }]) {
+    const result = await evaluateTrustedPullRequest({
+      github: makeGithub({ pr }), task, pullRequestNumber: 12,
+    });
+    assert.equal(result.ok, false);
+  }
+});
