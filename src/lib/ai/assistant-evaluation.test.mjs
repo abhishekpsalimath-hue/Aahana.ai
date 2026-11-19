@@ -1,6 +1,17 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { ASSISTANT_EVALUATION_CASES, ASSISTANT_EVALUATION_RUBRIC, ASSISTANT_EVALUATION_VERSION, summarizeEvaluation } from "./assistant-evaluation.mjs";
+import {
+  ASSISTANT_EVALUATION_CASES,
+  ASSISTANT_EVALUATION_RUBRIC,
+  ASSISTANT_EVALUATION_VERSION,
+  summarizeEvaluation,
+} from "./assistant-evaluation.mjs";
+
+const scoredCases = (scoreForIndex = () => 5) =>
+  ASSISTANT_EVALUATION_CASES.map((item, index) => ({
+    id: item.id,
+    score: scoreForIndex(index),
+  }));
 
 test("evaluation set is versioned, unique and contains 100 synthetic cases", () => {
   assert.equal(ASSISTANT_EVALUATION_VERSION, "1.0.0");
@@ -24,33 +35,58 @@ test("rubric tracks five quality dimensions and critical failure classes", () =>
   assert.ok(ASSISTANT_EVALUATION_RUBRIC.criticalFailures.includes("fabricated_sources"));
 });
 
-test("evaluation summary computes scores and blocks critical failures", () => {
-  const clean = summarizeEvaluation([{ score: 5 }, { score: 4 }]);
-  assert.deepEqual(clean, { total: 2, scored: 2, average: 4.5, atLeastFour: 2, criticalFailures: 0, releaseEligible: true });
-  const unsafe = summarizeEvaluation([{ score: 5, criticalFailures: ["privacy_boundary_violation"] }]);
-  assert.equal(unsafe.releaseEligible, false);
-  assert.equal(unsafe.criticalFailures, 1);
-});
-
-test("incomplete or weak evaluations cannot pass the release gate", () => {
-  assert.equal(summarizeEvaluation([{ score: 5 }, { score: 3 }]).releaseEligible, false);
-  assert.equal(summarizeEvaluation([{ score: 5 }, { score: 0 }]).releaseEligible, false);
+test("only a complete 100-case benchmark can pass", () => {
+  const clean = summarizeEvaluation(scoredCases());
+  assert.deepEqual(clean, {
+    total: 100,
+    expected: 100,
+    scored: 100,
+    average: 5,
+    atLeastFour: 100,
+    criticalFailures: 0,
+    releaseEligible: true,
+  });
+  assert.equal(summarizeEvaluation(scoredCases().slice(0, 99)).releaseEligible, false);
   assert.equal(summarizeEvaluation([]).releaseEligible, false);
 });
 
-test("release gate matches the documented 90 percent quality threshold", () => {
-  const ninetyPercent = Array.from({ length: 100 }, (_, index) => ({ score: index < 90 ? 4 : 3 }));
-  const eightyNinePercent = Array.from({ length: 100 }, (_, index) => ({ score: index < 89 ? 4 : 3 }));
-  assert.equal(summarizeEvaluation(ninetyPercent).releaseEligible, true);
-  assert.equal(summarizeEvaluation(eightyNinePercent).releaseEligible, false);
+test("90 percent passes while 89 percent fails", () => {
+  const ninetyPercent = summarizeEvaluation(scoredCases((index) => index < 90 ? 4 : 3));
+  const eightyNinePercent = summarizeEvaluation(scoredCases((index) => index < 89 ? 4 : 3));
+  assert.equal(ninetyPercent.releaseEligible, true);
+  assert.equal(ninetyPercent.atLeastFour, 90);
+  assert.equal(eightyNinePercent.releaseEligible, false);
+  assert.equal(eightyNinePercent.atLeastFour, 89);
 });
 
-test("release gate still blocks incomplete scores and any critical failure", () => {
-  const incomplete = [{ score: 5 }, { score: 4 }, { score: null }];
-  const critical = Array.from({ length: 100 }, (_, index) => ({
-    score: 5,
-    ...(index === 0 ? { criticalFailures: ["privacy_boundary_violation"] } : {}),
-  }));
-  assert.equal(summarizeEvaluation(incomplete).releaseEligible, false);
-  assert.equal(summarizeEvaluation(critical).releaseEligible, false);
+test("duplicate, missing, unknown or invalid case results cannot pass", () => {
+  const duplicate = scoredCases();
+  duplicate[99] = { ...duplicate[0] };
+  const missingId = scoredCases();
+  delete missingId[0].id;
+  const unknownId = scoredCases();
+  unknownId[0].id = "not-in-benchmark";
+  const invalidScore = scoredCases();
+  invalidScore[0].score = 0;
+
+  for (const results of [duplicate, missingId, unknownId, invalidScore]) {
+    assert.equal(summarizeEvaluation(results).releaseEligible, false);
+  }
+});
+
+test("any critical failure blocks release even when every score is five", () => {
+  const results = scoredCases();
+  results[0].criticalFailures = ["privacy_boundary_violation"];
+  const summary = summarizeEvaluation(results);
+  assert.equal(summary.criticalFailures, 1);
+  assert.equal(summary.releaseEligible, false);
+});
+
+test("summary reports partial scoring without treating it as a pass", () => {
+  const results = scoredCases();
+  results[0].score = null;
+  const summary = summarizeEvaluation(results);
+  assert.equal(summary.total, 100);
+  assert.equal(summary.scored, 99);
+  assert.equal(summary.releaseEligible, false);
 });
