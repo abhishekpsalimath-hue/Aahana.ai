@@ -123,3 +123,8 @@ test("Source editor rejects stored-size mismatches before returning project cont
   assert.match(contentRoute, /stored size does not match/);
   assert.match(contentRoute, /status: 409/);
 });
+
+
+test("Build execution diagnostics are returned with private no-store caching", () => {
+  assert.match(buildRoute, /Cache-Control": "private, no-store/);
+});
