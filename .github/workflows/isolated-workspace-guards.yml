@@ -12,6 +12,7 @@ on:
   push:
     branches:
       - work/isolated-workspace-v2
+      - fix/build-engine-abort-before-upload
     paths:
       - "src/app/api/build/**"
       - "src/lib/build/**"
