@@ -57,7 +57,7 @@ export default function ExperienceLab() {
   return <main className={`experience-lab ${focus ? "focus-mode" : ""}`}>
     <div className="lab-ambient ambient-one" /><div className="lab-ambient ambient-two" />
     <header className="lab-topbar">
-      <a className="lab-brand" href="/" aria-label="Aahana AI home"><span className="lab-brand-symbol">a</span><span>Aahana <i>ai</i></span></a>
+      <a className="lab-brand" href="/" aria-label="Aahana AI home"><span className="lab-brand-symbol" aria-hidden="true">a</span><span>Aahana <i className="lab-brand-ai">aı<span className="lab-brand-moon" aria-hidden="true" /></i></span></a>
       <div className="lab-top-center"><span className="live-pulse" /> INTERACTIVE EXPERIENCE LAB <span className="lab-preview-tag">CONCEPT</span></div>
       <div className="lab-top-actions"><button type="button" className={focus ? "top-icon selected" : "top-icon"} onClick={() => setFocus(!focus)} aria-pressed={focus} title="Toggle focus mode">⛶</button><a href="/" className="lab-exit">Exit preview <span>↗</span></a></div>
     </header>
@@ -118,6 +118,6 @@ export default function ExperienceLab() {
         <div className="inspector-footer"><span className="footer-spark">✳</span><div><strong>One intelligence.</strong><small>Many ways to work together.</small></div></div>
       </aside>
     </div>
-    <footer className="lab-footer"><span>AAHANA AI <i>EXPERIENCE LAB</i></span><span>THINK BEYOND THE EXPECTED</span><span>CONCEPT BUILD · INTERACTIONS ARE LOCAL ONLY</span></footer>
+    <footer className="lab-footer"><span>Aahana ai <i>EXPERIENCE LAB</i></span><span>THINK BEYOND THE EXPECTED</span><span>CONCEPT BUILD · INTERACTIONS ARE LOCAL ONLY</span></footer>
   </main>;
 }
