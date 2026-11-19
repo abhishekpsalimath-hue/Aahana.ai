@@ -73,7 +73,7 @@ export async function POST(request) {
           },
         }),
         cache: "no-store",
-        signal: AbortSignal.timeout(165000),
+        signal: AbortSignal.any([request.signal, AbortSignal.timeout(165000)]),
       },
     );
 
@@ -103,6 +103,9 @@ export async function POST(request) {
       expiresIn: "The provider's signed video URL is temporary; save the video promptly.",
     }, { headers: { "Cache-Control": "private, no-store" } });
   } catch (error) {
+    if (request.signal.aborted) {
+      return new Response(null, { status: 499 });
+    }
     console.error("Aahana video generation request failed:", error?.name || "unknown error");
     return NextResponse.json({
       error: "Video generation timed out or the provider is unavailable. Please try again.",
