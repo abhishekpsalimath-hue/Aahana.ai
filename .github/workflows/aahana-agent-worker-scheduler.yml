@@ -1,0 +1,35 @@
+name: Aahana Agent Worker Scheduler
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aahana-agent-worker-scheduler
+  cancel-in-progress: false
+
+jobs:
+  invoke-worker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Validate scheduler secret
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "::error::GitHub Actions secret CRON_SECRET is not configured."
+            exit 1
+          fi
+      - name: Invoke one bounded worker task
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl --fail-with-body --silent --show-error \
+            --max-time 55 \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            "https://aahana-ai.vercel.app/api/internal/agent-worker"

@@ -91,8 +91,14 @@ export async function GET(request) {
     if (lookupError || !existingRun) {
       return NextResponse.json({ error: "Could not recover the existing executive cycle." }, { status: 500 });
     }
-    if (existingRun.status === "completed") {
-      return NextResponse.json({ ok: true, duplicate: true, cycle: cycleKey, summary: existingRun.summary });
+    if (["completed", "failed"].includes(existingRun.status)) {
+      return NextResponse.json({
+        ok: existingRun.status === "completed",
+        duplicate: true,
+        cycle: cycleKey,
+        status: existingRun.status,
+        summary: existingRun.summary,
+      });
     }
     runId = existingRun.id;
   }
@@ -120,18 +126,18 @@ export async function GET(request) {
     return NextResponse.json({ error: "Could not queue executive duties." }, { status: 500 });
   }
 
-  const summary = "Daily CEO, CTO, COO and CMO duties were placed in the system-owned queue. No user workspace data was accessed and no external actions were performed.";
-  const { error: finishError } = await supabase.from("aahana_agent_runs").update({
-    status: "completed",
-    finished_at: new Date().toISOString(),
+  const summary = "Daily CEO, CTO, COO and CMO duties were queued. The run remains active until the worker completes or blocks every task.";
+  const { error: queueStateError } = await supabase.from("aahana_agent_runs").update({
+    status: "running",
+    finished_at: null,
     summary,
     error_code: null,
   }).eq("id", runId);
 
-  if (finishError) {
-    console.error("Aahana autonomous cycle finalisation failed:", finishError.message);
-    return NextResponse.json({ error: "Executive duties were queued but the run could not be finalised." }, { status: 500 });
+  if (queueStateError) {
+    console.error("Aahana autonomous cycle queue state could not be saved:", queueStateError.message);
+    return NextResponse.json({ error: "Duties were queued but the run state could not be saved." }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true, duplicate: false, cycle: cycleKey, queued: DAILY_DUTIES.length, roles: DAILY_DUTIES.map((duty) => duty.role) });
+  return NextResponse.json({ ok: true, status: "queued", duplicate: false, cycle: cycleKey, queued: DAILY_DUTIES.length, roles: DAILY_DUTIES.map((duty) => duty.role) });
 }
