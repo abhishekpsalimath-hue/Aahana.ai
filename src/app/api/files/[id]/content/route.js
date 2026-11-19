@@ -13,7 +13,7 @@ function versionFor(objectPath) {
 
 async function getOwnedSourceFile(supabase, userId, id) {
   const { data: file, error } = await supabase.from("user_files")
-    .select("id, user_id, project_id, bucket_id, object_path, original_filename, mime_type")
+    .select("id, user_id, project_id, bucket_id, object_path, original_filename, mime_type, size_bytes")
     .eq("id", id).eq("user_id", userId).maybeSingle();
   if (error || !file || file.bucket_id !== BUCKET || !file.project_id ||
       typeof file.object_path !== "string" || !file.object_path.startsWith(userId + "/" + file.project_id + "/") ||
@@ -32,6 +32,9 @@ export async function GET(_request, { params }) {
 
   const { data: blob, error } = await supabase.storage.from(BUCKET).download(file.object_path);
   if (error || !blob || blob.size > MAX_BYTES) return NextResponse.json({ error: "Could not read this source file." }, { status: 400 });
+  if (!Number.isInteger(file.size_bytes) || blob.size !== file.size_bytes) {
+    return NextResponse.json({ error: "This source file changed or its stored size does not match. Reload the project before editing." }, { status: 409 });
+  }
   let content;
   try { content = new TextDecoder("utf-8", { fatal: true }).decode(await blob.arrayBuffer()); }
   catch { return NextResponse.json({ error: "This file is not valid UTF-8 text." }, { status: 400 }); }
