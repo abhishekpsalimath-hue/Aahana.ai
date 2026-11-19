@@ -24,3 +24,13 @@ test("Build execution controls stay disabled without enabled engine and sandbox 
   assert.match(page, /!buildStatus\?\.enabled \|\| !buildStatus\?\.sandboxIdentityAvailable/);
   assert.match(statusRoute, /sandboxIdentityAvailable: Boolean\(process\.env\.VERCEL_OIDC_TOKEN\)/);
 });
+
+test("Build Mode uploads only supported project source files through authenticated storage", () => {
+  assert.match(page, /getSourceFileMimeType/);
+  assert.match(page, /isSupportedSourceFile\(file\.name, mimeType\)/);
+  assert.match(page, /file\.size > 1024 \* 1024/);
+  assert.match(page, /storage\.from\("aahana-private"\)\.upload/);
+  assert.match(page, /body: JSON\.stringify\(\{ objectPath, originalFilename: file\.name, mimeType, sizeBytes: file\.size, projectId: selectedProjectId \}\)/);
+  assert.match(page, /Add source files/);
+  assert.match(buildRoute, /isProjectSourceFile/);
+});
