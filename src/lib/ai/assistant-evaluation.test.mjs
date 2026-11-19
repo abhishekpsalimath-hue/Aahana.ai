@@ -37,3 +37,20 @@ test("incomplete or weak evaluations cannot pass the release gate", () => {
   assert.equal(summarizeEvaluation([{ score: 5 }, { score: 0 }]).releaseEligible, false);
   assert.equal(summarizeEvaluation([]).releaseEligible, false);
 });
+
+test("release gate matches the documented 90 percent quality threshold", () => {
+  const ninetyPercent = Array.from({ length: 100 }, (_, index) => ({ score: index < 90 ? 4 : 3 }));
+  const eightyNinePercent = Array.from({ length: 100 }, (_, index) => ({ score: index < 89 ? 4 : 3 }));
+  assert.equal(summarizeEvaluation(ninetyPercent).releaseEligible, true);
+  assert.equal(summarizeEvaluation(eightyNinePercent).releaseEligible, false);
+});
+
+test("release gate still blocks incomplete scores and any critical failure", () => {
+  const incomplete = [{ score: 5 }, { score: 4 }, { score: null }];
+  const critical = Array.from({ length: 100 }, (_, index) => ({
+    score: 5,
+    ...(index === 0 ? { criticalFailures: ["privacy_boundary_violation"] } : {}),
+  }));
+  assert.equal(summarizeEvaluation(incomplete).releaseEligible, false);
+  assert.equal(summarizeEvaluation(critical).releaseEligible, false);
+});
