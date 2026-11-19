@@ -1,0 +1,38 @@
+name: Aahana Phase C policy gate checks
+on:
+  pull_request:
+    branches:
+      - feat/aahana-agent-worker-phase-b
+    paths:
+      - "src/lib/operations/autonomous-policy.*"
+      - "package.json"
+      - ".github/workflows/aahana-phase-c-policy-gate.yml"
+  push:
+    branches:
+      - feat/aahana-autonomous-development-phase-c-policy-gate
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aahana-phase-c-policy-gate-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  policy-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Run policy tests
+        run: node --test src/lib/operations/autonomous-policy.test.mjs
+      - name: Run full test suite
+        run: npm test
+      - name: Build application
+        run: npm run build
