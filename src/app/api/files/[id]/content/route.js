@@ -67,33 +67,51 @@ export async function PUT(request, { params }) {
     return NextResponse.json({ error: "Source files must contain 1 byte to 1 MB of valid text." }, { status: 400 });
   }
 
-  const safeName = file.original_filename.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-100) || "source";
-  const nextPath = user.id + "/" + file.project_id + "/" + randomUUID() + "-" + safeName;
-  const { error: uploadError } = await supabase.storage.from(BUCKET).upload(
-    nextPath,
-    new Blob([body.content], { type: file.mime_type }),
-    { contentType: file.mime_type, upsert: false },
-  );
-  if (uploadError) return NextResponse.json({ error: "Could not save this source file." }, { status: 500 });
-
-  // The object path is the version pointer. A conditional row update ensures only one
-  // concurrent editor can advance the file from the version it originally opened.
-  const { data: updated, error: updateError } = await supabase.from("user_files")
-    .update({ object_path: nextPath, size_bytes: bytes })
-    .eq("id", file.id).eq("user_id", user.id).eq("object_path", file.object_path)
-    .select("id").maybeSingle();
-
-  if (updateError || !updated) {
-    await supabase.storage.from(BUCKET).remove([nextPath]).catch(() => ({}));
-    if (updateError) {
-      console.error("Aahana source metadata update failed:", updateError.message);
-      return NextResponse.json({ error: "Could not save this source file." }, { status: 500 });
-    }
-    return NextResponse.json({ error: "This source file was saved elsewhere first. Reload the latest version before trying again." }, { status: 409 });
+  const lockToken = randomUUID();
+  const { data: lockAcquired, error: lockError } = await supabase.rpc("acquire_aahana_build_lock", {
+    p_project_id: file.project_id,
+    p_lock_token: lockToken,
+  });
+  if (lockError) {
+    console.error("Aahana source edit lock could not be acquired:", lockError.message);
+    return NextResponse.json({ error: "Project editing protection is not ready. Please try again." }, { status: 503 });
+  }
+  if (lockAcquired !== true) {
+    return NextResponse.json({ error: "This project is currently building. Try saving your source again when execution finishes." }, { status: 409 });
   }
 
-  const { error: cleanupError } = await supabase.storage.from(BUCKET).remove([file.object_path]);
-  if (cleanupError) console.error("Aahana previous source version cleanup failed:", cleanupError.message);
+  try {
+    const safeName = file.original_filename.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-100) || "source";
+    const nextPath = user.id + "/" + file.project_id + "/" + randomUUID() + "-" + safeName;
+    const { error: uploadError } = await supabase.storage.from(BUCKET).upload(
+      nextPath,
+      new Blob([body.content], { type: file.mime_type }),
+      { contentType: file.mime_type, upsert: false },
+    );
+    if (uploadError) return NextResponse.json({ error: "Could not save this source file." }, { status: 500 });
 
-  return NextResponse.json({ saved: true, sizeBytes: bytes, version: versionFor(nextPath) });
+    // The object path is the version pointer. A conditional row update ensures only one
+    // concurrent editor can advance the file from the version it originally opened.
+    const { data: updated, error: updateError } = await supabase.from("user_files")
+      .update({ object_path: nextPath, size_bytes: bytes })
+      .eq("id", file.id).eq("user_id", user.id).eq("object_path", file.object_path)
+      .select("id").maybeSingle();
+
+    if (updateError || !updated) {
+      await supabase.storage.from(BUCKET).remove([nextPath]).catch(() => ({}));
+      if (updateError) {
+        console.error("Aahana source metadata update failed:", updateError.message);
+        return NextResponse.json({ error: "Could not save this source file." }, { status: 500 });
+      }
+      return NextResponse.json({ error: "This source file was saved elsewhere first. Reload the latest version before trying again." }, { status: 409 });
+    }
+
+    const { error: cleanupError } = await supabase.storage.from(BUCKET).remove([file.object_path]);
+    if (cleanupError) console.error("Aahana previous source version cleanup failed:", cleanupError.message);
+
+    return NextResponse.json({ saved: true, sizeBytes: bytes, version: versionFor(nextPath) });
+  } finally {
+    const { error: releaseError } = await supabase.rpc("release_aahana_build_lock", { p_lock_token: lockToken });
+    if (releaseError) console.error("Aahana source edit lock release failed:", releaseError.message);
+  }
 }
