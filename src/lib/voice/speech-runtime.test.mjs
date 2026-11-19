@@ -91,8 +91,10 @@ test("provider request deadline combines caller cancellation and bounded timeout
   const caller = new AbortController();
   const requestSignal = createProviderRequestSignal(caller.signal, 5);
   assert.notEqual(requestSignal, caller.signal);
-  await new Promise((resolve) => requestSignal.addEventListener("abort", resolve, { once: true }));
-  assert.equal(isProviderTimeout({ name: "AbortError" }, requestSignal, caller.signal), true);
+  // AbortSignal.timeout uses an unref'ed timer; keep the test process alive.
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  assert.equal(requestSignal.aborted, true);
+  assert.equal(isProviderTimeout({ name: "TimeoutError" }, requestSignal, caller.signal), true);
   assert.equal(caller.signal.aborted, false);
 });
 
