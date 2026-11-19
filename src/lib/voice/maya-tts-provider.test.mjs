@@ -109,3 +109,17 @@ test("rejects an invalid voice or oversized audio response", async () => {
   });
   await assert.rejects(provider.synthesize({ text: "hello", locale: "en-IN" }), { code: "AUDIO_TOO_LARGE" });
 });
+
+test("maps an upstream request deadline to PROVIDER_TIMEOUT", async () => {
+  const provider = createMayaTtsProvider({
+    baseUrl: "https://speech.example.com",
+    timeoutMs: 5,
+    fetchImpl: async (_url, { signal }) => new Promise((_, reject) => {
+      signal.addEventListener("abort", () => reject(signal.reason), { once: true });
+    }),
+  });
+  await assert.rejects(
+    provider.synthesize({ text: "hello", locale: "en-IN" }),
+    { code: "PROVIDER_TIMEOUT" },
+  );
+});
