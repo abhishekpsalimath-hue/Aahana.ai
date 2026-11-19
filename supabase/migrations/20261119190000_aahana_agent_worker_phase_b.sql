@@ -62,6 +62,10 @@ begin
   select * into v_task
   from public.aahana_agent_tasks
   where attempts < 5
+    -- Phase B is limited to the four system-owned executive duties. Do not
+    -- consume unrelated task types that may share the task queue in future.
+    and role in ('ceo', 'cto', 'coo', 'cmo')
+    and task_type in ('daily_review', 'brain_quality_review', 'health_review', 'growth_review')
     and available_at <= now()
     and (
       status = 'queued'
