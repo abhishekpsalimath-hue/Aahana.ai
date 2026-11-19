@@ -1,0 +1,38 @@
+name: Aahana interactive experience lab checks
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "src/app/experience-lab/**"
+      - ".github/workflows/experience-lab-checks.yml"
+      - "package.json"
+  push:
+    branches:
+      - feat/interactive-experience-lab
+    paths:
+      - "src/app/experience-lab/**"
+      - ".github/workflows/experience-lab-checks.yml"
+      - "package.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aahana-experience-lab-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Run tests and production build
+        run: npm run build
