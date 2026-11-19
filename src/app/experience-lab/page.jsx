@@ -80,6 +80,10 @@ export default function ExperienceLab() {
   const [buildFiles, setBuildFiles] = useState([]);
   const [filesLoading, setFilesLoading] = useState(false);
   const [fileBusy, setFileBusy] = useState(false);
+  const [editingFile, setEditingFile] = useState(null);
+  const [sourceDraft, setSourceDraft] = useState("");
+  const [editorLoading, setEditorLoading] = useState(false);
+  const [editorSaving, setEditorSaving] = useState(false);
   const buildFileInput = useRef(null);
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [buildStatus, setBuildStatus] = useState(null);
@@ -135,6 +139,46 @@ export default function ExperienceLab() {
       .finally(() => { if (active) setFilesLoading(false); });
     return () => { active = false; };
   }, [mode, selectedProjectId]);
+
+  async function openSourceEditor(file) {
+    if (!isSupportedSourceFile(file.original_filename, file.mime_type)) return;
+    setEditorLoading(true);
+    setBuildError("");
+    try {
+      const response = await fetch(`/api/files/${encodeURIComponent(file.id)}/content`, { cache: "no-store" });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Could not open source file.");
+      setEditingFile(file);
+      setSourceDraft(result.file.content);
+    } catch (error) {
+      setBuildError(error.message || "Could not open source file.");
+    } finally {
+      setEditorLoading(false);
+    }
+  }
+
+  async function saveSourceFile() {
+    if (!editingFile || editorSaving) return;
+    setEditorSaving(true);
+    setBuildError("");
+    try {
+      const response = await fetch(`/api/files/${encodeURIComponent(editingFile.id)}/content`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: sourceDraft }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Could not save source file.");
+      setBuildFiles((current) => current.map((file) => file.id === editingFile.id ? { ...file, size_bytes: result.sizeBytes } : file));
+      setEditingFile(null);
+      setSourceDraft("");
+      setBuildResult(null);
+    } catch (error) {
+      setBuildError(error.message || "Could not save source file.");
+    } finally {
+      setEditorSaving(false);
+    }
+  }
 
   async function uploadBuildFiles(event) {
     const selected = Array.from(event.target.files || []);
@@ -381,8 +425,13 @@ export default function ExperienceLab() {
             </div>
             {!buildStatus?.enabled && <p className="build-console-note">The isolated Build Engine is not enabled in this environment. Project selection is available, but execution is safely disabled.</p>}
             {buildStatus?.enabled && !buildStatus?.sandboxIdentityAvailable && <p className="build-console-note">Sandbox identity is not available. Execution remains unavailable until the environment is configured.</p>}
-            {selectedProjectId && <div className="build-file-list"><span>PROJECT FILES {filesLoading ? "· Loading…" : `· ${buildFiles.length}`}</span>{buildFiles.length ? buildFiles.map((file) => <div key={file.id}><span>{file.original_filename}</span><small>{Math.max(1, Math.round(file.size_bytes / 1024))} KB</small></div>) : !filesLoading ? <p>No files attached to this project yet. Add source files, including package.json, before running a build.</p> : null}</div>}
+            {selectedProjectId && <div className="build-file-list"><span>PROJECT FILES {filesLoading ? "· Loading…" : `· ${buildFiles.length}`}</span>{buildFiles.length ? buildFiles.map((file) => <div key={file.id}><span>{file.original_filename}</span><small>{Math.max(1, Math.round(file.size_bytes / 1024))} KB</small>{isSupportedSourceFile(file.original_filename, file.mime_type) && <button type="button" onClick={() => openSourceEditor(file)} disabled={editorLoading}>{editorLoading ? "Opening…" : "Edit"}</button>}</div>) : !filesLoading ? <p>No files attached to this project yet. Add source files, including package.json, before running a build.</p> : null}</div>}
             {!buildProjects.length && !buildError && <p className="build-console-note">No projects yet. Create one, then add source files and a package.json in your project files.</p>}
+            {editingFile && <section className="build-source-editor" aria-label={`Edit ${editingFile.original_filename}`}>
+              <div><strong>{editingFile.original_filename}</strong><button type="button" onClick={() => { setEditingFile(null); setSourceDraft(""); }} disabled={editorSaving}>Close</button></div>
+              <textarea aria-label={`Source code for ${editingFile.original_filename}`} spellCheck={false} value={sourceDraft} onChange={(event) => setSourceDraft(event.target.value)} />
+              <button type="button" onClick={saveSourceFile} disabled={editorSaving}>{editorSaving ? "Saving…" : "Save source"}</button>
+            </section>}
             {buildError && <p className="build-console-error" role="alert">{buildError}</p>}
             {buildResult && <div className="build-console-result"><strong>{buildResult.status === "passed" ? "Execution passed" : "Execution failed"} · {buildResult.operation}</strong><small>Exit code {buildResult.exitCode} · {buildResult.sourceFileCount} source files</small><pre>{[buildResult.stdout, buildResult.stderr].filter(Boolean).join("\\n") || "No output."}</pre></div>}
           </section>}
