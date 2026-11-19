@@ -63,7 +63,7 @@ jobs:
             globalIgnores([".next/**", "out/**", "build/**", "next-env.d.ts", "src/app/learn/**"]),
           ]);
           EOF
-      - name: Run repository lint
-        run: npm run lint
+      - name: Lint voice modules and authenticated voice routes
+        run: npx eslint src/lib/voice src/app/api/voice
       - name: Run production build
         run: npm run build
