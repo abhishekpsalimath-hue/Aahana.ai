@@ -57,6 +57,10 @@ jobs:
           node-version: "22"
       - name: Run SraVaani provider adapter tests
         run: node --test ../../src/lib/voice/sravaani-asr-provider.test.mjs
+      - name: Test provider-neutral speech runtime
+        run: node --test ../../src/lib/voice/speech-runtime.test.mjs
+      - name: Test Maya speech synthesis adapter
+        run: node --test ../../src/lib/voice/maya-tts-provider.test.mjs
       - name: Test browser WAV encoder
         run: node --test ../../src/lib/voice/audio-wav.test.mjs
       - name: Test multilingual locale detection and coverage
