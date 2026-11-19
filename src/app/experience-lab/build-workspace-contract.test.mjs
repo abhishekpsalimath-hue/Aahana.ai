@@ -69,11 +69,14 @@ test("Source editor uses versioned immutable objects and compare-and-swap metada
 
 test("AI source proposals are version-bound, reviewed as a diff, and never auto-saved", () => {
   assert.match(page, /validateSourceProposal\(raw/);
-  assert.match(page, /createSourceDiff\(sourceDraft, proposal\.updatedContent\)/);\n  assert.match(page, /sourceProposal\.baseContent !== sourceDraft/);\n  assert.match(page, /disabled=\{proposalBusy \|\| editorSaving\} value=\{sourceDraft\}/);
+  assert.match(page, /createSourceDiff\(sourceDraft, proposal\.updatedContent\)/);
+  assert.match(page, /sourceProposal\.baseContent !== sourceDraft/);
+  assert.match(page, /disabled=\{proposalBusy \|\| editorSaving\} value=\{sourceDraft\}/);
   assert.match(page, /Ask Aahana to propose an edit/);
   assert.match(page, /Use this proposal in editor/);
   assert.match(page, /Nothing is saved until you review the editor and select Save source/);
   assert.match(page, /body: JSON\.stringify\(\{ content: sourceDraft, version: editingFile\.version \}\)/);
   assert.match(page, /AI proposals are limited to source files up to 5 KB/);
-  assert.match(page, /instruction\.length > 8000/);\n  assert.match(page, /MAX_PROPOSAL_SOURCE_BYTES/);
+  assert.match(page, /instruction\.length > 8000/);
+  assert.match(page, /MAX_PROPOSAL_SOURCE_BYTES/);
 });
