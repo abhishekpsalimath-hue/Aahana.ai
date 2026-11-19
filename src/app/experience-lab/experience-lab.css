@@ -22,3 +22,9 @@
 .build-console-result small{margin-top:5px;color:#bdaed2;font-size:11px}
 .build-console-result pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:260px;overflow:auto;margin:12px 0 0;font:11px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;color:#ddd1f3}
 @media(max-width:600px){.build-console{padding:14px}.build-console-controls select{min-width:100%}}
+
+.build-file-list{margin-top:16px;padding-top:13px;border-top:1px solid rgba(210,190,255,.13)}
+.build-file-list>span{display:block;margin-bottom:8px;font-size:10px;letter-spacing:.13em;color:#bda6e8}
+.build-file-list>div{display:flex;justify-content:space-between;gap:12px;padding:7px 0;color:#e9def9;font-size:12px}
+.build-file-list>div small{color:#b7a8cd;white-space:nowrap}
+.build-file-list>p{margin:8px 0 0;font-size:12px;line-height:1.5;color:#c5b5dc}
