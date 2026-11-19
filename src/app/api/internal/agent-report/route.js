@@ -26,8 +26,9 @@ export async function GET(request) {
   if (Number.isNaN(parsedSince.getTime())) return NextResponse.json({ error: "Invalid since timestamp." }, { status: 400 });
   const minimum = Date.now() - 7 * 24 * 60 * 60 * 1000;
   const since = new Date(Math.max(parsedSince.getTime(), minimum)).toISOString();
+  const sourceEventsSince = new Date(Math.max(parsedSince.getTime() - 24 * 60 * 60 * 1000, minimum)).toISOString();
 
-  const [runsResult, tasksResult, eventsResult] = await Promise.all([
+  const [runsResult, tasksResult, eventsResult, sourceEventsResult] = await Promise.all([
     supabase.from("aahana_agent_runs")
       .select("id,cycle_key,status,started_at,finished_at,summary,error_code")
       .gte("started_at", since).order("started_at", { ascending: false }).limit(10),
@@ -37,13 +38,17 @@ export async function GET(request) {
     supabase.from("aahana_agent_task_events")
       .select("id,task_id,run_id,event_type,attempt,summary,created_at")
       .gte("created_at", since).order("created_at", { ascending: false }).limit(50),
+    supabase.from("aahana_system_events")
+      .select("id,event_type,severity,source,summary,created_at")
+      .gte("created_at", sourceEventsSince).order("created_at", { ascending: false }).limit(50),
   ]);
 
-  if (runsResult.error || tasksResult.error || eventsResult.error) {
+  if (runsResult.error || tasksResult.error || eventsResult.error || sourceEventsResult.error) {
     console.error("Aahana worker report read failed:", {
       runs: runsResult.error?.message,
       tasks: tasksResult.error?.message,
       events: eventsResult.error?.message,
+      sourceEvents: sourceEventsResult.error?.message,
     });
     return NextResponse.json({ error: "Could not assemble the worker activity report." }, { status: 500 });
   }
@@ -52,6 +57,7 @@ export async function GET(request) {
     runs: runsResult.data || [],
     tasks: tasksResult.data || [],
     events: eventsResult.data || [],
+    sourceEvents: sourceEventsResult.data || [],
     generatedAt: new Date().toISOString(),
     windowStart: since,
   });
