@@ -31,7 +31,8 @@ test("rejects empty, oversized, binary and malformed proposals", () => {
   assert.throws(() => validateSourceProposal(JSON.stringify({ ...valid, updatedContent: "" }), context), /1 byte/);
   assert.throws(() => validateSourceProposal(JSON.stringify({ ...valid, updatedContent: "x".repeat(1024 * 1024 + 1) }), context), /1 byte/);
   assert.throws(() => validateSourceProposal(JSON.stringify({ ...valid, updatedContent: "bad\u0000source" }), context), /1 byte/);
-  assert.throws(() => validateSourceProposal(JSON.stringify({ ...valid, summary: " " }), context), /did not match/);\n  assert.throws(() => validateSourceProposal(JSON.stringify({ ...valid, admin: true }), context), /did not match/);
+  assert.throws(() => validateSourceProposal(JSON.stringify({ ...valid, summary: " " }), context), /did not match/);
+  assert.throws(() => validateSourceProposal(JSON.stringify({ ...valid, admin: true }), context), /did not match/);
   assert.throws(() => validateSourceProposal("x".repeat(2 * 1024 * 1024 + 1), context), /oversized/);
 });
 
