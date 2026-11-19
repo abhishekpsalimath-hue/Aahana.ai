@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildAgentReport, getRetryDelaySeconds } from "./agent-worker.mjs";
+import { buildAgentReport, getRetryDelaySeconds, parseWorkerResponse } from "./agent-worker.mjs";
 
 test("retry delays grow exponentially and cap at five attempts", () => {
   assert.deepEqual([1, 2, 3, 4, 5].map(getRetryDelaySeconds), [15, 30, 60, 120, 240]);
@@ -42,4 +42,15 @@ test("report filters unknown statuses and excludes user-private payload fields",
   assert.equal(report.tasks[0].output, "safe output");
   assert.equal("prompt" in report.tasks[0], false);
   assert.equal(report.autonomousStatus, "work_blocked");
+});
+
+test("worker response validates schema and only accepts supplied evidence IDs", () => {
+  const parsed = parseWorkerResponse(JSON.stringify({
+    report: "Observed one verified platform event.",
+    evidence_event_ids: ["event-1", "fabricated-event", "event-1"],
+  }), ["event-1", "event-2"]);
+  assert.equal(parsed.report, "Observed one verified platform event.");
+  assert.deepEqual(parsed.evidenceEventIds, ["event-1"]);
+  assert.throws(() => parseWorkerResponse("not-json", []), TypeError);
+  assert.throws(() => parseWorkerResponse(JSON.stringify({ report: "missing refs" }), []), TypeError);
 });
