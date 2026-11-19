@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createRequestTimeoutSignal, getClientAbortResponse } from "@/lib/ai/request-timeout.mjs";
 import { createReplyPersistence } from "@/lib/ai/stream-persistence.mjs";
+import { createSseDeltaParser } from "@/lib/ai/stream-parser.mjs";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -475,34 +476,19 @@ export async function POST(request) {
   let streamCancelled = false;
   const stream = new ReadableStream({
     async start(controller) {
-      let buffer = "";
-      const handleLine = (line) => {
-        if (!line.startsWith("data:")) return;
-        const data = line.slice(5).trim();
-        if (!data || data === "[DONE]") return;
-        try {
-          const payload = JSON.parse(data);
-          const delta = payload.choices?.[0]?.delta?.content;
-          if (typeof delta === "string" && delta) {
-            fullReply += delta;
-            if (!streamCancelled) controller.enqueue(encoder.encode(delta));
-          }
-        } catch {
-          // Ignore non-JSON keepalive or metadata frames.
-        }
-      };
+      const parser = createSseDeltaParser((delta) => {
+        fullReply += delta;
+        if (!streamCancelled) controller.enqueue(encoder.encode(delta));
+      });
       try {
         while (!streamCancelled) {
           const { value, done } = await reader.read();
           if (done || streamCancelled) break;
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split("\n");
-          buffer = lines.pop() ?? "";
-          for (const line of lines) handleLine(line.replace(/\r$/, ""));
+          parser.push(decoder.decode(value, { stream: true }));
         }
         if (!streamCancelled) {
-          buffer += decoder.decode();
-          if (buffer) handleLine(buffer.replace(/\r$/, ""));
+          parser.push(decoder.decode());
+          parser.flush();
           await persistReply();
           if (!streamCancelled) controller.close();
         }
