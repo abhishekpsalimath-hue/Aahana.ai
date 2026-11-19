@@ -42,3 +42,11 @@ test("renders a readable line-oriented change preview", () => {
   assert.match(diff, /^\+ const b = 3;$/m);
   assert.equal(createSourceDiff("same", "same"), "No source changes proposed.");
 });
+
+test("bounds rendered diff previews for large source changes", () => {
+  const before = Array.from({ length: 700 }, (_, i) => "old_" + i).join("\n");
+  const after = Array.from({ length: 700 }, (_, i) => "new_" + i).join("\n");
+  const diff = createSourceDiff(before, after);
+  assert.match(diff, /diff truncated/);
+  assert.ok(diff.length <= 40_050);
+});
