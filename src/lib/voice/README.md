@@ -24,6 +24,18 @@ Recognition and synthesis can use different providers and have independent
 locale coverage. Unsupported locales fail before provider invocation. Empty
 transcripts/audio and unavailable providers fail with stable error codes.
 
+## Request deadlines and cancellation
+
+- SraVaani recognition and Maya synthesis requests have a 45-second upstream
+  deadline by default, with a hard adapter configuration ceiling of 120 seconds.
+- The caller's abort signal is combined with the provider deadline. A user
+  cancellation remains distinct from a provider timeout.
+- Provider deadline expiry returns the stable `PROVIDER_TIMEOUT` error code;
+  the authenticated HTTP routes translate it to HTTP 504.
+- These deadlines bound the outbound fetch. They do not prove that a remote
+  inference process stopped after disconnect; the private service should also
+  enforce its own request and GPU-worker limits.
+
 ## Security and activation
 
 - No provider is configured by default.
