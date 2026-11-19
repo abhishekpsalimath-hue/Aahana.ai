@@ -23,8 +23,8 @@ export function isSupportedSourceFile(filename, mimeType) {
 export function isSafePrivateObjectPath(objectPath, userId, projectId) {
   if (typeof objectPath !== "string" || typeof userId !== "string" || typeof projectId !== "string" ||
       !userId || !projectId || userId.includes("/") || projectId.includes("/") ||
-      objectPath.length > 1024 || objectPath.includes("%") || objectPath.includes("\\\\") ||
-      /[\\u0000-\\u001f\\u007f\\u2044\\u2215\\u29f8\\uff0f]/u.test(objectPath)) return false;
+      objectPath.length > 1024 || objectPath.includes("%") || objectPath.includes("\\") ||
+      /[\u0000-\u001f\u007f\u2044\u2215\u29f8\uff0f]/u.test(objectPath)) return false;
   const parts = objectPath.split("/");
   return parts.length === 3 && parts[0] === userId && parts[1] === projectId &&
     Boolean(parts[2]) && parts.every((segment) => segment !== "." && segment !== "..");
