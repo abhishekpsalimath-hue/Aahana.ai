@@ -14,8 +14,8 @@ test("Experience Lab Build mode loads owned projects and Build Engine status", (
 
 test("Build and Test actions call the authenticated isolated project endpoint", () => {
   assert.match(page, /fetch\("\/api\/build\/project"/);
-  assert.match(page, /operation: "build"/);
-  assert.match(page, /operation: "test"/);
+  assert.match(page, /runBuildOperation\("build"\)/);
+  assert.match(page, /runBuildOperation\("test"\)/);
   assert.match(buildRoute, /supabase\.auth\.getUser\(\)/);
   assert.match(buildRoute, /AAHANA_BUILD_ENGINE_ENABLED !== "true"/);
 });
