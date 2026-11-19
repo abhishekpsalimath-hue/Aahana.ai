@@ -9,3 +9,9 @@ export function createRequestTimeoutSignal(requestSignal, timeoutMs) {
   }
   return AbortSignal.any([requestSignal, AbortSignal.timeout(timeoutMs)]);
 }
+
+// A disconnected client is not an upstream provider failure. Stop the route
+// without returning a misleading 502/503 or attempting fallback work.
+export function getClientAbortResponse(requestSignal) {
+  return requestSignal?.aborted ? new Response(null, { status: 499 }) : null;
+}
