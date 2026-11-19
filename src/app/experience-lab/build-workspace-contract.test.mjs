@@ -23,6 +23,7 @@ test("Build and Test actions call the authenticated isolated project endpoint", 
 
 test("Build execution controls stay disabled without enabled engine and sandbox identity", () => {
   assert.match(page, /!buildStatus\?\.enabled \|\| !buildStatus\?\.sandboxIdentityAvailable/);
+  assert.match(page, /disabled=\{!selectedProjectId \|\| buildBusy \|\| !buildStatus\?\.enabled \|\| !buildStatus\?\.sandboxIdentityAvailable\} onClick=\{\(\) => runBuildOperation\("test"\)\}/);
   assert.match(statusRoute, /sandboxIdentityAvailable: Boolean\(process\.env\.VERCEL_OIDC_TOKEN\)/);
 });
 
