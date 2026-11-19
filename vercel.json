@@ -4,10 +4,6 @@
     {
       "path": "/api/internal/agent-cycle",
       "schedule": "0 3 * * *"
-    },
-    {
-      "path": "/api/internal/agent-worker",
-      "schedule": "*/5 * * * *"
     }
   ]
 }
