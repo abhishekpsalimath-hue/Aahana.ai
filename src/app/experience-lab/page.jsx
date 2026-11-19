@@ -240,8 +240,9 @@ export default function ExperienceLab() {
         body: JSON.stringify({ projectId: selectedProjectId, operation }),
       });
       const result = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(result.error || `Build ${operation} failed.`);
-      setBuildResult(result);
+      if (!response.ok && result.status !== "failed") throw new Error(result.error || `Build ${operation} failed.`);
+      if (result.status === "passed" || result.status === "failed") setBuildResult(result);
+      else throw new Error("The Build Engine returned an incomplete execution result.");
     } catch (error) {
       setBuildError(error.message || "Build operation failed.");
     } finally {
