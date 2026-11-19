@@ -108,10 +108,24 @@ export async function GET(request) {
   const supabase = getServiceClient();
   if (!supabase) return NextResponse.json({ error: "System database is not configured." }, { status: 503 });
 
+  if (request.signal.aborted) return new Response(null, { status: 499 });
+
   const { data: task, error: claimError } = await supabase.rpc("aahana_claim_next_agent_task", { p_lease_seconds: 180 });
   if (claimError) {
     console.error("Aahana worker claim failed:", claimError.message);
     return NextResponse.json({ error: "Could not claim a system task." }, { status: 500 });
+  }
+  if (request.signal.aborted) {
+    if (task) {
+      const { error: releaseError } = await supabase.rpc("aahana_fail_agent_task", {
+        p_task_id: task.id,
+        p_lease_token: task.lease_token,
+        p_error_code: "worker_cancelled",
+      });
+      if (releaseError) console.error("Aahana worker cancellation release failed:", releaseError.message);
+      else await supabase.rpc("aahana_finalize_agent_run", { p_run_id: task.run_id });
+    }
+    return new Response(null, { status: 499 });
   }
   if (!task) {
     return NextResponse.json({ ok: true, status: "idle", processed: 0 });
@@ -135,6 +149,7 @@ export async function GET(request) {
   }
 
   try {
+    if (request.signal.aborted) throw new Error("worker_cancelled");
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const [eventsResult, priorTasksResult] = await Promise.all([
       supabase.from("aahana_system_events")
@@ -146,6 +161,7 @@ export async function GET(request) {
         .order("finished_at", { ascending: false }).limit(8),
     ]);
     if (eventsResult.error || priorTasksResult.error) throw new Error("system_context_read_failed");
+    if (request.signal.aborted) throw new Error("worker_cancelled");
 
     const generated = await generateInternalDeliverable(config, task, eventsResult.data || [], priorTasksResult.data || [], request.signal);
     const result = {
@@ -187,6 +203,7 @@ export async function GET(request) {
     if (failError) console.error("Aahana worker could not persist failure state:", failError.message);
     else await supabase.rpc("aahana_finalize_agent_run", { p_run_id: task.run_id });
     console.error("Aahana bounded worker task failed:", code);
+    if (request.signal.aborted) return new Response(null, { status: 499 });
     return NextResponse.json({ ok: false, status: "retry_or_blocked", taskId: task.id, errorCode: code }, { status: 502 });
   }
 }
