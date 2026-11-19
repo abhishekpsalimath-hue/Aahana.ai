@@ -1,6 +1,7 @@
 import "./globals.css";
 
 export const metadata = {
+  metadataBase: new URL("https://aahana-ai.vercel.app"),
   title: "Aahana — Think beyond",
   description: "A general-purpose AI workspace to solve, create, write, build and improve.",
   verification: {
