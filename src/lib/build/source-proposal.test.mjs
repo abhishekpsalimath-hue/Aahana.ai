@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { validateSourceProposal } from "./source-proposal.mjs";
+import { validateSourceProposal, createSourceDiff } from "./source-proposal.mjs";
 
 const context = { fileName: "src/app.js", version: "a".repeat(64) };
 const valid = {
@@ -33,4 +33,12 @@ test("rejects empty, oversized, binary and malformed proposals", () => {
   assert.throws(() => validateSourceProposal(JSON.stringify({ ...valid, updatedContent: "bad\u0000source" }), context), /1 byte/);
   assert.throws(() => validateSourceProposal(JSON.stringify({ ...valid, summary: " " }), context), /did not match/);
   assert.throws(() => validateSourceProposal("x".repeat(2 * 1024 * 1024 + 1), context), /oversized/);
+});
+
+test("renders a readable line-oriented change preview", () => {
+  const diff = createSourceDiff("const a = 1;\nconst b = 2;\n", "const a = 1;\nconst b = 3;\n");
+  assert.match(diff, /^--- current source/m);
+  assert.match(diff, /^- const b = 2;$/m);
+  assert.match(diff, /^\+ const b = 3;$/m);
+  assert.equal(createSourceDiff("same", "same"), "No source changes proposed.");
 });
