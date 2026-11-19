@@ -14,6 +14,15 @@ function isProjectSourceFile(file) {
   const extension = String(file.original_filename || "").toLowerCase().split(".").pop();
   return SOURCE_MIME_TYPES.has(file.mime_type) || SOURCE_EXTENSIONS.test(extension);
 }
+
+function isSafePrivateObjectPath(objectPath, userId, projectId) {
+  const prefix = userId + "/" + projectId + "/";
+  if (typeof objectPath !== "string" || objectPath.length > 1024 ||
+      !objectPath.startsWith(prefix) || /[%\\\\\\u0000-\\u001f\\u007f]/u.test(objectPath)) return false;
+  const suffix = objectPath.slice(prefix.length);
+  if (!suffix) return false;
+  return suffix.split("/").every((segment) => segment && segment !== "." && segment !== "..");
+}
 export async function POST(request) {
   const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -35,8 +44,7 @@ export async function POST(request) {
   if (sourceCandidates.length > MAX_SOURCE_FILES) return NextResponse.json({ error: "A build can include up to 100 source files. Remove unused source files and try again." }, { status: 413 });
   const hasInvalidSourceMetadata = sourceCandidates.some((file) =>
     file.bucket_id !== "aahana-private" ||
-    typeof file.object_path !== "string" ||
-    !file.object_path.startsWith(user.id + "/" + projectId + "/") ||
+    !isSafePrivateObjectPath(file.object_path, user.id, projectId) ||
     !Number.isInteger(file.size_bytes) ||
     file.size_bytes <= 0
   );
