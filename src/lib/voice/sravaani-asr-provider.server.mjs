@@ -1,4 +1,4 @@
-import { SpeechProviderError, normalizeLocale } from "./speech-runtime.mjs";
+import { SpeechProviderError, normalizeLocale, createProviderRequestSignal, isProviderTimeout } from "./speech-runtime.mjs";
 
 const MAX_AUDIO_BYTES = 15 * 1024 * 1024;
 
@@ -14,6 +14,7 @@ export function createSraVaaniAsrProvider({
   authorizationToken = "",
   supportedLocales = [],
   fetchImpl = globalThis.fetch,
+  timeoutMs = 45_000,
 } = {}) {
   if (typeof window !== "undefined") {
     throw new SpeechProviderError(
@@ -86,15 +87,19 @@ export function createSraVaaniAsrProvider({
       const form = new FormData();
       form.append("file", audioBlob, "speech.wav");
 
+      const requestSignal = createProviderRequestSignal(signal, timeoutMs);
       let response;
       try {
         response = await fetchImpl(new URL("/v1/audio/transcriptions", parsedUrl), {
           method: "POST",
           headers: { Authorization: `Bearer ${authorizationToken}` },
           body: form,
-          signal,
+          signal: requestSignal,
         });
       } catch (error) {
+        if (isProviderTimeout(error, requestSignal, signal)) {
+          throw new SpeechProviderError("SraVaani request exceeded its time limit.", "PROVIDER_TIMEOUT");
+        }
         if (error?.name === "AbortError") throw error;
         throw new SpeechProviderError("Could not reach the private SraVaani service.", "PROVIDER_CONNECTION_FAILED");
       }
