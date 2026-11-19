@@ -69,3 +69,13 @@ test("report only retains evidence references present in its source-event ledger
   assert.deepEqual(report.tasks[0].evidenceEventIds, ["event-1"]);
   assert.equal(report.sourceEvents.length, 1);
 });
+
+test("Phase B claim migration limits worker claims to approved executive duties", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const migration = await readFile(
+    new URL("../../../supabase/migrations/20261119190000_aahana_agent_worker_phase_b.sql", import.meta.url),
+    "utf8"
+  );
+  assert.match(migration, /role in \\('ceo', 'cto', 'coo', 'cmo'\\)/);
+  assert.match(migration, /task_type in \\('daily_review', 'brain_quality_review', 'health_review', 'growth_review'\\)/);
+});
