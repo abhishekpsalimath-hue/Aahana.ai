@@ -57,7 +57,7 @@ test("calls Maya's documented endpoint and returns audio bytes", async () => {
   assert.deepEqual([...result.audio], [82, 73, 70, 70]);
 });
 
-test("passes cancellation signal to the inference endpoint", async () => {
+test("propagates caller cancellation to the bounded inference signal", async () => {
   const controller = new AbortController();
   let receivedSignal;
   const provider = createMayaTtsProvider({
@@ -68,7 +68,9 @@ test("passes cancellation signal to the inference endpoint", async () => {
     },
   });
   await provider.synthesize({ text: "hello", locale: "en-IN", signal: controller.signal });
-  assert.equal(receivedSignal, controller.signal);
+  assert.notEqual(receivedSignal, controller.signal);
+  controller.abort();
+  assert.equal(receivedSignal.aborted, true);
 });
 
 test("rejects unsupported locales before making a network request", async () => {
