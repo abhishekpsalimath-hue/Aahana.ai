@@ -126,6 +126,12 @@ export async function GET(request) {
   });
   if (checkpointError) {
     console.error("Aahana worker checkpoint failed:", checkpointError.message);
+    await supabase.rpc("aahana_fail_agent_task", {
+      p_task_id: task.id,
+      p_lease_token: task.lease_token,
+      p_error_code: "checkpoint_persist_failed",
+    });
+    await supabase.rpc("aahana_finalize_agent_run", { p_run_id: task.run_id });
     return NextResponse.json({ error: "Task lease could not be checkpointed." }, { status: 409 });
   }
 
