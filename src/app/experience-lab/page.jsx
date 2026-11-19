@@ -187,7 +187,7 @@ export default function ExperienceLab() {
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: instruction, mode: "build", conversationId }),
+        body: JSON.stringify({ message: instruction, mode: "build", conversationId, projectId: selectedProjectId }),
       });
       if (!response.ok) {
         const result = await response.json().catch(() => ({}));
