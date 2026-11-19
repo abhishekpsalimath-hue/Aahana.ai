@@ -375,6 +375,8 @@ export async function POST(request) {
   if (!upstream.ok || !upstream.body) {
     const gatewayRequestId = upstream.headers.get("x-request-id") || upstream.headers.get("x-vercel-id") || null;
     const responseText = await upstream.text().catch(() => "");
+    const abortResponse = getClientAbortResponse(request.signal);
+    if (abortResponse) return abortResponse;
     const safeDetail = responseText.replace(/[\r\n\t]+/g, " ").slice(0, 500);
     console.error("Aahana AI Gateway rejected request:", {
       status: upstream.status,
@@ -401,6 +403,8 @@ export async function POST(request) {
     try {
       researchPayload = await upstream.json();
     } catch {
+      const abortResponse = getClientAbortResponse(request.signal);
+      if (abortResponse) return abortResponse;
       return NextResponse.json({ error: "The research provider returned an unreadable response.", code: "RESEARCH_RESPONSE_INVALID" }, { status: 502 });
     }
     const researchReply = researchPayload?.choices?.[0]?.message?.content;
