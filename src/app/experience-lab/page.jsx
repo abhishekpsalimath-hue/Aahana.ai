@@ -334,6 +334,14 @@ export default function ExperienceLab() {
     buildRequest.current?.abort();
   }
 
+  function prepareBuildDiagnosis() {
+    if (!buildResult || buildResult.status !== "failed") return;
+    const logs = [buildResult.stdout, buildResult.stderr].filter(Boolean).join("\n").slice(0, 4000);
+    setPrompt(`Help diagnose this ${buildResult.operation} failure. Exit code: ${buildResult.exitCode}. Explain the likely cause and suggest a minimal safe fix. Do not claim to have changed or tested files.\n\nBuild output (review and remove secrets before sending):\n${logs}`);
+    setRequestError("");
+    document.getElementById("lab-composer")?.focus();
+  }
+
   async function createBuildProject() {
     const name = window.prompt("Name your project");
     if (!name?.trim()) return;
@@ -537,7 +545,7 @@ export default function ExperienceLab() {
               </section>}
             </section>}
             {buildError && <p className="build-console-error" role="alert">{buildError}</p>}
-            {buildResult && <div className="build-console-result"><strong>{buildResult.status === "passed" ? "Execution passed" : "Execution failed"} · {buildResult.operation}</strong><small>Exit code {buildResult.exitCode} · {buildResult.sourceFileCount} source files</small><pre>{[buildResult.stdout, buildResult.stderr].filter(Boolean).join("\\n") || "No output."}</pre></div>}
+            {buildResult && <div className="build-console-result"><strong>{buildResult.status === "passed" ? "Execution passed" : "Execution failed"} · {buildResult.operation}</strong><small>Exit code {buildResult.exitCode} · {buildResult.sourceFileCount} source files</small><pre>{[buildResult.stdout, buildResult.stderr].filter(Boolean).join("\\n") || "No output."}</pre>{buildResult.status === "failed" && <button type="button" onClick={prepareBuildDiagnosis}>Prepare diagnosis with Aahana</button>}</div>}
           </section>}
           <div className="lab-privacy-note"><span>◇</span> Your message is sent to your signed-in Aahana assistant.</div>
         </div>
