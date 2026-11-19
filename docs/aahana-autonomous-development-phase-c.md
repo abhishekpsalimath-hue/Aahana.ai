@@ -68,3 +68,27 @@ The repository currently contains no verified, activated Phase C sandbox integra
 - Phase B implements a gated system-analysis worker and an evidence-based report API.
 - Phase B does not edit source code or execute arbitrary code.
 - Phase C remains design-only until the sandbox adapter, policy gate, artifact capture, GitHub PR writer and isolation tests are implemented and verified.
+
+
+## Integration review — 2026-11-19
+
+The separate `work/isolated-workspace-v2` pull request was inspected as a possible provider foundation. It currently implements a user-workspace build/test/run path, not repository self-development:
+
+- It provisions a disposable Vercel Sandbox and writes validated user-submitted files.
+- It runs npm build/test scripts or a selected JavaScript/Python entrypoint.
+- It denies network access by default and temporarily allows the npm registry for dependency installation, then restores deny-all before running project code.
+- It does not check out Aahana's repository, produce a reviewed repository diff, capture immutable development artifacts, enforce a repository-task allowlist, or create a GitHub draft PR.
+
+Therefore, reuse is conditional: extract and independently test the sandbox lifecycle/policy primitives, but do not connect the existing user-project endpoint directly to the autonomous worker.
+
+At this review point, the workspace PR is open and draft, targets `main`, and GitHub reports it as not mergeable. No completed check run was returned for its current head. Its integration and regression status must be rechecked before any shared adoption.
+
+Additional gates before reuse:
+- verify sandbox stop/cleanup on timeout, cancellation and provider errors;
+- test that package installation cannot execute lifecycle scripts and that project code runs only after egress is denied;
+- validate actual CPU, memory, wall-clock and output limits at provider level;
+- test path traversal, symlink handling, malicious manifests, oversized output and concurrent requests;
+- verify the deployment's Vercel OIDC scope cannot expose unrelated project resources;
+- run the sandbox against a disposable test project and approved budget before enabling any paid provider usage.
+
+Until those checks pass, Phase C remains design-only and no provider is activated by this change.
