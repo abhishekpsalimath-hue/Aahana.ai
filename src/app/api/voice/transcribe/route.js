@@ -89,6 +89,7 @@ export async function POST(request) {
       : error?.code === "PROVIDER_UNAVAILABLE" ? 503
       : error?.code === "PROVIDER_CONNECTION_FAILED" ? 502
       : error?.code === "EMPTY_TRANSCRIPT" ? 422
+      : error?.code === "PROVIDER_TIMEOUT" ? 504
       : 502;
     console.error("Aahana SraVaani transcription failed:", {
       code: error?.code || "UNKNOWN",
