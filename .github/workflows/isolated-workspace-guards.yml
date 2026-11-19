@@ -12,6 +12,7 @@ on:
   push:
     branches:
       - work/isolated-workspace-v2
+      - fix/build-route-stop-storage-reads-on-disconnect
     paths:
       - "src/app/api/build/**"
       - "src/lib/build/**"
