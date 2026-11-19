@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - feat/aahana-agent-worker-phase-b
+      - fix/agent-worker-provider-credential-boundary
   workflow_dispatch:
 
 permissions:

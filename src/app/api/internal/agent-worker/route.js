@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { timingSafeEqual } from "node:crypto";
 import { getServiceClient } from "@/lib/operations/server";
-import { parseWorkerResponse } from "@/lib/operations/agent-worker.mjs";
+import { createWorkerProviderSignal, parseWorkerResponse } from "@/lib/operations/agent-worker.mjs";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,14 +16,13 @@ function isAuthorised(request) {
   return expected.length === actual.length && timingSafeEqual(expected, actual);
 }
 
-function getProviderConfig(request) {
+function getProviderConfig() {
   if (process.env.AAHANA_AGENT_WORKER_ENABLED !== "true" || process.env.AAHANA_AI_ENABLED !== "true") return null;
   const provider = (process.env.AAHANA_AI_PROVIDER || "groq").toLowerCase();
   const isGroq = provider === "groq";
   if (!isGroq && provider !== "vercel") return null;
-  const key = isGroq
-    ? process.env.GROQ_API_KEY
-    : (request.headers.get("x-vercel-oidc-token") || process.env.VERCEL_OIDC_TOKEN);
+  // Credentials come only from trusted server configuration, never caller headers.
+  const key = isGroq ? process.env.GROQ_API_KEY : process.env.VERCEL_OIDC_TOKEN;
   const model = process.env.AAHANA_MODEL || (isGroq ? "openai/gpt-oss-120b" : "");
   if (!key || !model) return null;
   return {
@@ -34,7 +33,7 @@ function getProviderConfig(request) {
   };
 }
 
-async function generateInternalDeliverable(config, task, events, priorTasks) {
+async function generateInternalDeliverable(config, task, events, priorTasks, callerSignal) {
   const system = [
     "You are an internal Aahana AI system-duty worker.",
     "You may only analyse the supplied system-owned task metadata, approved platform event summaries and prior system-owned task results.",
@@ -89,7 +88,7 @@ async function generateInternalDeliverable(config, task, events, priorTasks) {
         { role: "user", content: "Analyse the following bounded system records and return an internal report only. Do not claim actions were executed.\n\n" + JSON.stringify(payload) },
       ],
     }),
-    signal: AbortSignal.timeout(45000),
+    signal: createWorkerProviderSignal(callerSignal, 45000),
   });
   if (!response.ok) throw new Error("provider_error");
   const data = await response.json();
@@ -103,7 +102,7 @@ export async function GET(request) {
     return NextResponse.json({ ok: true, status: "disabled", reason: "worker_feature_flag_off" });
   }
 
-  const config = getProviderConfig(request);
+  const config = getProviderConfig();
   if (!config) return NextResponse.json({ ok: false, status: "blocked", reason: "provider_not_enabled_or_configured" }, { status: 503 });
 
   const supabase = getServiceClient();
@@ -148,7 +147,7 @@ export async function GET(request) {
     ]);
     if (eventsResult.error || priorTasksResult.error) throw new Error("system_context_read_failed");
 
-    const generated = await generateInternalDeliverable(config, task, eventsResult.data || [], priorTasksResult.data || []);
+    const generated = await generateInternalDeliverable(config, task, eventsResult.data || [], priorTasksResult.data || [], request.signal);
     const result = {
       worker_version: "phase-b.1",
       execution_mode: "bounded_system_analysis",
