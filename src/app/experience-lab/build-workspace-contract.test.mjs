@@ -6,6 +6,7 @@ const page = readFileSync(new URL("./page.jsx", import.meta.url), "utf8");
 const buildRoute = readFileSync(new URL("../api/build/project/route.js", import.meta.url), "utf8");
 const statusRoute = readFileSync(new URL("../api/build/status/route.js", import.meta.url), "utf8");
 const contentRoute = readFileSync(new URL("../api/files/[id]/content/route.js", import.meta.url), "utf8");
+const filesRoute = readFileSync(new URL("../api/files/route.js", import.meta.url), "utf8");
 
 test("Experience Lab Build mode loads owned projects and Build Engine status", () => {
   assert.match(page, /fetch\("\/api\/projects"/);
@@ -25,6 +26,15 @@ test("Build execution controls stay disabled without enabled engine and sandbox 
   assert.match(page, /!buildStatus\?\.enabled \|\| !buildStatus\?\.sandboxIdentityAvailable/);
   assert.match(page, /disabled=\{!selectedProjectId \|\| buildBusy \|\| !buildStatus\?\.enabled \|\| !buildStatus\?\.sandboxIdentityAvailable\} onClick=\{\(\) => runBuildOperation\("test"\)\}/);
   assert.match(statusRoute, /sandboxIdentityAvailable: Boolean\(process\.env\.VERCEL_OIDC_TOKEN\)/);
+});
+
+test("Private file registration rejects ambiguous and traversing storage paths", () => {
+  assert.match(filesRoute, /objectPath\.length > 1024/);
+  assert.match(filesRoute, /objectPath\.includes\("%"\)/);
+  assert.match(filesRoute, /objectPath\.includes\("\\\\\\"\)/);
+  assert.match(filesRoute, /parts\.some\(\(segment\) => !segment \|\| segment === "\." \|\| segment === "\.\."\)/);
+  assert.match(filesRoute, /parts\[0\] !== user\.id/);
+  assert.match(filesRoute, /parts\[1\] !== \(projectId \|\| "personal"\)/);
 });
 
 test("Build Mode uploads only supported project source files through authenticated storage", () => {
