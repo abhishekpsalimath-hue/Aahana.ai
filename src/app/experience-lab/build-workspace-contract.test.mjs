@@ -91,6 +91,9 @@ test("Build workspace assembly fails closed instead of silently omitting source 
   assert.match(buildRoute, /MAX_PROJECT_FILE_ROWS \+ 1/);
   assert.match(buildRoute, /sourceCandidates\.length > MAX_SOURCE_FILES/);
   assert.match(buildRoute, /hasInvalidSourceMetadata/);
+  assert.match(buildRoute, /function isSafePrivateObjectPath\(objectPath, userId, projectId\)/);
+  assert.match(buildRoute, /segment !== \.\./);
+  assert.match(buildRoute, /objectPath\.length > 1024/);
   assert.match(buildRoute, /invalid private-storage metadata/);
   assert.match(buildRoute, /const eligible = sourceCandidates/);
   assert.match(buildRoute, /invalid or duplicate workspace path/);
