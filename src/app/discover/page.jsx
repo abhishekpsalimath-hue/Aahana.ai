@@ -78,7 +78,7 @@ export default function DiscoverPage() {
       </section>
 
       <footer className="discover-footer">
-        <span>AAHANA AI</span>
+        <span>Aahana AI</span>
         <span>Think beyond.</span>
       </footer>
     </main>
