@@ -18,6 +18,39 @@ const prompts = [
   { mark: "⌕", title: "Find the signal", detail: "Research beyond the obvious", prompt: "Research this topic deeply and separate evidence from assumptions." },
 ];
 
+const promptsByMode = {
+  chat: [
+    { mark: "◌", title: "Think with me", detail: "Untangle a big idea", prompt: "Help me think through a bold idea and challenge my assumptions." },
+    { mark: "◇", title: "See another angle", detail: "Find the perspective I'm missing", prompt: "Show me three different perspectives on this problem." },
+    { mark: "✧", title: "Make a decision", detail: "Compare paths clearly", prompt: "Help me compare my options and choose a practical next step." },
+    { mark: "⌁", title: "Explain simply", detail: "Make a hard idea click", prompt: "Explain this clearly with an analogy and a practical example." },
+  ],
+  create: [
+    { mark: "✧", title: "Set the art direction", detail: "Mood, palette and visual language", prompt: "Create a distinctive art direction with mood, palette, lighting and composition." },
+    { mark: "◈", title: "Shape a character", detail: "Build a memorable visual identity", prompt: "Help me design an original character with a consistent visual identity." },
+    { mark: "▧", title: "Storyboard a scene", detail: "Turn an idea into frames", prompt: "Build a cinematic storyboard with clear camera movement and shot descriptions." },
+    { mark: "✳", title: "Explore styles", detail: "Compare creative directions", prompt: "Give me three visually distinct creative directions for this idea." },
+  ],
+  build: [
+    { mark: "⌘", title: "Map the product", detail: "Users, journeys and core value", prompt: "Map the product requirements, user journeys and smallest useful release." },
+    { mark: "⌁", title: "Design the system", detail: "Architecture before implementation", prompt: "Propose a secure, scalable architecture and explain the trade-offs." },
+    { mark: "⚙", title: "Debug a problem", detail: "Trace causes, not symptoms", prompt: "Help me isolate the root cause, reproduce it and propose a tested fix." },
+    { mark: "↗", title: "Review the code", detail: "Quality, security and performance", prompt: "Review this implementation for correctness, security, accessibility and performance." },
+  ],
+  research: [
+    { mark: "⌕", title: "Find primary evidence", detail: "Start with reliable sources", prompt: "Research this topic using primary sources and cite the strongest evidence." },
+    { mark: "◇", title: "Compare viewpoints", detail: "Separate facts from claims", prompt: "Compare the leading viewpoints and identify where evidence disagrees." },
+    { mark: "✧", title: "Trace a trend", detail: "What changed and why", prompt: "Trace the history of this trend and explain the forces behind it." },
+    { mark: "▤", title: "Build a briefing", detail: "Findings, gaps and implications", prompt: "Create a concise research briefing with findings, uncertainties and implications." },
+  ],
+  learn: [
+    { mark: "⌁", title: "Teach me from zero", detail: "Build intuition first", prompt: "Teach me this from first principles with examples and a short recap." },
+    { mark: "✳", title: "Test my understanding", detail: "Questions that reveal gaps", prompt: "Quiz me progressively and explain any mistakes without giving away answers too early." },
+    { mark: "◈", title: "Use a real example", detail: "Connect theory to practice", prompt: "Explain this concept through a realistic step-by-step example." },
+    { mark: "↗", title: "Go advanced", detail: "Push beyond the basics", prompt: "Take me to an advanced level and show the deeper connections." },
+  ],
+};
+
 const sampleResponses = {
   chat: "Let's open this up from three angles: what you believe, what the evidence says, and what might surprise you. Start with the outcome you want most.",
   create: "A strong visual direction starts with a feeling. Let's define the subject, atmosphere, palette and camera language before creating the first frame.",
@@ -41,6 +74,7 @@ export default function ExperienceLab() {
   const [focus, setFocus] = useState(false);
   const [activePanel, setActivePanel] = useState("tools");
   const current = modes.find((item) => item.id === mode) || modes[0];
+  const currentPrompts = promptsByMode[mode] || promptsByMode.chat;
 
   function tryPrompt(value) {
     setPrompt(value);
@@ -59,16 +93,16 @@ export default function ExperienceLab() {
     <header className="lab-topbar">
       <a className="lab-brand" href="/" aria-label="Aahana AI home"><span className="lab-brand-symbol">a</span><span>Aahana <i>ai</i></span></a>
       <div className="lab-top-center"><span className="live-pulse" /> INTERACTIVE EXPERIENCE LAB <span className="lab-preview-tag">CONCEPT</span></div>
-      <div className="lab-top-actions"><button type="button" className={focus ? "top-icon selected" : "top-icon"} onClick={() => setFocus(!focus)} aria-pressed={focus} title="Toggle focus mode">⛶</button><a href="/" className="lab-exit">Exit preview <span>↗</span></a></div>
+      <div className="lab-top-actions"><button type="button" className={focus ? "top-icon selected" : "top-icon"} onClick={() => setFocus(!focus)} aria-pressed={focus} aria-label={focus ? "Exit focus mode" : "Enter focus mode"} title="Toggle focus mode">⛶</button><a href="/" className="lab-exit">Exit preview <span>↗</span></a></div>
     </header>
 
     <div className="lab-layout">
       <aside className="lab-rail" aria-label="Workspace navigation">
         <button className="rail-new" type="button" onClick={() => { setPrompt(""); setSample(false); }} aria-label="New session">＋</button>
         <span className="rail-separator" />
-        <button className="rail-button active" type="button" title="Home">⌂</button>
-        <button className="rail-button" type="button" title="Discover" onClick={() => setActivePanel("discover")}>✧</button>
-        <button className="rail-button" type="button" title="Library" onClick={() => setActivePanel("library")}>▤</button>
+        <button className={mode === "chat" && activePanel === "tools" ? "rail-button active" : "rail-button"} type="button" title="Home" aria-label="Home" aria-current={mode === "chat" && activePanel === "tools" ? "page" : undefined} onClick={() => { setMode("chat"); setPrompt(""); setSample(false); setActivePanel("tools"); }}>⌂</button>
+        <button className={activePanel === "discover" ? "rail-button active" : "rail-button"} type="button" title="Discover" aria-pressed={activePanel === "discover"} onClick={() => setActivePanel("discover")}>✧</button>
+        <button className={activePanel === "library" ? "rail-button active" : "rail-button"} type="button" title="Library" aria-pressed={activePanel === "library"} onClick={() => setActivePanel("library")}>▤</button>
         <div className="rail-bottom"><button className="rail-button" type="button" title="Settings" onClick={() => setActivePanel("settings")}>⚙</button><span className="rail-avatar">A</span></div>
       </aside>
 
@@ -81,7 +115,7 @@ export default function ExperienceLab() {
 
         <div className="lab-workspace">
           <div className="lab-workspace-label"><span className="workspace-dot" /> {current.hint.toUpperCase()} <span className="workspace-divider">/</span> SESSION 01</div>
-          {sample ? <div className="lab-response-card">
+          {sample ? <div className="lab-response-card" aria-live="polite" aria-atomic="true">
             <div className="response-heading"><span className="response-avatar"><OrbitMark /></span><div><strong>Aahana</strong><small>Sample interaction · not connected to AI</small></div><button type="button" onClick={() => setSample(false)} aria-label="Close sample response">×</button></div>
             <div className="response-user">{prompt}</div><div className="response-copy">{sampleResponses[mode]}</div>
             <div className="response-actions"><button type="button" onClick={() => tryPrompt("Go deeper and give me a practical example.")}>↳ Go deeper</button><button type="button" onClick={() => tryPrompt("Challenge that answer and show another perspective.")}>◇ Challenge it</button><button type="button" onClick={() => setSample(false)}>＋ New thought</button></div>
@@ -100,13 +134,13 @@ export default function ExperienceLab() {
         </div>
 
         <div className="lab-suggestions-heading"><span>START WITH A SPARK</span><span>CHOOSE A DIRECTION ↘</span></div>
-        <div className="lab-prompt-grid">{prompts.map((item) => <button type="button" className="lab-prompt-card" key={item.title} onClick={() => { setMode(item.title === "Make a visual" ? "create" : item.title === "Build something" ? "build" : item.title === "Find the signal" ? "research" : "chat"); tryPrompt(item.prompt); }}><span className="prompt-mark">{item.mark}</span><span className="prompt-copy"><strong>{item.title}</strong><small>{item.detail}</small></span><span className="prompt-arrow">↗</span></button>)}</div>
+        <div className="lab-prompt-grid" aria-label={`${current.label} suggestions`}>{currentPrompts.map((item) => <button type="button" className="lab-prompt-card" key={item.title} onClick={() => tryPrompt(item.prompt)}><span className="prompt-mark">{item.mark}</span><span className="prompt-copy"><strong>{item.title}</strong><small>{item.detail}</small></span><span className="prompt-arrow">↗</span></button>)}</div>
       </section>
 
       <aside className="lab-inspector">
         <div className="inspector-head"><span>YOUR CO-PILOT</span><button type="button" onClick={() => setActivePanel("tools")} aria-label="Reset side panel">···</button></div>
         <div className="inspector-profile"><div className="inspector-orb"><OrbitMark /></div><div><strong>Aahana</strong><small>Ready to explore <span className="ready-dot" /></small></div></div>
-        <div className="inspector-tabs"><button type="button" className={activePanel === "tools" ? "active" : ""} onClick={() => setActivePanel("tools")}>Tools</button><button type="button" className={activePanel === "discover" ? "active" : ""} onClick={() => setActivePanel("discover")}>Discover</button><button type="button" className={activePanel === "library" ? "active" : ""} onClick={() => setActivePanel("library")}>Library</button></div>
+        <div className="inspector-tabs" role="group" aria-label="Co-pilot panel"><button type="button" className={activePanel === "tools" ? "active" : ""} aria-pressed={activePanel === "tools"} onClick={() => setActivePanel("tools")}>Tools</button><button type="button" className={activePanel === "discover" ? "active" : ""} aria-pressed={activePanel === "discover"} onClick={() => setActivePanel("discover")}>Discover</button><button type="button" className={activePanel === "library" ? "active" : ""} aria-pressed={activePanel === "library"} onClick={() => setActivePanel("library")}>Library</button></div>
         <div className="inspector-content">
           {activePanel === "tools" && <><div className="inspector-section-label">CAPABILITIES</div>{[["⌘","Build workspace","Code, preview and iterate"],["✧","Creative studio","Visuals, motion and ideas"],["⌕","Deep research","Sources, synthesis and insight"],["◖","Voice conversation","Speak naturally, hands-free"]].map(([mark,title,detail]) => <button type="button" className="capability-row" key={title} onClick={() => setActivePanel(title === "Voice conversation" ? "voice" : "discover")}><span className="capability-mark">{mark}</span><span><strong>{title}</strong><small>{detail}</small></span><b>↗</b></button>)}</>}
           {activePanel === "discover" && <div className="inspector-empty"><span>✧</span><strong>Discover your next move</strong><p>Explore connected experiences from one calm, intelligent workspace.</p><button type="button" onClick={() => setMode("research")}>Explore research mode</button></div>}

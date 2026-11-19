@@ -11,6 +11,7 @@ on:
   push:
     branches:
       - feat/interactive-experience-lab
+      - feat/aahana-contextual-interaction-cards
     paths:
       - "src/app/experience-lab/**"
       - ".github/workflows/experience-lab-checks.yml"
