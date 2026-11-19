@@ -6,6 +6,7 @@ on:
       - main
       - feat/experience-lab-live-assistant
       - fix/experience-lab-source-edit-conflicts
+      - feat/experience-lab-ai-code-proposals
     paths:
       - "src/app/experience-lab/**"
       - "src/app/api/build/**"
@@ -20,6 +21,7 @@ on:
       - feat/experience-lab-live-assistant
       - feat/experience-lab-build-workspace
       - fix/experience-lab-source-edit-conflicts
+      - feat/experience-lab-ai-code-proposals
     paths:
       - "src/app/experience-lab/**"
       - "src/app/api/build/**"
