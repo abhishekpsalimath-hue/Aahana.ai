@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { validateSourceProposal, createSourceDiff } from "./source-proposal.mjs";
+import { validateSourceProposal, createSourceDiff, MAX_PROPOSAL_SOURCE_BYTES } from "./source-proposal.mjs";
 
 const context = { fileName: "src/app.js", version: "a".repeat(64) };
 const valid = {
@@ -49,4 +49,9 @@ test("bounds rendered diff previews for large source changes", () => {
   const diff = createSourceDiff(before, after);
   assert.match(diff, /diff truncated/);
   assert.ok(diff.length <= 40_050);
+});
+
+test("proposal input budget stays below the chat route's 8,000-character limit", () => {
+  assert.equal(MAX_PROPOSAL_SOURCE_BYTES, 5000);
+  assert.ok(MAX_PROPOSAL_SOURCE_BYTES < 8000);
 });
