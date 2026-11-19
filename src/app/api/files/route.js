@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { isSupportedSourceFile } from "@/lib/build/source-file-policy.mjs";
+import { isSupportedSourceFile, isSafePrivateObjectPath } from "@/lib/build/source-file-policy.mjs";
 
 const BUCKET = "aahana-private";
 const MAX_BYTES = 10 * 1024 * 1024;
@@ -56,13 +56,7 @@ export async function POST(request) {
   }
 
   const parts = objectPath.split("/");
-  const expectedPrefix = `${user.id}/${projectId || "personal"}`;
-  const unsafePath = objectPath.length > 1024 || objectPath.includes("%") || objectPath.includes("\\") ||
-    /[\u0000-\u001f\u007f]/u.test(objectPath) ||
-    parts.some((segment) => !segment || segment === "." || segment === "..");
-  if (unsafePath || parts.length !== 3 || parts[0] !== user.id ||
-      parts[1] !== (projectId || "personal") || !parts[2] ||
-      !objectPath.startsWith(expectedPrefix + "/")) {
+  if (!isSafePrivateObjectPath(objectPath, user.id, projectId || "personal")) {
     return NextResponse.json({ error: "Invalid storage path." }, { status: 400 });
   }
   const { data: objects, error: listError } = await supabase.storage.from(BUCKET)
