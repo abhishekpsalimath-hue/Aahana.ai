@@ -24,6 +24,8 @@ on:
       - "services/sravaani-asr/**"
       - ".github/workflows/sravaani-guards.yml"
       - "src/lib/voice/sravaani-asr-provider.*"
+      - "src/lib/voice/speech-runtime.*"
+      - "src/lib/voice/maya-tts-provider.*"
       - "src/lib/voice/README.md"
       - "src/app/assistant-workspace.jsx"
       - "src/app/api/voice/transcribe/route.js"
