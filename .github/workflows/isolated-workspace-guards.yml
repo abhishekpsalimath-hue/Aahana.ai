@@ -8,7 +8,6 @@ on:
       - "src/app/assistant-workspace*"
       - ".github/workflows/isolated-workspace-guards.yml"
       - "package.json"
-      - "package-lock.json"
   push:
     branches:
       - work/isolated-workspace-v2
@@ -18,7 +17,6 @@ on:
       - "src/app/assistant-workspace*"
       - ".github/workflows/isolated-workspace-guards.yml"
       - "package.json"
-      - "package-lock.json"
   workflow_dispatch:
 
 permissions:
@@ -37,8 +35,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-      - run: npm ci
+      - run: npm install --no-audit --no-fund
       - run: node --test src/lib/build/*.test.mjs
       - run: npm run lint
       - run: npm run build
