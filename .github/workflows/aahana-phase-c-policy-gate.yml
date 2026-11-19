@@ -6,10 +6,13 @@ on:
       - feat/aahana-autonomous-development-phase-c-policy-gate
       - feat/aahana-phase-c-policy-hardening
       - feat/phase-c-trusted-github-evidence
+      - feat/phase-c-github-app-readonly-client
+      - feat/phase-c-github-app-minimum-permissions
     paths:
       - "src/lib/operations/autonomous-policy.*"
       - "src/lib/operations/autonomous-github-evidence.*"
       - "src/lib/operations/github-app-client.*"
+      - "src/lib/operations/autonomous-review.*"
       - "docs/aahana-github-app-readonly-integration.md"
       - "package.json"
       - ".github/workflows/aahana-phase-c-policy-gate.yml"
@@ -40,7 +43,7 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
       - name: Run policy tests
-        run: node --test src/lib/operations/autonomous-policy.test.mjs src/lib/operations/autonomous-github-evidence.test.mjs src/lib/operations/github-app-client.test.mjs
+        run: node --test src/lib/operations/autonomous-policy.test.mjs src/lib/operations/autonomous-github-evidence.test.mjs src/lib/operations/github-app-client.test.mjs src/lib/operations/autonomous-review.test.mjs
       - name: Run full test suite
         run: npm test
       - name: Build application
