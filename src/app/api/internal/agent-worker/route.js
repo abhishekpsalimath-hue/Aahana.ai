@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { timingSafeEqual } from "node:crypto";
 import { getServiceClient } from "@/lib/operations/server";
+import { parseWorkerResponse } from "@/lib/operations/agent-worker.mjs";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -42,7 +43,8 @@ async function generateInternalDeliverable(config, task, events, priorTasks) {
     "Do not modify code, create commits, deploy, publish, message people, change settings, spend money or claim to have performed those actions.",
     "Do not invent metrics, test results, incidents, evidence or progress. If the supplied records do not contain evidence, state that the evidence is unavailable.",
     "Separate observed records, interpretation, unknowns, risks and recommended next steps.",
-    "Return a concise, useful internal deliverable. Include evidence event IDs when a claim is directly supported by a supplied event; otherwise mark it as an unverified hypothesis.",
+    "Return one JSON object with exactly two fields: report (string) and evidence_event_ids (array of IDs copied from supplied events).",
+    "Only cite event IDs that directly support a specific claim. Never cite an event merely because it was included in context. If there is no supporting event, leave the evidence array empty and state that evidence is unavailable.",
   ].join("\n");
 
   const payload = {
@@ -59,14 +61,16 @@ async function generateInternalDeliverable(config, task, events, priorTasks) {
       severity: event.severity,
       source: event.source,
       summary: event.summary,
-      metadata: event.metadata,
       createdAt: event.created_at,
     })),
     priorSystemTaskResults: priorTasks.map((item) => ({
       role: item.role,
       title: item.title,
       status: item.status,
-      result: item.result,
+      result: {
+        output: typeof item.result?.output === "string" ? item.result.output.slice(0, 1600) : "",
+        evidence_event_ids: Array.isArray(item.result?.evidence_event_ids) ? item.result.evidence_event_ids.slice(0, 10) : [],
+      },
       finishedAt: item.finished_at,
     })),
   };
@@ -79,6 +83,7 @@ async function generateInternalDeliverable(config, task, events, priorTasks) {
       stream: false,
       ...(config.isGroq ? { max_completion_tokens: 1800 } : { max_tokens: 1800 }),
       temperature: 0.2,
+      response_format: { type: "json_object" },
       messages: [
         { role: "system", content: system },
         { role: "user", content: "Analyse the following bounded system records and return an internal report only. Do not claim actions were executed.\n\n" + JSON.stringify(payload) },
@@ -88,9 +93,8 @@ async function generateInternalDeliverable(config, task, events, priorTasks) {
   });
   if (!response.ok) throw new Error("provider_error");
   const data = await response.json();
-  const output = data?.choices?.[0]?.message?.content;
-  if (typeof output !== "string" || !output.trim()) throw new Error("empty_provider_output");
-  return output.trim().slice(0, 12000);
+  const content = data?.choices?.[0]?.message?.content;
+  return parseWorkerResponse(content, events.map((event) => event.id));
 }
 
 export async function GET(request) {
@@ -138,14 +142,13 @@ export async function GET(request) {
     ]);
     if (eventsResult.error || priorTasksResult.error) throw new Error("system_context_read_failed");
 
-    const output = await generateInternalDeliverable(config, task, eventsResult.data || [], priorTasksResult.data || []);
-    const evidenceEventIds = (eventsResult.data || []).map((event) => event.id).filter(Boolean).slice(0, 20);
+    const generated = await generateInternalDeliverable(config, task, eventsResult.data || [], priorTasksResult.data || []);
     const result = {
       worker_version: "phase-b.1",
       execution_mode: "bounded_system_analysis",
       role: task.role,
-      output,
-      evidence_event_ids: evidenceEventIds,
+      output: generated.report,
+      evidence_event_ids: generated.evidenceEventIds,
       generated_at: new Date().toISOString(),
       external_actions_performed: false,
       code_changes_performed: false,
@@ -164,7 +167,7 @@ export async function GET(request) {
       taskId: task.id,
       role: task.role,
       attempt: task.attempts,
-      evidenceEventCount: evidenceEventIds.length,
+      evidenceEventCount: generated.evidenceEventIds.length,
       codeChangesPerformed: false,
     });
   } catch (error) {
