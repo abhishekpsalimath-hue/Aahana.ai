@@ -93,6 +93,7 @@ export default function ExperienceLab() {
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [buildStatus, setBuildStatus] = useState(null);
   const [buildBusy, setBuildBusy] = useState(false);
+  const buildRequest = useRef(null);
   const [buildResult, setBuildResult] = useState(null);
   const [buildError, setBuildError] = useState("");
   const [focus, setFocus] = useState(false);
@@ -304,6 +305,8 @@ export default function ExperienceLab() {
 
   async function runBuildOperation(operation) {
     if (!selectedProjectId || buildBusy) return;
+    const controller = new AbortController();
+    buildRequest.current = controller;
     setBuildBusy(true);
     setBuildError("");
     setBuildResult(null);
@@ -312,16 +315,23 @@ export default function ExperienceLab() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ projectId: selectedProjectId, operation }),
+        signal: controller.signal,
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok && result.status !== "failed") throw new Error(result.error || `Build ${operation} failed.`);
       if (result.status === "passed" || result.status === "failed") setBuildResult(result);
       else throw new Error("The Build Engine returned an incomplete execution result.");
     } catch (error) {
-      setBuildError(error.message || "Build operation failed.");
+      if (error?.name === "AbortError") setBuildError("Build execution stopped. The isolated workspace is being cleaned up.");
+      else setBuildError(error.message || "Build operation failed.");
     } finally {
+      if (buildRequest.current === controller) buildRequest.current = null;
       setBuildBusy(false);
     }
+  }
+
+  function stopBuildOperation() {
+    buildRequest.current?.abort();
   }
 
   async function createBuildProject() {
