@@ -58,7 +58,7 @@ async function moderateImage(accountId, apiToken, imageDataUrl) {
       content: [
         {
           type: "text",
-          text: 'Review this image for image-safety policy. Return only JSON: {"safe":true|false,"reason":"short reason"}. Mark unsafe if it contains nudity, explicit or sexualized content, sexual activity, sexualized depictions of minors, or sexualized content where the subject's age is ambiguous, exploitation, graphic violence, or other clearly harmful prohibited imagery. Do not mark ordinary non-sexual family, medical, educational, or artistic imagery unsafe solely because of context. If uncertain, return safe:false.',
+          text: `Review this image for image-safety policy. Return only JSON: {"safe":true|false,"reason":"short reason"}. Mark unsafe if it contains nudity, explicit or sexualized content, sexual activity, sexualized depictions of minors, or sexualized content where the subject's age is ambiguous, exploitation, graphic violence, or other clearly harmful prohibited imagery. Do not mark ordinary non-sexual family, medical, educational, or artistic imagery unsafe solely because of context. If uncertain, return safe:false.`,
         },
         { type: "image_url", image_url: { url: imageDataUrl } },
       ],
