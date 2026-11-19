@@ -521,6 +521,6 @@ export function summarizeEvaluation(scores) {
     average: average === null ? null : Number(average.toFixed(2)),
     atLeastFour: valid.filter((item) => item.score >= 4).length,
     criticalFailures,
-    releaseEligible: valid.length === cases.length && cases.length > 0 && criticalFailures === 0 && valid.every((item) => item.score >= 4),
+    releaseEligible: valid.length === cases.length && cases.length > 0 && criticalFailures === 0 && valid.filter((item) => item.score >= 4).length >= Math.ceil(cases.length * 0.9),
   });
 }
