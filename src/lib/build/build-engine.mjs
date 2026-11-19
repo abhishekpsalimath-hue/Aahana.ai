@@ -123,6 +123,7 @@ export async function executeBuildTask({
       cwd: "/vercel/sandbox",
     });
     const [stdout, stderr] = await readOutput(result);
+    if (signal?.aborted) throw new Error("Build cancelled during project execution.");
     return {
       status: result.exitCode === 0 ? "passed" : "failed",
       operation,
