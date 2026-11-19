@@ -75,6 +75,8 @@ export default function ExperienceLab() {
   const [generatedImage, setGeneratedImage] = useState(null);
   const activeRequest = useRef(null);
   const [buildProjects, setBuildProjects] = useState([]);
+  const [buildFiles, setBuildFiles] = useState([]);
+  const [filesLoading, setFilesLoading] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [buildStatus, setBuildStatus] = useState(null);
   const [buildBusy, setBuildBusy] = useState(false);
@@ -110,6 +112,25 @@ export default function ExperienceLab() {
     });
     return () => { active = false; };
   }, [mode]);
+
+  useEffect(() => {
+    if (mode !== "build" || !selectedProjectId) {
+      setBuildFiles([]);
+      return;
+    }
+    let active = true;
+    setFilesLoading(true);
+    fetch(`/api/files?projectId=${encodeURIComponent(selectedProjectId)}`, { cache: "no-store" })
+      .then(async (response) => {
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || "Could not load project files.");
+        return data.files || [];
+      })
+      .then((files) => { if (active) setBuildFiles(files); })
+      .catch((error) => { if (active) setBuildError(error.message || "Could not load project files."); })
+      .finally(() => { if (active) setFilesLoading(false); });
+    return () => { active = false; };
+  }, [mode, selectedProjectId]);
 
   async function runBuildOperation(operation) {
     if (!selectedProjectId || buildBusy) return;
@@ -308,6 +329,7 @@ export default function ExperienceLab() {
             </div>
             {!buildStatus?.enabled && <p className="build-console-note">The isolated Build Engine is not enabled in this environment. Project selection is available, but execution is safely disabled.</p>}
             {buildStatus?.enabled && !buildStatus?.sandboxIdentityAvailable && <p className="build-console-note">Sandbox identity is not available. Execution remains unavailable until the environment is configured.</p>}
+            {selectedProjectId && <div className="build-file-list"><span>PROJECT FILES {filesLoading ? "· Loading…" : `· ${buildFiles.length}`}</span>{buildFiles.length ? buildFiles.map((file) => <div key={file.id}><span>{file.original_filename}</span><small>{Math.max(1, Math.round(file.size_bytes / 1024))} KB</small></div>) : !filesLoading ? <p>No files attached to this project yet. Add source files, including package.json, before running a build.</p> : null}</div>}
             {!buildProjects.length && !buildError && <p className="build-console-note">No projects yet. Create one, then add source files and a package.json in your project files.</p>}
             {buildError && <p className="build-console-error" role="alert">{buildError}</p>}
             {buildResult && <div className="build-console-result"><strong>{buildResult.status === "passed" ? "Execution passed" : "Execution failed"} · {buildResult.operation}</strong><small>Exit code {buildResult.exitCode} · {buildResult.sourceFileCount} source files</small><pre>{[buildResult.stdout, buildResult.stderr].filter(Boolean).join("\\n") || "No output."}</pre></div>}
