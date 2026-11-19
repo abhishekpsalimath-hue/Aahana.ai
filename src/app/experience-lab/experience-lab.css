@@ -32,3 +32,9 @@
 .build-console-heading-actions{display:flex;gap:8px;flex-wrap:wrap}
 .build-console-heading-actions input{display:none}
 .build-console-heading-actions button:disabled{opacity:.45;cursor:not-allowed}
+
+.build-file-list>div button{padding:4px 9px;font-size:10px}
+.build-source-editor{margin-top:14px;padding:13px;border:1px solid rgba(210,190,255,.2);border-radius:12px;background:rgba(10,8,18,.42)}
+.build-source-editor>div{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;color:#eee5ff;font-size:12px}
+.build-source-editor textarea{display:block;width:100%;min-height:240px;resize:vertical;border:1px solid rgba(210,190,255,.18);border-radius:9px;padding:12px;background:#110d1c;color:#eee5ff;font:12px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;tab-size:2}
+.build-source-editor>button{margin-top:10px}
