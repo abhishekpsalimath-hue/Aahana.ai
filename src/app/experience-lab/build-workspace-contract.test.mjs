@@ -53,3 +53,14 @@ test("Build Mode preserves failed execution output returned with HTTP 422", () =
   assert.match(page, /if \(!response\.ok && result\.status !== "failed"\)/);
   assert.match(page, /if \(result\.status === "passed" \|\| result\.status === "failed"\) setBuildResult\(result\)/);
 });
+
+test("Source editor uses versioned immutable objects and compare-and-swap metadata updates", () => {
+  assert.match(contentRoute, /function versionFor\(objectPath\)/);
+  assert.match(contentRoute, /body\.version !== versionFor\(file\.object_path\)/);
+  assert.match(contentRoute, /\.eq\("object_path", file\.object_path\)/);
+  assert.match(contentRoute, /\.select\("id"\)\.maybeSingle\(\)/);
+  assert.match(contentRoute, /status: 409/);
+  assert.match(contentRoute, /randomUUID\(\)/);
+  assert.match(page, /version: result\.version/);
+  assert.match(page, /content: sourceDraft, version: editingFile\.version/);
+});
