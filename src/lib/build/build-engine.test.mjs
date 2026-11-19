@@ -356,6 +356,6 @@ test("does not run project code if dependency installation resolves after discon
     signal: controller.signal,
   }), /Build cancelled after dependency installation/);
 
-  assert.deepEqual(calls, ["writeFiles", { allow: ["registry.npmjs.org"] }, "install", "stop", "deny-all"]);
+  assert.deepEqual(calls, ["writeFiles", { allow: ["registry.npmjs.org"] }, "install", "stop", "deny-all", "deny-all"]);
   assert.equal(calls.includes("run"), false);
 });
