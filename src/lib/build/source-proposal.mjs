@@ -1,3 +1,5 @@
+export const MAX_PROPOSAL_SOURCE_BYTES = 5000;
+
 const MAX_SOURCE_BYTES = 1024 * 1024;
 
 export function validateSourceProposal(raw, { fileName, version }) {
