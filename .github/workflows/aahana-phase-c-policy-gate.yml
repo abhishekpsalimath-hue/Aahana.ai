@@ -3,6 +3,7 @@ on:
   pull_request:
     branches:
       - feat/aahana-agent-worker-phase-b
+      - feat/aahana-autonomous-development-phase-c-policy-gate
     paths:
       - "src/lib/operations/autonomous-policy.*"
       - "package.json"
@@ -10,6 +11,7 @@ on:
   push:
     branches:
       - feat/aahana-autonomous-development-phase-c-policy-gate
+      - feat/aahana-phase-c-policy-hardening
   workflow_dispatch:
 
 permissions:
