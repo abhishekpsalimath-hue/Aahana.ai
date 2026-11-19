@@ -47,3 +47,9 @@ test("Inline source editor reads and saves only the signed-in owner's private pr
   assert.match(contentRoute, /MAX_BYTES/);
   assert.match(contentRoute, /upsert: true/);
 });
+
+
+test("Build Mode preserves failed execution output returned with HTTP 422", () => {
+  assert.match(page, /if \(!response\.ok && result\.status !== "failed"\)/);
+  assert.match(page, /if \(result\.status === "passed" \|\| result\.status === "failed"\) setBuildResult\(result\)/);
+});
