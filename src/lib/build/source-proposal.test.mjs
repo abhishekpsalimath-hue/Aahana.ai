@@ -12,7 +12,7 @@ const valid = {
 
 test("accepts a proposal only for the exact open file and version", () => {
   assert.deepEqual(validateSourceProposal(JSON.stringify(valid), context), {
-    ...context, summary: valid.summary, updatedContent: valid.updatedContent,
+    fileName: context.fileName, baseVersion: context.version, summary: valid.summary, updatedContent: valid.updatedContent,
     sizeBytes: new TextEncoder().encode(valid.updatedContent).byteLength,
   });
 });
