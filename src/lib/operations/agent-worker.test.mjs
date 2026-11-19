@@ -14,7 +14,7 @@ test("report distinguishes queued work from verified worker completion", () => {
     generatedAt: "2026-11-19T00:00:00.000Z",
   });
   assert.equal(queued.autonomousStatus, "work_queued_or_running");
-  assert.equal(queued.verifiedCompleted, 0);
+  assert.equal(queued.completedWithSavedOutput, 0);
   assert.equal(queued.counts.queued, 1);
 });
 
@@ -26,8 +26,8 @@ test("report counts only completed tasks with saved output and finish timestamp"
       { id: "t3", status: "claimed", result: { output: "Not completed" } },
     ],
   });
-  assert.equal(report.verifiedCompleted, 1);
-  assert.equal(report.autonomousStatus, "worker_activity_verified");
+  assert.equal(report.completedWithSavedOutput, 1);
+  assert.equal(report.autonomousStatus, "worker_tasks_completed");
   assert.equal(report.counts.completed, 2);
 });
 
