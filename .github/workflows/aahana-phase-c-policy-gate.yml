@@ -6,6 +6,7 @@ on:
       - feat/aahana-autonomous-development-phase-c-policy-gate
     paths:
       - "src/lib/operations/autonomous-policy.*"
+      - "src/lib/operations/autonomous-github-evidence.*"
       - "package.json"
       - ".github/workflows/aahana-phase-c-policy-gate.yml"
   push:
