@@ -76,6 +76,6 @@ test("Phase B claim migration limits worker claims to approved executive duties"
     new URL("../../../supabase/migrations/20261119190000_aahana_agent_worker_phase_b.sql", import.meta.url),
     "utf8"
   );
-  assert.match(migration, /role in \\('ceo', 'cto', 'coo', 'cmo'\\)/);
-  assert.match(migration, /task_type in \\('daily_review', 'brain_quality_review', 'health_review', 'growth_review'\\)/);
+  assert.match(migration, /role in \('ceo', 'cto', 'coo', 'cmo'\)/);
+  assert.match(migration, /task_type in \('daily_review', 'brain_quality_review', 'health_review', 'growth_review'\)/);
 });
