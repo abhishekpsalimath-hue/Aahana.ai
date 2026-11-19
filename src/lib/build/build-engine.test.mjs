@@ -300,3 +300,62 @@ test("does not upload workspace files if the caller disconnects while sandbox cr
   assert.equal(calls.includes("runCommand"), false);
   assert.equal(calls.filter((call) => call === "stop").length, 1);
 });
+
+
+test("does not proceed to dependency access or commands when upload completes after disconnect", async () => {
+  const controller = new AbortController();
+  const calls = [];
+  const sandbox = {
+    async writeFiles() { calls.push("writeFiles"); controller.abort(); },
+    async update() { calls.push("update"); },
+    async runCommand() { calls.push("runCommand"); return { exitCode: 0, async stdout() { return ""; }, async stderr() { return ""; } }; },
+    async stop() { calls.push("stop"); },
+  };
+  const SandboxClient = { async create() { return sandbox; } };
+
+  await assert.rejects(() => executeBuildTask({
+    files: [
+      { path: "package.json", content: JSON.stringify({ dependencies: { react: "^19.1.0" }, scripts: { build: "node build.js" } }) },
+      { path: "build.js", content: "console.log('must not run')" },
+    ],
+    operation: "build",
+    projectId: "prj_12345678",
+    sandboxName: "aahana-build-cancel-upload",
+    SandboxClient,
+    signal: controller.signal,
+  }), /Build cancelled after workspace upload/);
+
+  assert.deepEqual(calls, ["writeFiles", "stop", "update"]);
+  assert.equal(calls.includes("runCommand"), false);
+});
+
+test("does not run project code if dependency installation resolves after disconnect", async () => {
+  const controller = new AbortController();
+  const calls = [];
+  const sandbox = {
+    async writeFiles() { calls.push("writeFiles"); },
+    async update(options) { calls.push(options.networkPolicy); },
+    async runCommand(options) {
+      calls.push(options.args[0]);
+      controller.abort();
+      return { exitCode: 0, async stdout() { return "installed"; }, async stderr() { return ""; } };
+    },
+    async stop() { calls.push("stop"); },
+  };
+  const SandboxClient = { async create() { return sandbox; } };
+
+  await assert.rejects(() => executeBuildTask({
+    files: [
+      { path: "package.json", content: JSON.stringify({ dependencies: { react: "^19.1.0" }, scripts: { build: "node build.js" } }) },
+      { path: "build.js", content: "console.log('must not run')" },
+    ],
+    operation: "build",
+    projectId: "prj_12345678",
+    sandboxName: "aahana-build-cancel-install",
+    SandboxClient,
+    signal: controller.signal,
+  }), /Build cancelled after dependency installation/);
+
+  assert.deepEqual(calls, ["writeFiles", { allow: ["registry.npmjs.org"] }, "install", "stop", "deny-all", "deny-all"]);
+  assert.equal(calls.includes("run"), false);
+});
