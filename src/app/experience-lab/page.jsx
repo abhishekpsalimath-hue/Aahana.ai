@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import "./experience-lab.css";
 
 const modes = [
@@ -73,6 +73,7 @@ export default function ExperienceLab() {
   const [busy, setBusy] = useState(false);
   const [requestError, setRequestError] = useState("");
   const [generatedImage, setGeneratedImage] = useState(null);
+  const activeRequest = useRef(null);
   const [focus, setFocus] = useState(false);
   const [activePanel, setActivePanel] = useState("tools");
   const current = modes.find((item) => item.id === mode) || modes[0];
@@ -92,6 +93,8 @@ export default function ExperienceLab() {
     setThread((current) => [...current, { role: "user", content: message }, { role: "assistant", content: "" }]);
     setPrompt("");
     setRequestError("");
+    const controller = new AbortController();
+    activeRequest.current = controller;
     setBusy(true);
     try {
       if (mode === "create" && requestsImage(message)) {
@@ -99,6 +102,7 @@ export default function ExperienceLab() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ prompt: message }),
+          signal: controller.signal,
         });
         const imageResult = await imageResponse.json().catch(() => ({}));
         if (!imageResponse.ok) throw new Error(imageResult.error || "Aahana could not generate that image.");
@@ -115,6 +119,7 @@ export default function ExperienceLab() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message, mode: apiMode, conversationId }),
+        signal: controller.signal,
       });
       if (!response.ok) {
         const result = await response.json().catch(() => ({}));
@@ -139,14 +144,27 @@ export default function ExperienceLab() {
         index === current.length - 1 ? { ...item, content: answer || "Aahana returned an empty response. Please try again." } : item
       ));
     } catch (error) {
-      setRequestError(error.message || "Something went wrong. Please try again.");
-      setThread((current) => {
-        const last = current[current.length - 1];
-        return last?.role === "assistant" && !last.content ? current.slice(0, -1) : current;
-      });
+      if (error.name === "AbortError") {
+        setThread((current) => current.map((item, index) =>
+          index === current.length - 1 && item.role === "assistant" && !item.content
+            ? { ...item, content: "Response stopped." }
+            : item
+        ));
+      } else {
+        setRequestError(error.message || "Something went wrong. Please try again.");
+        setThread((current) => {
+          const last = current[current.length - 1];
+          return last?.role === "assistant" && !last.content ? current.slice(0, -1) : current;
+        });
+      }
     } finally {
+      if (activeRequest.current === controller) activeRequest.current = null;
       setBusy(false);
     }
+  }
+
+  function stopGeneration() {
+    activeRequest.current?.abort();
   }
 
   function startNewSession() {
@@ -202,7 +220,7 @@ export default function ExperienceLab() {
           <form className="lab-composer" onSubmit={previewFlow}>
             <label className="sr-only" htmlFor="lab-composer">Write a message for the preview</label>
             <textarea id="lab-composer" value={prompt} onChange={(event) => setPrompt(event.target.value)} placeholder={mode === "build" ? "Describe the product you want to bring to life..." : mode === "create" ? "Describe the world you want to create..." : "Ask anything. Start anywhere..."} rows={3} />
-            <div className="composer-controls"><div className="composer-tools"><button type="button" onClick={() => setActivePanel(activePanel === "attach" ? "tools" : "attach")} title="Add context">＋ <span>Attach</span></button><button type="button" onClick={() => setActivePanel(activePanel === "tools" ? "discover" : "tools")} title="Explore tools">◈ <span>Tools</span></button><span className="composer-divider" /><span className="composer-mode-label">{current.label} mode</span></div><div className="composer-submit"><button type="button" className="voice-button" title="Voice preview" onClick={() => setActivePanel("voice")}>◖</button><button type="submit" className="lab-send" disabled={!prompt.trim() || busy}>{busy ? "Thinking…" : "Send"} <span>↗</span></button></div></div>
+            <div className="composer-controls"><div className="composer-tools"><button type="button" onClick={() => setActivePanel(activePanel === "attach" ? "tools" : "attach")} title="Add context">＋ <span>Attach</span></button><button type="button" onClick={() => setActivePanel(activePanel === "tools" ? "discover" : "tools")} title="Explore tools">◈ <span>Tools</span></button><span className="composer-divider" /><span className="composer-mode-label">{current.label} mode</span></div><div className="composer-submit"><button type="button" className="voice-button" title="Voice preview" onClick={() => setActivePanel("voice")}>◖</button>{busy ? <button type="button" className="lab-send lab-stop" onClick={stopGeneration}>Stop <span>■</span></button> : <button type="submit" className="lab-send" disabled={!prompt.trim()}>Send <span>↗</span></button>}</div></div>
           </form>
           <div className="lab-privacy-note"><span>◇</span> Your message is sent to your signed-in Aahana assistant.</div>
         </div>
