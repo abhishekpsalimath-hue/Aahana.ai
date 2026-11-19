@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
+import { getSourceFileMimeType, isSupportedSourceFile } from "@/lib/build/source-file-policy.mjs";
 import "./experience-lab.css";
 
 const modes = [
@@ -77,6 +79,8 @@ export default function ExperienceLab() {
   const [buildProjects, setBuildProjects] = useState([]);
   const [buildFiles, setBuildFiles] = useState([]);
   const [filesLoading, setFilesLoading] = useState(false);
+  const [fileBusy, setFileBusy] = useState(false);
+  const buildFileInput = useRef(null);
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [buildStatus, setBuildStatus] = useState(null);
   const [buildBusy, setBuildBusy] = useState(false);
@@ -131,6 +135,53 @@ export default function ExperienceLab() {
       .finally(() => { if (active) setFilesLoading(false); });
     return () => { active = false; };
   }, [mode, selectedProjectId]);
+
+  async function uploadBuildFiles(event) {
+    const selected = Array.from(event.target.files || []);
+    event.target.value = "";
+    if (!selected.length || fileBusy || !selectedProjectId) return;
+    setFileBusy(true);
+    setBuildError("");
+    const supabase = createClient();
+    const uploadedPaths = [];
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) throw new Error("Please sign in again.");
+      for (const file of selected) {
+        const mimeType = getSourceFileMimeType(file.name, file.type);
+        if (!isSupportedSourceFile(file.name, mimeType)) {
+          throw new Error(`${file.name}: unsupported source-file type.`);
+        }
+        if (file.size < 1 || file.size > 1024 * 1024) {
+          throw new Error(`${file.name}: source files must be 1 MB or smaller.`);
+        }
+        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-100) || "source";
+        const objectPath = `${user.id}/${selectedProjectId}/${crypto.randomUUID()}-${safeName}`;
+        const { error: storageError } = await supabase.storage.from("aahana-private").upload(objectPath, file, { contentType: mimeType, upsert: false });
+        if (storageError) throw new Error(`${file.name}: upload failed.`);
+        uploadedPaths.push(objectPath);
+        const response = await fetch("/api/files", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ objectPath, originalFilename: file.name, mimeType, sizeBytes: file.size, projectId: selectedProjectId }),
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.error || `Could not register ${file.name}.`);
+        setBuildFiles((current) => [result.file, ...current]);
+      }
+      setBuildResult(null);
+    } catch (error) {
+      await supabase.storage.from("aahana-private").remove(uploadedPaths).catch(() => ({}));
+      setBuildError(error.message || "Source upload failed.");
+      const refresh = await fetch(`/api/files?projectId=${encodeURIComponent(selectedProjectId)}`, { cache: "no-store" });
+      if (refresh.ok) {
+        const data = await refresh.json().catch(() => ({}));
+        setBuildFiles(data.files || []);
+      }
+    } finally {
+      setFileBusy(false);
+    }
+  }
 
   async function runBuildOperation(operation) {
     if (!selectedProjectId || buildBusy) return;
@@ -317,7 +368,7 @@ export default function ExperienceLab() {
             <div className="composer-controls"><div className="composer-tools"><button type="button" onClick={() => setActivePanel(activePanel === "attach" ? "tools" : "attach")} title="Add context">＋ <span>Attach</span></button><button type="button" onClick={() => setActivePanel(activePanel === "tools" ? "discover" : "tools")} title="Explore tools">◈ <span>Tools</span></button><span className="composer-divider" /><span className="composer-mode-label">{current.label} mode</span></div><div className="composer-submit"><button type="button" className="voice-button" title="Voice preview" onClick={() => setActivePanel("voice")}>◖</button>{busy ? <button type="button" className="lab-send lab-stop" onClick={stopGeneration}>Stop <span>■</span></button> : <button type="submit" className="lab-send" disabled={!prompt.trim()}>Send <span>↗</span></button>}</div></div>
           </form>
           {mode === "build" && <section className="build-console" aria-label="Project build workspace">
-            <div className="build-console-heading"><div><span>PROJECT WORKSPACE</span><h2>Build and verify</h2></div><button type="button" onClick={createBuildProject}>＋ New project</button></div>
+            <div className="build-console-heading"><div><span>PROJECT WORKSPACE</span><h2>Build and verify</h2></div><div className="build-console-heading-actions"><button type="button" onClick={() => buildFileInput.current?.click()} disabled={!selectedProjectId || fileBusy}>{fileBusy ? "Uploading…" : "＋ Add source files"}</button><button type="button" onClick={createBuildProject}>＋ New project</button><input ref={buildFileInput} type="file" multiple accept=".js,.jsx,.ts,.tsx,.mjs,.cjs,.css,.html,.htm,.json,.md,.txt,.py,.toml,.yaml,.yml,.sql" onChange={uploadBuildFiles} hidden /></div></div>
             <div className="build-console-controls">
               <label htmlFor="build-project-select">Project</label>
               <select id="build-project-select" value={selectedProjectId} onChange={(event) => { setSelectedProjectId(event.target.value); setBuildResult(null); }}>
