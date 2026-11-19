@@ -100,7 +100,7 @@ async function generateInternalDeliverable(config, task, events, priorTasks) {
 export async function GET(request) {
   if (!isAuthorised(request)) return NextResponse.json({ error: "Not authorised." }, { status: 401 });
   if (process.env.AAHANA_AGENT_WORKER_ENABLED !== "true") {
-    return NextResponse.json({ ok: false, status: "disabled", reason: "worker_feature_flag_off" }, { status: 503 });
+    return NextResponse.json({ ok: true, status: "disabled", reason: "worker_feature_flag_off" });
   }
 
   const config = getProviderConfig(request);
