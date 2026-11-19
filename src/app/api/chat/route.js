@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createRequestTimeoutSignal } from "@/lib/ai/request-timeout.mjs";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -263,7 +264,7 @@ export async function POST(request) {
             include_raw_content: false,
             topic: /\b(?:news|breaking|today|yesterday|this week|this month|developments|announcements|breakthroughs|release|launched|November|December|October|September|August|July|June|May|April|March|February|January)\b/i.test(prompt) ? "news" : "general",
           }),
-          signal: AbortSignal.timeout(10000),
+          signal: createRequestTimeoutSignal(request.signal, 10000),
         });
         if (searchResponse.ok) {
           const searchData = await searchResponse.json();
@@ -359,7 +360,7 @@ export async function POST(request) {
           ...context,
         ],
       }),
-      signal: AbortSignal.timeout(45000),
+      signal: createRequestTimeoutSignal(request.signal, 45000),
     });
   } catch {
     return NextResponse.json({ error: "Aahana could not connect to the AI service. Please try again." }, { status: 502 });
