@@ -41,11 +41,18 @@ export function createSourceDiff(before, after) {
   const contextStart = Math.max(0, prefix - 3);
   const oldEnd = oldLines.length - suffix;
   const newEnd = newLines.length - suffix;
+  const removed = oldLines.slice(prefix, oldEnd);
+  const added = newLines.slice(prefix, newEnd);
+  const maxChangedLines = 300;
   const output = ["--- current source", "+++ proposed source", "@@ lines " + (contextStart + 1) + " @@",
     ...oldLines.slice(contextStart, prefix).map((line) => "  " + line),
-    ...oldLines.slice(prefix, oldEnd).map((line) => "- " + line),
-    ...newLines.slice(prefix, newEnd).map((line) => "+ " + line),
+    ...removed.slice(0, maxChangedLines).map((line) => "- " + line),
+    ...added.slice(0, maxChangedLines).map((line) => "+ " + line),
     ...oldLines.slice(oldEnd, Math.min(oldLines.length, oldEnd + 3)).map((line) => "  " + line),
   ];
-  return output.join("\n");
+  if (removed.length > maxChangedLines || added.length > maxChangedLines) {
+    output.push("… diff truncated (" + removed.length + " removed lines, " + added.length + " added lines)");
+  }
+  const rendered = output.join("\n");
+  return rendered.length > 40_000 ? rendered.slice(0, 40_000) + "\n… diff preview truncated for performance" : rendered;
 }
