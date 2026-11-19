@@ -18,7 +18,7 @@ function isProjectSourceFile(file) {
 function isSafePrivateObjectPath(objectPath, userId, projectId) {
   const prefix = userId + "/" + projectId + "/";
   if (typeof objectPath !== "string" || objectPath.length > 1024 ||
-      !objectPath.startsWith(prefix) || /[%\\\\\\u0000-\\u001f\\u007f]/u.test(objectPath)) return false;
+      !objectPath.startsWith(prefix) || objectPath.includes("%") || objectPath.includes("\\") || /[\u0000-\u001f\u007f]/u.test(objectPath)) return false;
   const suffix = objectPath.slice(prefix.length);
   if (!suffix) return false;
   return suffix.split("/").every((segment) => segment && segment !== "." && segment !== "..");
