@@ -92,7 +92,7 @@ test("Build workspace assembly fails closed instead of silently omitting source 
   assert.match(buildRoute, /sourceCandidates\.length > MAX_SOURCE_FILES/);
   assert.match(buildRoute, /hasInvalidSourceMetadata/);
   assert.match(buildRoute, /function isSafePrivateObjectPath\(objectPath, userId, projectId\)/);
-  assert.match(buildRoute, /segment !== "\\.\\."/);
+  assert.match(buildRoute, /segment !== "\.\."/);
   assert.match(buildRoute, /objectPath\.length > 1024/);
   assert.match(buildRoute, /objectPath\.includes\("%"\)/);
   assert.match(buildRoute, /objectPath\.includes\("\\\\"\)/);
