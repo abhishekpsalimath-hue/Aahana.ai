@@ -106,3 +106,12 @@ test("Build Mode exposes cancellation for an in-flight isolated execution", () =
   assert.match(page, /Stop execution/);
   assert.match(page, /Build execution stopped\. The isolated workspace is being cleaned up\./);
 });
+
+
+test("Failed build logs can be reviewed and handed to Aahana without automatic submission", () => {
+  assert.match(page, /function prepareBuildDiagnosis\(\)/);
+  assert.match(page, /slice\(0, 4000\)/);
+  assert.match(page, /review and remove secrets before sending/);
+  assert.match(page, /Prepare diagnosis with Aahana/);
+  assert.match(page, /setPrompt\(`Help diagnose this/);
+});
