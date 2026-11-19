@@ -10,9 +10,12 @@ test("evaluation set is versioned, unique and contains 100 synthetic cases", () 
 });
 
 test("evaluation set covers ten categories with ten cases each", () => {
-  const counts = Object.groupBy(ASSISTANT_EVALUATION_CASES, (item) => item.category);
+  const counts = ASSISTANT_EVALUATION_CASES.reduce((result, item) => {
+    result[item.category] = (result[item.category] || 0) + 1;
+    return result;
+  }, {});
   assert.equal(Object.keys(counts).length, 10);
-  for (const cases of Object.values(counts)) assert.equal(cases.length, 10);
+  for (const count of Object.values(counts)) assert.equal(count, 10);
 });
 
 test("rubric tracks five quality dimensions and critical failure classes", () => {
