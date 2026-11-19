@@ -22,7 +22,7 @@ export async function GET(request) {
       method: "GET",
       cache: "no-store",
       redirect: "error",
-      signal: AbortSignal.timeout(150000),
+      signal: AbortSignal.any([request.signal, AbortSignal.timeout(150000)]),
     });
     if (!upstream.ok || !upstream.body) {
       return NextResponse.json({ error: "The temporary video file is no longer available. Generate it again." }, { status: 502 });
@@ -38,6 +38,9 @@ export async function GET(request) {
     if (length && /^\d+$/.test(length)) headers.set("Content-Length", length);
     return new Response(upstream.body, { status: 200, headers });
   } catch (error) {
+    if (request.signal.aborted) {
+      return new Response(null, { status: 499 });
+    }
     console.error("Aahana video download failed:", error?.name || "unknown error");
     return NextResponse.json({ error: "Video download timed out or the provider is unavailable." }, { status: 502 });
   }
