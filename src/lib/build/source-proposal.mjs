@@ -27,3 +27,25 @@ export function validateSourceProposal(raw, { fileName, version }) {
     sizeBytes: bytes,
   };
 }
+
+export function createSourceDiff(before, after) {
+  if (typeof before !== "string" || typeof after !== "string") return "";
+  if (before === after) return "No source changes proposed.";
+  const oldLines = before.split("\n");
+  const newLines = after.split("\n");
+  let prefix = 0;
+  while (prefix < oldLines.length && prefix < newLines.length && oldLines[prefix] === newLines[prefix]) prefix++;
+  let suffix = 0;
+  while (suffix < oldLines.length - prefix && suffix < newLines.length - prefix &&
+      oldLines[oldLines.length - 1 - suffix] === newLines[newLines.length - 1 - suffix]) suffix++;
+  const contextStart = Math.max(0, prefix - 3);
+  const oldEnd = oldLines.length - suffix;
+  const newEnd = newLines.length - suffix;
+  const output = ["--- current source", "+++ proposed source", "@@ lines " + (contextStart + 1) + " @@",
+    ...oldLines.slice(contextStart, prefix).map((line) => "  " + line),
+    ...oldLines.slice(prefix, oldEnd).map((line) => "- " + line),
+    ...newLines.slice(prefix, newEnd).map((line) => "+ " + line),
+    ...oldLines.slice(oldEnd, Math.min(oldLines.length, oldEnd + 3)).map((line) => "  " + line),
+  ];
+  return output.join("\n");
+}
