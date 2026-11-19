@@ -54,3 +54,18 @@ test("worker response validates schema and only accepts supplied evidence IDs", 
   assert.throws(() => parseWorkerResponse("not-json", []), TypeError);
   assert.throws(() => parseWorkerResponse(JSON.stringify({ report: "missing refs" }), []), TypeError);
 });
+
+
+test("report only retains evidence references present in its source-event ledger", () => {
+  const report = buildAgentReport({
+    tasks: [{
+      id: "t1",
+      status: "completed",
+      finished_at: "2026-11-19T00:00:00Z",
+      result: { output: "A claim", evidence_event_ids: ["event-1", "missing-event"] },
+    }],
+    sourceEvents: [{ id: "event-1", event_type: "test_passed", summary: "Tests passed" }],
+  });
+  assert.deepEqual(report.tasks[0].evidenceEventIds, ["event-1"]);
+  assert.equal(report.sourceEvents.length, 1);
+});
