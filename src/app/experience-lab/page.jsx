@@ -93,24 +93,24 @@ export default function ExperienceLab() {
     <header className="lab-topbar">
       <a className="lab-brand" href="/" aria-label="Aahana AI home"><span className="lab-brand-symbol">a</span><span>Aahana <i>ai</i></span></a>
       <div className="lab-top-center"><span className="live-pulse" /> INTERACTIVE EXPERIENCE LAB <span className="lab-preview-tag">CONCEPT</span></div>
-      <div className="lab-top-actions"><button type="button" className={focus ? "top-icon selected" : "top-icon"} onClick={() => setFocus(!focus)} aria-pressed={focus} title="Toggle focus mode">⛶</button><a href="/" className="lab-exit">Exit preview <span>↗</span></a></div>
+      <div className="lab-top-actions"><button type="button" className={focus ? "top-icon selected" : "top-icon"} onClick={() => setFocus(!focus)} aria-pressed={focus} aria-label={focus ? "Exit focus mode" : "Enter focus mode"} title="Toggle focus mode">⛶</button><a href="/" className="lab-exit">Exit preview <span>↗</span></a></div>
     </header>
 
     <div className="lab-layout">
       <aside className="lab-rail" aria-label="Workspace navigation">
         <button className="rail-new" type="button" onClick={() => { setPrompt(""); setSample(false); }} aria-label="New session">＋</button>
         <span className="rail-separator" />
-        <button className="rail-button active" type="button" title="Home" aria-label="Home" onClick={() => { setMode("chat"); setPrompt(""); setSample(false); setActivePanel("tools"); }}>⌂</button>
-        <button className="rail-button" type="button" title="Discover" onClick={() => setActivePanel("discover")}>✧</button>
-        <button className="rail-button" type="button" title="Library" onClick={() => setActivePanel("library")}>▤</button>
+        <button className={mode === "chat" && activePanel === "tools" ? "rail-button active" : "rail-button"} type="button" title="Home" aria-label="Home" aria-current={mode === "chat" && activePanel === "tools" ? "page" : undefined} onClick={() => { setMode("chat"); setPrompt(""); setSample(false); setActivePanel("tools"); }}>⌂</button>
+        <button className={activePanel === "discover" ? "rail-button active" : "rail-button"} type="button" title="Discover" aria-pressed={activePanel === "discover"} onClick={() => setActivePanel("discover")}>✧</button>
+        <button className={activePanel === "library" ? "rail-button active" : "rail-button"} type="button" title="Library" aria-pressed={activePanel === "library"} onClick={() => setActivePanel("library")}>▤</button>
         <div className="rail-bottom"><button className="rail-button" type="button" title="Settings" onClick={() => setActivePanel("settings")}>⚙</button><span className="rail-avatar">A</span></div>
       </aside>
 
       <section className="lab-main">
         <div className="lab-heading-row"><div><div className="lab-kicker">YOUR SPACE TO THINK BIGGER</div><h1>What shall we <span>imagine?</span></h1><p>One intelligence. Infinite ways to explore, create and build.</p></div><div className="lab-heading-orb"><OrbitMark /></div></div>
 
-        <nav className="lab-modebar" aria-label="Choose an experience" role="tablist">
-          {modes.map((item) => <button type="button" key={item.id} onClick={() => { setMode(item.id); setSample(false); }} className={mode === item.id ? "lab-mode active" : "lab-mode"} role="tab" aria-selected={mode === item.id} aria-pressed={mode === item.id}><span>{item.mark}</span>{item.label}</button>)}
+        <nav className="lab-modebar" aria-label="Choose an experience">
+          {modes.map((item) => <button type="button" key={item.id} onClick={() => { setMode(item.id); setSample(false); }} className={mode === item.id ? "lab-mode active" : "lab-mode"} aria-pressed={mode === item.id}><span>{item.mark}</span>{item.label}</button>)}
         </nav>
 
         <div className="lab-workspace">
@@ -140,7 +140,7 @@ export default function ExperienceLab() {
       <aside className="lab-inspector">
         <div className="inspector-head"><span>YOUR CO-PILOT</span><button type="button" onClick={() => setActivePanel("tools")} aria-label="Reset side panel">···</button></div>
         <div className="inspector-profile"><div className="inspector-orb"><OrbitMark /></div><div><strong>Aahana</strong><small>Ready to explore <span className="ready-dot" /></small></div></div>
-        <div className="inspector-tabs"><button type="button" className={activePanel === "tools" ? "active" : ""} onClick={() => setActivePanel("tools")}>Tools</button><button type="button" className={activePanel === "discover" ? "active" : ""} onClick={() => setActivePanel("discover")}>Discover</button><button type="button" className={activePanel === "library" ? "active" : ""} onClick={() => setActivePanel("library")}>Library</button></div>
+        <div className="inspector-tabs" role="group" aria-label="Co-pilot panel"><button type="button" className={activePanel === "tools" ? "active" : ""} aria-pressed={activePanel === "tools"} onClick={() => setActivePanel("tools")}>Tools</button><button type="button" className={activePanel === "discover" ? "active" : ""} aria-pressed={activePanel === "discover"} onClick={() => setActivePanel("discover")}>Discover</button><button type="button" className={activePanel === "library" ? "active" : ""} aria-pressed={activePanel === "library"} onClick={() => setActivePanel("library")}>Library</button></div>
         <div className="inspector-content">
           {activePanel === "tools" && <><div className="inspector-section-label">CAPABILITIES</div>{[["⌘","Build workspace","Code, preview and iterate"],["✧","Creative studio","Visuals, motion and ideas"],["⌕","Deep research","Sources, synthesis and insight"],["◖","Voice conversation","Speak naturally, hands-free"]].map(([mark,title,detail]) => <button type="button" className="capability-row" key={title} onClick={() => setActivePanel(title === "Voice conversation" ? "voice" : "discover")}><span className="capability-mark">{mark}</span><span><strong>{title}</strong><small>{detail}</small></span><b>↗</b></button>)}</>}
           {activePanel === "discover" && <div className="inspector-empty"><span>✧</span><strong>Discover your next move</strong><p>Explore connected experiences from one calm, intelligent workspace.</p><button type="button" onClick={() => setMode("research")}>Explore research mode</button></div>}
