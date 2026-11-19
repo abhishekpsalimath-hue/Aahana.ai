@@ -31,6 +31,5 @@ jobs:
         run: |
           curl --fail-with-body --silent --show-error \
             --max-time 55 \
-            --retry 1 --retry-delay 2 --retry-all-errors \
             -H "Authorization: Bearer ${CRON_SECRET}" \
             "https://aahana-ai.vercel.app/api/internal/agent-worker"
