@@ -37,6 +37,7 @@ export default function LoginPage() {
       } else if (mode === "signup" && !result.data.session) {
         setMessage("Signup request accepted. Check your inbox and spam folder for the confirmation email. If it doesn't arrive, don't repeatedly submit; email delivery needs attention.");
       } else {
+        try { window.sessionStorage.setItem("aahana-founder-welcome", "show"); } catch { /* Optional one-time welcome animation. */ }
         router.replace("/");
         router.refresh();
       }
