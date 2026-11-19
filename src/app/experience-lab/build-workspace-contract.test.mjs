@@ -115,3 +115,11 @@ test("Failed build logs can be reviewed and handed to Aahana without automatic s
   assert.match(page, /Prepare diagnosis with Aahana/);
   assert.match(page, /setPrompt\(`Help diagnose this/);
 });
+
+
+test("Source editor rejects stored-size mismatches before returning project content", () => {
+  assert.match(contentRoute, /size_bytes/);
+  assert.match(contentRoute, /blob\.size !== file\.size_bytes/);
+  assert.match(contentRoute, /stored size does not match/);
+  assert.match(contentRoute, /status: 409/);
+});
