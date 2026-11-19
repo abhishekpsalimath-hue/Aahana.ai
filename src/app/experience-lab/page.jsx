@@ -497,6 +497,7 @@ export default function ExperienceLab() {
               <label className="build-proposal-instruction">What should Aahana change?
                 <input value={proposalInstruction} onChange={(event) => { setProposalInstruction(event.target.value); setSourceProposal(null); }} maxLength={1000} placeholder="e.g. Fix the validation bug without changing the public API" />
               </label>
+              <small className="build-proposal-privacy">The selected source is sent to your signed-in Aahana assistant to prepare the proposal. Remove secrets before continuing.</small>
               <div className="build-source-actions">
                 <button type="button" onClick={proposeSourceEdit} disabled={proposalBusy || editorSaving || !sourceDraft.trim() || !proposalInstruction.trim()}>{proposalBusy ? "Preparing proposal…" : "Ask Aahana to propose an edit"}</button>
                 <button type="button" onClick={saveSourceFile} disabled={editorSaving || proposalBusy}>{editorSaving ? "Saving…" : "Save source"}</button>
