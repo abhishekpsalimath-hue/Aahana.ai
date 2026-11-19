@@ -74,5 +74,6 @@ test("AI source proposals are version-bound, reviewed as a diff, and never auto-
   assert.match(page, /Use this proposal in editor/);
   assert.match(page, /Nothing is saved until you review the editor and select Save source/);
   assert.match(page, /body: JSON\.stringify\(\{ content: sourceDraft, version: editingFile\.version \}\)/);
-  assert.match(page, /AI proposals are limited to source files up to 5 KB/);\n  assert.match(page, /instruction\.length > 8000/);\n  assert.match(page, /MAX_PROPOSAL_SOURCE_BYTES/);
+  assert.match(page, /AI proposals are limited to source files up to 5 KB/);
+  assert.match(page, /instruction\.length > 8000/);\n  assert.match(page, /MAX_PROPOSAL_SOURCE_BYTES/);
 });
