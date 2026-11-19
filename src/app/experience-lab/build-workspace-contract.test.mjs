@@ -5,6 +5,7 @@ import { readFileSync } from "node:fs";
 const page = readFileSync(new URL("./page.jsx", import.meta.url), "utf8");
 const buildRoute = readFileSync(new URL("../api/build/project/route.js", import.meta.url), "utf8");
 const statusRoute = readFileSync(new URL("../api/build/status/route.js", import.meta.url), "utf8");
+const contentRoute = readFileSync(new URL("../api/files/[id]/content/route.js", import.meta.url), "utf8");
 
 test("Experience Lab Build mode loads owned projects and Build Engine status", () => {
   assert.match(page, /fetch\("\/api\/projects"/);
@@ -33,4 +34,15 @@ test("Build Mode uploads only supported project source files through authenticat
   assert.match(page, /body: JSON\.stringify\(\{ objectPath, originalFilename: file\.name, mimeType, sizeBytes: file\.size, projectId: selectedProjectId \}\)/);
   assert.match(page, /Add source files/);
   assert.match(buildRoute, /isProjectSourceFile/);
+});
+
+test("Inline source editor reads and saves only the signed-in owner's private project source", () => {
+  assert.match(page, /\/api\/files\/\\$\{encodeURIComponent\(file\.id\)\}\/content/);
+  assert.match(page, /method: "PUT"/);
+  assert.match(contentRoute, /supabase\.auth\.getUser\(\)/);
+  assert.match(contentRoute, /\.eq\("user_id", userId\)/);
+  assert.match(contentRoute, /file\.bucket_id !== BUCKET/);
+  assert.match(contentRoute, /TextDecoder\("utf-8", \{ fatal: true \}\)/);
+  assert.match(contentRoute, /MAX_BYTES/);
+  assert.match(contentRoute, /upsert: true/);
 });
