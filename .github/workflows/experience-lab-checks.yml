@@ -12,6 +12,7 @@ on:
     branches:
       - feat/interactive-experience-lab
       - feat/aahana-contextual-interaction-cards
+      - feat/experience-lab-live-assistant
     paths:
       - "src/app/experience-lab/**"
       - ".github/workflows/experience-lab-checks.yml"
