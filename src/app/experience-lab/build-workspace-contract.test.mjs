@@ -72,7 +72,7 @@ test("AI source proposals are version-bound, reviewed as a diff, and never auto-
   assert.match(page, /createSourceDiff\(sourceDraft, proposal\.updatedContent\)/);
   assert.match(page, /sourceProposal\.baseContent !== sourceDraft/);
   assert.match(page, /disabled=\{proposalBusy \|\| editorSaving\} value=\{sourceDraft\}/);
-  assert.match(page, /Ask Aahana to propose an edit/);
+  assert.match(page, /Ask Aahana to propose an edit/);\n  assert.match(page, /projectId: selectedProjectId/);
   assert.match(page, /Use this proposal in editor/);
   assert.match(page, /Nothing is saved until you review the editor and select Save source/);
   assert.match(page, /body: JSON\.stringify\(\{ content: sourceDraft, version: editingFile\.version \}\)/);
