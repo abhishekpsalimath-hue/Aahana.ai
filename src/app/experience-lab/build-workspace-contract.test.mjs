@@ -45,7 +45,7 @@ test("Inline source editor reads and saves only the signed-in owner's private pr
   assert.match(contentRoute, /file\.bucket_id !== BUCKET/);
   assert.match(contentRoute, /TextDecoder\("utf-8", \{ fatal: true \}\)/);
   assert.match(contentRoute, /MAX_BYTES/);
-  assert.match(contentRoute, /upsert: true/);
+  assert.match(contentRoute, /upsert: false/);
 });
 
 
