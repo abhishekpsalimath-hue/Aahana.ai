@@ -8,7 +8,6 @@ on:
       - "src/lib/ai/media-route-contract.test.mjs"
       - ".github/workflows/media-generation-guards.yml"
       - "package.json"
-      - "package-lock.json"
   push:
     branches:
       - feat/video-generation-and-distinctive-typography
@@ -18,7 +17,6 @@ on:
       - "src/lib/ai/media-route-contract.test.mjs"
       - ".github/workflows/media-generation-guards.yml"
       - "package.json"
-      - "package-lock.json"
 
 permissions:
   contents: read
@@ -36,8 +34,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-      - run: npm ci
+      - run: npm install --no-audit --no-fund
       - run: node --test src/lib/ai/video-generation-policy.test.mjs src/lib/ai/media-route-contract.test.mjs
       - run: npm run lint
       - run: npm run build
