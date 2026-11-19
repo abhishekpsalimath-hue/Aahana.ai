@@ -125,3 +125,12 @@ export function parseWorkerResponse(content, availableEventIds = []) {
     evidenceEventIds,
   });
 }
+
+
+export function createWorkerProviderSignal(callerSignal, timeoutMs = 45_000) {
+  if (!Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 60_000) {
+    throw new RangeError("timeoutMs must be an integer from 1 to 60000");
+  }
+  const timeoutSignal = AbortSignal.timeout(timeoutMs);
+  return callerSignal ? AbortSignal.any([callerSignal, timeoutSignal]) : timeoutSignal;
+}
