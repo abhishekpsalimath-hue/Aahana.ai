@@ -37,12 +37,12 @@ create or replace function public.aahana_claim_next_agent_task(p_lease_seconds i
 returns public.aahana_agent_tasks
 language plpgsql
 security definer
-set search_path = public, pg_temp
+set search_path = pg_catalog, public, pg_temp
 as $$
 declare
   v_task public.aahana_agent_tasks;
 begin
-  if p_lease_seconds < 30 or p_lease_seconds > 300 then
+  if p_lease_seconds is null or p_lease_seconds < 30 or p_lease_seconds > 300 then
     raise exception 'Lease duration is outside the permitted range' using errcode = '22023';
   end if;
 
@@ -105,12 +105,12 @@ create or replace function public.aahana_heartbeat_agent_task(
 returns public.aahana_agent_tasks
 language plpgsql
 security definer
-set search_path = public, pg_temp
+set search_path = pg_catalog, public, pg_temp
 as $$
 declare
   v_task public.aahana_agent_tasks;
 begin
-  if p_lease_seconds < 30 or p_lease_seconds > 300
+  if p_lease_seconds is null or p_lease_seconds < 30 or p_lease_seconds > 300
     or p_checkpoint is null
     or jsonb_typeof(p_checkpoint) <> 'object'
     or pg_column_size(p_checkpoint) > 8192 then
@@ -147,7 +147,7 @@ create or replace function public.aahana_complete_agent_task(
 returns public.aahana_agent_tasks
 language plpgsql
 security definer
-set search_path = public, pg_temp
+set search_path = pg_catalog, public, pg_temp
 as $$
 declare
   v_task public.aahana_agent_tasks;
@@ -185,7 +185,7 @@ create or replace function public.aahana_fail_agent_task(
 returns public.aahana_agent_tasks
 language plpgsql
 security definer
-set search_path = public, pg_temp
+set search_path = pg_catalog, public, pg_temp
 as $$
 declare
   v_task public.aahana_agent_tasks;
@@ -232,7 +232,7 @@ create or replace function public.aahana_finalize_agent_run(p_run_id uuid)
 returns public.aahana_agent_runs
 language plpgsql
 security definer
-set search_path = public, pg_temp
+set search_path = pg_catalog, public, pg_temp
 as $$
 declare
   v_run public.aahana_agent_runs;
