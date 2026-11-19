@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import "./experience-lab.css";
 
 const modes = [
@@ -74,10 +74,83 @@ export default function ExperienceLab() {
   const [requestError, setRequestError] = useState("");
   const [generatedImage, setGeneratedImage] = useState(null);
   const activeRequest = useRef(null);
+  const [buildProjects, setBuildProjects] = useState([]);
+  const [selectedProjectId, setSelectedProjectId] = useState("");
+  const [buildStatus, setBuildStatus] = useState(null);
+  const [buildBusy, setBuildBusy] = useState(false);
+  const [buildResult, setBuildResult] = useState(null);
+  const [buildError, setBuildError] = useState("");
   const [focus, setFocus] = useState(false);
   const [activePanel, setActivePanel] = useState("tools");
   const current = modes.find((item) => item.id === mode) || modes[0];
   const currentPrompts = promptsByMode[mode] || promptsByMode.chat;
+
+  useEffect(() => {
+    if (mode !== "build") return;
+    let active = true;
+    Promise.all([
+      fetch("/api/projects", { cache: "no-store" }).then(async (response) => {
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || "Could not load projects.");
+        return data.projects || [];
+      }),
+      fetch("/api/build/status", { cache: "no-store" }).then(async (response) => {
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || "Could not inspect Build Engine status.");
+        return data;
+      }),
+    ]).then(([projects, status]) => {
+      if (!active) return;
+      setBuildProjects(projects);
+      setSelectedProjectId((current) => current || projects[0]?.id || "");
+      setBuildStatus(status);
+      setBuildError("");
+    }).catch((error) => {
+      if (active) setBuildError(error.message || "Build workspace could not be loaded.");
+    });
+    return () => { active = false; };
+  }, [mode]);
+
+  async function runBuildOperation(operation) {
+    if (!selectedProjectId || buildBusy) return;
+    setBuildBusy(true);
+    setBuildError("");
+    setBuildResult(null);
+    try {
+      const response = await fetch("/api/build/project", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ projectId: selectedProjectId, operation }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || `Build ${operation} failed.`);
+      setBuildResult(result);
+    } catch (error) {
+      setBuildError(error.message || "Build operation failed.");
+    } finally {
+      setBuildBusy(false);
+    }
+  }
+
+  async function createBuildProject() {
+    const name = window.prompt("Name your project");
+    if (!name?.trim()) return;
+    try {
+      const response = await fetch("/api/projects", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: name.trim(), project_type: "web" }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Could not create project.");
+      setBuildProjects((current) => [result.project, ...current]);
+      setSelectedProjectId(result.project.id);
+      setBuildResult(null);
+      setBuildError("");
+    } catch (error) {
+      setBuildError(error.message || "Could not create project.");
+    }
+  }
 
   function tryPrompt(value) {
     setPrompt(value);
@@ -222,6 +295,23 @@ export default function ExperienceLab() {
             <textarea id="lab-composer" value={prompt} onChange={(event) => setPrompt(event.target.value)} placeholder={mode === "build" ? "Describe the product you want to bring to life..." : mode === "create" ? "Describe the world you want to create..." : "Ask anything. Start anywhere..."} rows={3} />
             <div className="composer-controls"><div className="composer-tools"><button type="button" onClick={() => setActivePanel(activePanel === "attach" ? "tools" : "attach")} title="Add context">＋ <span>Attach</span></button><button type="button" onClick={() => setActivePanel(activePanel === "tools" ? "discover" : "tools")} title="Explore tools">◈ <span>Tools</span></button><span className="composer-divider" /><span className="composer-mode-label">{current.label} mode</span></div><div className="composer-submit"><button type="button" className="voice-button" title="Voice preview" onClick={() => setActivePanel("voice")}>◖</button>{busy ? <button type="button" className="lab-send lab-stop" onClick={stopGeneration}>Stop <span>■</span></button> : <button type="submit" className="lab-send" disabled={!prompt.trim()}>Send <span>↗</span></button>}</div></div>
           </form>
+          {mode === "build" && <section className="build-console" aria-label="Project build workspace">
+            <div className="build-console-heading"><div><span>PROJECT WORKSPACE</span><h2>Build and verify</h2></div><button type="button" onClick={createBuildProject}>＋ New project</button></div>
+            <div className="build-console-controls">
+              <label htmlFor="build-project-select">Project</label>
+              <select id="build-project-select" value={selectedProjectId} onChange={(event) => { setSelectedProjectId(event.target.value); setBuildResult(null); }}>
+                <option value="">Choose a project</option>
+                {buildProjects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
+              </select>
+              <button type="button" disabled={!selectedProjectId || buildBusy || !buildStatus?.enabled} onClick={() => runBuildOperation("build")}>{buildBusy ? "Working…" : "Run build"}</button>
+              <button type="button" disabled={!selectedProjectId || buildBusy || !buildStatus?.enabled} onClick={() => runBuildOperation("test")}>Run tests</button>
+            </div>
+            {!buildStatus?.enabled && <p className="build-console-note">The isolated Build Engine is not enabled in this environment. Project selection is available, but execution is safely disabled.</p>}
+            {buildStatus?.enabled && !buildStatus?.sandboxIdentityAvailable && <p className="build-console-note">Sandbox identity is not available. Execution remains unavailable until the environment is configured.</p>}
+            {!buildProjects.length && !buildError && <p className="build-console-note">No projects yet. Create one, then add source files and a package.json in your project files.</p>}
+            {buildError && <p className="build-console-error" role="alert">{buildError}</p>}
+            {buildResult && <div className="build-console-result"><strong>{buildResult.status === "passed" ? "Execution passed" : "Execution failed"} · {buildResult.operation}</strong><small>Exit code {buildResult.exitCode} · {buildResult.sourceFileCount} source files</small><pre>{[buildResult.stdout, buildResult.stderr].filter(Boolean).join("\\n") || "No output."}</pre></div>}
+          </section>}
           <div className="lab-privacy-note"><span>◇</span> Your message is sent to your signed-in Aahana assistant.</div>
         </div>
 
