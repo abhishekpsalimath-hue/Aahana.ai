@@ -5,8 +5,14 @@ const MAX_FILE_PATCH_BYTES = 30 * 1024;
 const MAX_TOTAL_PATCH_BYTES = 150 * 1024;
 
 const PROTECTED_PATHS = [
+  ".git/",
   ".github/",
   ".vercel/",
+  ".next/",
+  "node_modules/",
+  "coverage/",
+  "dist/",
+  "build/",
   "vercel.json",
   "package.json",
   "package-lock.json",
@@ -119,10 +125,6 @@ export function validateAutonomousTask(input) {
   });
 }
 
-function containsSecret(patch) {
-  return SECRET_PATTERNS.some((pattern) => pattern.test(patch));
-}
-
 /**
  * Evidence must be assembled by the server from actual sandbox process results.
  * Never pass model-authored claims or repository text as execution evidence.
@@ -181,4 +183,8 @@ export function evaluateAutonomousDiff({ task: taskInput, files, evidence }) {
     status: uniqueReasons.length ? "approval_required" : "accepted",
     reasons: Object.freeze(uniqueReasons),
   });
+}
+
+function containsSecret(patch) {
+  return SECRET_PATTERNS.some((pattern) => pattern.test(patch));
 }
