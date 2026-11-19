@@ -13,7 +13,7 @@ test("propagates caller cancellation to the provider signal", async () => {
 test("aborts when the provider timeout expires", async () => {
   const controller = new AbortController();
   const signal = createRequestTimeoutSignal(controller.signal, 5);
-  await new Promise((resolve) => signal.addEventListener("abort", resolve, { once: true }));
+  await new Promise((resolve) => setTimeout(resolve, 15));
   assert.equal(signal.aborted, true);
   assert.equal(signal.reason.name, "TimeoutError");
 });
