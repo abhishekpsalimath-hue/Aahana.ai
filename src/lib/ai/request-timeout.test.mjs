@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createRequestTimeoutSignal } from "./request-timeout.mjs";
+import { createRequestTimeoutSignal, getClientAbortResponse } from "./request-timeout.mjs";
 
 test("propagates caller cancellation to the provider signal", async () => {
   const controller = new AbortController();
@@ -22,4 +22,12 @@ test("rejects a missing request signal or invalid timeout", () => {
   assert.throws(() => createRequestTimeoutSignal(null, 100), TypeError);
   const controller = new AbortController();
   assert.throws(() => createRequestTimeoutSignal(controller.signal, 0), RangeError);
+});
+
+test("distinguishes client cancellation from provider failures", () => {
+  const controller = new AbortController();
+  assert.equal(getClientAbortResponse(controller.signal), null);
+  controller.abort();
+  const response = getClientAbortResponse(controller.signal);
+  assert.equal(response.status, 499);
 });
