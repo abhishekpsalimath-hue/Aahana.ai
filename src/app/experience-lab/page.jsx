@@ -137,7 +137,7 @@ export default function ExperienceLab() {
     <div className="lab-ambient ambient-one" /><div className="lab-ambient ambient-two" />
     <header className="lab-topbar">
       <a className="lab-brand" href="/" aria-label="Aahana AI home"><span className="lab-brand-symbol">a</span><span>Aahana <i>ai</i></span></a>
-      <div className="lab-top-center"><span className="live-pulse" /> INTERACTIVE EXPERIENCE LAB <span className="lab-preview-tag">CONCEPT</span></div>
+      <div className="lab-top-center"><span className="live-pulse" /> INTERACTIVE EXPERIENCE LAB <span className="lab-preview-tag">AI CHAT INTEGRATION</span></div>
       <div className="lab-top-actions"><button type="button" className={focus ? "top-icon selected" : "top-icon"} onClick={() => setFocus(!focus)} aria-pressed={focus} aria-label={focus ? "Exit focus mode" : "Enter focus mode"} title="Toggle focus mode">⛶</button><a href="/" className="lab-exit">Exit preview <span>↗</span></a></div>
     </header>
 
@@ -190,7 +190,7 @@ export default function ExperienceLab() {
         <div className="inspector-profile"><div className="inspector-orb"><OrbitMark /></div><div><strong>Aahana</strong><small>Ready to explore <span className="ready-dot" /></small></div></div>
         <div className="inspector-tabs" role="group" aria-label="Co-pilot panel"><button type="button" className={activePanel === "tools" ? "active" : ""} aria-pressed={activePanel === "tools"} onClick={() => setActivePanel("tools")}>Tools</button><button type="button" className={activePanel === "discover" ? "active" : ""} aria-pressed={activePanel === "discover"} onClick={() => setActivePanel("discover")}>Discover</button><button type="button" className={activePanel === "library" ? "active" : ""} aria-pressed={activePanel === "library"} onClick={() => setActivePanel("library")}>Library</button></div>
         <div className="inspector-content">
-          {activePanel === "tools" && <><div className="inspector-section-label">CAPABILITIES</div>{[["⌘","Build workspace","Code, preview and iterate"],["✧","Creative studio","Visuals, motion and ideas"],["⌕","Deep research","Sources, synthesis and insight"],["◖","Voice conversation","Speak naturally, hands-free"]].map(([mark,title,detail]) => <button type="button" className="capability-row" key={title} onClick={() => setActivePanel(title === "Voice conversation" ? "voice" : "discover")}><span className="capability-mark">{mark}</span><span><strong>{title}</strong><small>{detail}</small></span><b>↗</b></button>)}</>}
+          {activePanel === "tools" && <><div className="inspector-section-label">CAPABILITIES</div>{[["⌘","Build workspace","Product guidance · engine in development"],["✧","Creative studio","Creative direction · media tools in development"],["⌕","Deep research","Source-backed answers when available"],["◖","Voice conversation","Voice runtime in development"]].map(([mark,title,detail]) => <button type="button" className="capability-row" key={title} onClick={() => setActivePanel(title === "Voice conversation" ? "voice" : "discover")}><span className="capability-mark">{mark}</span><span><strong>{title}</strong><small>{detail}</small></span><b>↗</b></button>)}</>}
           {activePanel === "discover" && <div className="inspector-empty"><span>✧</span><strong>Discover your next move</strong><p>Explore connected experiences from one calm, intelligent workspace.</p><button type="button" onClick={() => setMode("research")}>Explore research mode</button></div>}
           {activePanel === "library" && <div className="inspector-empty"><span>▤</span><strong>Your creative memory</strong><p>A home for saved ideas, projects and useful discoveries.</p><small>Library preview · no data stored</small></div>}
           {activePanel === "attach" && <div className="inspector-empty"><span>＋</span><strong>Bring context in</strong><p>Files, images and links can become part of the same conversation.</p><small>Attachment controls are visual only in this concept.</small></div>}
@@ -200,6 +200,6 @@ export default function ExperienceLab() {
         <div className="inspector-footer"><span className="footer-spark">✳</span><div><strong>One intelligence.</strong><small>Many ways to work together.</small></div></div>
       </aside>
     </div>
-    <footer className="lab-footer"><span>AAHANA AI <i>EXPERIENCE LAB</i></span><span>THINK BEYOND THE EXPECTED</span><span>CONCEPT BUILD · INTERACTIONS ARE LOCAL ONLY</span></footer>
+    <footer className="lab-footer"><span>AAHANA AI <i>EXPERIENCE LAB</i></span><span>THINK BEYOND THE EXPECTED</span><span>AI CHAT INTEGRATION · OTHER ENGINES IN DEVELOPMENT</span></footer>
   </main>;
 }
