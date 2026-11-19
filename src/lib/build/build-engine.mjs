@@ -80,6 +80,7 @@ export async function executeBuildTask({
 
   let installOutput = "";
   try {
+    if (signal?.aborted) throw new Error("Build cancelled before workspace upload.");
     await sandbox.writeFiles(workspaceFiles.map(({ path, content }) => ({
       path,
       content: Buffer.from(content, "utf8"),
