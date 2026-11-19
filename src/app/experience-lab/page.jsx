@@ -73,7 +73,8 @@ export default function ExperienceLab() {
   const [sample, setSample] = useState(false);
   const [focus, setFocus] = useState(false);
   const [activePanel, setActivePanel] = useState("tools");
-  const current = modes.find((item) => item.id === mode) || modes[0];\n  const currentPrompts = promptsByMode[mode] || promptsByMode.chat;
+  const current = modes.find((item) => item.id === mode) || modes[0];
+  const currentPrompts = promptsByMode[mode] || promptsByMode.chat;
 
   function tryPrompt(value) {
     setPrompt(value);
