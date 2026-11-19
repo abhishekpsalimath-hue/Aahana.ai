@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createRequestTimeoutSignal, getClientAbortResponse } from "@/lib/ai/request-timeout.mjs";
+import { createReplyPersistence } from "@/lib/ai/stream-persistence.mjs";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -455,12 +456,26 @@ export async function POST(request) {
   const decoder = new TextDecoder();
   const reader = upstream.body.getReader();
   let fullReply = "";
+  const persistReply = createReplyPersistence({
+    getContent: () => fullReply,
+    persist: async (content) => {
+      const { error: saveError } = await supabase.rpc("save_ai_reply", {
+        p_conversation_id: conversationId,
+        p_content: content,
+      });
+      const { error: updateError } = await supabase.from("conversations")
+        .update({ updated_at: new Date().toISOString() })
+        .eq("id", conversationId);
+      if (saveError) throw saveError;
+      if (updateError) throw updateError;
+    },
+    onError: (error) => console.error("Aahana reply persistence failed:", error?.message || "unknown error"),
+  });
 
   const stream = new ReadableStream({
     async start(controller) {
       let buffer = "";
       let finished = false;
-
       const handleLine = (line) => {
         if (!line.startsWith("data:")) return;
         const data = line.slice(5).trim();
@@ -476,28 +491,19 @@ export async function POST(request) {
           // Ignore non-JSON keepalive or metadata frames.
         }
       };
-
       try {
         while (true) {
           const { value, done } = await reader.read();
           if (done) break;
           buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split("\n");
+          const lines = buffer.split("\\n");
           buffer = lines.pop() ?? "";
-          for (const line of lines) handleLine(line.replace(/\r$/, ""));
+          for (const line of lines) handleLine(line.replace(/\\r$/, ""));
         }
         buffer += decoder.decode();
-        if (buffer) handleLine(buffer.replace(/\r$/, ""));
+        if (buffer) handleLine(buffer.replace(/\\r$/, ""));
         finished = true;
-
-        if (fullReply.trim()) {
-          const { error: saveError } = await supabase.rpc("save_ai_reply", {
-            p_conversation_id: conversationId,
-            p_content: fullReply.slice(0, 16000),
-          });
-          await supabase.from("conversations").update({ updated_at: new Date().toISOString() }).eq("id", conversationId);
-          if (saveError) console.error("Aahana reply persistence failed:", saveError.message);
-        }
+        await persistReply();
         controller.close();
       } catch (error) {
         console.error("Aahana stream failed:", error?.message || "unknown error");
@@ -507,7 +513,9 @@ export async function POST(request) {
       }
     },
     async cancel() {
+      // Cancel upstream consumption immediately and save any partial answer once.
       await reader.cancel().catch(() => {});
+      await persistReply();
     },
   });
 
