@@ -29,6 +29,7 @@ export async function executeBuildTask({
   projectId,
   sandboxName,
   SandboxClient,
+  signal,
 }) {
   const workspaceFiles = validateWorkspaceFiles(files);
   const { manifest, hasDependencies } = validatePackageManifest(workspaceFiles);
@@ -64,9 +65,18 @@ export async function executeBuildTask({
   }
 
   const Client = SandboxClient || (await import("@vercel/sandbox")).Sandbox;
+  if (signal?.aborted) throw new Error("Build cancelled before sandbox creation.");
   const sandbox = await Client.create(
     createSafeSandboxOptions({ name: sandboxName, projectId }),
   );
+  let stopPromise;
+  const stopSandbox = () => {
+    if (!stopPromise) stopPromise = Promise.resolve().then(() => sandbox.stop());
+    return stopPromise;
+  };
+  const onAbort = () => { void stopSandbox().catch(() => {}); };
+  signal?.addEventListener("abort", onAbort, { once: true });
+  if (signal?.aborted) onAbort();
 
   let installOutput = "";
   try {
@@ -116,7 +126,8 @@ export async function executeBuildTask({
       stderr: stderr.slice(0, OUTPUT_LIMIT),
     };
   } finally {
+    signal?.removeEventListener("abort", onAbort);
     await sandbox.update({ networkPolicy: "deny-all" }).catch(() => {});
-    await sandbox.stop();
+    await stopSandbox();
   }
 }
