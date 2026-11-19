@@ -6,6 +6,7 @@ on:
       - "src/app/api/chat/route.js"
       - "src/lib/ai/request-timeout.*"
       - "src/lib/ai/stream-persistence.*"
+      - "src/lib/ai/stream-parser.*"
       - "package.json"
       - ".github/workflows/stage1-chat-reliability.yml"
   workflow_dispatch:
