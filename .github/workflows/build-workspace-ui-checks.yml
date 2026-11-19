@@ -1,0 +1,34 @@
+name: Aahana Build Workspace UI checks
+
+on:
+  push:
+    branches:
+      - feat/experience-lab-build-workspace
+    paths:
+      - "src/app/experience-lab/**"
+      - ".github/workflows/build-workspace-ui-checks.yml"
+      - "package.json"
+  pull_request:
+    branches:
+      - feat/experience-lab-live-assistant
+    paths:
+      - "src/app/experience-lab/**"
+      - ".github/workflows/build-workspace-ui-checks.yml"
+      - "package.json"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Run tests and production build
+        run: npm run build
