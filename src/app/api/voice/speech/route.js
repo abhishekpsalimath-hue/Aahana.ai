@@ -79,6 +79,7 @@ export async function POST(request) {
       : error?.code === "PROVIDER_UNAVAILABLE" ? 503
       : error?.code === "INVALID_PROVIDER_CONFIG" || error?.code === "INSECURE_PROVIDER_ENDPOINT" ? 503
       : error?.code === "AUDIO_TOO_LARGE" ? 502
+      : error?.code === "PROVIDER_TIMEOUT" ? 504
       : 502;
     console.error("Aahana Maya speech synthesis failed:", {
       code: error?.code || "UNKNOWN",
