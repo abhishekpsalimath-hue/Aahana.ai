@@ -11,9 +11,20 @@ export function buildAgentReport({
   runs = [],
   tasks = [],
   events = [],
+  sourceEvents = [],
   generatedAt = new Date().toISOString(),
   windowStart = null,
 } = {}) {
+  const safeSourceEvents = sourceEvents.slice(0, 50).map((event) => ({
+    id: String(event.id || ""),
+    type: String(event.event_type || "unknown"),
+    severity: String(event.severity || "info"),
+    source: String(event.source || "unknown"),
+    summary: String(event.summary || "").slice(0, 240),
+    createdAt: event.created_at || null,
+  }));
+  const sourceEventIds = new Set(safeSourceEvents.map((event) => event.id));
+
   const safeTasks = tasks
     .filter((task) => task && TASK_STATUSES.has(task.status))
     .map((task) => ({
@@ -29,7 +40,7 @@ export function buildAgentReport({
       finishedAt: task.finished_at || null,
       output: typeof task.result?.output === "string" ? task.result.output.slice(0, 4000) : null,
       evidenceEventIds: Array.isArray(task.result?.evidence_event_ids)
-        ? task.result.evidence_event_ids.filter((id) => typeof id === "string").slice(0, 20)
+        ? task.result.evidence_event_ids.filter((id) => typeof id === "string" && sourceEventIds.has(id)).slice(0, 20)
         : [],
       externalActionsPerformed: task.result?.external_actions_performed === true,
     }));
@@ -81,6 +92,7 @@ export function buildAgentReport({
     runs: safeRuns,
     tasks: safeTasks,
     events: safeEvents,
+    sourceEvents: safeSourceEvents,
     limitations: [
       "This report reflects only system-owned worker task records and audit events.",
       "A completed internal-analysis task does not prove autonomous code development.",
