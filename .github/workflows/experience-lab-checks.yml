@@ -4,6 +4,8 @@ on:
   pull_request:
     branches:
       - main
+      - feat/interactive-experience-lab
+      - feat/aahana-moonmark-brand-polish
     paths:
       - "src/app/experience-lab/**"
       - ".github/workflows/experience-lab-checks.yml"
