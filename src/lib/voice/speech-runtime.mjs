@@ -6,6 +6,28 @@
  * audio, or chooses a provider implicitly.
  */
 
+export const DEFAULT_PROVIDER_TIMEOUT_MS = 45_000;
+
+/**
+ * Bound an upstream speech request while preserving caller cancellation.
+ * A caller abort remains distinguishable from the provider deadline.
+ */
+export function createProviderRequestSignal(signal, timeoutMs = DEFAULT_PROVIDER_TIMEOUT_MS) {
+  if (!Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 120_000) {
+    throw new SpeechProviderError("Provider timeout must be between 1 and 120,000 ms.", "INVALID_PROVIDER_TIMEOUT");
+  }
+  const timeoutSignal = AbortSignal.timeout(timeoutMs);
+  return signal ? AbortSignal.any([signal, timeoutSignal]) : timeoutSignal;
+}
+
+export function isProviderTimeout(error, requestSignal, callerSignal) {
+  return Boolean(
+    requestSignal?.aborted &&
+    !callerSignal?.aborted &&
+    requestSignal.reason?.name === "TimeoutError"
+  );
+}
+
 export class SpeechProviderError extends Error {
   constructor(message, code = "SPEECH_PROVIDER_ERROR") {
     super(message);
