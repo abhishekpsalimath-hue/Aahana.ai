@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { createRequestTimeoutSignal } from "@/lib/ai/request-timeout.mjs";
+import { createRequestTimeoutSignal, getClientAbortResponse } from "@/lib/ai/request-timeout.mjs";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -311,6 +311,8 @@ export async function POST(request) {
           console.error("Aahana live research provider returned:", searchResponse.status);
         }
       } catch (researchError) {
+        const abortResponse = getClientAbortResponse(request.signal);
+        if (abortResponse) return abortResponse;
         console.error("Aahana live research failed:", researchError?.message || "unknown error");
       }
     }
@@ -363,6 +365,8 @@ export async function POST(request) {
       signal: createRequestTimeoutSignal(request.signal, 45000),
     });
   } catch {
+    const abortResponse = getClientAbortResponse(request.signal);
+    if (abortResponse) return abortResponse;
     return NextResponse.json({ error: "Aahana could not connect to the AI service. Please try again." }, { status: 502 });
   }
 
