@@ -15,6 +15,7 @@ on:
     branches:
       - feat/aahana-autonomous-development-phase-c-policy-gate
       - feat/aahana-phase-c-policy-hardening
+      - feat/phase-c-trusted-github-evidence
   workflow_dispatch:
 
 permissions:
