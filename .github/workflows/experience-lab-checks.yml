@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - main
+      - feat/experience-lab-live-assistant
     paths:
       - "src/app/experience-lab/**"
       - "src/app/api/build/**"
