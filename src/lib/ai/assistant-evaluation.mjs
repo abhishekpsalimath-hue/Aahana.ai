@@ -511,16 +511,40 @@ export const ASSISTANT_EVALUATION_RUBRIC = Object.freeze({
 });
 
 export function summarizeEvaluation(scores) {
-  const cases = Array.isArray(scores) ? scores : [];
-  const valid = cases.filter((item) => item && Number.isInteger(item.score) && item.score >= 1 && item.score <= 5);
-  const criticalFailures = valid.reduce((count, item) => count + (Array.isArray(item.criticalFailures) ? item.criticalFailures.length : 0), 0);
-  const average = valid.length ? valid.reduce((sum, item) => sum + item.score, 0) / valid.length : null;
+  const results = Array.isArray(scores) ? scores : [];
+  const expectedIds = new Set(ASSISTANT_EVALUATION_CASES.map((item) => item.id));
+  const valid = results.filter((item) =>
+    item &&
+    typeof item.id === "string" &&
+    expectedIds.has(item.id) &&
+    Number.isInteger(item.score) &&
+    item.score >= 1 &&
+    item.score <= 5
+  );
+  const resultIds = new Set(valid.map((item) => item.id));
+  const criticalFailures = results.reduce(
+    (count, item) => count + (Array.isArray(item?.criticalFailures) ? item.criticalFailures.length : 0),
+    0
+  );
+  const average = valid.length
+    ? valid.reduce((sum, item) => sum + item.score, 0) / valid.length
+    : null;
+  const atLeastFour = valid.filter((item) => item.score >= 4).length;
+  const completeBenchmark =
+    results.length === ASSISTANT_EVALUATION_CASES.length &&
+    valid.length === ASSISTANT_EVALUATION_CASES.length &&
+    resultIds.size === ASSISTANT_EVALUATION_CASES.length;
+
   return Object.freeze({
-    total: cases.length,
+    total: results.length,
+    expected: ASSISTANT_EVALUATION_CASES.length,
     scored: valid.length,
     average: average === null ? null : Number(average.toFixed(2)),
-    atLeastFour: valid.filter((item) => item.score >= 4).length,
+    atLeastFour,
     criticalFailures,
-    releaseEligible: valid.length === cases.length && cases.length > 0 && criticalFailures === 0 && valid.filter((item) => item.score >= 4).length >= Math.ceil(cases.length * 0.9),
+    releaseEligible:
+      completeBenchmark &&
+      criticalFailures === 0 &&
+      atLeastFour >= Math.ceil(ASSISTANT_EVALUATION_CASES.length * 0.9),
   });
 }
