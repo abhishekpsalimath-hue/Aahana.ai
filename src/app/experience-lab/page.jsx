@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { getSourceFileMimeType, isSupportedSourceFile } from "@/lib/build/source-file-policy.mjs";
-import { validateSourceProposal } from "@/lib/build/source-proposal.mjs";
+import { createSourceDiff, validateSourceProposal } from "@/lib/build/source-proposal.mjs";
 import "./experience-lab.css";
 
 const modes = [
@@ -182,7 +182,7 @@ export default function ExperienceLab() {
         "<SOURCE_FILE>",
         sourceDraft,
         "</SOURCE_FILE>",
-      ].join("\\n");
+      ].join("\n");
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -197,7 +197,7 @@ export default function ExperienceLab() {
         fileName: editingFile.original_filename,
         version: editingFile.version,
       });
-      setSourceProposal(proposal);
+      setSourceProposal({ ...proposal, diff: createSourceDiff(sourceDraft, proposal.updatedContent) });
       const nextConversationId = response.headers.get("X-Conversation-Id");
       if (nextConversationId) setConversationId(nextConversationId);
     } catch (error) {
@@ -499,12 +499,13 @@ export default function ExperienceLab() {
               </label>
               <div className="build-source-actions">
                 <button type="button" onClick={proposeSourceEdit} disabled={proposalBusy || editorSaving || !sourceDraft.trim() || !proposalInstruction.trim()}>{proposalBusy ? "Preparing proposal…" : "Ask Aahana to propose an edit"}</button>
-                <button type="button" onClick={saveSourceFile} disabled={editorSaving}>{editorSaving ? "Saving…" : "Save source"}</button>
+                <button type="button" onClick={saveSourceFile} disabled={editorSaving || proposalBusy}>{editorSaving ? "Saving…" : "Save source"}</button>
               </div>
               {sourceProposal && <section className="build-source-proposal" aria-label="Review proposed source changes">
                 <strong>Proposed change · {sourceProposal.sizeBytes.toLocaleString()} bytes</strong>
                 <p>{sourceProposal.summary}</p>
-                <pre>{sourceProposal.updatedContent}</pre>
+                <small>Review the exact line changes below. Your source file is sent to Aahana to prepare this proposal.</small>
+                <pre>{sourceProposal.diff}</pre>
                 <div className="build-source-actions">
                   <button type="button" onClick={acceptSourceProposal}>Use this proposal in editor</button>
                   <button type="button" onClick={() => setSourceProposal(null)}>Discard proposal</button>
