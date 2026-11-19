@@ -198,7 +198,7 @@ export default function ExperienceLab() {
         fileName: editingFile.original_filename,
         version: editingFile.version,
       });
-      setSourceProposal({ ...proposal, diff: createSourceDiff(sourceDraft, proposal.updatedContent) });
+      setSourceProposal({ ...proposal, baseContent: sourceDraft, diff: createSourceDiff(sourceDraft, proposal.updatedContent) });
       const nextConversationId = response.headers.get("X-Conversation-Id");
       if (nextConversationId) setConversationId(nextConversationId);
     } catch (error) {
@@ -210,7 +210,7 @@ export default function ExperienceLab() {
 
   function acceptSourceProposal() {
     if (!sourceProposal || !editingFile || sourceProposal.baseVersion !== editingFile.version ||
-        sourceProposal.fileName !== editingFile.original_filename) {
+        sourceProposal.fileName !== editingFile.original_filename || sourceProposal.baseContent !== sourceDraft) {
       setBuildError("This proposal is no longer linked to the open source version. Reopen the file and try again.");
       setSourceProposal(null);
       return;
@@ -494,9 +494,9 @@ export default function ExperienceLab() {
             {!buildProjects.length && !buildError && <p className="build-console-note">No projects yet. Create one, then add source files and a package.json in your project files.</p>}
             {editingFile && <section className="build-source-editor" aria-label={`Edit ${editingFile.original_filename}`}>
               <div><strong>{editingFile.original_filename}</strong><button type="button" onClick={() => { setEditingFile(null); setSourceDraft(""); setSourceProposal(null); }} disabled={editorSaving}>Close</button></div>
-              <textarea aria-label={`Source code for ${editingFile.original_filename}`} spellCheck={false} value={sourceDraft} onChange={(event) => { setSourceDraft(event.target.value); setSourceProposal(null); }} />
+              <textarea aria-label={`Source code for ${editingFile.original_filename}`} spellCheck={false} disabled={proposalBusy || editorSaving} value={sourceDraft} onChange={(event) => { setSourceDraft(event.target.value); setSourceProposal(null); }} />
               <label className="build-proposal-instruction">What should Aahana change?
-                <input value={proposalInstruction} onChange={(event) => { setProposalInstruction(event.target.value); setSourceProposal(null); }} maxLength={1000} placeholder="e.g. Fix the validation bug without changing the public API" />
+                <input disabled={proposalBusy || editorSaving} value={proposalInstruction} onChange={(event) => { setProposalInstruction(event.target.value); setSourceProposal(null); }} maxLength={1000} placeholder="e.g. Fix the validation bug without changing the public API" />
               </label>
               <small className="build-proposal-privacy">The selected source is sent to your signed-in Aahana assistant to prepare the proposal. Remove secrets before continuing.</small>
               <div className="build-source-actions">
