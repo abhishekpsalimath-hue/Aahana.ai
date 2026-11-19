@@ -31,7 +31,7 @@ test("Build execution controls stay disabled without enabled engine and sandbox 
 test("Private file registration rejects ambiguous and traversing storage paths", () => {
   assert.match(filesRoute, /objectPath\.length > 1024/);
   assert.match(filesRoute, /objectPath\.includes\("%"\)/);
-  assert.match(filesRoute, /objectPath\.includes\("\\\\\\"\)/);
+  assert.ok(filesRoute.includes(String.raw`objectPath.includes("\\")`));
   assert.match(filesRoute, /parts\.some\(\(segment\) => !segment \|\| segment === "\." \|\| segment === "\.\."\)/);
   assert.match(filesRoute, /parts\[0\] !== user\.id/);
   assert.match(filesRoute, /parts\[1\] !== \(projectId \|\| "personal"\)/);
