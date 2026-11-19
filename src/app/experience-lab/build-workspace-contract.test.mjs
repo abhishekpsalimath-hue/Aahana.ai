@@ -37,7 +37,7 @@ test("Build Mode uploads only supported project source files through authenticat
 });
 
 test("Inline source editor reads and saves only the signed-in owner's private project source", () => {
-  assert.match(page, /\/api\/files\/\\$\{encodeURIComponent\(file\.id\)\}\/content/);
+  assert.match(page, /\/api\/files\/\$\{encodeURIComponent\(file\.id\)\}\/content/);
   assert.match(page, /method: "PUT"/);
   assert.match(contentRoute, /supabase\.auth\.getUser\(\)/);
   assert.match(contentRoute, /\.eq\("user_id", userId\)/);
