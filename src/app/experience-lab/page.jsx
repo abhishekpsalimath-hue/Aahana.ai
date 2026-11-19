@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { getSourceFileMimeType, isSupportedSourceFile } from "@/lib/build/source-file-policy.mjs";
-import { createSourceDiff, validateSourceProposal } from "@/lib/build/source-proposal.mjs";
+import { createSourceDiff, MAX_PROPOSAL_SOURCE_BYTES, validateSourceProposal } from "@/lib/build/source-proposal.mjs";
 import "./experience-lab.css";
 
 const modes = [
@@ -165,7 +165,7 @@ export default function ExperienceLab() {
   async function proposeSourceEdit() {
     if (!editingFile || proposalBusy || editorSaving) return;
     if (!proposalInstruction.trim()) { setBuildError("Describe the change you want Aahana to propose."); return; }
-    if (new TextEncoder().encode(sourceDraft).byteLength > 64 * 1024) { setBuildError("AI proposals are limited to source files up to 64 KB. You can still edit and save larger files manually."); return; }
+    if (new TextEncoder().encode(sourceDraft).byteLength > MAX_PROPOSAL_SOURCE_BYTES) { setBuildError("AI proposals are limited to source files up to 5 KB by the chat prompt budget. You can still edit and save larger files manually."); return; }
     setProposalBusy(true);
     setBuildError("");
     setSourceProposal(null);
@@ -183,6 +183,7 @@ export default function ExperienceLab() {
         sourceDraft,
         "</SOURCE_FILE>",
       ].join("\n");
+      if (instruction.length > 8000) throw new Error("This proposal exceeds Aahana chat request limits. Shorten the source or make a smaller change.");
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
