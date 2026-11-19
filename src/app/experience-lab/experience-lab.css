@@ -28,3 +28,7 @@
 .build-file-list>div{display:flex;justify-content:space-between;gap:12px;padding:7px 0;color:#e9def9;font-size:12px}
 .build-file-list>div small{color:#b7a8cd;white-space:nowrap}
 .build-file-list>p{margin:8px 0 0;font-size:12px;line-height:1.5;color:#c5b5dc}
+
+.build-console-heading-actions{display:flex;gap:8px;flex-wrap:wrap}
+.build-console-heading-actions input{display:none}
+.build-console-heading-actions button:disabled{opacity:.45;cursor:not-allowed}
