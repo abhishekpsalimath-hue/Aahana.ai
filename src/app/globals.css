@@ -329,3 +329,38 @@ button:focus-visible,a:focus-visible{outline-color:#c4a7ff}
 .video-setting select{border:1px solid #393044;border-radius:8px;background:#111018;color:#ded5eb;padding:7px 8px;font:inherit}
 .video-audio-setting{display:flex;align-items:center;gap:5px;color:#aaa1b8;font-size:11px}
 .video-audio-setting input{accent-color:#c4a7ff}
+
+/* Public Aahana discovery page */
+.discover-shell{min-height:100vh;background:radial-gradient(ellipse at 50% 0%,#21182f 0%,#0b0a10 43%,#09090d 100%);color:#f3f0f8}
+.discover-nav{height:76px;padding:0 clamp(22px,7vw,100px);display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #ffffff12}
+.discover-brand{padding:0}
+.discover-nav-link{color:#d8c8f5;text-decoration:none;font-size:12px;border:1px solid #514267;border-radius:9px;padding:9px 15px}
+.discover-nav-link:hover{border-color:#c4a7ff;color:#fff}
+.discover-hero{min-height:610px;padding:95px 24px 105px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;position:relative;overflow:hidden}
+.discover-orb{width:104px;height:104px;position:relative;display:grid;place-items:center;margin-bottom:24px}
+.discover-orb span{width:25px;height:25px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff,#d9c4ff 30%,#986cda 75%);box-shadow:0 0 22px #c4a7ffbb,0 0 60px #a17ae766}
+.discover-orb i,.discover-orb b{position:absolute;inset:8px;border:1px solid #c4a7ff66;border-radius:50%;transform:scaleY(.48) rotate(-28deg)}
+.discover-orb b{inset:0;transform:scaleY(.62) rotate(54deg);border-color:#e2d4ff33}
+.discover-eyebrow{font-size:10px;letter-spacing:2.2px;color:#b8a5d6;font-weight:600}
+.discover-hero h1{font:700 clamp(58px,9vw,100px)/1.02 Manrope,sans-serif;letter-spacing:-5px;margin:22px 0 20px}
+.discover-hero h1 em{font-style:normal;color:#c4a7ff}
+.discover-lead{max-width:610px;color:#b7b0c2;font-size:16px;line-height:1.85;margin:0}
+.discover-actions{display:flex;align-items:center;flex-direction:column;gap:14px;margin-top:34px}
+.discover-primary{display:inline-flex;align-items:center;gap:22px;padding:14px 19px;border-radius:10px;background:linear-gradient(120deg,#d8c5ff,#ad8be9);color:#1a1422;text-decoration:none;font-size:13px;font-weight:700;box-shadow:0 8px 28px #a77be833}
+.discover-primary:hover{transform:translateY(-2px);box-shadow:0 12px 34px #a77be855}
+.discover-note{font-size:11px;color:#898194}
+.discover-modes,.discover-detail,.discover-final{width:min(100% - 48px,1040px);margin:0 auto;padding:82px 0}
+.discover-modes>h2,.discover-detail h2,.discover-final h2{font:600 clamp(28px,4vw,43px)/1.2 Manrope,sans-serif;letter-spacing:-1.6px;margin:15px 0 34px;max-width:680px}
+.discover-mode-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+.discover-mode-card{min-height:175px;padding:19px 16px;border:1px solid #ffffff18;border-radius:13px;background:linear-gradient(145deg,#17131fdd,#100f16dd)}
+.discover-mode-index{color:#9d85c4;font-size:10px;letter-spacing:1px}
+.discover-mode-card h3{font:600 17px Manrope,sans-serif;margin:27px 0 8px;color:#eee7f7}
+.discover-mode-card p,.discover-detail>p{color:#a9a2b4;font-size:12px;line-height:1.8;margin:0}
+.discover-detail{display:grid;grid-template-columns:1fr 1fr;gap:55px;align-items:center;border-top:1px solid #ffffff14;border-bottom:1px solid #ffffff14}
+.discover-detail h2{margin-bottom:0}
+.discover-final{text-align:center;padding:95px 24px}
+.discover-final h2{margin:18px auto 27px}
+.discover-footer{padding:23px clamp(22px,7vw,100px);border-top:1px solid #ffffff14;display:flex;justify-content:space-between;color:#81798e;font-size:10px;letter-spacing:1.5px}
+@media(max-width:760px){.discover-hero{min-height:550px;padding:75px 22px}.discover-hero h1{letter-spacing:-3px}.discover-lead{font-size:14px}.discover-modes,.discover-detail,.discover-final{width:calc(100% - 40px);padding:60px 0}.discover-mode-grid{grid-template-columns:1fr 1fr}.discover-mode-card{min-height:150px}.discover-detail{grid-template-columns:1fr;gap:18px}.discover-footer{padding:20px}}
+@media(max-width:420px){.discover-mode-grid{grid-template-columns:1fr}.discover-mode-card{min-height:125px}.discover-mode-card h3{margin-top:18px}}
+@media(prefers-reduced-motion:reduce){.discover-primary{transition:none}}
