@@ -16,14 +16,13 @@ test("accepts only known source extensions and text-compatible MIME types", () =
   assert.equal(isSupportedSourceFile("src/App.tsx", "application/x-msdownload"), false);
   assert.equal(isSupportedSourceFile("payload.exe", "application/octet-stream"), false);
 });
-test("validates private object paths against owner and project boundaries", async () => {
-  const { isSafePrivateObjectPath } = await import("./source-file-policy.mjs");
+test("validates private object paths against owner and project boundaries", () => {
   assert.equal(isSafePrivateObjectPath("user-1/project-1/file.js", "user-1", "project-1"), true);
   assert.equal(isSafePrivateObjectPath("user-2/project-1/file.js", "user-1", "project-1"), false);
   assert.equal(isSafePrivateObjectPath("user-1/project-2/file.js", "user-1", "project-1"), false);
   assert.equal(isSafePrivateObjectPath("user-1/project-1/../secret", "user-1", "project-1"), false);
   assert.equal(isSafePrivateObjectPath("user-1/project-1/%2e%2e", "user-1", "project-1"), false);
-  assert.equal(isSafePrivateObjectPath("user-1/project-1/a\\\\b.js", "user-1", "project-1"), false);
-  assert.equal(isSafePrivateObjectPath("user-1/project-1/\\u0000.js", "user-1", "project-1"), false);
+  assert.equal(isSafePrivateObjectPath("user-1/project-1/a\\b.js", "user-1", "project-1"), false);
+  assert.equal(isSafePrivateObjectPath("user-1/project-1/\u0000.js", "user-1", "project-1"), false);
   assert.equal(isSafePrivateObjectPath("user-1/project-1/" + "a".repeat(1025), "user-1", "project-1"), false);
 });
