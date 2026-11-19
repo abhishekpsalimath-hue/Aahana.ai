@@ -890,6 +890,18 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
 
   return (
     <main className="shell">
+      {founderWelcomeVisible && (
+        <div className="founder-welcome" role="status" aria-live="polite">
+          <div className="founder-welcome-stars" aria-hidden="true"><i /><i /><i /><i /><i /><i /></div>
+          <div className="founder-welcome-card">
+            <span className="founder-welcome-kicker">A PERSONAL NOTE FROM THE FOUNDER</span>
+            <span className="founder-welcome-moon" aria-hidden="true">☾</span>
+            <h2>Welcome to <em>Aahana AI.</em></h2>
+            <p>A space to think freely, explore deeply, and turn your ideas into something real. I’m glad you’re here.</p>
+            <span className="founder-welcome-signature">Abhishekayya P. Salimath <small>Founder</small></span>
+          </div>
+        </div>
+      )}
       <aside className="sidebar">
         <a className="brand" href="/" aria-label="Aahana AI home">
           <span className="brand-word">Aahana</span><span className="brand-ai">AI</span>
