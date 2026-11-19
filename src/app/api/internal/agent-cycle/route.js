@@ -91,8 +91,14 @@ export async function GET(request) {
     if (lookupError || !existingRun) {
       return NextResponse.json({ error: "Could not recover the existing executive cycle." }, { status: 500 });
     }
-    if (existingRun.status === "completed") {
-      return NextResponse.json({ ok: true, duplicate: true, cycle: cycleKey, summary: existingRun.summary });
+    if (["completed", "failed"].includes(existingRun.status)) {
+      return NextResponse.json({
+        ok: existingRun.status === "completed",
+        duplicate: true,
+        cycle: cycleKey,
+        status: existingRun.status,
+        summary: existingRun.summary,
+      });
     }
     runId = existingRun.id;
   }
