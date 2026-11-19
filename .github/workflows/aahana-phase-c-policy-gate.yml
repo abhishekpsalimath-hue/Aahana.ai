@@ -9,6 +9,8 @@ on:
     paths:
       - "src/lib/operations/autonomous-policy.*"
       - "src/lib/operations/autonomous-github-evidence.*"
+      - "src/lib/operations/github-app-client.*"
+      - "docs/aahana-github-app-readonly-integration.md"
       - "package.json"
       - ".github/workflows/aahana-phase-c-policy-gate.yml"
   push:
