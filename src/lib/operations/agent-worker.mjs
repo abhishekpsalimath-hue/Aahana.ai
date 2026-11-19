@@ -38,7 +38,7 @@ export function buildAgentReport({
       createdAt: task.created_at || null,
       updatedAt: task.updated_at || null,
       finishedAt: task.finished_at || null,
-      output: typeof task.result?.output === "string" ? task.result.output.slice(0, 4000) : null,
+      output: typeof task.result?.output === "string" ? task.result.output.slice(0, 3000) : null,
       evidenceEventIds: Array.isArray(task.result?.evidence_event_ids)
         ? task.result.evidence_event_ids.filter((id) => typeof id === "string" && sourceEventIds.has(id)).slice(0, 20)
         : [],
@@ -121,7 +121,7 @@ export function parseWorkerResponse(content, availableEventIds = []) {
     (id) => typeof id === "string" && allowed.has(id)
   ))].slice(0, 20);
   return Object.freeze({
-    report: parsed.report.trim().slice(0, 12000),
+    report: parsed.report.trim().slice(0, 3000),
     evidenceEventIds,
   });
 }
