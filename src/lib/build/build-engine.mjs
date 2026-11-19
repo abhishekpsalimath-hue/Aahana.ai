@@ -85,6 +85,7 @@ export async function executeBuildTask({
       path,
       content: Buffer.from(content, "utf8"),
     })));
+    if (signal?.aborted) throw new Error("Build cancelled after workspace upload.");
 
     if (hasDependencies) {
       let installResult;
@@ -102,6 +103,7 @@ export async function executeBuildTask({
         await sandbox.update({ networkPolicy: "deny-all" });
       }
 
+      if (signal?.aborted) throw new Error("Build cancelled during dependency installation.");
       if (installResult.exitCode !== 0) {
         return {
           status: "failed",
@@ -113,6 +115,7 @@ export async function executeBuildTask({
       }
     }
 
+    if (signal?.aborted) throw new Error("Build cancelled before project execution.");
     const result = await sandbox.runCommand({
       cmd: command,
       args,
