@@ -60,7 +60,7 @@ test("Source editor uses versioned immutable objects and compare-and-swap metada
   assert.match(contentRoute, /\.eq\("object_path", file\.object_path\)/);
   assert.match(contentRoute, /\.select\("id"\)\.maybeSingle\(\)/);
   assert.match(contentRoute, /status: 409/);
-  assert.match(contentRoute, /randomUUID\(\)/);
+  assert.match(contentRoute, /randomUUID\(\)/);\n  assert.match(contentRoute, /acquire_aahana_build_lock/);\n  assert.match(contentRoute, /release_aahana_build_lock/);
   assert.match(page, /version: result\.version/);
   assert.match(page, /content: sourceDraft, version: editingFile\.version/);
 });
