@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import AmbientStarfield from "./ambient-starfield";
 import { getSourceFileMimeType, isSupportedSourceFile } from "@/lib/build/source-file-policy.mjs";
 
 const modes = [
@@ -245,6 +246,20 @@ function evaluateArithmetic(input) {
 export default function Home({ userEmail = "", aiEnabled = false }) {
   const router = useRouter();
   const conversationEndRef = useRef(null);
+  const [founderWelcomeVisible, setFounderWelcomeVisible] = useState(false);
+  useEffect(() => {
+    let timer;
+    try {
+      if (window.sessionStorage.getItem("aahana-founder-welcome") === "show") {
+        window.sessionStorage.removeItem("aahana-founder-welcome");
+        setFounderWelcomeVisible(true);
+        timer = window.setTimeout(() => setFounderWelcomeVisible(false), 3400);
+      }
+    } catch {
+      // The workspace remains usable when browser session storage is unavailable.
+    }
+    return () => window.clearTimeout(timer);
+  }, []);
   const [mode, setMode] = useState("solve");
   const [prompt, setPrompt] = useState("");
   const [imageFile, setImageFile] = useState(null);
@@ -1010,20 +1025,12 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
 
       <section className="main-panel">
         <div className="space-background" aria-hidden="true">
-          {spaceStars.map((star, index) => (
-            <span
-              className="space-star"
-              key={index}
-              style={{
-                "--start-x": star.startX,
-                "--start-y": star.startY,
-                "--end-x": star.endX,
-                "--end-y": star.endY,
-                "--delay": star.delay,
-                "--size": star.size,
-              }}
-            />
-          ))}
+          <div className="space-nebula space-nebula-one" />
+          <div className="space-nebula space-nebula-two" />
+          <div className="space-nebula space-nebula-three" />
+          <div className="space-constellation space-constellation-one" />
+          <div className="space-constellation space-constellation-two" />
+          <AmbientStarfield />
         </div>
         <header className="topbar">
           <div className="breadcrumb">Workspace <span>/</span> {selectedProjectId ? (projects.find((item) => item.id === selectedProjectId)?.name || "Project") : "Assistant"}</div>
