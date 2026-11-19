@@ -110,9 +110,11 @@ test("maps an upstream request deadline to PROVIDER_TIMEOUT", async () => {
     authorizationToken: token,
     supportedLocales: locale,
     timeoutMs: 5,
-    fetchImpl: async (_url, { signal }) => new Promise((_, reject) => {
-      signal.addEventListener("abort", () => reject(signal.reason), { once: true });
-    }),
+    fetchImpl: async (_url, { signal }) => {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      if (signal.aborted) throw signal.reason;
+      return response({ text: "too late" });
+    },
   });
   await assert.rejects(
     provider.transcribe({ audio: wavBytes(), locale: "kn-IN" }),
