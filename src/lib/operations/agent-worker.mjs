@@ -88,3 +88,28 @@ export function buildAgentReport({
     ],
   });
 }
+
+export function parseWorkerResponse(content, availableEventIds = []) {
+  if (typeof content !== "string" || !content.trim()) {
+    throw new TypeError("Worker response must be a non-empty JSON string");
+  }
+  let parsed;
+  try {
+    parsed = JSON.parse(content);
+  } catch {
+    throw new TypeError("Worker response must be valid JSON");
+  }
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed) ||
+      typeof parsed.report !== "string" || !parsed.report.trim() ||
+      !Array.isArray(parsed.evidence_event_ids)) {
+    throw new TypeError("Worker response schema is invalid");
+  }
+  const allowed = new Set(availableEventIds.filter((id) => typeof id === "string"));
+  const evidenceEventIds = [...new Set(parsed.evidence_event_ids.filter(
+    (id) => typeof id === "string" && allowed.has(id)
+  ))].slice(0, 20);
+  return Object.freeze({
+    report: parsed.report.trim().slice(0, 12000),
+    evidenceEventIds,
+  });
+}
