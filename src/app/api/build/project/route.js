@@ -58,9 +58,10 @@ export async function POST(request) {
     }
     const files = validateWorkspaceFiles(workspace);
     if (!files.some((file) => file.path === "package.json")) return NextResponse.json({ error: "This project needs a package.json file before Aahana can run its build or tests." }, { status: 400 });
-    const result = await executeBuildTask({ files, operation, entrypoint, projectId: process.env.VERCEL_PROJECT_ID || "prj_Ts4f4dcI3IPvBOw5IWPdsfmumbHK", sandboxName: "aahana-project-" + randomUUID().replace(/-/g, "").slice(0, 20) });
+    const result = await executeBuildTask({ files, operation, entrypoint, projectId: process.env.VERCEL_PROJECT_ID || "prj_Ts4f4dcI3IPvBOw5IWPdsfmumbHK", sandboxName: "aahana-project-" + randomUUID().replace(/-/g, "").slice(0, 20), signal: request.signal });
     return NextResponse.json({ ...result, sourceFileCount: files.length, sourceBytes: totalBytes }, { status: result.status === "passed" ? 200 : 422 });
   } catch (error) {
+    if (request.signal.aborted) return new Response(null, { status: 499 });
     console.error("Aahana project build failed:", error?.message || "unknown error");
     return NextResponse.json({ error: error?.message || "Aahana could not run this project safely." }, { status: 400 });
   } finally {
