@@ -48,7 +48,7 @@ export function buildAgentReport({
   const counts = Object.fromEntries(
     [...TASK_STATUSES].map((status) => [status, safeTasks.filter((task) => task.status === status).length])
   );
-  const verifiedCompleted = safeTasks.filter((task) =>
+  const completedWithSavedOutput = safeTasks.filter((task) =>
     task.status === "completed" && task.finishedAt && task.output
   ).length;
   const pending = counts.queued + counts.claimed;
@@ -74,8 +74,8 @@ export function buildAgentReport({
     createdAt: event.created_at || null,
   }));
 
-  const status = verifiedCompleted > 0
-    ? "worker_activity_verified"
+  const status = completedWithSavedOutput > 0
+    ? "worker_tasks_completed"
     : pending > 0
       ? "work_queued_or_running"
       : blocked > 0
@@ -87,7 +87,7 @@ export function buildAgentReport({
     generatedAt,
     windowStart,
     autonomousStatus: status,
-    verifiedCompleted,
+    completedWithSavedOutput,
     counts,
     runs: safeRuns,
     tasks: safeTasks,
