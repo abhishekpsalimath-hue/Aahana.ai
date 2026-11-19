@@ -6,6 +6,7 @@ on:
       - "src/app/api/build/**"
       - "src/lib/build/**"
       - "src/app/assistant-workspace*"
+      - "src/app/globals.css"
       - ".github/workflows/isolated-workspace-guards.yml"
       - "package.json"
   push:
