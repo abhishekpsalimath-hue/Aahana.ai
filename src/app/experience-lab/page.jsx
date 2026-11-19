@@ -86,6 +86,7 @@ export default function ExperienceLab() {
   const [editorLoading, setEditorLoading] = useState(false);
   const [editorSaving, setEditorSaving] = useState(false);
   const [proposalBusy, setProposalBusy] = useState(false);
+  const proposalRequest = useRef(null);
   const [sourceProposal, setSourceProposal] = useState(null);
   const [proposalInstruction, setProposalInstruction] = useState("");
   const buildFileInput = useRef(null);
@@ -166,6 +167,8 @@ export default function ExperienceLab() {
     if (!editingFile || proposalBusy || editorSaving) return;
     if (!proposalInstruction.trim()) { setBuildError("Describe the change you want Aahana to propose."); return; }
     if (new TextEncoder().encode(sourceDraft).byteLength > MAX_PROPOSAL_SOURCE_BYTES) { setBuildError("AI proposals are limited to source files up to 5 KB by the chat prompt budget. You can still edit and save larger files manually."); return; }
+    const controller = new AbortController();
+    proposalRequest.current = controller;
     setProposalBusy(true);
     setBuildError("");
     setSourceProposal(null);
@@ -188,6 +191,7 @@ export default function ExperienceLab() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: instruction, mode: "build", conversationId, projectId: selectedProjectId }),
+        signal: controller.signal,
       });
       if (!response.ok) {
         const result = await response.json().catch(() => ({}));
@@ -202,10 +206,16 @@ export default function ExperienceLab() {
       const nextConversationId = response.headers.get("X-Conversation-Id");
       if (nextConversationId) setConversationId(nextConversationId);
     } catch (error) {
-      setBuildError(error.message || "Could not prepare a safe code proposal.");
+      if (error?.name === "AbortError") setBuildError("Code proposal stopped.");
+      else setBuildError(error.message || "Could not prepare a safe code proposal.");
     } finally {
+      if (proposalRequest.current === controller) proposalRequest.current = null;
       setProposalBusy(false);
     }
+  }
+
+  function stopSourceProposal() {
+    proposalRequest.current?.abort();
   }
 
   function acceptSourceProposal() {
@@ -500,7 +510,7 @@ export default function ExperienceLab() {
               </label>
               <small className="build-proposal-privacy">The selected source is sent to your signed-in Aahana assistant to prepare the proposal. Remove secrets before continuing.</small>
               <div className="build-source-actions">
-                <button type="button" onClick={proposeSourceEdit} disabled={proposalBusy || editorSaving || !sourceDraft.trim() || !proposalInstruction.trim()}>{proposalBusy ? "Preparing proposal…" : "Ask Aahana to propose an edit"}</button>
+                <button type="button" onClick={proposeSourceEdit} disabled={proposalBusy || editorSaving || !sourceDraft.trim() || !proposalInstruction.trim()}>{proposalBusy ? "Preparing proposal…" : "Ask Aahana to propose an edit"}</button>\n                {proposalBusy && <button type="button" onClick={stopSourceProposal}>Stop proposal</button>}
                 <button type="button" onClick={saveSourceFile} disabled={editorSaving || proposalBusy}>{editorSaving ? "Saving…" : "Save source"}</button>
               </div>
               {sourceProposal && <section className="build-source-proposal" aria-label="Review proposed source changes">
