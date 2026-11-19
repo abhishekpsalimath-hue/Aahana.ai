@@ -68,8 +68,8 @@ begin
       or (status = 'claimed' and lease_expires_at <= now())
     )
   order by priority desc, available_at asc, created_at asc
-  for update skip locked
-  limit 1;
+  limit 1
+  for update skip locked;
 
   if not found then
     return null;
