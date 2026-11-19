@@ -51,6 +51,12 @@ const promptsByMode = {
   ],
 };
 
+function requestsImage(value) {
+  const text = String(value || "").trim();
+  return /\b(?:generate|create|draw|render|make)\b[\s\S]{0,120}\b(?:image|picture|illustration|artwork|portrait|wallpaper|logo|poster|cover|banner|thumbnail|scene|landscape)\b/i.test(text)
+    || /\b(?:image|picture|illustration|artwork)\b[\s\S]{0,80}\b(?:generate|create|draw|render)\b/i.test(text);
+}
+
 function OrbitMark() {
   return <div className="lab-orbit" aria-hidden="true">
     <span className="lab-orbit-ring ring-a" /><span className="lab-orbit-ring ring-b" />
@@ -66,6 +72,7 @@ export default function ExperienceLab() {
   const [conversationId, setConversationId] = useState(null);
   const [busy, setBusy] = useState(false);
   const [requestError, setRequestError] = useState("");
+  const [generatedImage, setGeneratedImage] = useState(null);
   const [focus, setFocus] = useState(false);
   const [activePanel, setActivePanel] = useState("tools");
   const current = modes.find((item) => item.id === mode) || modes[0];
@@ -85,8 +92,26 @@ export default function ExperienceLab() {
     setThread((current) => [...current, { role: "user", content: message }, { role: "assistant", content: "" }]);
     setPrompt("");
     setRequestError("");
+    setGeneratedImage(null);
     setBusy(true);
     try {
+      if (mode === "create" && requestsImage(message)) {
+        const imageResponse = await fetch("/api/images/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt: message }),
+        });
+        const imageResult = await imageResponse.json().catch(() => ({}));
+        if (!imageResponse.ok) throw new Error(imageResult.error || "Aahana could not generate that image.");
+        if (typeof imageResult.imageDataUrl !== "string" || !imageResult.imageDataUrl.startsWith("data:image/jpeg;base64,")) {
+          throw new Error("The image service returned an invalid image.");
+        }
+        setGeneratedImage({ dataUrl: imageResult.imageDataUrl, prompt: message });
+        setThread((current) => current.map((item, index) =>
+          index === current.length - 1 ? { ...item, content: "Your image is ready. It is available in this session." } : item
+        ));
+        return;
+      }
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -128,6 +153,7 @@ export default function ExperienceLab() {
   function startNewSession() {
     if (busy) return;
     setThread([]);
+    setGeneratedImage(null);
     setConversationId(null);
     setPrompt("");
     setRequestError("");
@@ -165,6 +191,7 @@ export default function ExperienceLab() {
               {item.role === "assistant" && <div className="response-heading"><span className="response-avatar"><OrbitMark /></span><div><strong>Aahana</strong><small>{busy && index === thread.length - 1 ? "Thinking · live response" : "Aahana AI"}</small></div></div>}
               <div className="live-message-text">{item.content || (busy && index === thread.length - 1 ? "Thinking…" : "")}</div>
             </div>)}
+            {generatedImage && <div className="lab-generated-image"><img src={generatedImage.dataUrl} alt={generatedImage.prompt} /><a href={generatedImage.dataUrl} download="aahana-generated-image.jpg">Download image ↗</a><small>Generated for this session · not saved to Library</small></div>}
             {requestError && <p className="live-error" role="alert">{requestError}</p>}
             <div className="response-actions"><button type="button" disabled={busy} onClick={() => tryPrompt("Go deeper and give me a practical example.")}>↳ Go deeper</button><button type="button" disabled={busy} onClick={() => tryPrompt("Challenge that answer and show another perspective.")}>◇ Challenge it</button><button type="button" disabled={busy} onClick={startNewSession}>＋ New thought</button></div>
           </div> : <div className="lab-empty">
