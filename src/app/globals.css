@@ -606,6 +606,6 @@ html, body {
   .founder-welcome-stars i, .space-nebula, .space-constellation {
     animation: none !important;
   }
-  .founder-welcome { opacity: 0; }
+  .founder-welcome { opacity: 1; backdrop-filter: none; }
   .ambient-starfield { opacity: .5; }
 }
