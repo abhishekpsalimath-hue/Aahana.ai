@@ -96,3 +96,13 @@ test("Build workspace assembly fails closed instead of silently omitting source 
   assert.match(buildRoute, /bytes !== file\.size_bytes/);
   assert.match(buildRoute, /Project source files exceed the 3 MB build workspace limit/);
 });
+
+
+test("Build Mode exposes cancellation for an in-flight isolated execution", () => {
+  assert.match(page, /const buildRequest = useRef\(null\)/);
+  assert.match(page, /signal: controller\.signal/);
+  assert.match(page, /function stopBuildOperation\(\)/);
+  assert.match(page, /buildRequest\.current\?\.abort\(\)/);
+  assert.match(page, /Stop execution/);
+  assert.match(page, /Build execution stopped\. The isolated workspace is being cleaned up\./);
+});
