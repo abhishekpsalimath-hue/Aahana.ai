@@ -19,9 +19,9 @@ test("parses CR-only SSE line endings and CRLF split across chunks", () => {
   const output = [];
   const parser = createSseDeltaParser((delta) => output.push(delta));
   const input = frame("one") + "\r\r" + frame("two") + "\r\n";
-  const splitAtCr = input.indexOf("\r") + 1;
-  parser.push(input.slice(0, splitAtCr));
-  parser.push(input.slice(splitAtCr));
+  const splitAtCrLf = input.lastIndexOf("\r\n") + 1;
+  parser.push(input.slice(0, splitAtCrLf));
+  parser.push(input.slice(splitAtCrLf));
   parser.flush();
   assert.deepEqual(output, ["one", "two"]);
 });
