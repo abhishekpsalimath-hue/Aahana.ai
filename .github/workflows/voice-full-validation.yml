@@ -1,0 +1,70 @@
+name: Aahana voice full repository validation
+
+on:
+  pull_request:
+    branches:
+      - feat/aahana-voice-preferences
+      - feat/aahana-voice-runtime-adapters
+    paths:
+      - "src/app/api/voice/**"
+      - "src/lib/voice/**"
+      - "services/sravaani-asr/**"
+      - "src/app/assistant-workspace*"
+      - "src/app/chat/**"
+      - "src/app/globals.css"
+      - ".github/workflows/voice-full-validation.yml"
+      - "package.json"
+  push:
+    branches:
+      - feat/aahana-voice-runtime-adapters
+      - test/voice-full-repository-validation
+    paths:
+      - "src/app/api/voice/**"
+      - "src/lib/voice/**"
+      - "services/sravaani-asr/**"
+      - "src/app/assistant-workspace*"
+      - "src/app/chat/**"
+      - "src/app/globals.css"
+      - ".github/workflows/voice-full-validation.yml"
+      - "package.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: voice-full-validation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run dependency-free SraVaani request guard tests
+        working-directory: services/sravaani-asr
+        run: python -m unittest -v test_request_validation.py
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --no-audit --no-fund
+      - name: Run full repository test suite
+        run: npm test
+      - name: Prepare shared ESLint config for parallel branch
+        run: |
+          cat > eslint.config.mjs <<'EOF'
+          import { defineConfig, globalIgnores } from "eslint/config";
+          import nextVitals from "eslint-config-next/core-web-vitals";
+
+          export default defineConfig([
+            ...nextVitals,
+            globalIgnores([".next/**", "out/**", "build/**", "next-env.d.ts", "src/app/learn/**"]),
+          ]);
+          EOF
+      - name: Lint voice modules and authenticated voice routes
+        run: npx eslint src/lib/voice src/app/api/voice
+      - name: Run production build
+        run: npm run build
