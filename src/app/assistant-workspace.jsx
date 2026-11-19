@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import AmbientStarfield from "./ambient-starfield";
 import { getSourceFileMimeType, isSupportedSourceFile } from "@/lib/build/source-file-policy.mjs";
@@ -903,9 +904,9 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         </div>
       )}
       <aside className="sidebar">
-        <a className="brand" href="/" aria-label="Aahana AI home">
+        <Link className="brand" href="/" aria-label="Aahana AI home">
           <span className="brand-word">Aahana</span><span className="brand-ai">AI</span>
-        </a>
+        </Link>
         <button className="new-chat" type="button" onClick={newConversation}>
           <span aria-hidden="true">＋</span> New conversation
         </button>
