@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { getSourceFileMimeType, isSupportedSourceFile } from "./source-file-policy.mjs";
+import { getSourceFileMimeType, isSupportedSourceFile, isSafePrivateObjectPath } from "./source-file-policy.mjs";
 
 test("maps web source files to stable text MIME types", () => {
   assert.equal(getSourceFileMimeType("package.json", "application/octet-stream"), "application/json");
