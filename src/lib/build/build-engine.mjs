@@ -79,17 +79,23 @@ export async function executeBuildTask({
   if (signal?.aborted) onAbort();
 
   let installOutput = "";
+  const throwIfAborted = (stage) => {
+    if (signal?.aborted) throw new Error("Build cancelled " + stage + ".");
+  };
   try {
-    if (signal?.aborted) throw new Error("Build cancelled before workspace upload.");
+    throwIfAborted("before workspace upload");
     await sandbox.writeFiles(workspaceFiles.map(({ path, content }) => ({
       path,
       content: Buffer.from(content, "utf8"),
     })));
+    throwIfAborted("after workspace upload");
 
     if (hasDependencies) {
       let installResult;
+      throwIfAborted("before enabling dependency network access");
       await sandbox.update({ networkPolicy: { allow: ["registry.npmjs.org"] } });
       try {
+        throwIfAborted("before dependency installation");
         installResult = await sandbox.runCommand({
           cmd: "npm",
           args: INSTALL_ARGS,
@@ -101,6 +107,7 @@ export async function executeBuildTask({
         // Never run project code while package-registry egress is enabled.
         await sandbox.update({ networkPolicy: "deny-all" });
       }
+      throwIfAborted("after dependency installation");
 
       if (installResult.exitCode !== 0) {
         return {
@@ -113,6 +120,7 @@ export async function executeBuildTask({
       }
     }
 
+    throwIfAborted("before project command");
     const result = await sandbox.runCommand({
       cmd: command,
       args,
