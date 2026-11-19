@@ -148,7 +148,7 @@ export default function ExperienceLab() {
       const response = await fetch(`/api/files/${encodeURIComponent(file.id)}/content`, { cache: "no-store" });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || "Could not open source file.");
-      setEditingFile(file);
+      setEditingFile({ ...file, version: result.version });
       setSourceDraft(result.file.content);
     } catch (error) {
       setBuildError(error.message || "Could not open source file.");
@@ -165,7 +165,7 @@ export default function ExperienceLab() {
       const response = await fetch(`/api/files/${encodeURIComponent(editingFile.id)}/content`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: sourceDraft }),
+        body: JSON.stringify({ content: sourceDraft, version: editingFile.version }),
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || "Could not save source file.");
