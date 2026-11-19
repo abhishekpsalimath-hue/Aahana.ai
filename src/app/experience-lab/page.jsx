@@ -92,7 +92,6 @@ export default function ExperienceLab() {
     setThread((current) => [...current, { role: "user", content: message }, { role: "assistant", content: "" }]);
     setPrompt("");
     setRequestError("");
-    setGeneratedImage(null);
     setBusy(true);
     try {
       if (mode === "create" && requestsImage(message)) {
