@@ -133,7 +133,7 @@ begin
   insert into public.aahana_agent_task_events (task_id, run_id, event_type, attempt, summary, metadata)
   values (v_task.id, v_task.run_id, 'checkpoint_saved', v_task.attempts,
     'Worker heartbeat and checkpoint saved.',
-    jsonb_build_object('checkpoint_keys', (select coalesce(jsonb_agg(key), '[]'::jsonb) from jsonb_object_keys(p_checkpoint) as key)));
+    jsonb_build_object('checkpoint_keys', (select coalesce(jsonb_agg(key), '[]'::jsonb) from jsonb_object_keys(p_checkpoint) as keys(key))));
 
   return v_task;
 end;
@@ -171,7 +171,7 @@ begin
   insert into public.aahana_agent_task_events (task_id, run_id, event_type, attempt, summary, metadata)
   values (v_task.id, v_task.run_id, 'task_completed', v_task.attempts,
     'Worker completed the internal task and saved its deliverable.',
-    jsonb_build_object('result_keys', (select coalesce(jsonb_agg(key), '[]'::jsonb) from jsonb_object_keys(p_result) as key)));
+    jsonb_build_object('result_keys', (select coalesce(jsonb_agg(key), '[]'::jsonb) from jsonb_object_keys(p_result) as keys(key))));
 
   return v_task;
 end;
