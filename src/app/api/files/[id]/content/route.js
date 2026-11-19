@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { isSupportedSourceFile } from "@/lib/build/source-file-policy.mjs";
+import { isSupportedSourceFile, isSafePrivateObjectPath } from "@/lib/build/source-file-policy.mjs";
 
 export const runtime = "nodejs";
 const BUCKET = "aahana-private";
@@ -16,7 +16,7 @@ async function getOwnedSourceFile(supabase, userId, id) {
     .select("id, user_id, project_id, bucket_id, object_path, original_filename, mime_type, size_bytes")
     .eq("id", id).eq("user_id", userId).maybeSingle();
   if (error || !file || file.bucket_id !== BUCKET || !file.project_id ||
-      typeof file.object_path !== "string" || !file.object_path.startsWith(userId + "/" + file.project_id + "/") ||
+      !isSafePrivateObjectPath(file.object_path, userId, file.project_id) ||
       !isSupportedSourceFile(file.original_filename, file.mime_type)) return null;
   return file;
 }
