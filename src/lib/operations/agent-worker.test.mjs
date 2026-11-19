@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildAgentReport, getRetryDelaySeconds, parseWorkerResponse } from "./agent-worker.mjs";
+import { buildAgentReport, createWorkerProviderSignal, getRetryDelaySeconds, parseWorkerResponse } from "./agent-worker.mjs";
 
 test("retry delays grow exponentially and cap at five attempts", () => {
   assert.deepEqual([1, 2, 3, 4, 5].map(getRetryDelaySeconds), [15, 30, 60, 120, 240]);
@@ -78,4 +78,27 @@ test("Phase B claim migration limits worker claims to approved executive duties"
   );
   assert.match(migration, /role in \('ceo', 'cto', 'coo', 'cmo'\)/);
   assert.match(migration, /task_type in \('daily_review', 'brain_quality_review', 'health_review', 'growth_review'\)/);
+});
+
+
+test("provider requests inherit caller cancellation and retain a bounded deadline", () => {
+  const controller = new AbortController();
+  const signal = createWorkerProviderSignal(controller.signal, 45_000);
+  assert.equal(signal.aborted, false);
+  controller.abort(new Error("caller disconnected"));
+  assert.equal(signal.aborted, true);
+  assert.equal(signal.reason.message, "caller disconnected");
+  assert.throws(() => createWorkerProviderSignal(undefined, 0), RangeError);
+  assert.throws(() => createWorkerProviderSignal(undefined, 60_001), RangeError);
+});
+
+test("agent worker obtains provider credentials only from server environment and forwards request cancellation", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const route = await readFile(
+    new URL("../../app/api/internal/agent-worker/route.js", import.meta.url),
+    "utf8"
+  );
+  assert.doesNotMatch(route, /x-vercel-oidc-token/);
+  assert.match(route, /const key = isGroq \? process\.env\.GROQ_API_KEY : process\.env\.VERCEL_OIDC_TOKEN/);
+  assert.match(route, /generateInternalDeliverable\(config, task, eventsResult\.data \|\| \[\], priorTasksResult\.data \|\| \[\], request\.signal\)/);
 });
