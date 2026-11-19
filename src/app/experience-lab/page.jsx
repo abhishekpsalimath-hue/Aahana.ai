@@ -143,7 +143,7 @@ export default function ExperienceLab() {
     setFileBusy(true);
     setBuildError("");
     const supabase = createClient();
-    const uploadedPaths = [];
+    let pendingPath = null;
     try {
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError || !user) throw new Error("Please sign in again.");
@@ -157,9 +157,9 @@ export default function ExperienceLab() {
         }
         const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-100) || "source";
         const objectPath = `${user.id}/${selectedProjectId}/${crypto.randomUUID()}-${safeName}`;
+        pendingPath = objectPath;
         const { error: storageError } = await supabase.storage.from("aahana-private").upload(objectPath, file, { contentType: mimeType, upsert: false });
         if (storageError) throw new Error(`${file.name}: upload failed.`);
-        uploadedPaths.push(objectPath);
         const response = await fetch("/api/files", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -167,11 +167,12 @@ export default function ExperienceLab() {
         });
         const result = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(result.error || `Could not register ${file.name}.`);
+        pendingPath = null;
         setBuildFiles((current) => [result.file, ...current]);
       }
       setBuildResult(null);
     } catch (error) {
-      await supabase.storage.from("aahana-private").remove(uploadedPaths).catch(() => ({}));
+      if (pendingPath) await supabase.storage.from("aahana-private").remove([pendingPath]).catch(() => ({}));
       setBuildError(error.message || "Source upload failed.");
       const refresh = await fetch(`/api/files?projectId=${encodeURIComponent(selectedProjectId)}`, { cache: "no-store" });
       if (refresh.ok) {
