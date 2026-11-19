@@ -6,7 +6,7 @@ export const IMAGE_WORKFLOW_LIMITS = Object.freeze({
 
 export function parseImageDataUrl(value) {
   if (typeof value !== "string") return null;
-  const match = value.match(/^data:(image\/(?:jpeg|png));base64,([A-Za-z0-9+/]+={0,2})$/);
+  const match = value.match(/^data:(image\\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/]+={0,2})$/);
   if (!match) return null;
   const [, mimeType, base64] = match;
   const bytes = Buffer.from(base64, "base64");
