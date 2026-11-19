@@ -31,8 +31,17 @@ export async function POST(request) {
   const { data: rows, error: filesError } = await supabase.from("user_files").select("bucket_id, object_path, original_filename, mime_type, size_bytes").eq("user_id", user.id).eq("project_id", projectId).order("created_at", { ascending: false }).limit(MAX_PROJECT_FILE_ROWS + 1);
   if (filesError) return NextResponse.json({ error: "Could not load this project’s files." }, { status: 500 });
   if ((rows || []).length > MAX_PROJECT_FILE_ROWS) return NextResponse.json({ error: "This project has too many stored files to build safely. Remove unused files and try again." }, { status: 413 });
-  const eligible = (rows || []).filter((file) => file.bucket_id === "aahana-private" && typeof file.object_path === "string" && file.object_path.startsWith(user.id + "/" + projectId + "/") && Number.isInteger(file.size_bytes) && file.size_bytes > 0 && isProjectSourceFile(file));
-  if (eligible.length > MAX_SOURCE_FILES) return NextResponse.json({ error: "A build can include up to 100 source files. Remove unused source files and try again." }, { status: 413 });
+  const sourceCandidates = (rows || []).filter(isProjectSourceFile);
+  if (sourceCandidates.length > MAX_SOURCE_FILES) return NextResponse.json({ error: "A build can include up to 100 source files. Remove unused source files and try again." }, { status: 413 });
+  const hasInvalidSourceMetadata = sourceCandidates.some((file) =>
+    file.bucket_id !== "aahana-private" ||
+    typeof file.object_path !== "string" ||
+    !file.object_path.startsWith(user.id + "/" + projectId + "/") ||
+    !Number.isInteger(file.size_bytes) ||
+    file.size_bytes <= 0
+  );
+  if (hasInvalidSourceMetadata) return NextResponse.json({ error: "A project source file has invalid private-storage metadata. Reload the project and repair or remove that file before building." }, { status: 409 });
+  const eligible = sourceCandidates;
   if (!eligible.length) return NextResponse.json({ error: "Upload project source files first. A package.json file is required." }, { status: 400 });
   const lockToken = randomUUID();
   const { data: lockAcquired, error: lockError } = await supabase.rpc("acquire_aahana_build_lock", { p_project_id: projectId, p_lock_token: lockToken });
