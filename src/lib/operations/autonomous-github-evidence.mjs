@@ -64,11 +64,15 @@ export async function evaluateTrustedPullRequest({ github, task, pullRequestNumb
       errors.push("every changed file must include a path and text patch");
       continue;
     }
-    const mode = headModes.get(file.filename) || baseModes.get(file.filename);
-    if (mode === "120000") {
+    const headMode = headModes.get(file.filename);
+    const baseMode = baseModes.get(file.filename);
+    if (headMode === undefined && baseMode === undefined) {
+      errors.push("changed path is absent from both complete Git trees");
+    }
+    if (headMode === "120000" || baseMode === "120000") {
       errors.push("symbolic-link changes are not eligible for autonomous review");
     }
-    changedFiles.push({ path: file.filename, mode });
+    changedFiles.push({ path: file.filename, mode: headMode || baseMode });
     patches.push(file.patch);
     if (!Number.isInteger(file.additions) || !Number.isInteger(file.deletions)) {
       errors.push("GitHub file change counts are incomplete");
@@ -81,7 +85,7 @@ export async function evaluateTrustedPullRequest({ github, task, pullRequestNumb
   const checks = checkResult.checkRuns;
   const successfulChecks = checks.filter((check) =>
     check.status === "completed" && check.conclusion === "success" &&
-    (!check.headSha || check.headSha === pr.head.sha)
+    check.headSha === pr.head.sha
   );
   const failedOrPending = checks.some((check) =>
     check.status !== "completed" || check.conclusion !== "success"
