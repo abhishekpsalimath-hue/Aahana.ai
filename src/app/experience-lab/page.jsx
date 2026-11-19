@@ -303,7 +303,7 @@ export default function ExperienceLab() {
                 <option value="">Choose a project</option>
                 {buildProjects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
               </select>
-              <button type="button" disabled={!selectedProjectId || buildBusy || !buildStatus?.enabled} onClick={() => runBuildOperation("build")}>{buildBusy ? "Working…" : "Run build"}</button>
+              <button type="button" disabled={!selectedProjectId || buildBusy || !buildStatus?.enabled || !buildStatus?.sandboxIdentityAvailable} onClick={() => runBuildOperation("build")}>{buildBusy ? "Working…" : "Run build"}</button>
               <button type="button" disabled={!selectedProjectId || buildBusy || !buildStatus?.enabled} onClick={() => runBuildOperation("test")}>Run tests</button>
             </div>
             {!buildStatus?.enabled && <p className="build-console-note">The isolated Build Engine is not enabled in this environment. Project selection is available, but execution is safely disabled.</p>}
