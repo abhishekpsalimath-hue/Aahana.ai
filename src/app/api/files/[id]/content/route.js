@@ -11,7 +11,7 @@ async function getOwnedSourceFile(supabase, userId, id) {
     .select("id, user_id, project_id, bucket_id, object_path, original_filename, mime_type")
     .eq("id", id).eq("user_id", userId).maybeSingle();
   if (error || !file || file.bucket_id !== BUCKET || !file.project_id ||
-      !file.object_path.startsWith(userId + "/" + file.project_id + "/") ||
+      typeof file.object_path !== "string" || !file.object_path.startsWith(userId + "/" + file.project_id + "/") ||
       !isSupportedSourceFile(file.original_filename, file.mime_type)) return null;
   return file;
 }
@@ -27,7 +27,9 @@ export async function GET(_request, { params }) {
 
   const { data: blob, error } = await supabase.storage.from(BUCKET).download(file.object_path);
   if (error || !blob || blob.size > MAX_BYTES) return NextResponse.json({ error: "Could not read this source file." }, { status: 400 });
-  const content = await blob.text();
+  let content;
+  try { content = new TextDecoder("utf-8", { fatal: true }).decode(await blob.arrayBuffer()); }
+  catch { return NextResponse.json({ error: "This file is not valid UTF-8 text." }, { status: 400 }); }
   if (content.includes("\u0000") || new TextEncoder().encode(content).byteLength > MAX_BYTES) {
     return NextResponse.json({ error: "This file is not a supported text source." }, { status: 400 });
   }
@@ -38,6 +40,8 @@ export async function GET(_request, { params }) {
 
 export async function PUT(request, { params }) {
   const { id } = await params;
+  const declaredLength = Number(request.headers.get("content-length") || 0);
+  if (declaredLength > MAX_BYTES + 64 * 1024) return NextResponse.json({ error: "Source update is too large." }, { status: 413 });
   const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) return NextResponse.json({ error: "Please sign in." }, { status: 401 });
