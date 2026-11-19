@@ -4,6 +4,8 @@ on:
     branches:
       - feat/aahana-agent-worker-phase-b
       - feat/aahana-autonomous-development-phase-c-policy-gate
+      - feat/aahana-phase-c-policy-hardening
+      - feat/phase-c-trusted-github-evidence
     paths:
       - "src/lib/operations/autonomous-policy.*"
       - "src/lib/operations/autonomous-github-evidence.*"
