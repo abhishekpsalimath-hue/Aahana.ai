@@ -3,25 +3,13 @@ on:
   push:
     branches:
       - feat/aahana-agent-worker-phase-b
-  pull_request:
-    branches:
-      - main
-      - feat/aahana-autonomous-cycle-phase-a
-    paths:
-      - "src/app/api/internal/agent-*"
-      - "src/lib/operations/agent-worker.*"
-      - "supabase/migrations/*agent_worker*"
-      - "vercel.json"
-      - "package.json"
-      - "package-lock.json"
-      - ".github/workflows/agent-worker-phase-b.yml"
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: aahana-agent-worker-phase-b-${{ github.event.pull_request.number || github.ref }}
+  group: aahana-agent-worker-phase-b
   cancel-in-progress: true
 
 jobs:
