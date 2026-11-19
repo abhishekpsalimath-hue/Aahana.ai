@@ -1,4 +1,4 @@
-import { SpeechProviderError } from "./speech-runtime.mjs";
+import { SpeechProviderError, createProviderRequestSignal, isProviderTimeout } from "./speech-runtime.mjs";
 
 const MAYA_LANGUAGE_CODES = Object.freeze({
   "as-IN": "as",
@@ -31,6 +31,7 @@ export function createMayaTtsProvider({
   voice = "Ahana",
   fetchImpl = globalThis.fetch,
   authorizationToken = "",
+  timeoutMs = 45_000,
 } = {}) {
   const normalizedBaseUrl = typeof baseUrl === "string" ? baseUrl.trim().replace(/\/+$/, "") : "";
   let parsedUrl = null;
@@ -61,6 +62,7 @@ export function createMayaTtsProvider({
       const language = MAYA_LANGUAGE_CODES[locale];
       if (!language) throw new SpeechProviderError(`Maya does not support ${locale}.`, "UNSUPPORTED_LOCALE");
       const headers = { "Content-Type": "application/json", Accept: "audio/wav" };
+      const requestSignal = createProviderRequestSignal(signal, timeoutMs);
       if (authorizationToken) headers.Authorization = `Bearer ${authorizationToken}`;
       let response;
       try {
@@ -68,9 +70,12 @@ export function createMayaTtsProvider({
           method: "POST",
           headers,
           body: JSON.stringify({ input: text, language, voice, response_format: "wav" }),
-          signal,
+          signal: requestSignal,
         });
       } catch (error) {
+        if (isProviderTimeout(error, requestSignal, signal)) {
+          throw new SpeechProviderError("Maya request exceeded its time limit.", "PROVIDER_TIMEOUT");
+        }
         if (error?.name === "AbortError") throw error;
         throw new SpeechProviderError("Could not reach the private Maya speech service.", "PROVIDER_CONNECTION_FAILED");
       }
