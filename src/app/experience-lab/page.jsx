@@ -535,7 +535,8 @@ export default function ExperienceLab() {
               </label>
               <small className="build-proposal-privacy">The selected source is sent to your signed-in Aahana assistant to prepare the proposal. Remove secrets before continuing.</small>
               <div className="build-source-actions">
-                <button type="button" onClick={proposeSourceEdit} disabled={proposalBusy || editorSaving || !sourceDraft.trim() || !proposalInstruction.trim()}>{proposalBusy ? "Preparing proposal…" : "Ask Aahana to propose an edit"}</button>\n                {proposalBusy && <button type="button" onClick={stopSourceProposal}>Stop proposal</button>}
+                <button type="button" onClick={proposeSourceEdit} disabled={proposalBusy || editorSaving || !sourceDraft.trim() || !proposalInstruction.trim()}>{proposalBusy ? "Preparing proposal…" : "Ask Aahana to propose an edit"}</button>
+                {proposalBusy && <button type="button" onClick={stopSourceProposal}>Stop proposal</button>}
                 <button type="button" onClick={saveSourceFile} disabled={editorSaving || proposalBusy}>{editorSaving ? "Saving…" : "Save source"}</button>
               </div>
               {sourceProposal && <section className="build-source-proposal" aria-label="Review proposed source changes">
