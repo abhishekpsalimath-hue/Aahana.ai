@@ -19,3 +19,11 @@ test("chat route stops before optional private-memory reads after disconnect", (
   assert.match(route, /\.maybeSingle\(\);\s*if \(request\.signal\.aborted\) return new Response\(null, \{ status: 499 \}\);\s*if \(memorySettingsError\)/);
   assert.match(route, /\.limit\(30\);\s*if \(request\.signal\.aborted\) return new Response\(null, \{ status: 499 \}\);/);
 });
+
+test("aborted new conversation creation is cleaned up before returning HTTP 499", () => {
+  assert.match(route, /if \(created\) \{\s*conversationId = created\.id;\s*createdConversation = true;\s*\}\s*if \(request\.signal\.aborted\) \{\s*if \(createdConversation\) \{\s*await supabase\.from\("conversations"\)\.delete\(\)\.eq\("id", conversationId\)\.eq\("user_id", user\.id\);\s*\}\s*return new Response\(null, \{ status: 499 \}\);/);
+});
+
+test("aborted user-message insert cleans up only an empty newly-created conversation", () => {
+  assert.match(route, /if \(request\.signal\.aborted\) \{\s*if \(createdConversation && !savedUserMessage\) \{\s*await supabase\.from\("conversations"\)\.delete\(\)\.eq\("id", conversationId\)\.eq\("user_id", user\.id\);\s*\}\s*return new Response\(null, \{ status: 499 \}\);/);
+});

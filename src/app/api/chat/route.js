@@ -118,12 +118,19 @@ export async function POST(request) {
       .insert({ user_id: user.id, mode, project_id: projectId, title: prompt.slice(0, 72) || "New conversation" })
       .select("id")
       .single();
-    if (request.signal.aborted) return new Response(null, { status: 499 });
+    if (created) {
+      conversationId = created.id;
+      createdConversation = true;
+    }
+    if (request.signal.aborted) {
+      if (createdConversation) {
+        await supabase.from("conversations").delete().eq("id", conversationId).eq("user_id", user.id);
+      }
+      return new Response(null, { status: 499 });
+    }
     if (error || !created) {
       return NextResponse.json({ error: "Could not create your conversation." }, { status: 500 });
     }
-    conversationId = created.id;
-    createdConversation = true;
   }
 
   const { data: savedUserMessage, error: messageError } = await supabase.from("messages").insert({
@@ -132,7 +139,12 @@ export async function POST(request) {
     role: "user",
     content: image ? `${prompt}\n[Image attached: ${imageMatch[1]}]` : prompt,
   }).select("id").single();
-  if (request.signal.aborted) return new Response(null, { status: 499 });
+  if (request.signal.aborted) {
+    if (createdConversation && !savedUserMessage) {
+      await supabase.from("conversations").delete().eq("id", conversationId).eq("user_id", user.id);
+    }
+    return new Response(null, { status: 499 });
+  }
 
   if (messageError || !savedUserMessage) {
     if (createdConversation) await supabase.from("conversations").delete().eq("id", conversationId);
