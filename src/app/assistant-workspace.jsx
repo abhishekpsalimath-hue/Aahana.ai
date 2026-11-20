@@ -1,9 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getSourceFileMimeType, isSupportedSourceFile } from "@/lib/build/source-file-policy.mjs";
+import { isVideoGenerationRequest } from "@/lib/ai/video-generation-policy.mjs";
 
 const modes = [
   { id: "solve", label: "Solve", hint: "Work through a problem" },
@@ -289,6 +291,12 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [analyzingFileId, setAnalyzingFileId] = useState(null);
   const [imageGenerating, setImageGenerating] = useState(false);
   const [generatedImage, setGeneratedImage] = useState(null);
+  const [videoGenerating, setVideoGenerating] = useState(false);
+  const [generatedVideo, setGeneratedVideo] = useState(null);
+  const [videoDuration, setVideoDuration] = useState(5);
+  const [videoResolution, setVideoResolution] = useState("fhd");
+  const [videoAspectRatio, setVideoAspectRatio] = useState("16:9");
+  const [videoGenerateAudio, setVideoGenerateAudio] = useState(true);
   const [memoryOpen, setMemoryOpen] = useState(false);
   const [memoryEnabled, setMemoryEnabled] = useState(false);
   const [memories, setMemories] = useState([]);
@@ -751,10 +759,49 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     printWindow.document.close();
   }
 
+  async function generateVideo(videoPrompt = prompt.trim()) {
+    if (!videoPrompt || videoGenerating || imageGenerating || busy || buildBusy || imageFile) return;
+    setVideoGenerating(true);
+    setError("");
+    setGeneratedVideo(null);
+    setPrompt("");
+    setMessages((current) => [...current,
+      { role: "user", content: videoPrompt },
+      { role: "assistant", content: "Creating your video…" },
+    ]);
+    try {
+      const response = await fetch("/api/videos/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: videoPrompt, duration: videoDuration, resolution: videoResolution, aspectRatio: videoAspectRatio, generateAudio: videoGenerateAudio }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Could not generate the video.");
+      let trustedUrl = false;
+      try {
+        const parsed = new URL(result.videoUrl);
+        trustedUrl = parsed.protocol === "https:" && (parsed.hostname === "aig.cloudflare.com" || parsed.hostname.endsWith(".aig.cloudflare.com"));
+      } catch {}
+      if (!trustedUrl) throw new Error("The video provider returned an invalid video URL.");
+      setGeneratedVideo({ url: result.videoUrl, prompt: videoPrompt, duration: result.duration || videoDuration, resolution: result.resolution || videoResolution });
+      setMessages((current) => current.map((item, index) => index === current.length - 1 ? { ...item, content: "Your video is ready. Play it below and save it before the temporary link expires." } : item));
+    } catch (err) {
+      setMessages((current) => current.map((item, index) => index === current.length - 1 ? { ...item, content: err.message || "I couldn't generate that video." } : item));
+      setError(err.message || "Video generation failed.");
+    } finally {
+      setVideoGenerating(false);
+    }
+  }
+
   async function submitPrompt(event) {
     event.preventDefault();
     const text = prompt.trim();
-    if ((!text && !imageFile) || busy || buildBusy || imageGenerating) return;
+    if ((!text && !imageFile) || busy || buildBusy || imageGenerating || videoGenerating) return;
+
+    if (!imageFile && isVideoGenerationRequest(text)) {
+      await generateVideo(text);
+      return;
+    }
 
     if (isImageGenerationRequest(text)) {
       setPrompt("");
@@ -891,9 +938,9 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   return (
     <main className="shell">
       <aside className="sidebar">
-        <a className="brand" href="/" aria-label="Aahana AI home">
+        <Link className="brand" href="/" aria-label="Aahana AI home">
           <span className="brand-word">Aahana</span><span className="brand-ai">AI</span>
-        </a>
+        </Link>
         <button className="new-chat" type="button" onClick={newConversation}>
           <span aria-hidden="true">＋</span> New conversation
         </button>
@@ -1193,6 +1240,16 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
           )}
           <form className="composer" onSubmit={submitPrompt}>
             <label className="sr-only" htmlFor="image-upload">Attach an image for Aahana to identify or analyse</label>
+            {generatedVideo && (
+              <div className="generated-video-preview">
+                <video src={generatedVideo.url} controls playsInline preload="metadata" aria-label={generatedVideo.prompt} />
+                <div className="message-actions">
+                  <a className="copy-message" href={`/api/videos/download?url=${encodeURIComponent(generatedVideo.url)}`} download="aahana-video.mp4">Download video</a>
+                  <button className="copy-message" type="button" onClick={() => setGeneratedVideo(null)}>Remove preview</button>
+                </div>
+                <small>{generatedVideo.duration}s · {generatedVideo.resolution.toUpperCase()} · Video links are temporary; save your video promptly.</small>
+              </div>
+            )}
             {generatedImage && (
               <div className="generated-image-preview">
                 <img src={generatedImage.dataUrl} alt={generatedImage.prompt} style={{ display: "block", width: "100%", maxWidth: "640px", borderRadius: "14px" }} />
@@ -1220,8 +1277,33 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
               </label>
               {imageFile && <span className="image-attach-name">{imageFile.name} <button type="button" onClick={() => setImageFile(null)}>Remove</button></span>}
               <button className="copy-message" type="button" onClick={generateImage}
-                disabled={!prompt.trim() || imageGenerating || busy || Boolean(imageFile)}>
+                disabled={!prompt.trim() || imageGenerating || videoGenerating || busy || buildBusy || Boolean(imageFile)}>
                 {imageGenerating ? "Creating image…" : "Generate image"}
+              </button>
+              <label className="video-setting">Duration
+                <select aria-label="Video duration" value={videoDuration} onChange={(event) => setVideoDuration(Number(event.target.value))} disabled={videoGenerating || busy}>
+                  {[5, 10, 15, 20].map((seconds) => <option key={seconds} value={seconds}>{seconds}s</option>)}
+                </select>
+              </label>
+              <label className="video-setting">Quality
+                <select aria-label="Video quality" value={videoResolution} onChange={(event) => setVideoResolution(event.target.value)} disabled={videoGenerating || busy}>
+                  <option value="hd">HD</option>
+                  <option value="fhd">Full HD</option>
+                </select>
+              </label>
+              <label className="video-setting">Format
+                <select aria-label="Video aspect ratio" value={videoAspectRatio} onChange={(event) => setVideoAspectRatio(event.target.value)} disabled={videoGenerating || busy}>
+                  <option value="16:9">Landscape · 16:9</option>
+                  <option value="9:16">Portrait · 9:16</option>
+                  <option value="1:1">Square · 1:1</option>
+                </select>
+              </label>
+              <label className="video-audio-setting">
+                <input type="checkbox" checked={videoGenerateAudio} onChange={(event) => setVideoGenerateAudio(event.target.checked)} disabled={videoGenerating || busy} />
+                Audio
+              </label>
+              <button className="copy-message" type="button" onClick={() => generateVideo()} disabled={!prompt.trim() || videoGenerating || imageGenerating || busy || buildBusy || Boolean(imageFile)}>
+                {videoGenerating ? "Creating video…" : "Generate video"}
               </button>
             </div>
             <label className="sr-only" htmlFor="prompt">What would you like to work on?</label>
@@ -1230,7 +1312,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
               placeholder={aiEnabled ? "What would you like to work on today?" : "Try a calculation, e.g. 2 + 2 (offline)"} rows={3} disabled={busy} />
             <div className="composer-footer">
               <span className="composer-mode">{modes.find((item) => item.id === mode)?.hint} · Enter to send · Shift + Enter for a new line</span>
-              <button className={`send send-orb${busy || imageGenerating ? " is-thinking" : ""}`} type="submit" disabled={(!prompt.trim() && !imageFile) || busy || imageGenerating || (!aiEnabled && !imageFile && !isImageGenerationRequest(prompt.trim()) && evaluateArithmetic(prompt.trim()) === null)} aria-label={busy || imageGenerating ? "Aahana is working" : "Launch your message"} title={busy || imageGenerating ? "Aahana is working" : "Launch your message"}><span className="send-orb-halo" aria-hidden="true" /><svg className="send-rocket" viewBox="0 0 32 32" aria-hidden="true"><path className="rocket-flame" d="M12 21.5c-2.1 1.2-3.3 3.2-3.4 5.1 2-.1 4-1.3 5.1-3.4" /><path className="rocket-body" d="M12.2 19.8c-1.3-4.9 1.1-11.1 8.8-15.6 1.3 8.8-1.8 14-6.6 16.5l-2.2-.9Z" /><path className="rocket-window" d="M18.7 10.1a2.1 2.1 0 1 0 0 4.2 2.1 2.1 0 0 0 0-4.2Z" /><path className="rocket-fin" d="m12.4 15.8-4.1 1.4 1.1 4.1 4.1-2.2m5.2-6.9 2.2-4.1 4.1 1.1-1.4 4.1" /></svg><span className="send-orb-thinking" aria-hidden="true"><i /><i /><i /></span></button>
+              <button className={`send send-orb${busy || imageGenerating || videoGenerating ? " is-thinking" : ""}`} type="submit" disabled={(!prompt.trim() && !imageFile) || busy || imageGenerating || videoGenerating || (!aiEnabled && !imageFile && !isImageGenerationRequest(prompt.trim()) && !isVideoGenerationRequest(prompt.trim()) && evaluateArithmetic(prompt.trim()) === null)} aria-label={busy || imageGenerating || videoGenerating ? "Aahana is working" : "Launch your message"} title={busy || imageGenerating || videoGenerating ? "Aahana is working" : "Launch your message"}><span className="send-orb-halo" aria-hidden="true" /><svg className="send-rocket" viewBox="0 0 32 32" aria-hidden="true"><path className="rocket-flame" d="M12 21.5c-2.1 1.2-3.3 3.2-3.4 5.1 2-.1 4-1.3 5.1-3.4" /><path className="rocket-body" d="M12.2 19.8c-1.3-4.9 1.1-11.1 8.8-15.6 1.3 8.8-1.8 14-6.6 16.5l-2.2-.9Z" /><path className="rocket-window" d="M18.7 10.1a2.1 2.1 0 1 0 0 4.2 2.1 2.1 0 0 0 0-4.2Z" /><path className="rocket-fin" d="m12.4 15.8-4.1 1.4 1.1 4.1 4.1-2.2m5.2-6.9 2.2-4.1 4.1 1.1-1.4 4.1" /></svg><span className="send-orb-thinking" aria-hidden="true"><i /><i /><i /></span></button>
             </div>
           </form>
           {error && <div className="notice error-notice" role="alert">{error}</div>}
