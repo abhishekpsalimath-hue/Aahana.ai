@@ -161,6 +161,10 @@ function isImageGenerationRequest(value) {
   const text = String(value || "").trim();
   if (!text) return false;
 
+  // Short, natural commands for well-known visual subjects should work
+  // without forcing users to append the word "image".
+  if (/^\s*(?:please\s+)?(?:generate|create|draw|paint|illustrate|render|make)\s+(?:(?:a|an|the)\s+)?(?:(?:lord|shri|sri)\s+)?(?:shiva|mahadev|mahadeva|shankar|hanuman|anjaneya|maruti|ganesha|ganapati|vinayaka|krishna|rama|ram)\b/i.test(text)) return true;
+
   // Explicit image-generation instructions.
   if (/\b(?:generate|create|draw|paint|illustrate|render|make)\b[\s\S]{0,180}\b(?:image|picture|illustration|artwork|portrait|wallpaper|logo|poster|cover|banner|icon|thumbnail|scene|landscape|cityscape|character|diagram)\b/i.test(text)) return true;
   if (/\b(?:show me|visuali[sz]e|turn this into|text[- ]to[- ]image)\b/i.test(text) && /\b(?:image|picture|art|illustration|render|visual)\b/i.test(text)) return true;
