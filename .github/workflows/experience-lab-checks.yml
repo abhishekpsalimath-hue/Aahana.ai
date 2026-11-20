@@ -23,6 +23,7 @@ on:
       - feat/experience-lab-build-workspace
       - fix/experience-lab-source-edit-conflicts
       - feat/experience-lab-ai-code-proposals
+      - feat/aahana-self-build-repository-bridge
     paths:
       - "src/app/experience-lab/**"
       - "src/app/api/build/**"
