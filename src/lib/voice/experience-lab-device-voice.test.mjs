@@ -1,0 +1,30 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+
+const page = readFileSync(new URL("../../app/experience-lab/page.jsx", import.meta.url), "utf8");
+const styles = readFileSync(new URL("../../app/experience-lab/experience-lab.css", import.meta.url), "utf8");
+
+test("Experience Lab provides browser voice input with a selectable locale", () => {
+  assert.match(page, /window\.SpeechRecognition \|\| window\.webkitSpeechRecognition/);
+  assert.match(page, /recognition\.lang = voiceLocale/);
+  assert.match(page, /setPrompt\(\(current\) => current \? current \+ " " \+ transcript\.trim\(\) : transcript\.trim\(\)\)/);
+  for (const locale of ["en-IN", "kn-IN", "hi-IN", "ta-IN", "te-IN", "ml-IN"]) {
+    assert.match(page, new RegExp(locale));
+  }
+});
+
+test("Experience Lab provides interruptible device speech playback and cleanup", () => {
+  assert.match(page, /new SpeechSynthesisUtterance/);
+  assert.match(page, /window\.speechSynthesis\.cancel\(\)/);
+  assert.match(page, /recognitionRef\.current\?\.stop/);
+  assert.match(page, /window\.speechSynthesis\?\.cancel\?\.\(\)/);
+  assert.match(page, /aria-live="polite"/);
+});
+
+test("voice panel discloses local browser processing and has responsive interaction styling", () => {
+  assert.match(page, /Microphone audio is not uploaded or saved/);
+  assert.match(styles, /\.voice-panel-action/);
+  assert.match(styles, /\.voice-panel-status/);
+  assert.match(styles, /\.voice-panel-error/);
+});
