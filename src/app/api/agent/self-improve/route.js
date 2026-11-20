@@ -152,7 +152,11 @@ export async function POST(request) {
           model,
           messages,
           tools,
-          tool_choice: "auto",
+          tool_choice: !inventoryListed
+            ? { type: "function", function: { name: "list_approved_source_files" } }
+            : readFiles.size === 0
+              ? { type: "function", function: { name: "read_approved_source_file" } }
+              : "auto",
           parallel_tool_calls: false,
           temperature: 0.2,
           max_completion_tokens: 4096,
