@@ -5,6 +5,8 @@ import { readFileSync } from "node:fs";
 const route = readFileSync(new URL("../../app/api/videos/generate/route.js", import.meta.url), "utf8");
 const downloadRoute = readFileSync(new URL("../../app/api/videos/download/route.js", import.meta.url), "utf8");
 const workspace = readFileSync(new URL("../../app/assistant-workspace.jsx", import.meta.url), "utf8");
+const experienceLab = readFileSync(new URL("../../app/experience-lab/page.jsx", import.meta.url), "utf8");
+const experienceLabStyles = readFileSync(new URL("../../app/experience-lab/experience-lab.css", import.meta.url), "utf8");
 const styles = readFileSync(new URL("../../app/globals.css", import.meta.url), "utf8");
 
 test("video endpoint authenticates before provider calls and bounds execution", () => {
@@ -47,6 +49,12 @@ test("assistant exposes video creation, quality, duration and download controls"
   assert.match(workspace, /videoDuration/);
   assert.match(workspace, /generatedVideo/);
   assert.match(workspace, /api\/videos\/download/);
+  assert.match(experienceLab, /isVideoGenerationRequest/);
+  assert.match(experienceLab, /api\/videos\/generate/);
+  assert.match(experienceLab, /generatedVideo/);
+  assert.match(experienceLab, /api\/videos\/download/);
+  assert.match(experienceLab, /signal: controller\.signal/);
+  assert.match(experienceLabStyles, /\.lab-generated-video/);
 });
 
 test("Aahana typography uses the distinctive display and interface font pair", () => {
