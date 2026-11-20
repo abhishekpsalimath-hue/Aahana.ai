@@ -90,3 +90,28 @@ test("validates conversational reference-image edits and bounded uploads", () =>
   assert.equal(parseImageEditInput({ prompt: "Change it", imageType: "image/jpeg", imageSize: MAX_IMAGE_EDIT_BYTES + 1 }).ok, false);
   assert.equal(parseImageEditInput({ prompt: "x".repeat(MAX_IMAGE_EDIT_PROMPT_LENGTH + 1), imageType: "image/jpeg", imageSize: 20 }).ok, false);
 });
+
+test("parses PNG reference dimensions and enforces the strict 512px provider limit", () => {
+  const png = new Uint8Array(24);
+  png.set([0x89, 0x50, 0x4e, 0x47], 0);
+  new DataView(png.buffer).setUint32(16, 511);
+  new DataView(png.buffer).setUint32(20, 480);
+  const dimensions = getReferenceImageDimensions(png, "image/png");
+  assert.deepEqual(dimensions, { width: 511, height: 480 });
+  assert.equal(isReferenceImageWithinProviderBounds(dimensions), true);
+  assert.equal(isReferenceImageWithinProviderBounds({ width: 512, height: 480 }), false);
+  assert.equal(isReferenceImageWithinProviderBounds(null), false);
+});
+
+test("parses JPEG and WebP reference dimensions without trusting client metadata", () => {
+  const jpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xc0, 0x00, 0x07, 0x08, 0x01, 0xe0, 0x01, 0xff]);
+  assert.deepEqual(getReferenceImageDimensions(jpeg, "image/jpeg"), { width: 511, height: 480 });
+
+  const webp = new Uint8Array(30);
+  webp.set([...new TextEncoder().encode("RIFF")], 0);
+  webp.set([...new TextEncoder().encode("WEBP")], 8);
+  webp.set([...new TextEncoder().encode("VP8X")], 12);
+  webp[24] = 0xfe;
+  webp[27] = 0xdf;
+  assert.deepEqual(getReferenceImageDimensions(webp, "image/webp"), { width: 255, height: 224 });
+});
