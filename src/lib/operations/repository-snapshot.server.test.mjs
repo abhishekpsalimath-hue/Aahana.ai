@@ -132,3 +132,30 @@ test("rejects Git LFS pointer files instead of passing pointers as source", asyn
     github, sourceSha, allowedPaths: ["src/index.mjs"],
   }), /git_lfs_pointer_files_are_not_supported/);
 });
+
+
+test("rejects Unicode slash lookalikes, invisible controls, encoded paths and non-NFC names", async () => {
+  const github = makeGithub();
+  const unsafePaths = [
+    "src∕index.mjs", "src／index.mjs", "src⁄index.mjs",
+    "src​index.mjs", "src/%2e%2e/.env", "src/name:stream.mjs",
+    "src/café.mjs",
+  ];
+  for (const path of unsafePaths) {
+    await assert.rejects(() => collectReadOnlyRepositorySnapshot({
+      github, sourceSha, allowedPaths: [path],
+    }), /unsafe_repository_snapshot_path/);
+  }
+  assert.equal(github.calls.length, 0);
+});
+
+test("rejects NUL bytes in otherwise valid UTF-8 text", async () => {
+  const nulText = Buffer.from([0x65, 0x78, 0x70, 0x6f, 0x72, 0x74, 0x20, 0x00, 0x3b, 0x0a]);
+  await assert.rejects(() => collectReadOnlyRepositorySnapshot({
+    github: makeGithub({
+      entries: [{ path: "src/index.mjs", mode: "100644", type: "blob", sha: blobSha, size: nulText.length }],
+      blob: { sha: blobSha, size: nulText.length, encoding: "base64", content: nulText.toString("base64") },
+    }),
+    sourceSha, allowedPaths: ["src/index.mjs"],
+  }), /nul_bytes_in_repository_text_file/);
+});
