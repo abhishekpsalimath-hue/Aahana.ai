@@ -251,16 +251,6 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [prompt, setPrompt] = useState("");
   const [imageFile, setImageFile] = useState(null);
   const [messages, setMessages] = useState([]);
-  const [showLoginWelcome, setShowLoginWelcome] = useState(true);
-  const [dissolvingLoginWelcome, setDissolvingLoginWelcome] = useState(false);
-  useEffect(() => {
-    const dissolveTimer = window.setTimeout(() => setDissolvingLoginWelcome(true), 3000);
-    const removeTimer = window.setTimeout(() => setShowLoginWelcome(false), 3900);
-    return () => {
-      window.clearTimeout(dissolveTimer);
-      window.clearTimeout(removeTimer);
-    };
-  }, []);
   useEffect(() => {
     if (messages.length) conversationEndRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
   }, [messages]);
@@ -282,7 +272,6 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [buildStatusLoading, setBuildStatusLoading] = useState(true);
   const [error, setError] = useState("");
   const [history, setHistory] = useState([]);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyError, setHistoryError] = useState("");
@@ -908,14 +897,11 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   }
 
   return (
-    <main className={sidebarOpen ? "shell sidebar-expanded" : "shell sidebar-collapsed"}>
-      <aside id="aahana-sidebar" className={sidebarOpen ? "sidebar sidebar-visible" : "sidebar sidebar-hidden"}>
-        <div className="sidebar-heading">
-          <Link className="brand" href="/" aria-label="Aahana AI home">
-            <span className="brand-word">Aahana</span><span className="brand-ai">AI</span>
-          </Link>
-          <button className="sidebar-close" type="button" onClick={() => setSidebarOpen(false)} aria-label="Hide navigation">×</button>
-        </div>
+    <main className="shell">
+      <aside className="sidebar">
+        <Link className="brand" href="/" aria-label="Aahana AI home">
+          <span className="brand-word">Aahana</span><span className="brand-ai">AI</span>
+        </Link>
         <button className="new-chat" type="button" onClick={newConversation}>
           <span aria-hidden="true">＋</span> New conversation
         </button>
@@ -1048,12 +1034,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
           ))}
         </div>
         <header className="topbar">
-          <div className="topbar-leading">
-            <button className="menu-toggle" type="button" onClick={() => setSidebarOpen((value) => !value)} aria-label={sidebarOpen ? "Hide navigation" : "Show navigation"} aria-expanded={sidebarOpen} aria-controls="aahana-sidebar">
-              <span /><span /><span />
-            </button>
-            <div className="breadcrumb">Workspace <span>/</span> {selectedProjectId ? (projects.find((item) => item.id === selectedProjectId)?.name || "Project") : "Assistant"}</div>
-          </div>
+          <div className="breadcrumb">Workspace <span>/</span> {selectedProjectId ? (projects.find((item) => item.id === selectedProjectId)?.name || "Project") : "Assistant"}</div>
           <div className="top-actions"><button className="mobile-history-toggle" type="button" onClick={toggleProjects}>Projects</button><button className="mobile-history-toggle" type="button" onClick={toggleHistory}>History</button><button className="mobile-history-toggle" type="button" onClick={toggleFiles}>Files</button><button className="mobile-history-toggle" type="button" onClick={toggleMemoryPanel}>Memory</button><span>Private workspace</span></div>
         </header>
         {projectsOpen && (
@@ -1111,20 +1092,6 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         )}
 
         <div className="welcome">
-          {showLoginWelcome && !messages.length && (
-            <div
-              className={dissolvingLoginWelcome ? "founder-welcome-note is-dissolving" : "founder-welcome-note"}
-              role="status"
-              aria-live="polite"
-              aria-label="Welcome to Aahana AI from Abhishekayya Salimath."
-            >
-              <p>
-                <span>Welcome to Aahana AI.</span>
-                <span>I’m glad you’re here.</span>
-              </p>
-              <strong>From Abhishekayya Salimath</strong>
-            </div>
-          )}
           {!messages.length && (
             <div className="astronaut-float" aria-hidden="true">
               <svg viewBox="0 0 180 180" role="presentation">
