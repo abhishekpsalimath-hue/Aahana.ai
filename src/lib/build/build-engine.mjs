@@ -1,3 +1,4 @@
+import { Writable } from "node:stream";
 import {
   createSafeSandboxOptions,
   validatePackageManifest,
@@ -15,11 +16,30 @@ const INSTALL_ARGS = [
   "--registry=https://registry.npmjs.org/",
 ];
 
-function readOutput(result) {
-  return Promise.all([
-    result.stdout().catch(() => ""),
-    result.stderr().catch(() => ""),
-  ]);
+function createBoundedOutputSink(limit = OUTPUT_LIMIT) {
+  let remaining = limit;
+  let byteLength = 0;
+  let truncated = false;
+  const chunks = [];
+  const stream = new Writable({
+    write(chunk, encoding, callback) {
+      const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk, encoding);
+      const keptLength = Math.min(remaining, buffer.length);
+      if (keptLength > 0) {
+        // Copy only retained bytes, not the larger SDK chunk.
+        chunks.push(Buffer.from(buffer.subarray(0, keptLength)));
+        byteLength += keptLength;
+        remaining -= keptLength;
+      }
+      if (keptLength < buffer.length) truncated = true;
+      callback();
+    },
+  });
+  return {
+    stream,
+    text: () => Buffer.concat(chunks, byteLength).toString("utf8"),
+    get truncated() { return truncated; },
+  };
 }
 
 export async function executeBuildTask({
@@ -89,13 +109,17 @@ export async function executeBuildTask({
       let installResult;
       await sandbox.update({ networkPolicy: { allow: ["registry.npmjs.org"] } });
       try {
+        const installStdout = createBoundedOutputSink();
+        const installStderr = createBoundedOutputSink();
         installResult = await sandbox.runCommand({
           cmd: "npm",
           args: INSTALL_ARGS,
           cwd: "/vercel/sandbox",
+          stdout: installStdout.stream,
+          stderr: installStderr.stream,
         });
-        const [stdout, stderr] = await readOutput(installResult);
-        installOutput = (stdout + "\n" + stderr).slice(0, OUTPUT_LIMIT);
+        // Drain excess output without retaining it, bounding server memory.
+        installOutput = (installStdout.text() + "\n" + installStderr.text()).slice(0, OUTPUT_LIMIT);
       } finally {
         // Never run project code while package-registry egress is enabled.
         await sandbox.update({ networkPolicy: "deny-all" });
@@ -112,18 +136,21 @@ export async function executeBuildTask({
       }
     }
 
+    const taskStdout = createBoundedOutputSink();
+    const taskStderr = createBoundedOutputSink();
     const result = await sandbox.runCommand({
       cmd: command,
       args,
       cwd: "/vercel/sandbox",
+      stdout: taskStdout.stream,
+      stderr: taskStderr.stream,
     });
-    const [stdout, stderr] = await readOutput(result);
     return {
       status: result.exitCode === 0 ? "passed" : "failed",
       operation,
       exitCode: result.exitCode ?? 1,
-      stdout: (installOutput + stdout).slice(0, OUTPUT_LIMIT),
-      stderr: stderr.slice(0, OUTPUT_LIMIT),
+      stdout: (installOutput + taskStdout.text()).slice(0, OUTPUT_LIMIT),
+      stderr: taskStderr.text().slice(0, OUTPUT_LIMIT),
     };
   } finally {
     signal?.removeEventListener("abort", onAbort);
