@@ -48,7 +48,7 @@ test("reference image edit prompt preserves original sacred subject identity", (
   assert.match(prompt, /Original image brief: Generate Lord Shiva/i);
   assert.match(prompt, /Requested refinement: Make the background cinematic/i);
   assert.match(prompt, /Preserve the exact main subject, identity, face, anatomy, pose/i);
-  assert.match(prompt, /unmistakable depiction of Lord Shiva/i);
+  assert.match(prompt, /Lord Shiva \(Mahadev\) unmistakably/i);
 });
 
 test("reference image edit prompt rejects empty instructions", () => {
