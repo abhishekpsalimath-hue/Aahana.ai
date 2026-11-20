@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { parseImageGenerationInput } from "@/lib/creative/image-generation.mjs";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
 const MODEL = "@cf/black-forest-labs/flux-1-schnell";
-const MAX_PROMPT_LENGTH = 2048;
 
 export async function POST(request) {
   const supabase = await createClient();
@@ -26,10 +26,11 @@ export async function POST(request) {
   try { body = await request.json(); } catch {
     return NextResponse.json({ error: "Invalid request." }, { status: 400 });
   }
-  const prompt = typeof body?.prompt === "string" ? body.prompt.trim() : "";
-  if (!prompt || prompt.length > MAX_PROMPT_LENGTH) {
-    return NextResponse.json({ error: "Describe the image in 1–2,048 characters." }, { status: 400 });
+  const input = parseImageGenerationInput(body);
+  if (!input.ok) {
+    return NextResponse.json({ error: input.error }, { status: 400 });
   }
+  const { prompt, steps } = input;
 
   try {
     const response = await fetch(
@@ -40,7 +41,7 @@ export async function POST(request) {
           Authorization: `Bearer ${apiToken}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ prompt, steps: 4 }),
+        body: JSON.stringify({ prompt, steps }),
         cache: "no-store",
         signal: AbortSignal.timeout(55000),
       }
@@ -61,7 +62,7 @@ export async function POST(request) {
     }
 
     return NextResponse.json(
-      { imageDataUrl: `data:image/jpeg;base64,${image}`, model: MODEL },
+      { imageDataUrl: `data:image/jpeg;base64,${image}`, model: MODEL, steps },
       { headers: { "Cache-Control": "no-store" } }
     );
   } catch (error) {
