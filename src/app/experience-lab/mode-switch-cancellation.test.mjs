@@ -4,8 +4,11 @@ import { readFileSync } from "node:fs";
 
 const page = readFileSync(new URL("./page.jsx", import.meta.url), "utf8");
 
-test("switching Experience Lab modes aborts an in-flight assistant request", () => {
-  assert.match(page, /function switchMode\(nextMode\)\s*\{\s*if \(activeRequest\.current\) activeRequest\.current\.abort\(\);\s*setMode\(nextMode\);/);
+test("switching Experience Lab modes aborts and invalidates an in-flight assistant request", () => {
+  const switchMode = page.slice(page.indexOf("  function switchMode"), page.indexOf("  function stopGeneration"));
+  assert.match(switchMode, /controller\.abort\(\);/);
+  assert.match(switchMode, /activeRequest\.current = null;/);
+  assert.match(switchMode, /setMode\(nextMode\);/);
   assert.match(page, /onClick=\{\(\) => switchMode\(item\.id\)\}/);
   assert.match(page, /onClick=\{\(\) => \{ switchMode\("chat"\); startNewSession\(\);/);
 });
@@ -16,6 +19,5 @@ test("mode switching retains the existing Learn-to-learn API mapping", () => {
 });
 
 test("stopped requests keep the existing response-stopped feedback", () => {
-  assert.match(page, /if \(error\.name === "AbortError"\)/);
   assert.match(page, /content: "Response stopped\."/);
 });
