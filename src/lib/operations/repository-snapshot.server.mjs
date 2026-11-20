@@ -7,8 +7,9 @@ const BLOCKED_NAMES = new Set([".env", ".env.local", ".env.production", ".npmrc"
 
 function validateSnapshotPath(input) {
   if (typeof input !== "string" || input.length < 1 || input.length > 240 ||
-      /[\u0000-\u001f\u007f\u202a-\u202e\u2066-\u2069]/u.test(input) ||
-      input.includes("\\") || input.startsWith("/") || /^[a-zA-Z]:/.test(input)) {
+      /[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e\u2060-\u206f\ufeff\u2044\u2215\u29f8\uff0f\uff3c\ufe68]/u.test(input) ||
+      input.normalize("NFC") !== input || input.includes("%") || input.includes(":") ||
+      input.includes("\\") || input.startsWith("/")) {
     throw new Error("unsafe_repository_snapshot_path");
   }
   const segments = input.split("/");
@@ -102,6 +103,9 @@ export async function collectReadOnlyRepositorySnapshot({
       content = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
     } catch {
       throw new Error("binary_repository_files_are_not_supported");
+    }
+    if (content.includes(String.fromCharCode(0))) {
+      throw new Error("nul_bytes_in_repository_text_file");
     }
     if (content.startsWith("version https://git-lfs.github.com/spec/v1\n")) {
       throw new Error("git_lfs_pointer_files_are_not_supported");

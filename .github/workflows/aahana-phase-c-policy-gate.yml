@@ -14,6 +14,7 @@ on:
       - fix/phase-c-require-trusted-check-app
       - feat/phase-c-readonly-repository-snapshot
       - fix/repository-snapshot-strict-blob-validation
+      - fix/repository-snapshot-path-normalization
     paths:
       - "src/lib/operations/autonomous-policy.*"
       - "src/lib/operations/autonomous-github-evidence.*"
@@ -37,6 +38,7 @@ on:
       - fix/phase-c-require-trusted-check-app
       - feat/phase-c-readonly-repository-snapshot
       - fix/repository-snapshot-strict-blob-validation
+      - fix/repository-snapshot-path-normalization
   workflow_dispatch:
 
 permissions:
