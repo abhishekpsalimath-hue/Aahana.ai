@@ -1128,14 +1128,9 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
             <p>Think freely. Explore ideas. Build something real.</p>
           </>}
 
-          <div className="mode-row" role="tablist" aria-label="Choose a mode">
-            {modes.map((item) => (
-              <button key={item.id} type="button" role="tab" aria-selected={mode === item.id}
-                className={mode === item.id ? "mode active-mode" : "mode"}
-                onClick={() => setMode(item.id)}>
-                {item.label}
-              </button>
-            ))}
+          <div className="mode-row assistance-context" aria-label="Current workspace">
+            <span className="active-mode">Assistance</span>
+            <span className="assistance-context-note">Ask naturally — create, write, research, build and improve in one conversation.</span>
           </div>
 
           {messages.length > 0 && (
