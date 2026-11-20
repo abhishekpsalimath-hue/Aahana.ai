@@ -9,8 +9,8 @@ test("masterpiece image direction adds composition, lighting, and detail guidanc
   assert.match(prompt, /Preserve the subject/i);
 });
 
-test("standard image prompts remain unchanged and unknown quality is rejected", () => {
-  assert.equal(buildImagePrompt("A portrait"), "A portrait");
+test("standard image direction stays minimal and unknown quality is rejected", () => {
+  assert.equal(buildImagePrompt("A portrait", "standard"), "A portrait");
   assert.equal(buildImagePrompt("A portrait", "unknown"), null);
 });
 
