@@ -24,6 +24,7 @@ on:
       - fix/experience-lab-source-edit-conflicts
       - feat/experience-lab-ai-code-proposals
       - fix/experience-lab-mode-switch-cancellation
+      - fix/chat-stream-stale-request-guards
     paths:
       - "src/app/experience-lab/**"
       - "src/app/api/build/**"
