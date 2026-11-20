@@ -20,6 +20,10 @@ test("chat route stops before optional private-memory reads after disconnect", (
   assert.match(route, /\.limit\(30\);\s*if \(request\.signal\.aborted\) return new Response\(null, \{ status: 499 \}\);/);
 });
 
+test("failed user-message persistence scopes new-conversation cleanup to its owner", () => {
+  assert.match(route, /if \(messageError \|\| !savedUserMessage\) \{\s*if \(createdConversation\) \{\s*await supabase\.from\("conversations"\)\.delete\(\)\.eq\("id", conversationId\)\.eq\("user_id", user\.id\);\s*\}/);
+});
+
 test("aborted new conversation creation is cleaned up before returning HTTP 499", () => {
   assert.match(route, /if \(created\) \{\s*conversationId = created\.id;\s*createdConversation = true;\s*\}\s*if \(request\.signal\.aborted\) \{\s*if \(createdConversation\) \{\s*await supabase\.from\("conversations"\)\.delete\(\)\.eq\("id", conversationId\)\.eq\("user_id", user\.id\);\s*\}\s*return new Response\(null, \{ status: 499 \}\);/);
 });
