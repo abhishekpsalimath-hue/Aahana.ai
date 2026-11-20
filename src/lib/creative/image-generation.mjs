@@ -40,3 +40,25 @@ export function parseImageGenerationInput(body) {
 
   return { ok: true, prompt: styledPrompt, steps, style, quality };
 }
+
+
+export const MAX_IMAGE_EDIT_BYTES = 2 * 1024 * 1024;
+export const SUPPORTED_IMAGE_EDIT_TYPES = Object.freeze([
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+]);
+
+export function parseImageEditInput({ prompt, imageType, imageSize } = {}) {
+  const normalizedPrompt = typeof prompt === "string" ? prompt.trim() : "";
+  if (!normalizedPrompt || normalizedPrompt.length > MAX_IMAGE_PROMPT_LENGTH) {
+    return { ok: false, error: "Describe the change in 1–2,048 characters." };
+  }
+  if (!SUPPORTED_IMAGE_EDIT_TYPES.includes(imageType)) {
+    return { ok: false, error: "Attach a PNG, JPEG or WebP reference image." };
+  }
+  if (!Number.isInteger(imageSize) || imageSize < 1 || imageSize > MAX_IMAGE_EDIT_BYTES) {
+    return { ok: false, error: "The reference image must be smaller than 2 MB." };
+  }
+  return { ok: true, prompt: normalizedPrompt };
+}
