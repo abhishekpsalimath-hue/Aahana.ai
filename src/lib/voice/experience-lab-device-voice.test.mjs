@@ -17,7 +17,7 @@ test("Experience Lab provides browser voice input with a selectable locale", () 
 
 test("Experience Lab provides interruptible device speech playback and cleanup", () => {
   assert.match(page, /new SpeechSynthesisUtterance/);
-  assert.match(page, /window\.speechSynthesis(?:\?\.|\.)cancel(?:\?\.)?\(\)/);
+  assert.match(page, /window\.speechSynthesis\?\.cancel\?\.\(\)/);
   assert.match(page, /recognitionRef\.current\?\.stop/);
   assert.match(page, /aria-live="polite"/);
 });
@@ -41,10 +41,10 @@ test("Experience Lab prefers private Maya speech and safely falls back to device
 });
 
 test("Create mode exposes bounded video settings and passes them to the video route", () => {
-  assert.match(page, /const \[videoDuration, setVideoDuration\] = useState\(5\)/);
-  assert.match(page, /const \[videoResolution, setVideoResolution\] = useState\("hd"\)/);
-  assert.match(page, /const \[videoAspectRatio, setVideoAspectRatio\] = useState\("16:9"\)/);
-  assert.match(page, /const \[videoAudio, setVideoAudio\] = useState\(true\)/);
+  assert.match(page, /const \\[videoDuration, setVideoDuration\\] = useState\\(5\\)/);
+  assert.match(page, /const \\[videoResolution, setVideoResolution\\] = useState\\("hd"\\)/);
+  assert.match(page, /const \\[videoAspectRatio, setVideoAspectRatio\\] = useState\\("16:9"\\)/);
+  assert.match(page, /const \\[videoAudio, setVideoAudio\\] = useState\\(true\\)/);
   assert.match(page, /duration: videoDuration, resolution: videoResolution, aspectRatio: videoAspectRatio, generateAudio: videoAudio/);
   for (const value of ["5", "10", "15", "20", "hd", "fhd", "16:9", "9:16", "1:1"]) assert.ok(page.includes(`value={${value}}`) || page.includes(`value="${value}"`), `missing option ${value}`);
 });
