@@ -4,10 +4,8 @@ import { readFileSync } from "node:fs";
 
 const route = readFileSync(new URL("../../app/api/videos/generate/route.js", import.meta.url), "utf8");
 const downloadRoute = readFileSync(new URL("../../app/api/videos/download/route.js", import.meta.url), "utf8");
-const workspace = readFileSync(new URL("../../app/assistant-workspace.jsx", import.meta.url), "utf8");
 const experienceLab = readFileSync(new URL("../../app/experience-lab/page.jsx", import.meta.url), "utf8");
 const experienceLabStyles = readFileSync(new URL("../../app/experience-lab/experience-lab.css", import.meta.url), "utf8");
-const styles = readFileSync(new URL("../../app/globals.css", import.meta.url), "utf8");
 
 test("video endpoint authenticates before provider calls and bounds execution", () => {
   const auth = route.indexOf("supabase.auth.getUser()");
