@@ -14,6 +14,7 @@ on:
       - "src/app/experience-lab/**"
       - "src/app/assistant-workspace.jsx"
       - "src/app/api/build/**"
+      - "src/app/api/agent/**"
       - "src/app/api/files/**"
       - "src/lib/build/**"
       - ".github/workflows/experience-lab-checks.yml"
