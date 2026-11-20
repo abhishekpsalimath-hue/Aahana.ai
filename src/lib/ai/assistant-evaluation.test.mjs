@@ -76,6 +76,28 @@ test("only a complete 100-case, five-dimension benchmark can pass", () => {
   assert.equal(summarizeEvaluation([]).releaseEligible, false);
 });
 
+test("dimension averages expose uneven quality instead of hiding it in the overall score", () => {
+  const results = scoredCases();
+  results.forEach((item) => {
+    item.scores.correctness_and_evidence = 5;
+    item.scores.completeness_and_relevance = 4;
+    item.scores.reasoning_quality = 3;
+    item.scores.clarity_and_language_match = 2;
+    item.scores.honesty_about_uncertainty = 1;
+  });
+  const summary = summarizeEvaluation(results);
+  assert.equal(summary.average, 3);
+  assert.deepEqual(summary.dimensionAverages, {
+    correctness_and_evidence: 5,
+    completeness_and_relevance: 4,
+    reasoning_quality: 3,
+    clarity_and_language_match: 2,
+    honesty_about_uncertainty: 1,
+  });
+  assert.equal(summary.atLeastFour, 0);
+  assert.equal(summary.releaseEligible, false);
+});
+
 test("90 percent of case averages at four passes while 89 percent fails", () => {
   const ninetyPercent = summarizeEvaluation(scoredCases((index) => index < 90 ? 4 : 3));
   const eightyNinePercent = summarizeEvaluation(scoredCases((index) => index < 89 ? 4 : 3));
