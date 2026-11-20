@@ -17,17 +17,23 @@ test("accepts supported portrait, square, and landscape ratios", () => {
 test("rejects empty, overlong, and unsupported video prompts or settings", () => {
   assert.equal(parseVideoGenerationInput({ prompt: " " }).ok, false);
   assert.equal(parseVideoGenerationInput({ prompt: "x".repeat(2001) }).ok, false);
-  for (const duration of [0, 6, 10, "5", null]) {
+  for (const duration of [0, 16, 20, "5", null]) {
     assert.equal(parseVideoGenerationInput({ prompt: "A scene", duration }).ok, false);
   }
   assert.equal(parseVideoGenerationInput({ prompt: "A scene", aspectRatio: "21:9" }).ok, false);
   assert.equal(parseVideoGenerationInput({ prompt: "A scene", resolution: "1080p" }).ok, false);
 });
 
-test("trims a valid prompt and accepts the maximum initial duration", () => {
-  const result = parseVideoGenerationInput({ prompt: "  A cinematic city  ", duration: 5, resolution: "720p" });
+test("trims a valid prompt and accepts the documented maximum duration", () => {
+  const result = parseVideoGenerationInput({ prompt: "  A cinematic city  ", duration: 15, resolution: "720p" });
   assert.equal(result.ok, true);
   assert.equal(result.prompt, "A cinematic city");
-  assert.equal(result.duration, 5);
+  assert.equal(result.duration, 15);
   assert.equal(result.resolution, "720p");
+});
+
+test("accepts intermediate durations supported by the provider", () => {
+  for (const duration of [1, 3, 5, 10, 15]) {
+    assert.equal(parseVideoGenerationInput({ prompt: "A scene", duration }).ok, true);
+  }
 });
