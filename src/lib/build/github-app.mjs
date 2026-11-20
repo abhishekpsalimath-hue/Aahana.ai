@@ -72,7 +72,7 @@ export async function getSelfBuildRepository({ env = process.env, fetchImpl = fe
   if (!config.enabled) throw new Error("Aahana self-build is not configured.");
   const token = await getInstallationToken(config, env, fetchImpl);
   const [owner, repo] = config.repository.split("/");
-  const branch = String(env.AAHANA_SELF_BUILD_BASE_BRANCH || "main");
+  const branch = String(env.AAHANA_SELF_BUILD_BASE_BRANCH || env.VERCEL_GIT_COMMIT_REF || "main");
   const ref = await githubRequest(
     "/repos/" + encodeURIComponent(owner) + "/" + encodeURIComponent(repo) + "/git/ref/heads/" + encodeURIComponent(branch),
     token, { fetchImpl },
@@ -95,7 +95,7 @@ export async function getSelfBuildFile({ path, ref, env = process.env, fetchImpl
   if (!config.enabled) throw new Error("Aahana self-build is not configured.");
   const token = await getInstallationToken(config, env, fetchImpl);
   const [owner, repo] = config.repository.split("/");
-  const branch = String(env.AAHANA_SELF_BUILD_BASE_BRANCH || "main");
+  const branch = String(env.AAHANA_SELF_BUILD_BASE_BRANCH || env.VERCEL_GIT_COMMIT_REF || "main");
   const data = await githubRequest(
     "/repos/" + encodeURIComponent(owner) + "/" + encodeURIComponent(repo) + "/contents/" + repositoryPath(path) + "?ref=" + encodeURIComponent(ref || branch),
     token, { fetchImpl },
@@ -125,7 +125,7 @@ export async function createSelfBuildPullRequest({
 
   const token = await getInstallationToken(config, env, fetchImpl);
   const [owner, repo] = config.repository.split("/");
-  const baseBranch = String(env.AAHANA_SELF_BUILD_BASE_BRANCH || "main");
+  const baseBranch = String(env.AAHANA_SELF_BUILD_BASE_BRANCH || env.VERCEL_GIT_COMMIT_REF || "main");
   const prefix = "/repos/" + encodeURIComponent(owner) + "/" + encodeURIComponent(repo);
   const currentRef = await githubRequest(
     prefix + "/git/ref/heads/" + encodeURIComponent(baseBranch), token, { fetchImpl },
