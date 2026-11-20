@@ -78,6 +78,6 @@ test("quiz keys are stable and safely encode learner context", () => {
   const input = { subject: "Math & Science", topic: "Fractions / ratios", gradeBand: "primary", curriculum: "CBSE", language: "en-IN", difficulty: "easy", contentVersion: 2 };
   const key = createQuizPackKey(input);
   assert.equal(key, createQuizPackKey(input));
-  assert.ok(key.includes("Math%20%26%20Science"));
-  assert.ok(key.includes("Fractions%20%2F%20ratios"));
+  assert.ok(key.includes("math%20%26%20science"));
+  assert.ok(key.includes("fractions%20%2F%20ratios"));
 });
