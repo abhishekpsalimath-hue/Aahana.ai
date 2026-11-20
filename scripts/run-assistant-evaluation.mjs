@@ -16,12 +16,29 @@ import { buildAahanaSystemPrompt } from "../src/lib/ai/system-prompt.mjs";
 const provider = (process.env.AAHANA_AI_PROVIDER || "groq").toLowerCase();
 const apiKey = process.env.GROQ_API_KEY;
 const model = process.env.AAHANA_MODEL || "openai/gpt-oss-120b";
-const outputPath = resolve(process.argv[2] || `artifacts/aahana-evaluation-${new Date().toISOString().replaceAll(":", "-")}.json`);
+const dryRun = process.argv.includes("--dry-run");
+const outputArgument = process.argv.slice(2).find((argument) => argument !== "--dry-run");
+const outputPath = resolve(outputArgument || `artifacts/aahana-evaluation-${new Date().toISOString().replaceAll(":", "-")}.json`);
 const dimensions = ASSISTANT_EVALUATION_RUBRIC.dimensions;
 const failureCodes = ASSISTANT_EVALUATION_RUBRIC.criticalFailures;
 
 if (provider !== "groq") {
   throw new Error(`Isolated runner supports Groq only; configured provider is "${provider}". No fallback is attempted.`);
+}
+if (dryRun) {
+  process.stdout.write(JSON.stringify({
+    dryRun: true,
+    provider,
+    model,
+    cases: ASSISTANT_EVALUATION_CASES.length,
+    categories: [...new Set(ASSISTANT_EVALUATION_CASES.map((item) => item.category))],
+    dimensions,
+    systemPromptCharacters: buildAahanaSystemPrompt("solve").length,
+    networkRequests: 0,
+    databaseWrites: 0,
+    requiresApiKey: false,
+  }, null, 2) + "\\n");
+  process.exit(0);
 }
 if (!apiKey) {
   throw new Error("GROQ_API_KEY is required in the local environment. The key is never read from or written to the repository.");
