@@ -205,7 +205,7 @@ export default function LearningStudio({ userEmail = "" }) {
       await loadLearningMemory();
       setMemoryNotice(action === "enable"
         ? "Private learning memory is on. You choose which completed journeys to save."
-        : "Private learning memory is off. Existing saved journeys remain available until you delete them.");
+        : "Private learning memory is off. Existing records are kept but hidden; turn memory back on to review or delete them.");
     } catch (err) {
       setMemoryError(err.message || "Could not update private memory.");
     } finally {
@@ -484,7 +484,7 @@ export default function LearningStudio({ userEmail = "" }) {
             {memoryLoading ? "Loading…" : memoryBusy ? "Updating…" : learningMemory.enabled ? "Turn memory off" : "Turn memory on"}
           </button>
         </div>
-        <p>When enabled, Aahana can save a completed lesson or quiz only when you choose to save it. Turning memory off stops new saves; it does not delete existing records.</p>
+        <p>When enabled, Aahana can save a completed lesson or quiz only when you choose to save it. Turning memory off stops new saves and hides existing records without deleting them. Turn memory back on to review or delete saved records.</p>
         {memoryNotice && <p role="status">{memoryNotice}</p>}
         {memoryError && <p className="learning-error" role="alert">{memoryError}</p>}
         {(learningMemory.journeys.length > 0 || (learningMemory.quizProgress || []).length > 0) && <div className="learning-memory-list">
