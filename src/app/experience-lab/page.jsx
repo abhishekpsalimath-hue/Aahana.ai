@@ -101,6 +101,12 @@ export default function ExperienceLab() {
   const current = modes.find((item) => item.id === mode) || modes[0];
   const currentPrompts = promptsByMode[mode] || promptsByMode.chat;
 
+  useEffect(() => () => {
+    activeRequest.current?.abort();
+    proposalRequest.current?.abort();
+    buildRequest.current?.abort();
+  }, []);
+
   useEffect(() => {
     if (mode !== "build") return;
     let active = true;
