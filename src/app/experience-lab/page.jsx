@@ -118,6 +118,15 @@ export default function ExperienceLab() {
   }, []);
 
   useEffect(() => {
+    if (activePanel === "voice") return;
+    if (voiceListening) recognitionRef.current?.stop?.();
+    if (voiceSpeaking) {
+      window.speechSynthesis?.cancel?.();
+      setVoiceSpeaking(false);
+    }
+  }, [activePanel, voiceListening, voiceSpeaking]);
+
+  useEffect(() => {
     if (mode !== "build") return;
     let active = true;
     Promise.all([
@@ -507,6 +516,10 @@ export default function ExperienceLab() {
   }
   function startNewSession() {
     if (busy) return;
+    recognitionRef.current?.stop?.();
+    window.speechSynthesis?.cancel?.();
+    setVoiceListening(false);
+    setVoiceSpeaking(false);
     setThread([]);
     setGeneratedImage(null);
     setGeneratedVideo(null);
