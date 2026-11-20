@@ -260,9 +260,10 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         if (active) {
           setBuildEnabled(status?.enabled === true && status?.sandboxIdentityAvailable === true);
           setPreviewEnabled(status?.previewEnabled === true);
+          setVideoEnabled(status?.videoEnabled === true);
         }
       })
-      .catch(() => { if (active) { setBuildEnabled(false); setPreviewEnabled(false); } })
+      .catch(() => { if (active) { setBuildEnabled(false); setPreviewEnabled(false); setVideoEnabled(false); } })
       .finally(() => { if (active) setBuildStatusLoading(false); });
     return () => { active = false; };
   }, []);
@@ -297,9 +298,16 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [filesError, setFilesError] = useState("");
   const [analyzingFileId, setAnalyzingFileId] = useState(null);
   const [imageGenerating, setImageGenerating] = useState(false);
+  const [imageSaving, setImageSaving] = useState(false);
   const [imageQuality, setImageQuality] = useState("standard");
   const [imageStyle, setImageStyle] = useState("none");
   const [generatedImage, setGeneratedImage] = useState(null);
+  const [videoEnabled, setVideoEnabled] = useState(false);
+  const [videoGenerating, setVideoGenerating] = useState(false);
+  const [videoDuration, setVideoDuration] = useState(5);
+  const [videoAspectRatio, setVideoAspectRatio] = useState("16:9");
+  const [videoResolution, setVideoResolution] = useState("480p");
+  const [generatedVideo, setGeneratedVideo] = useState(null);
   const [memoryOpen, setMemoryOpen] = useState(false);
   const [memoryEnabled, setMemoryEnabled] = useState(false);
   const [memories, setMemories] = useState([]);
@@ -638,6 +646,75 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       setError(err.message || "Image generation failed.");
     } finally {
       setImageGenerating(false);
+    }
+  }
+
+  async function saveGeneratedImage() {
+    if (!generatedImage || imageSaving) return;
+    setImageSaving(true);
+    setError("");
+    try {
+      const response = await fetch(generatedImage.dataUrl);
+      const blob = await response.blob();
+      const file = new File([blob], `aahana-image-${Date.now()}.jpg`, { type: "image/jpeg" });
+      const supabase = createClient();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) throw new Error("Please sign in again.");
+      const folder = selectedProjectId || "personal";
+      const objectPath = `${user.id}/${folder}/${crypto.randomUUID()}-${file.name}`;
+      const { error: storageError } = await supabase.storage.from("aahana-private").upload(objectPath, file, {
+        contentType: "image/jpeg", upsert: false,
+      });
+      if (storageError) throw new Error("Could not save the generated image. Please try again.");
+      const saved = await fetch("/api/files", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          objectPath, originalFilename: file.name, mimeType: "image/jpeg",
+          sizeBytes: file.size, projectId: selectedProjectId,
+        }),
+      });
+      const result = await saved.json().catch(() => ({}));
+      if (!saved.ok) {
+        await supabase.storage.from("aahana-private").remove([objectPath]);
+        throw new Error(result.error || "Could not save the image details.");
+      }
+      setFiles((items) => [result.file, ...items]);
+      setError("Image saved to your Aahana Files.");
+    } catch (err) {
+      setError(err.message || "Could not save the generated image.");
+    } finally {
+      setImageSaving(false);
+    }
+  }
+
+  async function generateVideo() {
+    const videoPrompt = prompt.trim();
+    if (!videoEnabled || !videoPrompt || videoGenerating || busy || imageGenerating || imageFile) return;
+    setVideoGenerating(true);
+    setError("");
+    setGeneratedVideo(null);
+    try {
+      const response = await fetch("/api/videos/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt: videoPrompt,
+          duration: videoDuration,
+          aspectRatio: videoAspectRatio,
+          resolution: videoResolution,
+        }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Could not generate the video.");
+      if (typeof result.videoUrl !== "string" || !result.videoUrl.startsWith("https://")) {
+        throw new Error("The video provider returned an invalid video address.");
+      }
+      setGeneratedVideo({ url: result.videoUrl, prompt: videoPrompt, duration: result.duration });
+    } catch (err) {
+      setError(err.message || "Video generation failed.");
+    } finally {
+      setVideoGenerating(false);
     }
   }
 
@@ -1258,7 +1335,17 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                 <img src={generatedImage.dataUrl} alt={generatedImage.prompt} style={{ display: "block", width: "100%", maxWidth: "640px", borderRadius: "14px" }} />
                 <div className="message-actions">
                   <a className="copy-message" href={generatedImage.dataUrl} download="aahana-generated-image.jpg">Download image</a>
+                  <button className="copy-message" type="button" onClick={saveGeneratedImage} disabled={imageSaving}>{imageSaving ? "Saving…" : "Save to Files"}</button>
                   <button className="copy-message" type="button" onClick={() => setGeneratedImage(null)}>Remove</button>
+                </div>
+              </div>
+            )}
+            {generatedVideo && (
+              <div className="generated-image-preview">
+                <video controls playsInline preload="metadata" src={generatedVideo.url} style={{ display: "block", width: "100%", maxWidth: "720px", borderRadius: "14px" }} />
+                <div className="message-actions">
+                  <a className="copy-message" href={generatedVideo.url} target="_blank" rel="noopener noreferrer">Open video</a>
+                  <button className="copy-message" type="button" onClick={() => setGeneratedVideo(null)}>Remove</button>
                 </div>
               </div>
             )}
@@ -1276,6 +1363,30 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                 <option value="illustration">Digital illustration</option>
                 <option value="editorial">Editorial design</option>
               </select>
+              {videoEnabled && (
+                <>
+                  <select aria-label="Video duration" value={videoDuration} onChange={(event) => setVideoDuration(Number(event.target.value))} className="copy-message">
+                    <option value={3}>3 seconds</option>
+                    <option value={5}>5 seconds</option>
+                  </select>
+                  <select aria-label="Video aspect ratio" value={videoAspectRatio} onChange={(event) => setVideoAspectRatio(event.target.value)} className="copy-message">
+                    <option value="16:9">Landscape 16:9</option>
+                    <option value="9:16">Portrait 9:16</option>
+                    <option value="1:1">Square 1:1</option>
+                    <option value="4:3">4:3</option>
+                    <option value="3:4">3:4</option>
+                    <option value="3:2">3:2</option>
+                    <option value="2:3">2:3</option>
+                  </select>
+                  <select aria-label="Video resolution" value={videoResolution} onChange={(event) => setVideoResolution(event.target.value)} className="copy-message">
+                    <option value="480p">480p</option>
+                    <option value="720p">720p</option>
+                  </select>
+                  <button className="copy-message" type="button" onClick={generateVideo} disabled={!prompt.trim() || videoGenerating || busy || imageGenerating || Boolean(imageFile)}>
+                    {videoGenerating ? "Generating video…" : "Generate video"}
+                  </button>
+                </>
+              )}
               <select aria-label="Voice language" value={voiceLanguage} onChange={(event) => setVoiceLanguage(event.target.value)} className="copy-message">{voiceLanguages.map(([code, label]) => <option key={code} value={code}>{label}</option>)}</select>
               <button className="copy-message" type="button" onClick={startVoiceInput} disabled={listening || busy}>{listening ? "Listening…" : "Speak"}</button>
               <label className="image-attach">
