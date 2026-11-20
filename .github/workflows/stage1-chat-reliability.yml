@@ -1,13 +1,14 @@
 name: Stage 1 chat reliability checks
 on:
   pull_request:
-    branches: [main, feat/experience-lab-ai-code-proposals, integrate/chat-reliability-into-experience-lab]
+    branches: [main, feat/experience-lab-ai-code-proposals, integrate/chat-reliability-into-experience-lab, fix/conversation-history-abort-guards]
     paths:
       - "src/app/api/chat/route.js"
       - "src/lib/ai/request-timeout.*"
       - "src/lib/ai/stream-persistence.*"
       - "src/lib/ai/stream-parser.*"
       - "src/lib/ai/chat-research-cancellation.test.mjs"
+      - "src/lib/ai/chat-early-disconnect.test.mjs"
       - "package.json"
       - ".github/workflows/stage1-chat-reliability.yml"
   workflow_dispatch:
@@ -32,6 +33,8 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Run research cancellation contract
         run: node --test src/lib/ai/chat-research-cancellation.test.mjs
+      - name: Run early disconnect and owner-scope contracts
+        run: node --test src/lib/ai/chat-early-disconnect.test.mjs
       - name: Run all automated tests
         run: npm test
       - name: Build application
