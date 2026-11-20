@@ -6,11 +6,11 @@ import { createClient } from "@/lib/supabase/client";
 import { getSourceFileMimeType, isSupportedSourceFile } from "@/lib/build/source-file-policy.mjs";
 
 const modes = [
-  { id: "solve", label: "Solve", hint: "Work through a problem" },
-  { id: "create", label: "Create", hint: "Make something new" },
-  { id: "write", label: "Write", hint: "Shape your thoughts" },
-  { id: "build", label: "Build", hint: "Turn ideas into products" },
-  { id: "improve", label: "Improve", hint: "Make it better" },
+  { id: "solve", label: "Solve", hint: "Work through a problem", description: "Untangle a question, understand the steps and reach a clear answer.", prompt: "Help me solve this step by step, explain the reasoning, and check the result." },
+  { id: "create", label: "Create", hint: "Make something new", description: "Explore a fresh idea and shape it into something original.", prompt: "Help me develop an original idea, explore three directions, and choose the strongest one." },
+  { id: "write", label: "Write", hint: "Shape your thoughts", description: "Find the right words, structure and tone for what you want to say.", prompt: "Help me write a clear first draft. Ask only for details that are essential." },
+  { id: "build", label: "Build", hint: "Turn ideas into products", description: "Move from concept to architecture, code and a testable product.", prompt: "Help me turn this idea into a working product. Start by defining the smallest useful version." },
+  { id: "improve", label: "Improve", hint: "Make it better", description: "Review what exists, find the friction and make focused improvements.", prompt: "Review this and identify the three highest-impact improvements, with reasons." },
 ];
 
 const starters = [
@@ -1151,6 +1151,33 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
               </button>
             ))}
           </div>
+
+          {!messages.length && (
+            <section className="mode-launchpad" aria-label={modes.find((item) => item.id === mode)?.label + " workspace"}>
+              <div className="mode-launchpad-visual" aria-hidden="true">
+                <span className="launch-orbit launch-orbit-one" />
+                <span className="launch-orbit launch-orbit-two" />
+                <span className="launch-orbit launch-orbit-three" />
+                <span className="launch-core" />
+                <span className="launch-spark launch-spark-one" />
+                <span className="launch-spark launch-spark-two" />
+              </div>
+              <div className="mode-launchpad-copy">
+                <span className="mode-launchpad-kicker">YOUR NEXT MOVE</span>
+                <h2>{modes.find((item) => item.id === mode)?.label} with Aahana</h2>
+                <p>{modes.find((item) => item.id === mode)?.description}</p>
+                <button className="mode-launchpad-action" type="button"
+                  onClick={() => setPrompt(modes.find((item) => item.id === mode)?.prompt || "")}>
+                  Use a starting prompt <span aria-hidden="true">↗</span>
+                </button>
+              </div>
+              <div className="mode-launchpad-index" aria-hidden="true">
+                <span>0{modes.findIndex((item) => item.id === mode) + 1}</span>
+                <i />
+                <small>05 MODES</small>
+              </div>
+            </section>
+          )}
 
           {messages.length > 0 && (
             <div className="conversation" aria-live="polite">
