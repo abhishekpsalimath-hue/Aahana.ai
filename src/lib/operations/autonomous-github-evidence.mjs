@@ -67,22 +67,39 @@ export async function evaluateTrustedPullRequest({ github, task, pullRequestNumb
     }
     const headMode = headModes.get(file.filename);
     const baseMode = baseModes.get(file.filename);
-    if (headMode === undefined && baseMode === undefined) {
-      errors.push("changed path is absent from both complete Git trees");
-    }
-    if (headMode === "120000" || baseMode === "120000") {
-      errors.push("symbolic-link changes are not eligible for autonomous review");
-    }
-    changedFiles.push({ path: file.filename, mode: headMode || baseMode });
-    if (file.status === "renamed") {
-      if (typeof file.previousFilename !== "string" || !file.previousFilename) {
-        errors.push("renamed files must include their previous path");
-      } else {
-        const previousMode = baseModes.get(file.previousFilename);
-        if (previousMode === undefined) errors.push("renamed source path is absent from the complete base tree");
-        if (previousMode === "120000") errors.push("symbolic-link rename sources are not eligible for autonomous review");
-        changedFiles.push({ path: file.previousFilename, mode: previousMode });
+    const previousPath = typeof file.previousFilename === "string" ? file.previousFilename : "";
+    const previousMode = previousPath ? baseModes.get(previousPath) : undefined;
+
+    // Cross-check GitHub's PR file status against both complete Git trees.
+    // A path merely appearing in either tree is not enough to authenticate a diff.
+    if (file.status === "added" && (baseMode !== undefined || headMode === undefined)) {
+      errors.push("added file must be absent from the base tree and present in the head tree");
+    } else if (["modified", "changed"].includes(file.status) &&
+      (baseMode === undefined || headMode === undefined)) {
+      errors.push("modified file must exist in both base and head trees");
+    } else if (file.status === "removed" &&
+      (baseMode === undefined || headMode !== undefined)) {
+      errors.push("removed file must exist in the base tree and be absent from the head tree");
+    } else if (file.status === "renamed") {
+      if (!previousPath || previousMode === undefined || headMode === undefined) {
+        errors.push("renamed file must include a source in the base tree and destination in the head tree");
       }
+      if (previousPath && headModes.has(previousPath)) {
+        errors.push("renamed source path unexpectedly remains in the head tree");
+      }
+    } else if (file.status === "copied" && headMode === undefined) {
+      errors.push("copied destination must exist in the head tree");
+    }
+
+    for (const mode of [headMode, baseMode, previousMode]) {
+      if (mode === "120000") errors.push("symbolic-link changes are not eligible for autonomous review");
+      if (mode === "160000") errors.push("Git submodule changes are not eligible for autonomous review");
+    }
+    if (headMode !== undefined || baseMode !== undefined) {
+      changedFiles.push({ path: file.filename, mode: headMode || baseMode });
+    }
+    if (file.status === "renamed" && previousPath) {
+      changedFiles.push({ path: previousPath, mode: previousMode });
     }
     patches.push(file.patch);
     if (!Number.isInteger(file.additions) || !Number.isInteger(file.deletions)) {
