@@ -98,6 +98,7 @@ export default function Creative3DStage() {
         wireframe,
       });
       const mesh = new THREE.Mesh(geometry, material);
+      meshRef.current = mesh;
       scene.add(mesh);
 
       const resize = () => {
@@ -157,6 +158,7 @@ export default function Creative3DStage() {
 
       return () => {
         disposed = true;
+        if (meshRef.current === mesh) meshRef.current = null;
         cancelAnimationFrame(frame);
         observer.disconnect();
         renderer.domElement.removeEventListener("pointerdown", onPointerDown);
