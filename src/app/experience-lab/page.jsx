@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { getSourceFileMimeType, isSupportedSourceFile } from "@/lib/build/source-file-policy.mjs";
 import { createSourceDiff, MAX_PROPOSAL_SOURCE_BYTES, validateSourceProposal } from "@/lib/build/source-proposal.mjs";
 import "./experience-lab.css";
+import Creative3DStage from "./creative-3d-stage";
 
 const modes = [
   { id: "chat", label: "Ask", mark: "✳", hint: "Think out loud" },
@@ -511,6 +512,7 @@ export default function ExperienceLab() {
             <textarea id="lab-composer" value={prompt} onChange={(event) => setPrompt(event.target.value)} placeholder={mode === "build" ? "Describe the product you want to bring to life..." : mode === "create" ? "Describe the world you want to create..." : "Ask anything. Start anywhere..."} rows={3} />
             <div className="composer-controls"><div className="composer-tools"><button type="button" onClick={() => setActivePanel(activePanel === "attach" ? "tools" : "attach")} title="Add context">＋ <span>Attach</span></button><button type="button" onClick={() => setActivePanel(activePanel === "tools" ? "discover" : "tools")} title="Explore tools">◈ <span>Tools</span></button><span className="composer-divider" /><span className="composer-mode-label">{current.label} mode</span></div><div className="composer-submit"><button type="button" className="voice-button" title="Voice preview" onClick={() => setActivePanel("voice")}>◖</button>{busy ? <button type="button" className="lab-send lab-stop" onClick={stopGeneration}>Stop <span>■</span></button> : <button type="submit" className="lab-send" disabled={!prompt.trim()}>Send <span>↗</span></button>}</div></div>
           </form>
+          {mode === "create" && <Creative3DStage />}
           {mode === "build" && <section className="build-console" aria-label="Project build workspace">
             <div className="build-console-heading"><div><span>PROJECT WORKSPACE</span><h2>Build and verify</h2></div><div className="build-console-heading-actions"><button type="button" onClick={() => buildFileInput.current?.click()} disabled={!selectedProjectId || fileBusy}>{fileBusy ? "Uploading…" : "＋ Add source files"}</button><button type="button" onClick={createBuildProject}>＋ New project</button><input ref={buildFileInput} type="file" multiple accept=".js,.jsx,.ts,.tsx,.mjs,.cjs,.css,.html,.htm,.json,.md,.txt,.py,.toml,.yaml,.yml,.sql" onChange={uploadBuildFiles} hidden /></div></div>
             <div className="build-console-controls">
