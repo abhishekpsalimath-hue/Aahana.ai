@@ -116,3 +116,15 @@ test("agent worker releases a claimed lease and returns 499 when the caller disc
   assert.match(route, /generateInternalDeliverable\([\s\S]*?request\.signal\);\s*if \(request\.signal\.aborted\) throw new Error\("worker_cancelled"\);\s*const result/);
   assert.match(route, /if \(request\.signal\.aborted\) return new Response\(null, \{ status: 499 \}\);\s*\n\s*return NextResponse\.json\(\{ ok: false, status: "retry_or_blocked"/);
 });
+
+
+test("agent worker propagates caller cancellation into both bounded context database reads", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const route = await readFile(
+    new URL("../../app/api/internal/agent-worker/route.js", import.meta.url),
+    "utf8"
+  );
+  assert.match(route, /\.limit\(40\)\.abortSignal\(request\.signal\)/);
+  assert.match(route, /\.limit\(8\)\.abortSignal\(request\.signal\)/);
+  assert.match(route, /if \(request\.signal\.aborted\) throw new Error\("worker_cancelled"\);\s*if \(eventsResult\.error \|\| priorTasksResult\.error\)/);
+});
