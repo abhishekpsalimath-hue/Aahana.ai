@@ -37,6 +37,9 @@ test("agent execution is bounded and uses the existing Groq provider only", () =
   assert.match(route, /GROQ_API_KEY/);
   assert.ok(route.includes('process.env.AAHANA_AGENT_MODEL || "openai/gpt-oss-120b"'));
   assert.match(route, /inventoryListed/);
+  assert.match(route, /name: "list_approved_source_files"/);
+  assert.match(route, /name: "read_approved_source_file"/);
+  assert.match(route, /readFiles\.size === 0/);
   assert.match(route, /No paid provider fallback/);
 });
 
