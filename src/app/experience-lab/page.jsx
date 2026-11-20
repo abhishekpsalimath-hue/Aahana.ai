@@ -394,6 +394,7 @@ export default function ExperienceLab() {
           signal: controller.signal,
         });
         const imageResult = await imageResponse.json().catch(() => ({}));
+        if (activeRequest.current !== controller) return;
         if (!imageResponse.ok) throw new Error(imageResult.error || "Aahana could not generate that image.");
         if (typeof imageResult.imageDataUrl !== "string" || !imageResult.imageDataUrl.startsWith("data:image/jpeg;base64,")) {
           throw new Error("The image service returned an invalid image.");
@@ -410,8 +411,10 @@ export default function ExperienceLab() {
         body: JSON.stringify({ message, mode: apiMode, conversationId }),
         signal: controller.signal,
       });
+      if (activeRequest.current !== controller) return;
       if (!response.ok) {
         const result = await response.json().catch(() => ({}));
+        if (activeRequest.current !== controller) return;
         throw new Error(result.error || "Aahana couldn't process that request.");
       }
       const nextConversationId = response.headers.get("X-Conversation-Id");
@@ -422,6 +425,7 @@ export default function ExperienceLab() {
       let answer = "";
       while (true) {
         const { value, done } = await reader.read();
+        if (activeRequest.current !== controller) return;
         if (done) break;
         answer += decoder.decode(value, { stream: true });
         setThread((current) => current.map((item, index) =>
@@ -429,10 +433,12 @@ export default function ExperienceLab() {
         ));
       }
       answer += decoder.decode();
+      if (activeRequest.current !== controller) return;
       setThread((current) => current.map((item, index) =>
         index === current.length - 1 ? { ...item, content: answer || "Aahana returned an empty response. Please try again." } : item
       ));
     } catch (error) {
+      if (activeRequest.current !== controller) return;
       if (error.name === "AbortError") {
         setThread((current) => current.map((item, index) =>
           index === current.length - 1 && item.role === "assistant" && !item.content
@@ -447,13 +453,25 @@ export default function ExperienceLab() {
         });
       }
     } finally {
-      if (activeRequest.current === controller) activeRequest.current = null;
-      setBusy(false);
+      if (activeRequest.current === controller) {
+        activeRequest.current = null;
+        setBusy(false);
+      }
     }
   }
 
   function switchMode(nextMode) {
-    if (activeRequest.current) activeRequest.current.abort();
+    const controller = activeRequest.current;
+    if (controller) {
+      controller.abort();
+      activeRequest.current = null;
+      setThread((current) => current.map((item, index) =>
+        index === current.length - 1 && item.role === "assistant" && !item.content
+          ? { ...item, content: "Response stopped." }
+          : item
+      ));
+      setBusy(false);
+    }
     setMode(nextMode);
     setRequestError("");
   }
