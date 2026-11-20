@@ -14,7 +14,7 @@ const BLOCKED_SEGMENTS = new Set([
   "supabase", "migrations", "middleware", "secrets", "credentials",
 ]);
 
-const SECRET_PATTERNS = [
+const BLOCKED_FILES = new Set([\n  "self-build-policy.mjs", "sandbox-policy.mjs", "github-app.mjs",\n  "build-engine.mjs", "source-file-policy.mjs",\n]);\n\nconst SECRET_PATTERNS = [
   /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/,
   /\bgithub_pat_[A-Za-z0-9_]{20,}\b/,
   /\bgh[pousr]_[A-Za-z0-9]{20,}\b/,
