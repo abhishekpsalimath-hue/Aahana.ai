@@ -113,5 +113,6 @@ test("agent worker releases a claimed lease and returns 499 when the caller disc
   assert.match(route, /if \(request\.signal\.aborted\) return new Response\(null, \{ status: 499 \}\);\s*\n\s*const \{ data: task, error: claimError \}/);
   assert.match(route, /if \(request\.signal\.aborted\) \{\s*if \(task\) \{[\s\S]*?aahana_fail_agent_task[\s\S]*?p_error_code: "worker_cancelled"[\s\S]*?\}\s*return new Response\(null, \{ status: 499 \}\);/);
   assert.match(route, /if \(request\.signal\.aborted\) throw new Error\("worker_cancelled"\)/);
+  assert.match(route, /generateInternalDeliverable\([\s\S]*?request\.signal\);\s*if \(request\.signal\.aborted\) throw new Error\("worker_cancelled"\);\s*const result/);
   assert.match(route, /if \(request\.signal\.aborted\) return new Response\(null, \{ status: 499 \}\);\s*\n\s*return NextResponse\.json\(\{ ok: false, status: "retry_or_blocked"/);
 });
