@@ -51,6 +51,20 @@ test("only a complete 100-case, five-dimension benchmark can pass", () => {
     criticalFailures: 0,
     releaseEligible: true,
   });
+  assert.deepEqual(clean.dimensionAverages, {
+    correctness_and_evidence: 5,
+    completeness_and_relevance: 5,
+    reasoning_quality: 5,
+    clarity_and_language_match: 5,
+    honesty_about_uncertainty: 5,
+  });
+  assert.deepEqual(summarizeEvaluation([]).dimensionAverages, {
+    correctness_and_evidence: null,
+    completeness_and_relevance: null,
+    reasoning_quality: null,
+    clarity_and_language_match: null,
+    honesty_about_uncertainty: null,
+  });
   assert.equal(summarizeEvaluation(scoredCases().slice(0, 99)).releaseEligible, false);
   assert.equal(summarizeEvaluation([]).releaseEligible, false);
 });
