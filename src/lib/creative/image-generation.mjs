@@ -17,12 +17,12 @@ export function parseImageGenerationInput(body) {
     return { ok: false, error: "Describe the image in 1–2,048 characters." };
   }
 
-  const steps = body?.steps === undefined ? 4 : body.steps;
+  const steps = body?.steps === undefined ? 8 : body.steps;
   if (!SUPPORTED_IMAGE_STEPS.includes(steps)) {
     return { ok: false, error: "Choose standard (4 steps) or enhanced detail (8 steps)." };
   }
 
-  const quality = body?.quality === undefined ? "standard" : body.quality;
+  const quality = body?.quality === undefined ? "masterpiece" : body.quality;
   if (!IMAGE_QUALITY_PRESETS.includes(quality)) {
     return { ok: false, error: "Choose standard or masterpiece image quality." };
   }
