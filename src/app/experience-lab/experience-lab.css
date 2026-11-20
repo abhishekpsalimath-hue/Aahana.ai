@@ -50,3 +50,13 @@
 .build-source-proposal small{display:block;margin-top:8px;color:#bcaed0;font-size:10px}
 
 .build-proposal-privacy{display:block;margin-top:7px;color:#bcaed0;font-size:10px;line-height:1.5}
+
+.self-build-console{margin:0 0 18px;padding:16px;border:1px solid rgba(201,178,255,.32);border-radius:14px;background:linear-gradient(145deg,rgba(56,39,78,.4),rgba(17,14,26,.65))}
+.self-build-status{padding:5px 8px;border:1px solid rgba(201,178,255,.25);border-radius:999px;color:#d6c1fa;font-size:9px;letter-spacing:.04em}
+.self-build-console .build-console-heading{margin-bottom:10px}
+.self-build-console .build-file-list{max-height:250px;overflow:auto}
+.self-build-console .build-file-list>div>span{min-width:0;overflow-wrap:anywhere}
+.self-build-console .build-source-editor{background:rgba(8,7,14,.58)}
+.self-build-console .build-source-editor textarea{min-height:300px}
+.self-build-console a{color:#d9c2ff;text-decoration:underline;text-underline-offset:3px}
+@media(max-width:600px){.self-build-console{padding:12px}.self-build-console .build-file-list>div{align-items:flex-start;flex-wrap:wrap}}
