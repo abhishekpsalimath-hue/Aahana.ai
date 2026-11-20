@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - main
+      - feat/aahana-contextual-interaction-cards
     paths:
       - "src/app/experience-lab/**"
       - ".github/workflows/experience-lab-checks.yml"
