@@ -92,8 +92,10 @@ test("validates conversational reference-image edits and bounded uploads", () =>
 });
 
 test("parses PNG reference dimensions and enforces the strict 512px provider limit", () => {
-  const png = new Uint8Array(24);
+  const png = new Uint8Array(33);
   png.set([0x89, 0x50, 0x4e, 0x47], 0);
+  png.set([0x00, 0x00, 0x00, 0x0d], 8);
+  png.set([0x49, 0x48, 0x44, 0x52], 12);
   new DataView(png.buffer).setUint32(16, 511);
   new DataView(png.buffer).setUint32(20, 480);
   const dimensions = getReferenceImageDimensions(png, "image/png");
