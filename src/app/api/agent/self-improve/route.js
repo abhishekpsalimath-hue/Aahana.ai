@@ -158,7 +158,7 @@ export async function POST(request) {
           max_completion_tokens: 4096,
           stream: false,
         }),
-        signal: AbortSignal.timeout(12000),
+        signal: AbortSignal.any([request.signal, AbortSignal.timeout(12000)]),
       });
       const payload = await upstream.json().catch(() => ({}));
       if (!upstream.ok) {
