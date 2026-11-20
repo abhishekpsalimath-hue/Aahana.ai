@@ -47,7 +47,7 @@ async function complete(messages, maxTokens) {
 }
 
 function parseJson(text) {
-  const cleaned = text.replace(/^\`\`\`(?:json)?\\s*/i, "").replace(/\\s*\`\`\`$/, "").trim();
+  const cleaned = text.replace(/^```(?:json)?\\s*/i, "").replace(/\\s*```$/, "").trim();
   return JSON.parse(cleaned);
 }
 
