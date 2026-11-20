@@ -1,9 +1,19 @@
 name: Stage 1 assistant quality checks
 on:
   pull_request:
-    branches: [main]
+    branches:
+      - main
+      - stage-1/assistant-quality-foundation
+      - stage-1/five-dimension-evaluation
     paths:
       - "src/lib/ai/assistant-evaluation.*"
+      - "src/lib/learning/quiz-bank-policy.*"
+      - "src/lib/learning/learner-progress-policy.*"
+      - "src/app/interaction-accessibility.test.mjs"
+      - "src/app/mode-tabs-accessibility.test.mjs"
+      - "src/app/globals.css"
+      - "src/app/assistant-workspace.jsx"
+      - "src/app/learn/learning-studio.css"
       - "docs/stage-1-assistant-quality-foundation.md"
       - "package.json"
       - "package-lock.json"
