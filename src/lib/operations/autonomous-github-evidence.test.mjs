@@ -151,3 +151,16 @@ test("rejects a rename with a missing previous path or symlink source", async ()
   });
   assert.equal(symlinkSource.ok, false);
 });
+
+
+test("fails closed on malformed acceptance criteria without throwing", async () => {
+  for (const acceptanceCriteria of [[null], ["Unit tests"], [{}], [{ requiredCheckName: "   " }]]) {
+    const result = await evaluateTrustedPullRequest({
+      github: makeGithub(),
+      task: { ...task, acceptanceCriteria },
+      pullRequestNumber: 12,
+    });
+    assert.equal(result.ok, false);
+    assert.ok(result.errors.some((error) => error.includes("acceptance criteria")));
+  }
+});

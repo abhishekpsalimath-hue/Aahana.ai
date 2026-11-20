@@ -104,16 +104,21 @@ export async function evaluateTrustedPullRequest({ github, task, pullRequestNumb
   if (failedOrPending) errors.push("all reported CI checks must be completed successfully");
 
   const criteria = Array.isArray(task?.acceptanceCriteria) ? task.acceptanceCriteria : [];
-  const acceptanceCriteria = criteria.map((criterion) => {
+  const criteriaAreValid = criteria.length > 0 && criteria.every((criterion) =>
+    criterion !== null && typeof criterion === "object" &&
+    typeof criterion.requiredCheckName === "string" &&
+    criterion.requiredCheckName.trim().length > 0
+  );
+  if (!criteriaAreValid) {
+    errors.push("task must name required CI checks for every acceptance criterion");
+  }
+  const acceptanceCriteria = criteriaAreValid ? criteria.map((criterion) => {
     const match = successfulChecks.find((check) => check.name === criterion.requiredCheckName);
     return {
       met: Boolean(match),
       evidence: match ? (match.url || `GitHub check: ${match.name}`) : "",
     };
-  });
-  if (criteria.length === 0 || criteria.some((criterion) => typeof criterion?.requiredCheckName !== "string" || !criterion.requiredCheckName.trim())) {
-    errors.push("task must name required CI checks for every acceptance criterion");
-  }
+  }) : [];
 
   const policy = evaluateAutonomousTask(task, {
     changedFiles,
