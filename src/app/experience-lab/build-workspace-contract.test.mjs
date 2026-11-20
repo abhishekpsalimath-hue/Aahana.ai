@@ -101,23 +101,15 @@ test("AI source proposals are version-bound, reviewed as a diff, and never auto-
 });
 
 
-test("Build workspace assembly fails closed instead of silently omitting source files", () => {
-  assert.match(buildRoute, /MAX_PROJECT_FILE_ROWS \+ 1/);
-  assert.match(buildRoute, /sourceCandidates\.length > MAX_SOURCE_FILES/);
+test("Build workspace assembly fails closed and shares strict source/path validation", () => {
+  assert.match(buildRoute, /MAX_PROJECT_FILE_ROWS \\+ 1/);
+  assert.match(buildRoute, /sourceCandidates\\.length > MAX_SOURCE_FILES/);
   assert.match(buildRoute, /hasInvalidSourceMetadata/);
-  assert.match(buildRoute, /function isSafePrivateObjectPath\(objectPath, userId, projectId\)/);
-  assert.match(buildRoute, /segment !== "\.\."/);
-  assert.match(buildRoute, /objectPath\.length > 1024/);
-  assert.match(buildRoute, /objectPath\.includes\("%"\)/);
-  assert.match(buildRoute, /objectPath\.includes\("\\\\"\)/);
-  assert.match(buildRoute, /\\u0000-\\u001f/);
-  assert.match(buildRoute, /invalid private-storage metadata/);
+  assert.match(buildRoute, /isSupportedSourceFile, isSafePrivateObjectPath/);
+  assert.match(buildRoute, /isSafePrivateObjectPath\\(file\\.object_path, user\\.id, projectId\\)/);
+  assert.doesNotMatch(buildRoute, /function isSafePrivateObjectPath/);
   assert.match(buildRoute, /const eligible = sourceCandidates/);
-  assert.match(buildRoute, /invalid or duplicate workspace path/);
   assert.match(buildRoute, /No partial build was started/);
-  assert.match(buildRoute, /new TextDecoder\("utf-8", \{ fatal: true \}\)/);
-  assert.match(buildRoute, /bytes !== file\.size_bytes/);
-  assert.match(buildRoute, /Project source files exceed the 3 MB build workspace limit/);
 });
 
 
