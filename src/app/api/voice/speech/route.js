@@ -75,6 +75,7 @@ export async function POST(request) {
       },
     });
   } catch (error) {
+    if (request.signal.aborted || error?.name === "AbortError") return new Response(null, { status: 499 });
     const status = error?.code === "UNSUPPORTED_LOCALE" ? 400
       : error?.code === "PROVIDER_UNAVAILABLE" ? 503
       : error?.code === "INVALID_PROVIDER_CONFIG" || error?.code === "INSECURE_PROVIDER_ENDPOINT" ? 503
