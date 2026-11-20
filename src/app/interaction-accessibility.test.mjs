@@ -32,7 +32,7 @@ test("Student Mode accessibility selectors target real learning studio controls"
     "learning-memory-panel",
     "learning-discovery-selects",
   ]) {
-    assert.ok(learningStudio.includes(`className="${className}"`), `${className} must exist in the rendered learning studio`);
+    assert.match(learningStudio, new RegExp(`className="[^"]*\\b${className}\\b`), `${className} must exist in the rendered learning studio`);
   }
 });
 
