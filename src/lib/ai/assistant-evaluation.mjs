@@ -525,11 +525,15 @@ export function summarizeEvaluation(results) {
       Number.isInteger(item.scores[dimension]) &&
       item.scores[dimension] >= 1 &&
       item.scores[dimension] <= 5
-    )
+    ) &&
+    Array.isArray(item.criticalFailures) &&
+    item.criticalFailures.every((failure) => ASSISTANT_EVALUATION_RUBRIC.criticalFailures.includes(failure))
   );
   const resultIds = new Set(valid.map((item) => item.id));
   const criticalFailures = entries.reduce(
-    (count, item) => count + (Array.isArray(item?.criticalFailures) ? item.criticalFailures.length : 0),
+    (count, item) => count + (Array.isArray(item?.criticalFailures)
+      ? item.criticalFailures.filter((failure) => ASSISTANT_EVALUATION_RUBRIC.criticalFailures.includes(failure)).length
+      : 0),
     0
   );
   const dimensionScoreCount = valid.length * dimensions.length;
