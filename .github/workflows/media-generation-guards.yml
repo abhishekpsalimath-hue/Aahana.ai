@@ -4,12 +4,17 @@ on:
   pull_request:
     paths:
       - "src/app/api/videos/**"
+      - "src/app/api/voice/speech/**"
       - "src/app/assistant-workspace*"
       - "src/app/experience-lab/**"
       - "src/app/globals.css"
       - "src/lib/ai/video-generation-policy.*"
       - "src/lib/ai/media-route-contract.test.mjs"
       - "src/lib/voice/experience-lab-device-voice.test.mjs"
+      - "src/lib/voice/maya-tts-provider.*"
+      - "src/lib/voice/speech-runtime.mjs"
+      - "src/lib/voice/speech-fallback-policy.mjs"
+      - "src/lib/voice/voice-route-cancellation.test.mjs"
       - ".github/workflows/media-generation-guards.yml"
       - "package.json"
   push:
@@ -42,7 +47,7 @@ jobs:
         with:
           node-version: 22
       - run: npm install --no-audit --no-fund
-      - run: node --test src/lib/ai/video-generation-policy.test.mjs src/lib/ai/media-route-contract.test.mjs src/lib/voice/experience-lab-device-voice.test.mjs
+      - run: node --test src/lib/ai/video-generation-policy.test.mjs src/lib/ai/media-route-contract.test.mjs src/lib/voice/experience-lab-device-voice.test.mjs src/lib/voice/maya-tts-provider.test.mjs src/lib/voice/voice-route-cancellation.test.mjs
       # The flat ESLint config lands with the Stage 2 workspace foundation.
       # Supply the same config temporarily so this parallel branch can lint independently.
       - name: Prepare shared ESLint config for verification
