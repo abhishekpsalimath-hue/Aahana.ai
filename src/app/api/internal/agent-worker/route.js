@@ -164,6 +164,7 @@ export async function GET(request) {
     if (request.signal.aborted) throw new Error("worker_cancelled");
 
     const generated = await generateInternalDeliverable(config, task, eventsResult.data || [], priorTasksResult.data || [], request.signal);
+    if (request.signal.aborted) throw new Error("worker_cancelled");
     const result = {
       worker_version: "phase-b.1",
       execution_mode: "bounded_system_analysis",
