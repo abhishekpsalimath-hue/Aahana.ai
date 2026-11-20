@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=Syne:wght@500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Allura&family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=Syne:wght@500;600;700;800&display=swap');
 
 :root{color-scheme:dark;--bg:#09090d;--panel:#101016;--panel-2:#15151e;--line:#252431;--text:#f3f0f8;--muted:#9691a4;--lilac:#c4a7ff;--lilac-2:#a987f2}
 *{box-sizing:border-box}
@@ -404,3 +404,11 @@ button:focus-visible,a:focus-visible{outline-color:#c4a7ff}
 .footer{position:relative;z-index:1}
 @media(max-width:760px){.welcome{width:calc(100% - 36px);margin:48px auto 48px}.welcome h1{font-size:clamp(43px,11.2vw,62px);letter-spacing:-.07em;max-width:calc(100% - 30px)}.welcome-signal{width:78px;height:78px}.mode-row{gap:6px}.mode{padding:9px 13px;font-size:11px}.composer{border-radius:17px;padding:13px}.composer textarea{min-height:76px;font-size:14px}.starter{min-height:65px;padding:14px}.cosmic-nebula{filter:blur(48px);opacity:.16}}
 @media(prefers-reduced-motion:reduce){.welcome,.welcome h1 em,.cosmic-nebula,.mode,.starter,.starter::before,.composer{animation:none!important;transition:none!important}.welcome{opacity:1;filter:none;transform:none}}
+
+/* Founder signature — elegant handwritten mark */
+.footer{align-items:center;gap:18px;flex-wrap:wrap}
+.footer-brand{letter-spacing:2px;color:#8c829e;font:700 11px Manrope,sans-serif}
+.footer-note{margin-left:auto}
+.founder-signature{position:relative;display:inline-block;color:#d8c5ff;font:400 clamp(25px,3vw,34px)/1 'Allura','Segoe Script',cursive;letter-spacing:.15px;white-space:nowrap;text-shadow:0 0 18px #b99aff35;transform:rotate(-3deg);padding:0 8px 4px}
+.founder-signature::after{content:"";position:absolute;left:8px;right:4px;bottom:0;height:1px;background:linear-gradient(90deg,transparent,#b99affaa 18%,#d9c8ff 70%,transparent);transform:skewX(-24deg);transform-origin:left}
+@media(max-width:760px){.footer{gap:10px}.footer-note{margin-left:0;flex:1 1 100%;order:3}.founder-signature{font-size:29px;margin-left:auto}}
