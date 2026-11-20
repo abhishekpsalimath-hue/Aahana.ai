@@ -164,3 +164,58 @@ test("fails closed on malformed acceptance criteria without throwing", async () 
     assert.ok(result.errors.some((error) => error.includes("acceptance criteria")));
   }
 });
+
+
+test("cross-checks each PR file status against both complete Git trees", async () => {
+  const cases = [
+    {
+      name: "added path already exists in base",
+      files: [{ filename: "src/features/demo/hello.mjs", status: "added", patch: "+x", additions: 1, deletions: 0 }],
+      baseTree: { entries: [{ path: "src/features/demo/hello.mjs", mode: "100644" }] },
+      headTree: { entries: [{ path: "src/features/demo/hello.mjs", mode: "100644" }] },
+    },
+    {
+      name: "modified path missing from head",
+      files: [{ filename: "src/features/demo/hello.mjs", status: "modified", patch: "+x", additions: 1, deletions: 0 }],
+      baseTree: { entries: [{ path: "src/features/demo/hello.mjs", mode: "100644" }] },
+      headTree: { entries: [] },
+    },
+    {
+      name: "removed path still exists in head",
+      files: [{ filename: "src/features/demo/hello.mjs", status: "removed", patch: "-x", additions: 0, deletions: 1 }],
+      baseTree: { entries: [{ path: "src/features/demo/hello.mjs", mode: "100644" }] },
+      headTree: { entries: [{ path: "src/features/demo/hello.mjs", mode: "100644" }] },
+    },
+    {
+      name: "renamed destination missing from head",
+      files: [{ filename: "src/features/demo/new.mjs", previousFilename: "src/features/demo/hello.mjs", status: "renamed", patch: "+x", additions: 1, deletions: 1 }],
+      baseTree: { entries: [{ path: "src/features/demo/hello.mjs", mode: "100644" }] },
+      headTree: { entries: [] },
+    },
+  ];
+  for (const scenario of cases) {
+    const result = await evaluateTrustedPullRequest({
+      github: makeGithub({
+        files: { files: scenario.files },
+        baseTree: { entries: scenario.baseTree.entries },
+        headTree: { entries: scenario.headTree.entries },
+      }),
+      task,
+      pullRequestNumber: 12,
+    });
+    assert.equal(result.ok, false, scenario.name);
+    assert.ok(result.errors.length > 0, scenario.name);
+  }
+});
+
+test("rejects Git submodule entries in changed paths", async () => {
+  const result = await evaluateTrustedPullRequest({
+    github: makeGithub({
+      headTree: { entries: [{ path: "src/features/demo/hello.mjs", mode: "160000" }] },
+    }),
+    task,
+    pullRequestNumber: 12,
+  });
+  assert.equal(result.ok, false);
+  assert.ok(result.errors.some((error) => error.includes("submodule")));
+});

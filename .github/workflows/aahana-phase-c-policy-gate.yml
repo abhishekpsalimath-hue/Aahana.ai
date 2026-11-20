@@ -9,6 +9,7 @@ on:
       - fix/phase-c-detect-renamed-protected-paths
       - fix/phase-c-evidence-invalid-criteria
       - fix/phase-c-github-api-timeouts
+      - fix/phase-c-verify-diff-tree-statuses
     paths:
       - "src/lib/operations/autonomous-policy.*"
       - "src/lib/operations/autonomous-github-evidence.*"
