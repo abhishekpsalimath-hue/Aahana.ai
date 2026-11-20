@@ -544,6 +544,10 @@ export function summarizeEvaluation(results) {
   const average = dimensionScoreCount
     ? totalDimensionScore / dimensionScoreCount
     : null;
+  const dimensionAverages = Object.fromEntries(dimensions.map((dimension) => {
+    const scoreTotal = valid.reduce((sum, item) => sum + item.scores[dimension], 0);
+    return [dimension, valid.length ? Number((scoreTotal / valid.length).toFixed(2)) : null];
+  }));
   const atLeastFour = valid.filter((item) => {
     const caseAverage = dimensions.reduce((sum, dimension) => sum + item.scores[dimension], 0) / dimensions.length;
     return caseAverage >= 4;
@@ -560,6 +564,7 @@ export function summarizeEvaluation(results) {
     dimensionsPerCase: dimensions.length,
     dimensionScores: dimensionScoreCount,
     average: average === null ? null : Number(average.toFixed(2)),
+    dimensionAverages,
     atLeastFour,
     criticalFailures,
     releaseEligible:
