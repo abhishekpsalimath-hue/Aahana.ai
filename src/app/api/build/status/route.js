@@ -12,6 +12,7 @@ export async function GET(request) {
   );
   return NextResponse.json({
     enabled: process.env.AAHANA_BUILD_ENGINE_ENABLED === "true",
+    previewEnabled: process.env.AAHANA_PREVIEW_ENGINE_ENABLED === "true" && sandboxIdentityAvailable,
     sandboxIdentityAvailable,
     environment: process.env.VERCEL_ENV === "preview" ? "preview" : process.env.VERCEL_ENV === "production" ? "production" : "development",
   }, { headers: { "Cache-Control": "private, no-store" } });
