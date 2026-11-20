@@ -23,8 +23,8 @@ test("Experience Lab provides interruptible device speech playback and cleanup",
 });
 
 test("voice panel discloses local browser processing and has responsive interaction styling", () => {
-  assert.match(page, /Aahana does not directly upload or store a raw recording/);
-  assert.match(page, /browser&apos;s speech service may process audio under its own privacy terms/);
+  assert.match(page, /audio is sent to the configured SraVaani service only after you check the consent box/);
+  assert.match(page, /Browser speech recognition is a separate device\\/browser service with its own privacy terms/);
   assert.match(styles, /\.voice-panel-action/);
   assert.match(styles, /\.voice-panel-status/);
   assert.match(styles, /\.voice-panel-error/);
@@ -47,4 +47,18 @@ test("Create mode exposes bounded video settings and passes them to the video ro
   assert.ok(page.includes("const [videoAudio, setVideoAudio] = useState(true)"));
   assert.match(page, /duration: videoDuration, resolution: videoResolution, aspectRatio: videoAspectRatio, generateAudio: videoAudio/);
   for (const value of ["5", "10", "15", "20", "hd", "fhd", "16:9", "9:16", "1:1"]) assert.ok(page.includes(`value={${value}}`) || page.includes(`value="${value}"`), `missing option ${value}`);
+});
+
+
+test("Experience Lab wires consent-gated SraVaani recording to the authenticated transcription route", () => {
+  assert.match(page, /encodePcm16Wav/);
+  assert.match(page, /getUserMedia/);
+  assert.match(page, /voiceConsent/);
+  assert.match(page, /form\\.append\\("consent", "true"\\)/);
+  assert.match(page, /api\\/voice\\/transcribe/);
+  assert.match(page, /finishSraVaaniRecording/);
+  assert.match(page, /cancelSraVaaniRecording/);
+  assert.match(page, /30_000/);
+  assert.match(page, /15 \\* 1024 \\* 1024/);
+  assert.match(page, /setPrompt\\(\\(current\\) => current \\? current \\+ " " \\+ transcript : transcript\\)/);
 });
