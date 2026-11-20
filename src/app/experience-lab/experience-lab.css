@@ -71,3 +71,7 @@
 .creative-3d-note{margin:10px 1px 0;color:#82788f;font-size:9px}
 @media(max-width:600px){.creative-3d-stage{padding:12px}.creative-3d-viewport{height:235px}.creative-3d-hint{width:100%;margin-left:0}}
 @media(prefers-reduced-motion:reduce){.creative-3d-viewport canvas{cursor:default}}
+
+.creative-3d-export{border:1px solid rgba(202,177,255,.48);border-radius:8px;padding:8px 12px;background:linear-gradient(120deg,#8c6ac7,#6c54a5);color:#fff;font:inherit;font-size:10px;font-weight:600;cursor:pointer}
+.creative-3d-export:disabled{opacity:.55;cursor:wait}
+.creative-3d-export-status{margin:9px 1px 0;color:#cbb8ed;font-size:10px}
