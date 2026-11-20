@@ -30,6 +30,7 @@ function createFakeSandbox({
         writeOutput(options.stdout, isInstall ? "installed\\n" : taskStdout),
         writeOutput(options.stderr, isInstall && installExitCode ? "install failed\\n" : taskStderr),
       ]);
+      if (options.signal?.aborted) throw options.signal.reason || new Error("sandbox command aborted");
       return { exitCode: isInstall ? installExitCode : taskExitCode };
     },
     async stop() {
@@ -282,25 +283,37 @@ test("does not create a sandbox when the caller is already disconnected", async 
 });
 
 
-test("bounds streamed stdout and stderr before retaining command output", async () => {
-  const fake = createFakeSandbox({
-    taskStdout: "o".repeat(50_000),
-    taskStderr: "e".repeat(50_000),
-  });
-  const result = await executeBuildTask({
+test("aborts the provider command when streamed stdout exceeds the output cap", async () => {
+  const fake = createFakeSandbox({ taskStdout: "o".repeat(50_000) });
+  await assert.rejects(() => executeBuildTask({
     files: [{ path: "src/main.js", content: "console.log('hello')" }],
     operation: "run",
     entrypoint: "src/main.js",
     projectId: "prj_12345678",
     sandboxName: "aahana-build-output-cap",
     SandboxClient: fake.SandboxClient,
-  });
+  }), /Build output exceeded the 12 KB limit/);
 
-  assert.equal(result.status, "passed");
-  assert.equal(result.stdout.length, 12_000);
-  assert.equal(result.stderr.length, 12_000);
-  assert.equal(result.stdout, "o".repeat(12_000));
-  assert.equal(result.stderr, "e".repeat(12_000));
+  const command = fake.calls.find((call) => call.type === "runCommand");
+  assert.equal(command.options.signal instanceof AbortSignal, true);
+  assert.equal(command.options.signal.aborted, true);
+  assert.equal(fake.calls.filter((call) => call.type === "stop").length, 1);
+});
+
+test("aborts the provider command when streamed stderr exceeds the output cap", async () => {
+  const fake = createFakeSandbox({ taskStderr: "e".repeat(50_000) });
+  await assert.rejects(() => executeBuildTask({
+    files: [{ path: "src/main.js", content: "console.log('hello')" }],
+    operation: "run",
+    entrypoint: "src/main.js",
+    projectId: "prj_12345678",
+    sandboxName: "aahana-build-stderr-cap",
+    SandboxClient: fake.SandboxClient,
+  }), /Build output exceeded the 12 KB limit/);
+
+  const command = fake.calls.find((call) => call.type === "runCommand");
+  assert.equal(command.options.signal.aborted, true);
+  assert.equal(fake.calls.filter((call) => call.type === "stop").length, 1);
 });
 
 test("passes the hard wall-clock timeout to the Vercel Sandbox provider", async () => {
