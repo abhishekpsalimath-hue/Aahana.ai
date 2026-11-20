@@ -150,3 +150,13 @@ test("Source editor rejects stored-size mismatches before returning project cont
 test("Build execution diagnostics are returned with private no-store caching", () => {
   assert.match(buildRoute, /Cache-Control": "private, no-store/);
 });
+
+
+test("Build workspace rejects oversized declared source metadata before downloading blobs", () => {
+  const metadataGuard = buildRoute.indexOf("const declaredSourceBytes = sourceCandidates.reduce");
+  const firstDownload = buildRoute.indexOf("storage.from(\"aahana-private\").download");
+  assert.ok(metadataGuard >= 0 && firstDownload > metadataGuard);
+  assert.match(buildRoute, /sourceCandidates\.some\(\(file\) => file\.size_bytes > 1024 \* 1024\)/);
+  assert.match(buildRoute, /declaredSourceBytes > MAX_SOURCE_BYTES/);
+  assert.match(buildRoute, /status: 413/);
+});
