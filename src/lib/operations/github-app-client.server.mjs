@@ -144,6 +144,8 @@ export function createGitHubAppClient({
         complete: result.complete,
         files: result.entries.map((file) => ({
           filename: file.filename,
+          previousFilename: file.previous_filename,
+          status: file.status,
           patch: file.patch,
           additions: file.additions,
           deletions: file.deletions,

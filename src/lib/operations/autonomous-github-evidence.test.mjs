@@ -17,7 +17,7 @@ function makeGithub(overrides = {}) {
     },
     async listPullRequestFiles() {
       return { complete: true, files: [{
-        filename: "src/features/demo/hello.mjs", patch: "+export const hello = true;",
+        filename: "src/features/demo/hello.mjs", status: "added", patch: "+export const hello = true;",
         additions: 1, deletions: 0,
       }], ...(overrides.files || {}) };
     },
@@ -104,4 +104,50 @@ test("rejects merged or closed pull requests", async () => {
     });
     assert.equal(result.ok, false);
   }
+});
+
+test("rejects a rename that moves a protected source path into an allowed folder", async () => {
+  const result = await evaluateTrustedPullRequest({
+    github: makeGithub({
+      files: { files: [{
+        filename: "src/features/demo/renamed.mjs",
+        previousFilename: ".github/workflows/release.yml",
+        status: "renamed",
+        patch: "+export const safe = true;",
+        additions: 1,
+        deletions: 1,
+      }] },
+      baseTree: { entries: [{ path: ".github/workflows/release.yml", mode: "100644" }] },
+      headTree: { entries: [{ path: "src/features/demo/renamed.mjs", mode: "100644" }] },
+    }),
+    task: { ...task, allowedPaths: ["src/features/demo/**", ".github/workflows/**"] },
+    pullRequestNumber: 12,
+  });
+  assert.equal(result.ok, false);
+  assert.ok(result.errors.some((error) => error.includes(".github/workflows/release.yml")));
+});
+
+test("rejects a rename with a missing previous path or symlink source", async () => {
+  const missingPrevious = await evaluateTrustedPullRequest({
+    github: makeGithub({
+      files: { files: [{
+        filename: "src/features/demo/renamed.mjs", status: "renamed",
+        patch: "+export const safe = true;", additions: 1, deletions: 1,
+      }] },
+    }),
+    task, pullRequestNumber: 12,
+  });
+  assert.equal(missingPrevious.ok, false);
+  const symlinkSource = await evaluateTrustedPullRequest({
+    github: makeGithub({
+      files: { files: [{
+        filename: "src/features/demo/renamed.mjs", previousFilename: "src/features/demo/link",
+        status: "renamed", patch: "+export const safe = true;", additions: 1, deletions: 1,
+      }] },
+      baseTree: { entries: [{ path: "src/features/demo/link", mode: "120000" }] },
+      headTree: { entries: [{ path: "src/features/demo/renamed.mjs", mode: "100644" }] },
+    }),
+    task, pullRequestNumber: 12,
+  });
+  assert.equal(symlinkSource.ok, false);
 });
