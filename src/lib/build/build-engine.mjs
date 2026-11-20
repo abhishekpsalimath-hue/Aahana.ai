@@ -67,9 +67,10 @@ export async function executeBuildTask({
   if (signal?.aborted) throw new Error("Build cancelled before sandbox creation.");
 
   const Client = SandboxClient || (await import("@vercel/sandbox")).Sandbox;
-  const sandbox = await Client.create(
-    createSafeSandboxOptions({ name: sandboxName, projectId }),
-  );
+  const sandbox = await Client.create({
+    ...createSafeSandboxOptions({ name: sandboxName, projectId }),
+    ...(signal ? { signal } : {}),
+  });
 
   let stopPromise;
   const stopSandbox = () => {
@@ -95,6 +96,7 @@ export async function executeBuildTask({
           cmd: "npm",
           args: INSTALL_ARGS,
           cwd: "/vercel/sandbox",
+          ...(signal ? { signal } : {}),
         });
         const [stdout, stderr] = await readOutput(installResult);
         installOutput = (stdout + "\n" + stderr).slice(0, OUTPUT_LIMIT);
@@ -121,6 +123,7 @@ export async function executeBuildTask({
       cmd: command,
       args,
       cwd: "/vercel/sandbox",
+      ...(signal ? { signal } : {}),
     });
     const [stdout, stderr] = await readOutput(result);
     if (signal?.aborted) throw new Error("Build cancelled during project execution.");
