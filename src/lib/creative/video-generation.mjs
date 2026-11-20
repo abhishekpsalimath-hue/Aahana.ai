@@ -1,6 +1,6 @@
 export const VIDEO_MODEL = "xai/grok-imagine-video";
 export const MAX_VIDEO_PROMPT_LENGTH = 2000;
-export const MAX_VIDEO_DURATION_SECONDS = 5;
+export const MAX_VIDEO_DURATION_SECONDS = 15;
 export const VIDEO_ASPECT_RATIOS = Object.freeze(["1:1", "16:9", "9:16", "4:3", "3:4", "3:2", "2:3"]);
 export const VIDEO_RESOLUTIONS = Object.freeze(["480p", "720p"]);
 
@@ -12,7 +12,7 @@ export function parseVideoGenerationInput(body) {
 
   const duration = body?.duration === undefined ? 5 : body.duration;
   if (!Number.isInteger(duration) || duration < 1 || duration > MAX_VIDEO_DURATION_SECONDS) {
-    return { ok: false, error: "Video duration must be between 1 and 5 seconds in this initial release." };
+    return { ok: false, error: "Video duration must be between 1 and 15 seconds." };
   }
 
   const aspectRatio = body?.aspectRatio === undefined ? "16:9" : body.aspectRatio;
