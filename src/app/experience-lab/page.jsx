@@ -101,6 +101,11 @@ export default function ExperienceLab() {
   const [buildError, setBuildError] = useState("");
   const [focus, setFocus] = useState(false);
   const [activePanel, setActivePanel] = useState("tools");
+  const [voiceLocale, setVoiceLocale] = useState("en-IN");
+  const [voiceListening, setVoiceListening] = useState(false);
+  const [voiceSpeaking, setVoiceSpeaking] = useState(false);
+  const [voiceError, setVoiceError] = useState("");
+  const recognitionRef = useRef(null);
   const current = modes.find((item) => item.id === mode) || modes[0];
   const currentPrompts = promptsByMode[mode] || promptsByMode.chat;
 
@@ -108,6 +113,8 @@ export default function ExperienceLab() {
     activeRequest.current?.abort();
     proposalRequest.current?.abort();
     buildRequest.current?.abort();
+    recognitionRef.current?.stop?.();
+    window.speechSynthesis?.cancel?.();
   }, []);
 
   useEffect(() => {
@@ -476,6 +483,28 @@ export default function ExperienceLab() {
     activeRequest.current?.abort();
   }
 
+  function startVoiceInput() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) { setVoiceError("Voice input is not supported in this browser. Try Chrome, or keep typing."); return; }
+    if (voiceListening) { recognitionRef.current?.stop?.(); setVoiceListening(false); return; }
+    window.speechSynthesis?.cancel?.(); setVoiceSpeaking(false); setVoiceError("");
+    const recognition = new SpeechRecognition(); recognition.lang = voiceLocale; recognition.continuous = false; recognition.interimResults = true;
+    recognition.onresult = (event) => { let transcript = ""; for (let i = event.resultIndex; i < event.results.length; i += 1) if (event.results[i].isFinal) transcript += event.results[i][0]?.transcript || ""; if (transcript.trim()) setPrompt((current) => current ? current + " " + transcript.trim() : transcript.trim()); };
+    recognition.onerror = (event) => { setVoiceError(event.error === "not-allowed" ? "Microphone permission was denied. Allow access in browser settings." : event.error === "no-speech" ? "No speech detected. Try again." : "Voice input stopped. You can continue by typing."); setVoiceListening(false); };
+    recognition.onend = () => { setVoiceListening(false); recognitionRef.current = null; };
+    recognitionRef.current = recognition; try { recognition.start(); setVoiceListening(true); } catch { recognitionRef.current = null; setVoiceListening(false); setVoiceError("Voice input could not start. Please try again."); }
+  }
+
+  function speakLatestResponse() {
+    const latest = [...thread].reverse().find((item) => item.role === "assistant" && String(item.content || "").trim());
+    if (!latest) { setVoiceError("Ask Aahana something first, then listen to the reply."); return; }
+    if (!("speechSynthesis" in window)) { setVoiceError("Spoken playback is not supported in this browser."); return; }
+    if (voiceSpeaking) { window.speechSynthesis.cancel(); setVoiceSpeaking(false); return; }
+    recognitionRef.current?.stop?.(); setVoiceListening(false); window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(latest.content.slice(0, 6000)); utterance.lang = voiceLocale; utterance.rate = 1;
+    utterance.onend = () => setVoiceSpeaking(false); utterance.onerror = () => { setVoiceSpeaking(false); setVoiceError("Speech playback could not complete on this device."); };
+    setVoiceError(""); setVoiceSpeaking(true); window.speechSynthesis.speak(utterance);
+  }
   function startNewSession() {
     if (busy) return;
     setThread([]);
@@ -591,7 +620,19 @@ export default function ExperienceLab() {
           {activePanel === "discover" && <div className="inspector-empty"><span>✧</span><strong>Discover your next move</strong><p>Explore connected experiences from one calm, intelligent workspace.</p><button type="button" onClick={() => setMode("research")}>Explore research mode</button></div>}
           {activePanel === "library" && <div className="inspector-empty"><span>▤</span><strong>Your creative memory</strong><p>A home for saved ideas, projects and useful discoveries.</p><small>Library preview · no data stored</small></div>}
           {activePanel === "attach" && <div className="inspector-empty"><span>＋</span><strong>Bring context in</strong><p>Files, images and links can become part of the same conversation.</p><small>Attachment controls are visual only in this concept.</small></div>}
-          {activePanel === "voice" && <div className="inspector-empty"><span>◖</span><strong>Voice, in the flow</strong><p>Imagine speaking, interrupting and switching between voice and text without losing context.</p><small>Voice is not connected in this preview.</small></div>}
+          {activePanel === "voice" && <section className="voice-panel" aria-label="Voice controls">
+            <span className="voice-panel-kicker">SPEAK NATURALLY</span><h2>Voice, in the flow.</h2>
+            <p>Speak a prompt or listen to Aahana’s latest reply. These controls use your browser and device.</p>
+            <label htmlFor="lab-voice-language">Speech language</label>
+            <select id="lab-voice-language" value={voiceLocale} onChange={(event) => setVoiceLocale(event.target.value)}>
+              <option value="en-IN">English (India)</option><option value="kn-IN">Kannada</option><option value="hi-IN">Hindi</option><option value="ta-IN">Tamil</option><option value="te-IN">Telugu</option><option value="ml-IN">Malayalam</option><option value="bn-IN">Bengali</option><option value="en-US">English (US)</option>
+            </select>
+            <button type="button" className={voiceListening ? "voice-panel-action listening" : "voice-panel-action"} onClick={startVoiceInput} aria-pressed={voiceListening}>{voiceListening ? "■ Stop listening" : "◖ Speak a prompt"}</button>
+            <button type="button" className="voice-panel-action secondary" onClick={speakLatestResponse} disabled={!thread.some((item) => item.role === "assistant" && String(item.content || "").trim())}>{voiceSpeaking ? "■ Stop speaking" : "♫ Listen to Aahana"}</button>
+            <div className="voice-panel-status" role="status" aria-live="polite">{voiceListening ? "Listening on this device…" : voiceSpeaking ? "Aahana is speaking…" : "Ready when you are."}</div>
+            {voiceError && <p className="voice-panel-error" role="alert">{voiceError}</p>}
+            <small className="voice-panel-privacy">Device speech preview. Microphone audio is not uploaded or saved by these controls. Browser support and installed voices vary.</small>
+          </section>}
           {activePanel === "settings" && <div className="inspector-empty"><span>⚙</span><strong>Your space, your rules</strong><p>Shape how Aahana responds, remembers and works with you.</p></div>}
         </div>
         <div className="inspector-footer"><span className="footer-spark">✳</span><div><strong>One intelligence.</strong><small>Many ways to work together.</small></div></div>
