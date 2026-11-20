@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - feat/experience-lab-live-assistant
+      - feat/experience-lab-build-workspace
       - fix/experience-lab-source-edit-conflicts
       - feat/experience-lab-ai-code-proposals
     paths:
