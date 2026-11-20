@@ -11,8 +11,12 @@ export async function GET() {
 
   const config = getSelfBuildConfig();
   const ownerAllowed = isSelfBuildOwner(user.email, config);
+  const agentReady = process.env.AAHANA_AI_ENABLED === "true" &&
+    (process.env.AAHANA_AI_PROVIDER || "groq").toLowerCase() === "groq" &&
+    Boolean(process.env.GROQ_API_KEY);
   return NextResponse.json({
     enabled: config.enabled && ownerAllowed,
+    agentReady,
     configured: config.enabled,
     ownerAllowed,
     repository: ownerAllowed ? config.repository : null,
