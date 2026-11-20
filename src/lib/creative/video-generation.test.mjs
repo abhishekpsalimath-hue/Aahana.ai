@@ -4,7 +4,7 @@ import { parseVideoGenerationInput } from "./video-generation.mjs";
 
 test("defaults to a five-second 480p widescreen video", () => {
   assert.deepEqual(parseVideoGenerationInput({ prompt: "A calm ocean at sunrise" }), {
-    ok: true, prompt: "A calm ocean at sunrise\\n\\nCinematic direction: define a clear opening composition, one readable subject action, motivated camera movement, natural physical motion, coherent spatial continuity, controlled focus, and a visually satisfying final frame. Keep motion smooth and avoid morphing, flicker, jitter, object duplication, and sudden scene changes.", duration: 5, aspectRatio: "16:9", resolution: "480p", director: "cinematic",
+    ok: true, prompt: "A calm ocean at sunrise\n\nCinematic direction: define a clear opening composition, one readable subject action, motivated camera movement, natural physical motion, coherent spatial continuity, controlled focus, and a visually satisfying final frame. Keep motion smooth and avoid morphing, flicker, jitter, object duplication, and sudden scene changes.", duration: 5, aspectRatio: "16:9", resolution: "480p", director: "cinematic",
   });
 });
 
