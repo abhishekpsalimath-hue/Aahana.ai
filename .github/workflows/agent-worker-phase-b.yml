@@ -1,17 +1,23 @@
 name: Aahana agent worker Phase B checks
 on:
+  pull_request:
+    paths:
+      - ".github/workflows/agent-worker-phase-b.yml"
+      - "src/app/api/internal/agent-worker/**"
+      - "src/lib/operations/agent-worker.*"
   push:
     branches:
       - feat/aahana-agent-worker-phase-b
       - fix/agent-worker-provider-credential-boundary
       - fix/agent-worker-requeue-on-caller-cancel
+      - fix/agent-worker-abort-context-reads
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: aahana-agent-worker-phase-b
+  group: aahana-agent-worker-phase-b-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
