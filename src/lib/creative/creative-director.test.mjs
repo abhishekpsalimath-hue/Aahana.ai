@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildImagePrompt, buildVideoPrompt, getCreativeProviderStatus } from "./creative-director.mjs";
+import { buildImagePrompt, buildImageEditPrompt, buildVideoPrompt, getCreativeProviderStatus } from "./creative-director.mjs";
 
 test("masterpiece image direction adds composition, lighting, and detail guidance", () => {
   const prompt = buildImagePrompt("A glass perfume bottle on black marble", "masterpiece");
@@ -37,4 +37,20 @@ test("provider registry reports configuration without exposing credentials", () 
   assert.equal(status.find((item) => item.id === "elevenlabs").configured, true);
   assert.equal(status.find((item) => item.id === "higgsfield").configured, false);
   assert.equal(JSON.stringify(status).includes("secret"), false);
+});
+
+
+test("reference image edit prompt preserves original sacred subject identity", () => {
+  const prompt = buildImageEditPrompt(
+    "Generate Lord Shiva with a crescent moon, Ganga, tripundra and trident",
+    "Make the background cinematic"
+  );
+  assert.match(prompt, /Original image brief: Generate Lord Shiva/i);
+  assert.match(prompt, /Requested refinement: Make the background cinematic/i);
+  assert.match(prompt, /Preserve the exact main subject, identity, face, anatomy, pose/i);
+  assert.match(prompt, /unmistakable depiction of Lord Shiva/i);
+});
+
+test("reference image edit prompt rejects empty instructions", () => {
+  assert.equal(buildImageEditPrompt("A portrait", " "), null);
 });
