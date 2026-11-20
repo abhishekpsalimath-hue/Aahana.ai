@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feat/experience-lab-build-workspace
+      - feat/experience-lab-ai-code-proposals
     paths:
       - "src/app/experience-lab/**"
       - "src/app/api/files/**"
@@ -13,6 +14,7 @@ on:
   pull_request:
     branches:
       - feat/experience-lab-live-assistant
+      - fix/experience-lab-source-edit-conflicts
     paths:
       - "src/app/experience-lab/**"
       - "src/app/api/files/**"
