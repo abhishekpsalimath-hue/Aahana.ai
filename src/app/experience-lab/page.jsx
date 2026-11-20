@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import "./experience-lab.css";
 
 const modes = [
@@ -51,13 +51,11 @@ const promptsByMode = {
   ],
 };
 
-const sampleResponses = {
-  chat: "Let's open this up from three angles: what you believe, what the evidence says, and what might surprise you. Start with the outcome you want most.",
-  create: "A strong visual direction starts with a feeling. Let's define the subject, atmosphere, palette and camera language before creating the first frame.",
-  build: "Let's shape the product in layers: the user problem, the core journey, the system architecture and a small testable first release.",
-  research: "I'll structure the exploration around primary evidence, competing explanations, unknowns and a concise set of findings to verify.",
-  learn: "We'll build intuition first, then connect the concepts, test your understanding and increase the difficulty at your pace.",
-};
+function requestsImage(value) {
+  const text = String(value || "").trim();
+  return /\b(?:generate|create|draw|render|make)\b[\s\S]{0,120}\b(?:image|picture|illustration|artwork|portrait|wallpaper|logo|poster|cover|banner|thumbnail|scene|landscape)\b/i.test(text)
+    || /\b(?:image|picture|illustration|artwork)\b[\s\S]{0,80}\b(?:generate|create|draw|render)\b/i.test(text);
+}
 
 function OrbitMark() {
   return <div className="lab-orbit" aria-hidden="true">
@@ -70,7 +68,12 @@ function OrbitMark() {
 export default function ExperienceLab() {
   const [mode, setMode] = useState("chat");
   const [prompt, setPrompt] = useState("");
-  const [sample, setSample] = useState(false);
+  const [thread, setThread] = useState([]);
+  const [conversationId, setConversationId] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [requestError, setRequestError] = useState("");
+  const [generatedImage, setGeneratedImage] = useState(null);
+  const activeRequest = useRef(null);
   const [focus, setFocus] = useState(false);
   const [activePanel, setActivePanel] = useState("tools");
   const current = modes.find((item) => item.id === mode) || modes[0];
@@ -78,29 +81,114 @@ export default function ExperienceLab() {
 
   function tryPrompt(value) {
     setPrompt(value);
-    setSample(false);
+    setRequestError("");
     document.getElementById("lab-composer")?.focus();
   }
 
-  function previewFlow(event) {
+  async function previewFlow(event) {
     event.preventDefault();
-    if (!prompt.trim()) return;
-    setSample(true);
+    const message = prompt.trim();
+    if (!message || busy) return;
+    const apiMode = ({ chat: "solve", create: "create", build: "build", research: "solve", learn: "learn" })[mode] || "solve";
+    setThread((current) => [...current, { role: "user", content: message }, { role: "assistant", content: "" }]);
+    setPrompt("");
+    setRequestError("");
+    const controller = new AbortController();
+    activeRequest.current = controller;
+    setBusy(true);
+    try {
+      if (mode === "create" && requestsImage(message)) {
+        const imageResponse = await fetch("/api/images/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt: message }),
+          signal: controller.signal,
+        });
+        const imageResult = await imageResponse.json().catch(() => ({}));
+        if (!imageResponse.ok) throw new Error(imageResult.error || "Aahana could not generate that image.");
+        if (typeof imageResult.imageDataUrl !== "string" || !imageResult.imageDataUrl.startsWith("data:image/jpeg;base64,")) {
+          throw new Error("The image service returned an invalid image.");
+        }
+        setGeneratedImage({ dataUrl: imageResult.imageDataUrl, prompt: message });
+        setThread((current) => current.map((item, index) =>
+          index === current.length - 1 ? { ...item, content: "Your image is ready. It is available in this session." } : item
+        ));
+        return;
+      }
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message, mode: apiMode, conversationId }),
+        signal: controller.signal,
+      });
+      if (!response.ok) {
+        const result = await response.json().catch(() => ({}));
+        throw new Error(result.error || "Aahana couldn't process that request.");
+      }
+      const nextConversationId = response.headers.get("X-Conversation-Id");
+      if (nextConversationId) setConversationId(nextConversationId);
+      if (!response.body) throw new Error("Aahana's response stream was unavailable.");
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let answer = "";
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        answer += decoder.decode(value, { stream: true });
+        setThread((current) => current.map((item, index) =>
+          index === current.length - 1 ? { ...item, content: answer } : item
+        ));
+      }
+      answer += decoder.decode();
+      setThread((current) => current.map((item, index) =>
+        index === current.length - 1 ? { ...item, content: answer || "Aahana returned an empty response. Please try again." } : item
+      ));
+    } catch (error) {
+      if (error.name === "AbortError") {
+        setThread((current) => current.map((item, index) =>
+          index === current.length - 1 && item.role === "assistant" && !item.content
+            ? { ...item, content: "Response stopped." }
+            : item
+        ));
+      } else {
+        setRequestError(error.message || "Something went wrong. Please try again.");
+        setThread((current) => {
+          const last = current[current.length - 1];
+          return last?.role === "assistant" && !last.content ? current.slice(0, -1) : current;
+        });
+      }
+    } finally {
+      if (activeRequest.current === controller) activeRequest.current = null;
+      setBusy(false);
+    }
+  }
+
+  function stopGeneration() {
+    activeRequest.current?.abort();
+  }
+
+  function startNewSession() {
+    if (busy) return;
+    setThread([]);
+    setGeneratedImage(null);
+    setConversationId(null);
+    setPrompt("");
+    setRequestError("");
   }
 
   return <main className={`experience-lab ${focus ? "focus-mode" : ""}`}>
     <div className="lab-ambient ambient-one" /><div className="lab-ambient ambient-two" />
     <header className="lab-topbar">
       <a className="lab-brand" href="/" aria-label="Aahana AI home"><span className="lab-brand-symbol">a</span><span>Aahana <i>ai</i></span></a>
-      <div className="lab-top-center"><span className="live-pulse" /> INTERACTIVE EXPERIENCE LAB <span className="lab-preview-tag">CONCEPT</span></div>
+      <div className="lab-top-center"><span className="live-pulse" /> INTERACTIVE EXPERIENCE LAB <span className="lab-preview-tag">AI CHAT INTEGRATION</span></div>
       <div className="lab-top-actions"><button type="button" className={focus ? "top-icon selected" : "top-icon"} onClick={() => setFocus(!focus)} aria-pressed={focus} aria-label={focus ? "Exit focus mode" : "Enter focus mode"} title="Toggle focus mode">⛶</button><a href="/" className="lab-exit">Exit preview <span>↗</span></a></div>
     </header>
 
     <div className="lab-layout">
       <aside className="lab-rail" aria-label="Workspace navigation">
-        <button className="rail-new" type="button" onClick={() => { setPrompt(""); setSample(false); }} aria-label="New session">＋</button>
+        <button className="rail-new" type="button" onClick={startNewSession} aria-label="New session">＋</button>
         <span className="rail-separator" />
-        <button className={mode === "chat" && activePanel === "tools" ? "rail-button active" : "rail-button"} type="button" title="Home" aria-label="Home" aria-current={mode === "chat" && activePanel === "tools" ? "page" : undefined} onClick={() => { setMode("chat"); setPrompt(""); setSample(false); setActivePanel("tools"); }}>⌂</button>
+        <button className={mode === "chat" && activePanel === "tools" ? "rail-button active" : "rail-button"} type="button" title="Home" aria-label="Home" aria-current={mode === "chat" && activePanel === "tools" ? "page" : undefined} onClick={() => { setMode("chat"); startNewSession(); setActivePanel("tools"); }}>⌂</button>
         <button className={activePanel === "discover" ? "rail-button active" : "rail-button"} type="button" title="Discover" aria-pressed={activePanel === "discover"} onClick={() => setActivePanel("discover")}>✧</button>
         <button className={activePanel === "library" ? "rail-button active" : "rail-button"} type="button" title="Library" aria-pressed={activePanel === "library"} onClick={() => setActivePanel("library")}>▤</button>
         <div className="rail-bottom"><button className="rail-button" type="button" title="Settings" onClick={() => setActivePanel("settings")}>⚙</button><span className="rail-avatar">A</span></div>
@@ -110,15 +198,19 @@ export default function ExperienceLab() {
         <div className="lab-heading-row"><div><div className="lab-kicker">YOUR SPACE TO THINK BIGGER</div><h1>What shall we <span>imagine?</span></h1><p>One intelligence. Infinite ways to explore, create and build.</p></div><div className="lab-heading-orb"><OrbitMark /></div></div>
 
         <nav className="lab-modebar" aria-label="Choose an experience">
-          {modes.map((item) => <button type="button" key={item.id} onClick={() => { setMode(item.id); setSample(false); }} className={mode === item.id ? "lab-mode active" : "lab-mode"} aria-pressed={mode === item.id}><span>{item.mark}</span>{item.label}</button>)}
+          {modes.map((item) => <button type="button" key={item.id} onClick={() => { setMode(item.id); setRequestError(""); }} className={mode === item.id ? "lab-mode active" : "lab-mode"} aria-pressed={mode === item.id}><span>{item.mark}</span>{item.label}</button>)}
         </nav>
 
         <div className="lab-workspace">
           <div className="lab-workspace-label"><span className="workspace-dot" /> {current.hint.toUpperCase()} <span className="workspace-divider">/</span> SESSION 01</div>
-          {sample ? <div className="lab-response-card" aria-live="polite" aria-atomic="true">
-            <div className="response-heading"><span className="response-avatar"><OrbitMark /></span><div><strong>Aahana</strong><small>Sample interaction · not connected to AI</small></div><button type="button" onClick={() => setSample(false)} aria-label="Close sample response">×</button></div>
-            <div className="response-user">{prompt}</div><div className="response-copy">{sampleResponses[mode]}</div>
-            <div className="response-actions"><button type="button" onClick={() => tryPrompt("Go deeper and give me a practical example.")}>↳ Go deeper</button><button type="button" onClick={() => tryPrompt("Challenge that answer and show another perspective.")}>◇ Challenge it</button><button type="button" onClick={() => setSample(false)}>＋ New thought</button></div>
+          {thread.length ? <div className="lab-response-card" aria-live="polite">
+            {thread.map((item, index) => <div className={item.role === "user" ? "response-user" : "response-copy"} key={index}>
+              {item.role === "assistant" && <div className="response-heading"><span className="response-avatar"><OrbitMark /></span><div><strong>Aahana</strong><small>{busy && index === thread.length - 1 ? "Thinking · live response" : "Aahana AI"}</small></div></div>}
+              <div className="live-message-text">{item.content || (busy && index === thread.length - 1 ? "Thinking…" : "")}</div>
+            </div>)}
+            {generatedImage && <div className="lab-generated-image"><img src={generatedImage.dataUrl} alt={generatedImage.prompt} /><a href={generatedImage.dataUrl} download="aahana-generated-image.jpg">Download image ↗</a><small>Generated for this session · not saved to Library</small></div>}
+            {requestError && <p className="live-error" role="alert">{requestError}</p>}
+            <div className="response-actions"><button type="button" disabled={busy} onClick={() => tryPrompt("Go deeper and give me a practical example.")}>↳ Go deeper</button><button type="button" disabled={busy} onClick={() => tryPrompt("Challenge that answer and show another perspective.")}>◇ Challenge it</button><button type="button" disabled={busy} onClick={startNewSession}>＋ New thought</button></div>
           </div> : <div className="lab-empty">
             <div className="empty-orb"><OrbitMark /></div>
             <div className="empty-title">A thought is a beginning.</div>
@@ -128,9 +220,9 @@ export default function ExperienceLab() {
           <form className="lab-composer" onSubmit={previewFlow}>
             <label className="sr-only" htmlFor="lab-composer">Write a message for the preview</label>
             <textarea id="lab-composer" value={prompt} onChange={(event) => setPrompt(event.target.value)} placeholder={mode === "build" ? "Describe the product you want to bring to life..." : mode === "create" ? "Describe the world you want to create..." : "Ask anything. Start anywhere..."} rows={3} />
-            <div className="composer-controls"><div className="composer-tools"><button type="button" onClick={() => setActivePanel(activePanel === "attach" ? "tools" : "attach")} title="Add context">＋ <span>Attach</span></button><button type="button" onClick={() => setActivePanel(activePanel === "tools" ? "discover" : "tools")} title="Explore tools">◈ <span>Tools</span></button><span className="composer-divider" /><span className="composer-mode-label">{current.label} mode</span></div><div className="composer-submit"><button type="button" className="voice-button" title="Voice preview" onClick={() => setActivePanel("voice")}>◖</button><button type="submit" className="lab-send" disabled={!prompt.trim()}>Explore <span>↗</span></button></div></div>
+            <div className="composer-controls"><div className="composer-tools"><button type="button" onClick={() => setActivePanel(activePanel === "attach" ? "tools" : "attach")} title="Add context">＋ <span>Attach</span></button><button type="button" onClick={() => setActivePanel(activePanel === "tools" ? "discover" : "tools")} title="Explore tools">◈ <span>Tools</span></button><span className="composer-divider" /><span className="composer-mode-label">{current.label} mode</span></div><div className="composer-submit"><button type="button" className="voice-button" title="Voice preview" onClick={() => setActivePanel("voice")}>◖</button>{busy ? <button type="button" className="lab-send lab-stop" onClick={stopGeneration}>Stop <span>■</span></button> : <button type="submit" className="lab-send" disabled={!prompt.trim()}>Send <span>↗</span></button>}</div></div>
           </form>
-          <div className="lab-privacy-note"><span>◇</span> Your ideas stay yours. You are in a visual concept preview.</div>
+          <div className="lab-privacy-note"><span>◇</span> Your message is sent to your signed-in Aahana assistant.</div>
         </div>
 
         <div className="lab-suggestions-heading"><span>START WITH A SPARK</span><span>CHOOSE A DIRECTION ↘</span></div>
@@ -142,7 +234,7 @@ export default function ExperienceLab() {
         <div className="inspector-profile"><div className="inspector-orb"><OrbitMark /></div><div><strong>Aahana</strong><small>Ready to explore <span className="ready-dot" /></small></div></div>
         <div className="inspector-tabs" role="group" aria-label="Co-pilot panel"><button type="button" className={activePanel === "tools" ? "active" : ""} aria-pressed={activePanel === "tools"} onClick={() => setActivePanel("tools")}>Tools</button><button type="button" className={activePanel === "discover" ? "active" : ""} aria-pressed={activePanel === "discover"} onClick={() => setActivePanel("discover")}>Discover</button><button type="button" className={activePanel === "library" ? "active" : ""} aria-pressed={activePanel === "library"} onClick={() => setActivePanel("library")}>Library</button></div>
         <div className="inspector-content">
-          {activePanel === "tools" && <><div className="inspector-section-label">CAPABILITIES</div>{[["⌘","Build workspace","Code, preview and iterate"],["✧","Creative studio","Visuals, motion and ideas"],["⌕","Deep research","Sources, synthesis and insight"],["◖","Voice conversation","Speak naturally, hands-free"]].map(([mark,title,detail]) => <button type="button" className="capability-row" key={title} onClick={() => setActivePanel(title === "Voice conversation" ? "voice" : "discover")}><span className="capability-mark">{mark}</span><span><strong>{title}</strong><small>{detail}</small></span><b>↗</b></button>)}</>}
+          {activePanel === "tools" && <><div className="inspector-section-label">CAPABILITIES</div>{[["⌘","Build workspace","Product guidance · engine in development"],["✧","Creative studio","Creative direction · media tools in development"],["⌕","Deep research","Source-backed answers when available"],["◖","Voice conversation","Voice runtime in development"]].map(([mark,title,detail]) => <button type="button" className="capability-row" key={title} onClick={() => setActivePanel(title === "Voice conversation" ? "voice" : "discover")}><span className="capability-mark">{mark}</span><span><strong>{title}</strong><small>{detail}</small></span><b>↗</b></button>)}</>}
           {activePanel === "discover" && <div className="inspector-empty"><span>✧</span><strong>Discover your next move</strong><p>Explore connected experiences from one calm, intelligent workspace.</p><button type="button" onClick={() => setMode("research")}>Explore research mode</button></div>}
           {activePanel === "library" && <div className="inspector-empty"><span>▤</span><strong>Your creative memory</strong><p>A home for saved ideas, projects and useful discoveries.</p><small>Library preview · no data stored</small></div>}
           {activePanel === "attach" && <div className="inspector-empty"><span>＋</span><strong>Bring context in</strong><p>Files, images and links can become part of the same conversation.</p><small>Attachment controls are visual only in this concept.</small></div>}
@@ -152,6 +244,6 @@ export default function ExperienceLab() {
         <div className="inspector-footer"><span className="footer-spark">✳</span><div><strong>One intelligence.</strong><small>Many ways to work together.</small></div></div>
       </aside>
     </div>
-    <footer className="lab-footer"><span>AAHANA AI <i>EXPERIENCE LAB</i></span><span>THINK BEYOND THE EXPECTED</span><span>CONCEPT BUILD · INTERACTIONS ARE LOCAL ONLY</span></footer>
+    <footer className="lab-footer"><span>AAHANA AI <i>EXPERIENCE LAB</i></span><span>THINK BEYOND THE EXPECTED</span><span>AI CHAT INTEGRATION · OTHER ENGINES IN DEVELOPMENT</span></footer>
   </main>;
 }
