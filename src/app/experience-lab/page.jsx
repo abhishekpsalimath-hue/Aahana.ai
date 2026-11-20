@@ -1,6 +1,8 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
+import { getSourceFileMimeType, isSupportedSourceFile } from "@/lib/build/source-file-policy.mjs";
 import "./experience-lab.css";
 
 const modes = [
@@ -74,10 +76,199 @@ export default function ExperienceLab() {
   const [requestError, setRequestError] = useState("");
   const [generatedImage, setGeneratedImage] = useState(null);
   const activeRequest = useRef(null);
+  const [buildProjects, setBuildProjects] = useState([]);
+  const [buildFiles, setBuildFiles] = useState([]);
+  const [filesLoading, setFilesLoading] = useState(false);
+  const [fileBusy, setFileBusy] = useState(false);
+  const [editingFile, setEditingFile] = useState(null);
+  const [sourceDraft, setSourceDraft] = useState("");
+  const [editorLoading, setEditorLoading] = useState(false);
+  const [editorSaving, setEditorSaving] = useState(false);
+  const buildFileInput = useRef(null);
+  const [selectedProjectId, setSelectedProjectId] = useState("");
+  const [buildStatus, setBuildStatus] = useState(null);
+  const [buildBusy, setBuildBusy] = useState(false);
+  const [buildResult, setBuildResult] = useState(null);
+  const [buildError, setBuildError] = useState("");
   const [focus, setFocus] = useState(false);
   const [activePanel, setActivePanel] = useState("tools");
   const current = modes.find((item) => item.id === mode) || modes[0];
   const currentPrompts = promptsByMode[mode] || promptsByMode.chat;
+
+  useEffect(() => {
+    if (mode !== "build") return;
+    let active = true;
+    Promise.all([
+      fetch("/api/projects", { cache: "no-store" }).then(async (response) => {
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || "Could not load projects.");
+        return data.projects || [];
+      }),
+      fetch("/api/build/status", { cache: "no-store" }).then(async (response) => {
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || "Could not inspect Build Engine status.");
+        return data;
+      }),
+    ]).then(([projects, status]) => {
+      if (!active) return;
+      setBuildProjects(projects);
+      setSelectedProjectId((current) => current || projects[0]?.id || "");
+      setBuildStatus(status);
+      setBuildError("");
+    }).catch((error) => {
+      if (active) setBuildError(error.message || "Build workspace could not be loaded.");
+    });
+    return () => { active = false; };
+  }, [mode]);
+
+  useEffect(() => {
+    if (mode !== "build" || !selectedProjectId) {
+      setBuildFiles([]);
+      return;
+    }
+    let active = true;
+    setFilesLoading(true);
+    fetch(`/api/files?projectId=${encodeURIComponent(selectedProjectId)}`, { cache: "no-store" })
+      .then(async (response) => {
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || "Could not load project files.");
+        return data.files || [];
+      })
+      .then((files) => { if (active) setBuildFiles(files); })
+      .catch((error) => { if (active) setBuildError(error.message || "Could not load project files."); })
+      .finally(() => { if (active) setFilesLoading(false); });
+    return () => { active = false; };
+  }, [mode, selectedProjectId]);
+
+  async function openSourceEditor(file) {
+    if (!isSupportedSourceFile(file.original_filename, file.mime_type)) return;
+    setEditorLoading(true);
+    setBuildError("");
+    try {
+      const response = await fetch(`/api/files/${encodeURIComponent(file.id)}/content`, { cache: "no-store" });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Could not open source file.");
+      setEditingFile(file);
+      setSourceDraft(result.file.content);
+    } catch (error) {
+      setBuildError(error.message || "Could not open source file.");
+    } finally {
+      setEditorLoading(false);
+    }
+  }
+
+  async function saveSourceFile() {
+    if (!editingFile || editorSaving) return;
+    setEditorSaving(true);
+    setBuildError("");
+    try {
+      const response = await fetch(`/api/files/${encodeURIComponent(editingFile.id)}/content`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: sourceDraft }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Could not save source file.");
+      setBuildFiles((current) => current.map((file) => file.id === editingFile.id ? { ...file, size_bytes: result.sizeBytes } : file));
+      setEditingFile(null);
+      setSourceDraft("");
+      setBuildResult(null);
+    } catch (error) {
+      setBuildError(error.message || "Could not save source file.");
+    } finally {
+      setEditorSaving(false);
+    }
+  }
+
+  async function uploadBuildFiles(event) {
+    const selected = Array.from(event.target.files || []);
+    event.target.value = "";
+    if (!selected.length || fileBusy || !selectedProjectId) return;
+    setFileBusy(true);
+    setBuildError("");
+    const supabase = createClient();
+    let pendingPath = null;
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) throw new Error("Please sign in again.");
+      for (const file of selected) {
+        const mimeType = getSourceFileMimeType(file.name, file.type);
+        if (!isSupportedSourceFile(file.name, mimeType)) {
+          throw new Error(`${file.name}: unsupported source-file type.`);
+        }
+        if (file.size < 1 || file.size > 1024 * 1024) {
+          throw new Error(`${file.name}: source files must be 1 MB or smaller.`);
+        }
+        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-100) || "source";
+        const objectPath = `${user.id}/${selectedProjectId}/${crypto.randomUUID()}-${safeName}`;
+        pendingPath = objectPath;
+        const { error: storageError } = await supabase.storage.from("aahana-private").upload(objectPath, file, { contentType: mimeType, upsert: false });
+        if (storageError) throw new Error(`${file.name}: upload failed.`);
+        const response = await fetch("/api/files", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ objectPath, originalFilename: file.name, mimeType, sizeBytes: file.size, projectId: selectedProjectId }),
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.error || `Could not register ${file.name}.`);
+        pendingPath = null;
+        setBuildFiles((current) => [result.file, ...current]);
+      }
+      setBuildResult(null);
+    } catch (error) {
+      if (pendingPath) await supabase.storage.from("aahana-private").remove([pendingPath]).catch(() => ({}));
+      setBuildError(error.message || "Source upload failed.");
+      const refresh = await fetch(`/api/files?projectId=${encodeURIComponent(selectedProjectId)}`, { cache: "no-store" });
+      if (refresh.ok) {
+        const data = await refresh.json().catch(() => ({}));
+        setBuildFiles(data.files || []);
+      }
+    } finally {
+      setFileBusy(false);
+    }
+  }
+
+  async function runBuildOperation(operation) {
+    if (!selectedProjectId || buildBusy) return;
+    setBuildBusy(true);
+    setBuildError("");
+    setBuildResult(null);
+    try {
+      const response = await fetch("/api/build/project", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ projectId: selectedProjectId, operation }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok && result.status !== "failed") throw new Error(result.error || `Build ${operation} failed.`);
+      if (result.status === "passed" || result.status === "failed") setBuildResult(result);
+      else throw new Error("The Build Engine returned an incomplete execution result.");
+    } catch (error) {
+      setBuildError(error.message || "Build operation failed.");
+    } finally {
+      setBuildBusy(false);
+    }
+  }
+
+  async function createBuildProject() {
+    const name = window.prompt("Name your project");
+    if (!name?.trim()) return;
+    try {
+      const response = await fetch("/api/projects", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: name.trim(), project_type: "web" }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Could not create project.");
+      setBuildProjects((current) => [result.project, ...current]);
+      setSelectedProjectId(result.project.id);
+      setBuildResult(null);
+      setBuildError("");
+    } catch (error) {
+      setBuildError(error.message || "Could not create project.");
+    }
+  }
 
   function tryPrompt(value) {
     setPrompt(value);
@@ -222,6 +413,29 @@ export default function ExperienceLab() {
             <textarea id="lab-composer" value={prompt} onChange={(event) => setPrompt(event.target.value)} placeholder={mode === "build" ? "Describe the product you want to bring to life..." : mode === "create" ? "Describe the world you want to create..." : "Ask anything. Start anywhere..."} rows={3} />
             <div className="composer-controls"><div className="composer-tools"><button type="button" onClick={() => setActivePanel(activePanel === "attach" ? "tools" : "attach")} title="Add context">＋ <span>Attach</span></button><button type="button" onClick={() => setActivePanel(activePanel === "tools" ? "discover" : "tools")} title="Explore tools">◈ <span>Tools</span></button><span className="composer-divider" /><span className="composer-mode-label">{current.label} mode</span></div><div className="composer-submit"><button type="button" className="voice-button" title="Voice preview" onClick={() => setActivePanel("voice")}>◖</button>{busy ? <button type="button" className="lab-send lab-stop" onClick={stopGeneration}>Stop <span>■</span></button> : <button type="submit" className="lab-send" disabled={!prompt.trim()}>Send <span>↗</span></button>}</div></div>
           </form>
+          {mode === "build" && <section className="build-console" aria-label="Project build workspace">
+            <div className="build-console-heading"><div><span>PROJECT WORKSPACE</span><h2>Build and verify</h2></div><div className="build-console-heading-actions"><button type="button" onClick={() => buildFileInput.current?.click()} disabled={!selectedProjectId || fileBusy}>{fileBusy ? "Uploading…" : "＋ Add source files"}</button><button type="button" onClick={createBuildProject}>＋ New project</button><input ref={buildFileInput} type="file" multiple accept=".js,.jsx,.ts,.tsx,.mjs,.cjs,.css,.html,.htm,.json,.md,.txt,.py,.toml,.yaml,.yml,.sql" onChange={uploadBuildFiles} hidden /></div></div>
+            <div className="build-console-controls">
+              <label htmlFor="build-project-select">Project</label>
+              <select id="build-project-select" value={selectedProjectId} onChange={(event) => { setSelectedProjectId(event.target.value); setBuildResult(null); }}>
+                <option value="">Choose a project</option>
+                {buildProjects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
+              </select>
+              <button type="button" disabled={!selectedProjectId || buildBusy || !buildStatus?.enabled || !buildStatus?.sandboxIdentityAvailable} onClick={() => runBuildOperation("build")}>{buildBusy ? "Working…" : "Run build"}</button>
+              <button type="button" disabled={!selectedProjectId || buildBusy || !buildStatus?.enabled || !buildStatus?.sandboxIdentityAvailable} onClick={() => runBuildOperation("test")}>Run tests</button>
+            </div>
+            {!buildStatus?.enabled && <p className="build-console-note">The isolated Build Engine is not enabled in this environment. Project selection is available, but execution is safely disabled.</p>}
+            {buildStatus?.enabled && !buildStatus?.sandboxIdentityAvailable && <p className="build-console-note">Sandbox identity is not available. Execution remains unavailable until the environment is configured.</p>}
+            {selectedProjectId && <div className="build-file-list"><span>PROJECT FILES {filesLoading ? "· Loading…" : `· ${buildFiles.length}`}</span>{buildFiles.length ? buildFiles.map((file) => <div key={file.id}><span>{file.original_filename}</span><small>{Math.max(1, Math.round(file.size_bytes / 1024))} KB</small>{isSupportedSourceFile(file.original_filename, file.mime_type) && <button type="button" onClick={() => openSourceEditor(file)} disabled={editorLoading}>{editorLoading ? "Opening…" : "Edit"}</button>}</div>) : !filesLoading ? <p>No files attached to this project yet. Add source files, including package.json, before running a build.</p> : null}</div>}
+            {!buildProjects.length && !buildError && <p className="build-console-note">No projects yet. Create one, then add source files and a package.json in your project files.</p>}
+            {editingFile && <section className="build-source-editor" aria-label={`Edit ${editingFile.original_filename}`}>
+              <div><strong>{editingFile.original_filename}</strong><button type="button" onClick={() => { setEditingFile(null); setSourceDraft(""); }} disabled={editorSaving}>Close</button></div>
+              <textarea aria-label={`Source code for ${editingFile.original_filename}`} spellCheck={false} value={sourceDraft} onChange={(event) => setSourceDraft(event.target.value)} />
+              <button type="button" onClick={saveSourceFile} disabled={editorSaving}>{editorSaving ? "Saving…" : "Save source"}</button>
+            </section>}
+            {buildError && <p className="build-console-error" role="alert">{buildError}</p>}
+            {buildResult && <div className="build-console-result"><strong>{buildResult.status === "passed" ? "Execution passed" : "Execution failed"} · {buildResult.operation}</strong><small>Exit code {buildResult.exitCode} · {buildResult.sourceFileCount} source files</small><pre>{[buildResult.stdout, buildResult.stderr].filter(Boolean).join("\\n") || "No output."}</pre></div>}
+          </section>}
           <div className="lab-privacy-note"><span>◇</span> Your message is sent to your signed-in Aahana assistant.</div>
         </div>
 

@@ -23,3 +23,9 @@ test("build lock is unique per account, expires safely and can only be released 
   assert.match(migration, /set search_path = ''/);
   assert.match(migration, /grant execute on function public\.acquire_aahana_build_lock\(uuid, uuid\) to authenticated/);
 });
+
+test("build route propagates caller cancellation into sandbox execution and returns HTTP 499", () => {
+  assert.match(route, /signal: request\.signal/);
+  assert.match(route, /request\.signal\.aborted/);
+  assert.match(route, /status: 499/);
+});

@@ -5,8 +5,12 @@ on:
     branches:
       - main
       - feat/aahana-contextual-interaction-cards
+      - feat/experience-lab-live-assistant
     paths:
       - "src/app/experience-lab/**"
+      - "src/app/api/build/**"
+      - "src/app/api/files/**"
+      - "src/lib/build/**"
       - ".github/workflows/experience-lab-checks.yml"
       - "package.json"
   push:
@@ -14,8 +18,12 @@ on:
       - feat/interactive-experience-lab
       - feat/aahana-contextual-interaction-cards
       - feat/experience-lab-live-assistant
+      - feat/experience-lab-build-workspace
     paths:
       - "src/app/experience-lab/**"
+      - "src/app/api/build/**"
+      - "src/app/api/files/**"
+      - "src/lib/build/**"
       - ".github/workflows/experience-lab-checks.yml"
       - "package.json"
 

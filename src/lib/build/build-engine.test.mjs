@@ -213,3 +213,54 @@ test("stops the sandbox when workspace upload fails before any command can run",
   assert.deepEqual(calls, ["create", "writeFiles", "update", "stop"]);
   assert.equal(calls.includes("runCommand"), false);
 });
+
+
+test("stops sandbox and never starts project execution when the request is cancelled", async () => {
+  const fake = createFakeSandbox();
+  const controller = new AbortController();
+  const originalWrite = fake.sandbox.writeFiles;
+  fake.sandbox.writeFiles = async (files) => {
+    await originalWrite.call(fake.sandbox, files);
+    controller.abort();
+  };
+  await assert.rejects(() => executeBuildTask({
+    files: [{ path: "src/main.js", content: "console.log('hello')" }],
+    operation: "run", entrypoint: "src/main.js", projectId: "prj_12345678",
+    sandboxName: "aahana-build-cancel-test", SandboxClient: fake.SandboxClient,
+    signal: controller.signal,
+  }), /cancelled/);
+  assert.equal(fake.calls.filter((call) => call.type === "runCommand").length, 0);
+  assert.equal(fake.calls.filter((call) => call.type === "stop").length, 1);
+});
+
+test("does not create a sandbox for a request already cancelled", async () => {
+  const fake = createFakeSandbox();
+  const controller = new AbortController();
+  controller.abort();
+  await assert.rejects(() => executeBuildTask({
+    files: [{ path: "src/main.js", content: "console.log('hello')" }],
+    operation: "run", entrypoint: "src/main.js", projectId: "prj_12345678",
+    sandboxName: "aahana-build-pre-cancel", SandboxClient: fake.SandboxClient,
+    signal: controller.signal,
+  }), /cancelled/);
+  assert.equal(fake.calls.length, 0);
+});
+
+
+test("reports cancellation when the sandbox command finishes after caller abort", async () => {
+  const fake = createFakeSandbox();
+  const controller = new AbortController();
+  const originalRun = fake.sandbox.runCommand;
+  fake.sandbox.runCommand = async (options) => {
+    const result = await originalRun.call(fake.sandbox, options);
+    controller.abort();
+    return result;
+  };
+  await assert.rejects(() => executeBuildTask({
+    files: [{ path: "src/main.js", content: "console.log('hello')" }],
+    operation: "run", entrypoint: "src/main.js", projectId: "prj_12345678",
+    sandboxName: "aahana-build-cancel-after-command", SandboxClient: fake.SandboxClient,
+    signal: controller.signal,
+  }), /cancelled/);
+  assert.equal(fake.calls.filter((call) => call.type === "stop").length, 1);
+});
