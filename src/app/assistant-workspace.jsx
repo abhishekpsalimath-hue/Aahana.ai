@@ -303,6 +303,8 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [analyzingFileId, setAnalyzingFileId] = useState(null);
   const [imageGenerating, setImageGenerating] = useState(false);
   const [generatedImage, setGeneratedImage] = useState(null);
+  const [imageProcessing, setImageProcessing] = useState(false);
+  const [processedImage, setProcessedImage] = useState(null);
   const [memoryOpen, setMemoryOpen] = useState(false);
   const [memoryEnabled, setMemoryEnabled] = useState(false);
   const [memories, setMemories] = useState([]);
@@ -641,6 +643,59 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       setError(err.message || "Image generation failed.");
     } finally {
       setImageGenerating(false);
+    }
+  }
+
+  async function processUploadedImage(action) {
+    if (!imageFile || imageProcessing || busy) return;
+    if (action === "edit" && !prompt.trim()) {
+      setError("Describe the change you want Aahana to make first.");
+      return;
+    }
+    setImageProcessing(true);
+    setError("");
+    try {
+      let sourceFile = imageFile;
+      if (imageFile.type === "image/webp") {
+        if (typeof createImageBitmap !== "function") throw new Error("This browser cannot prepare WebP images for editing. Choose a JPEG or PNG instead.");
+        const bitmap = await createImageBitmap(imageFile);
+        const canvas = document.createElement("canvas");
+        canvas.width = bitmap.width;
+        canvas.height = bitmap.height;
+        const context = canvas.getContext("2d");
+        if (!context) { bitmap.close(); throw new Error("Could not prepare this image in the browser."); }
+        context.drawImage(bitmap, 0, 0);
+        bitmap.close();
+        const converted = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.82));
+        if (!converted) throw new Error("Could not convert this WebP image. Choose a JPEG or PNG instead.");
+        sourceFile = new File([converted], imageFile.name.replace(/\.webp$/i, ".jpg"), { type: "image/jpeg" });
+      }
+      const imageDataUrl = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => typeof reader.result === "string" ? resolve(reader.result) : reject(new Error("Could not read the selected image."));
+        reader.onerror = () => reject(new Error("Could not read the selected image."));
+        reader.readAsDataURL(sourceFile);
+      });
+      const response = await fetch("/api/images/process", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, imageDataUrl, prompt: action === "edit" ? prompt.trim() : "" }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Image processing failed.");
+      if (typeof result.imageDataUrl !== "string" || !result.imageDataUrl.startsWith("data:image/")) {
+        throw new Error("The image service returned an invalid result.");
+      }
+      setProcessedImage({
+        dataUrl: result.imageDataUrl,
+        action,
+        filename: imageFile.name,
+        originalPreserved: result.originalPreserved === true,
+      });
+    } catch (err) {
+      setError(err.message || "Image processing failed.");
+    } finally {
+      setImageProcessing(false);
     }
   }
 
@@ -1259,12 +1314,24 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                 </div>
               </div>
             )}
+            {processedImage && (
+              <div className="generated-image-preview">
+                <img src={processedImage.dataUrl} alt={processedImage.action === "enhance" ? "Enhanced image" : "Edited image"} style={{ display: "block", width: "100%", maxWidth: "640px", borderRadius: "14px" }} />
+                <small className="image-prompt-status">
+                  {processedImage.action === "enhance" ? "Enhanced copy · 4K-width output target · original preserved" : "Edited copy · original preserved"}
+                </small>
+                <div className="message-actions">
+                  <a className="copy-message" href={processedImage.dataUrl} download={processedImage.action === "enhance" ? "aahana-enhanced-4k.jpg" : "aahana-edited-image.jpg"}>Download copy</a>
+                  <button className="copy-message" type="button" onClick={() => setProcessedImage(null)}>Remove</button>
+                </div>
+              </div>
+            )}
             <div className="image-attach-row">
               <select aria-label="Voice language" value={voiceLanguage} onChange={(event) => setVoiceLanguage(event.target.value)} className="copy-message">{voiceLanguages.map(([code, label]) => <option key={code} value={code}>{label}</option>)}</select>
               <button className="copy-message" type="button" onClick={startVoiceInput} disabled={listening || busy}>{listening ? "Listening…" : "Speak"}</button>
               <label className="image-attach">
                 + Add image
-                <input id="image-upload" type="file" accept="image/png,image/jpeg,image/webp" disabled={busy}
+                <input id="image-upload" type="file" accept="image/png,image/jpeg,image/webp" disabled={busy || imageProcessing}
                   onChange={(event) => {
                     const file = event.target.files?.[0] || null;
                     event.target.value = "";
@@ -1272,10 +1339,23 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                     if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) { setError("Choose a PNG, JPEG or WebP image."); return; }
                     if (file.size > 2 * 1024 * 1024) { setError("Images must be 2 MB or smaller."); return; }
                     setError("");
+                    setProcessedImage(null);
                     setImageFile(file);
                   }} />
               </label>
-              {imageFile && <span className="image-attach-name">{imageFile.name} <button type="button" onClick={() => setImageFile(null)}>Remove</button></span>}
+              {imageFile && (
+                <>
+                  <span className="image-attach-name">{imageFile.name} <button type="button" onClick={() => setImageFile(null)}>Remove</button></span>
+                  <button className="copy-message" type="button" onClick={() => processUploadedImage("edit")}
+                    disabled={!prompt.trim() || imageProcessing || busy}>
+                    {imageProcessing ? "Processing…" : "Edit image"}
+                  </button>
+                  <button className="copy-message" type="button" onClick={() => processUploadedImage("enhance")}
+                    disabled={imageProcessing || busy}>
+                    {imageProcessing ? "Processing…" : "Enhance to 4K"}
+                  </button>
+                </>
+              )}
               <button className="copy-message" type="button" onClick={generateImage}
                 disabled={!prompt.trim() || imageGenerating || busy || Boolean(imageFile)}>
                 {imageGenerating ? "Creating image…" : "Generate image"}
