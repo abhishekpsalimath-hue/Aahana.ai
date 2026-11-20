@@ -117,6 +117,7 @@ export default function ExperienceLab() {
     activeRequest.current?.abort();
     proposalRequest.current?.abort();
     buildRequest.current?.abort();
+    selfBuildRequest.current?.abort();
   }, []);
 
   useEffect(() => {
