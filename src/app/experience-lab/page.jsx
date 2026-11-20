@@ -124,12 +124,14 @@ export default function ExperienceLab() {
   const [voiceListening, setVoiceListening] = useState(false);
   const [voiceSpeaking, setVoiceSpeaking] = useState(false);
   const [voiceRecording, setVoiceRecording] = useState(false);
+  const [voiceStarting, setVoiceStarting] = useState(false);
   const [voiceTranscribing, setVoiceTranscribing] = useState(false);
   const [voiceConsent, setVoiceConsent] = useState(false);
   const [voiceError, setVoiceError] = useState("");
   const [voiceSource, setVoiceSource] = useState("");
   const recognitionRef = useRef(null);
   const recordingRef = useRef(null);
+  const recordingStartRef = useRef(null);
   const transcriptionRequestRef = useRef(null);
   const speechRequestRef = useRef(null);
   const audioPlaybackRef = useRef(null);
@@ -142,6 +144,9 @@ export default function ExperienceLab() {
     proposalRequest.current?.abort();
     buildRequest.current?.abort();
     recognitionRef.current?.stop?.();
+    recordingStartRef.current?.abort();
+    recordingStartRef.current = null;
+    setVoiceStarting(false);
     releaseAudioCapture(recordingRef.current);
     recordingRef.current = null;
     transcriptionRequestRef.current?.abort();
@@ -522,7 +527,7 @@ export default function ExperienceLab() {
       setVoiceError("Confirm the audio-sharing consent before recording.");
       return;
     }
-    if (recordingRef.current || voiceTranscribing) return;
+    if (recordingRef.current || recordingStartRef.current || voiceTranscribing) return;
     if (!navigator.mediaDevices?.getUserMedia) {
       setVoiceError("Microphone recording is unavailable in this browser or connection. Use device speech recognition or type instead.");
       return;
@@ -531,14 +536,26 @@ export default function ExperienceLab() {
     stopVoicePlayback();
     recognitionRef.current?.stop?.();
     setVoiceListening(false);
+    const startController = new AbortController();
+    recordingStartRef.current = startController;
+    setVoiceStarting(true);
     let stream;
     let context;
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
+      if (startController.signal.aborted) {
+        stream.getTracks().forEach((track) => track.stop());
+        return;
+      }
       const AudioContextClass = window.AudioContext || window.webkitAudioContext;
       if (!AudioContextClass) throw new Error("Audio recording is not supported in this browser.");
       context = new AudioContextClass();
       if (context.state === "suspended") await context.resume();
+      if (startController.signal.aborted) {
+        stream.getTracks().forEach((track) => track.stop());
+        if (context.state !== "closed") await context.close();
+        return;
+      }
       const source = context.createMediaStreamSource(stream);
       const processor = context.createScriptProcessor(4096, 1, 1);
       const silence = context.createGain();
@@ -552,6 +569,10 @@ export default function ExperienceLab() {
       source.connect(processor);
       processor.connect(silence);
       silence.connect(context.destination);
+      if (startController.signal.aborted) {
+        releaseAudioCapture({ stream, context, source, processor, silence });
+        return;
+      }
       recordingRef.current = capture;
       setVoiceRecording(true);
       setVoiceSource("sravaani");
@@ -559,10 +580,15 @@ export default function ExperienceLab() {
     } catch (error) {
       stream?.getTracks?.().forEach((track) => track.stop());
       if (context && context.state !== "closed") context.close().catch(() => {});
-      setVoiceRecording(false);
-      setVoiceError(error?.name === "NotAllowedError"
-        ? "Microphone permission was denied. Allow access in browser settings."
-        : error?.message || "Could not start microphone recording.");
+      if (!startController.signal.aborted) {
+        setVoiceRecording(false);
+        setVoiceError(error?.name === "NotAllowedError"
+          ? "Microphone permission was denied. Allow access in browser settings."
+          : error?.message || "Could not start microphone recording.");
+      }
+    } finally {
+      if (recordingStartRef.current === startController) recordingStartRef.current = null;
+      setVoiceStarting(false);
     }
   }
 
@@ -617,9 +643,12 @@ export default function ExperienceLab() {
   }
 
   function cancelSraVaaniRecording() {
+    const hadStartup = Boolean(recordingStartRef.current);
     const hadRecording = Boolean(recordingRef.current);
     const hadTranscription = Boolean(transcriptionRequestRef.current);
-    if (!hadRecording && !hadTranscription) return;
+    if (!hadStartup && !hadRecording && !hadTranscription) return;
+    recordingStartRef.current?.abort();
+    recordingStartRef.current = null;
     releaseAudioCapture(recordingRef.current);
     recordingRef.current = null;
     setVoiceRecording(false);
@@ -886,11 +915,11 @@ export default function ExperienceLab() {
               <option value="en-IN">English (India)</option><option value="kn-IN">Kannada</option><option value="hi-IN">Hindi</option><option value="ta-IN">Tamil</option><option value="te-IN">Telugu</option><option value="ml-IN">Malayalam</option><option value="bn-IN">Bengali</option><option value="en-US">English (US)</option>
             </select>
             <label className="voice-panel-consent"><input type="checkbox" checked={voiceConsent} onChange={(event) => setVoiceConsent(event.target.checked)} disabled={voiceRecording || voiceTranscribing} /> I agree to send this microphone audio to Aahana&apos;s configured speech service for transcription.</label>
-            <button type="button" className="voice-panel-action" onClick={startSraVaaniRecording} disabled={!voiceConsent || voiceRecording || voiceTranscribing}>{voiceTranscribing ? "Transcribing…" : "◖ Start SraVaani recording"}</button>
+            <button type="button" className="voice-panel-action" onClick={startSraVaaniRecording} disabled={!voiceConsent || voiceStarting || voiceRecording || voiceTranscribing}>{voiceStarting ? "Waiting for microphone…" : voiceTranscribing ? "Transcribing…" : "◖ Start SraVaani recording"}</button>
             {voiceRecording && <><button type="button" className="voice-panel-action listening" onClick={finishSraVaaniRecording}>■ Stop &amp; transcribe</button><button type="button" className="voice-panel-action secondary" onClick={cancelSraVaaniRecording}>Cancel recording</button></>}
             <button type="button" className="voice-panel-action secondary" onClick={startVoiceInput} disabled={voiceRecording || voiceTranscribing}>{voiceListening ? "■ Stop device listening" : "Use browser speech recognition"}</button>
             <button type="button" className="voice-panel-action secondary" onClick={speakLatestResponse} disabled={!thread.some((item) => item.role === "assistant" && String(item.content || "").trim()) || voiceRecording || voiceTranscribing}>{voiceSpeaking ? "■ Stop speaking" : "♫ Listen to Aahana"}</button>
-            <div className="voice-panel-status" role="status" aria-live="polite">{voiceRecording ? "Recording on this device · maximum 30 seconds" : voiceTranscribing ? "Sending audio securely for transcription…" : voiceListening ? "Browser speech recognition is listening…" : voiceSpeaking ? (voiceSource === "maya" ? "Aahana's private voice is speaking…" : "Device voice is speaking…") : voiceSource === "sravaani" ? "SraVaani transcript is ready in your composer." : "Ready when you are."}</div>
+            <div className="voice-panel-status" role="status" aria-live="polite">{voiceStarting ? "Waiting for microphone permission…" : voiceRecording ? "Recording on this device · maximum 30 seconds" : voiceTranscribing ? "Sending audio securely for transcription…" : voiceListening ? "Browser speech recognition is listening…" : voiceSpeaking ? (voiceSource === "maya" ? "Aahana's private voice is speaking…" : "Device voice is speaking…") : voiceSource === "sravaani" ? "SraVaani transcript is ready in your composer." : "Ready when you are."}</div>
             {voiceError && <p className="voice-panel-error" role="alert">{voiceError}</p>}
             <small className="voice-panel-privacy">Your audio is sent to the configured SraVaani service only after you check the consent box and start recording. Aahana does not save the raw audio to your conversation. Recordings are limited to 30 seconds and 15 MB, and are discarded after transcription. Browser speech recognition is a separate device/browser service with its own privacy terms.</small>
           </section>}
