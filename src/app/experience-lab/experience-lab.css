@@ -50,3 +50,24 @@
 .build-source-proposal small{display:block;margin-top:8px;color:#bcaed0;font-size:10px}
 
 .build-proposal-privacy{display:block;margin-top:7px;color:#bcaed0;font-size:10px;line-height:1.5}
+
+
+/* Interactive procedural 3D stage */
+.creative-3d-stage{margin:22px 0 14px;padding:18px;border:1px solid rgba(190,160,255,.24);border-radius:17px;background:linear-gradient(145deg,rgba(35,26,51,.8),rgba(15,12,23,.92));box-shadow:0 18px 55px #0004}
+.creative-3d-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+.creative-3d-heading>div>span{font-size:9px;letter-spacing:1.7px;color:#bda6e8}
+.creative-3d-heading h2{margin:6px 0 0;color:#f4edff;font-size:18px;font-weight:550;letter-spacing:-.5px}
+.creative-3d-live{padding:5px 8px;border:1px solid #9f86c755;border-radius:6px;color:#d4c1f5;font-size:8px;letter-spacing:1px}
+.creative-3d-viewport{height:300px;overflow:hidden;border:1px solid #ffffff12;border-radius:12px;background:#100d19;touch-action:none}
+.creative-3d-viewport canvas{display:block;width:100%;height:100%;cursor:grab;touch-action:none}
+.creative-3d-viewport canvas:active{cursor:grabbing}
+.creative-3d-viewport>p{padding:18px;color:#f0c4cc;font-size:11px}
+.creative-3d-controls{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:13px}
+.creative-3d-controls>label:first-child{display:flex;align-items:center;gap:8px;color:#bdb1d0;font-size:10px}
+.creative-3d-controls select{border:1px solid #ffffff20;border-radius:8px;padding:7px 10px;background:#1b1527;color:#eee5ff;font:inherit;font-size:10px}
+.creative-3d-toggle{display:flex;align-items:center;gap:7px;color:#cbbce0;font-size:10px}
+.creative-3d-toggle input{accent-color:#c5a7ff}
+.creative-3d-hint{margin-left:auto;color:#a99aba;font-size:9px}
+.creative-3d-note{margin:10px 1px 0;color:#82788f;font-size:9px}
+@media(max-width:600px){.creative-3d-stage{padding:12px}.creative-3d-viewport{height:235px}.creative-3d-hint{width:100%;margin-left:0}}
+@media(prefers-reduced-motion:reduce){.creative-3d-viewport canvas{cursor:default}}
