@@ -634,7 +634,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       const response = await fetch("/api/images/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: imagePrompt, steps: imageQuality === "enhanced" ? 8 : 4, style: imageStyle }),
+        body: JSON.stringify({ prompt: imagePrompt, steps: imageQuality === "enhanced" ? 8 : 4, style: imageStyle, quality: imageQuality === "enhanced" ? "masterpiece" : "standard" }),
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || "Could not generate the image.");
@@ -881,7 +881,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         const response = await fetch("/api/images/generate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt: text, steps: imageQuality === "enhanced" ? 8 : 4, style: imageStyle }),
+          body: JSON.stringify({ prompt: text, steps: imageQuality === "enhanced" ? 8 : 4, style: imageStyle, quality: imageQuality === "enhanced" ? "masterpiece" : "standard" }),
         });
         const result = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(result.error || "Could not generate the image.");
