@@ -289,6 +289,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [analyzingFileId, setAnalyzingFileId] = useState(null);
   const [imageGenerating, setImageGenerating] = useState(false);
   const [imageQuality, setImageQuality] = useState("standard");
+  const [imageStyle, setImageStyle] = useState("none");
   const [generatedImage, setGeneratedImage] = useState(null);
   const [memoryOpen, setMemoryOpen] = useState(false);
   const [memoryEnabled, setMemoryEnabled] = useState(false);
@@ -616,7 +617,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       const response = await fetch("/api/images/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: imagePrompt, steps: imageQuality === "enhanced" ? 8 : 4 }),
+        body: JSON.stringify({ prompt: imagePrompt, steps: imageQuality === "enhanced" ? 8 : 4, style: imageStyle }),
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || "Could not generate the image.");
@@ -770,7 +771,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         const response = await fetch("/api/images/generate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt: text, steps: imageQuality === "enhanced" ? 8 : 4 }),
+          body: JSON.stringify({ prompt: text, steps: imageQuality === "enhanced" ? 8 : 4, style: imageStyle }),
         });
         const result = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(result.error || "Could not generate the image.");
@@ -1207,6 +1208,15 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
               <select aria-label="Image generation quality" value={imageQuality} onChange={(event) => setImageQuality(event.target.value)} className="copy-message">
                 <option value="standard">Standard image</option>
                 <option value="enhanced">Enhanced detail</option>
+              </select>
+              <select aria-label="Visual style" value={imageStyle} onChange={(event) => setImageStyle(event.target.value)} className="copy-message">
+                <option value="none">Original style</option>
+                <option value="cinematic">Cinematic</option>
+                <option value="photorealistic">Photorealistic</option>
+                <option value="3d-render">3D render</option>
+                <option value="product-studio">Product studio</option>
+                <option value="illustration">Digital illustration</option>
+                <option value="editorial">Editorial design</option>
               </select>
               <select aria-label="Voice language" value={voiceLanguage} onChange={(event) => setVoiceLanguage(event.target.value)} className="copy-message">{voiceLanguages.map(([code, label]) => <option key={code} value={code}>{label}</option>)}</select>
               <button className="copy-message" type="button" onClick={startVoiceInput} disabled={listening || busy}>{listening ? "Listening…" : "Speak"}</button>
