@@ -17,6 +17,7 @@ export async function GET() {
   return NextResponse.json({
     enabled: config.enabled && ownerAllowed,
     agentReady,
+    validationEnabled: process.env.VERCEL_ENV === "preview" && process.env.AAHANA_SELF_BUILD_VALIDATION_ENABLED === "true",
     configured: config.enabled,
     ownerAllowed,
     repository: ownerAllowed ? config.repository : null,
