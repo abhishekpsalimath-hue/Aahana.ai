@@ -970,6 +970,19 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       return;
     }
 
+    if (generatedImage && isImageEditRequest(text)) {
+      setPrompt("");
+      if (!imageEditingEnabled) {
+        setMessages((current) => [...current,
+          { role: "user", content: text },
+          { role: "assistant", content: "Reference-based image editing is prepared but not enabled yet. Your current image is preserved." },
+        ]);
+        return;
+      }
+      await editGeneratedImage(text);
+      return;
+    }
+
     if (!aiEnabled) {
       const calculation = evaluateArithmetic(text);
       if (calculation === null) {
