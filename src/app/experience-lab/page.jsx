@@ -139,7 +139,6 @@ export default function ExperienceLab() {
   useEffect(() => {
     if (mode !== "build" || !selectedProjectId) return;
     let active = true;
-    setFilesLoading(true);
     fetch(`/api/files?projectId=${encodeURIComponent(selectedProjectId)}`, { cache: "no-store" })
       .then(async (response) => {
         const data = await response.json().catch(() => ({}));
