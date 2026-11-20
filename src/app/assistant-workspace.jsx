@@ -325,6 +325,8 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [selfBuildInstruction, setSelfBuildInstruction] = useState("");
   const [selfBuildProposal, setSelfBuildProposal] = useState(null);
   const [selfBuildReviews, setSelfBuildReviews] = useState([]);
+  const [selfBuildValidationBusy, setSelfBuildValidationBusy] = useState(false);
+  const [selfBuildValidation, setSelfBuildValidation] = useState(null);
   const [selfBuildAgentResponse, setSelfBuildAgentResponse] = useState("");
   const [selfBuildBusy, setSelfBuildBusy] = useState(false);
   const [selfBuildError, setSelfBuildError] = useState("");
@@ -499,6 +501,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     setSelfBuildFile(null);
     setSelfBuildProposal(null);
     setSelfBuildReviews([]);
+    setSelfBuildValidation(null);
     setSelfBuildPullRequest(null);
     try {
       const response = await fetch("/api/build/self/repository", { cache: "no-store" });
@@ -643,7 +646,40 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   }
 
   function updateSelfBuildReview(path, content) {
+    setSelfBuildValidation(null);
     setSelfBuildReviews((current) => current.map((file) => file.path === path ? { ...file, content, diff: createSourceDiff(file.originalContent, content) } : file));
+  }
+
+  async function validateSelfBuildChanges() {
+    if (!selfBuildRepository?.baseSha || selfBuildValidationBusy || selfBuildBusy) return;
+    const files = selfBuildReviews
+      .filter((file) => file.content !== file.originalContent)
+      .map((file) => ({ path: file.path, baseVersion: file.baseVersion, content: file.content }));
+    if (selfBuildFile && selfBuildDraft !== selfBuildFile.originalContent) {
+      if (files.some((file) => file.path === selfBuildFile.path)) {
+        setSelfBuildError("A file can only appear once in a validation set. Close the duplicate manual editor first.");
+        return;
+      }
+      files.push({ path: selfBuildFile.path, baseVersion: selfBuildFile.sha, content: selfBuildDraft });
+    }
+    if (!files.length || files.length > 3) return;
+    setSelfBuildValidationBusy(true);
+    setSelfBuildValidation(null);
+    setSelfBuildError("");
+    try {
+      const response = await fetch("/api/agent/self-improve/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ baseSha: selfBuildRepository.baseSha, files }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok && !result.stage) throw new Error(result.error || "Isolated validation could not start.");
+      setSelfBuildValidation(result);
+    } catch (error) {
+      setSelfBuildError(error.message || "Isolated validation could not complete.");
+    } finally {
+      setSelfBuildValidationBusy(false);
+    }
   }
 
   function stopSelfBuildProposal() {
@@ -1530,16 +1566,20 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                   <p>{file.summary}</p>
                   <pre>{file.diff}</pre>
                   <label htmlFor={"self-build-review-" + index}>Proposed source (editable)</label>
-                  <textarea id={"self-build-review-" + index} rows={12} spellCheck={false} value={file.content} onChange={(event) => updateSelfBuildReview(file.path, event.target.value)} disabled={selfBuildBusy} />
+                  <textarea id={"self-build-review-" + index} rows={12} spellCheck={false} value={file.content} onChange={(event) => updateSelfBuildReview(file.path, event.target.value)} disabled={selfBuildBusy || selfBuildValidationBusy} />
                   <p className="build-tools-note">{file.content === file.originalContent ? "No changes currently staged for this file." : "Edited source differs from the original."}</p>
                 </section>)}
-                <button type="button" onClick={createSelfBuildPullRequest} disabled={selfBuildBusy || !selfBuildReviews.some((file) => file.content !== file.originalContent)}>Create one draft pull request for reviewed files</button>
+                <button type="button" onClick={createSelfBuildPullRequest} disabled={selfBuildBusy || selfBuildValidationBusy || !selfBuildReviews.some((file) => file.content !== file.originalContent)}>Create one draft pull request for reviewed files</button>
               </div>}
               {selfBuildFile && <div className="self-build-editor">
                 <strong>Opened file: {selfBuildFile.path}</strong>
                 <label htmlFor="self-build-source">Review and edit source</label>
-                <textarea id="self-build-source" rows={12} spellCheck={false} value={selfBuildDraft} onChange={(event) => { setSelfBuildDraft(event.target.value); setSelfBuildProposal(null); }} disabled={selfBuildBusy} />
+                <textarea id="self-build-source" rows={12} spellCheck={false} value={selfBuildDraft} onChange={(event) => { setSelfBuildDraft(event.target.value); setSelfBuildProposal(null); setSelfBuildValidation(null); }} disabled={selfBuildBusy || selfBuildValidationBusy} />
                 <button type="button" onClick={createSelfBuildPullRequest} disabled={selfBuildBusy || selfBuildDraft === selfBuildFile.originalContent}>Add edited file to draft pull request</button>
+              </div>}
+              {selfBuildStatus?.validationEnabled === true && (selfBuildReviews.length > 0 || selfBuildFile) && <div className="self-build-validation">
+                <button type="button" onClick={validateSelfBuildChanges} disabled={selfBuildBusy || selfBuildValidationBusy || (!selfBuildReviews.some((file) => file.content !== file.originalContent) && (!selfBuildFile || selfBuildDraft === selfBuildFile.originalContent))}>{selfBuildValidationBusy ? "Running isolated tests & build…" : "Run isolated tests & build"}</button>
+                {selfBuildValidation && <div role="status"><p>{selfBuildValidation.message}</p>{selfBuildValidation.output && <pre>{[selfBuildValidation.output.stdout, selfBuildValidation.output.stderr].filter(Boolean).join("\\n")}</pre>}</div>}
               </div>}
               {selfBuildPullRequest && <p className="notice" role="status">Draft pull request created: <a href={selfBuildPullRequest.url} target="_blank" rel="noopener noreferrer">#{selfBuildPullRequest.number} — review on GitHub</a>. It has not been merged or deployed.</p>}
             </section>
