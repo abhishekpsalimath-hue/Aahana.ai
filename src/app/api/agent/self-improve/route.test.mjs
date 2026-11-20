@@ -28,7 +28,7 @@ test("agent treats repository content as untrusted and never commits, merges, or
   assert.match(route, /human review/);
   assert.match(route, /commitCreated: false/);
   assert.match(route, /pullRequestCreated: false/);
-  assert.match(workspace, /Create draft pull request/);
+  assert.match(workspace, /Create one draft pull request for reviewed files/);
 });
 
 test("agent execution is bounded and uses the existing Groq provider only", () => {
