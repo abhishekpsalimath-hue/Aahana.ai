@@ -63,6 +63,7 @@ export function createGitHubAppClient({
           "X-GitHub-Api-Version": API_VERSION,
         },
         body: JSON.stringify({ permissions: { contents: "read", pull_requests: "read", checks: "read" } }),
+        signal: AbortSignal.timeout(10_000),
       },
     );
     if (!response.ok) throw new Error("github_installation_token_request_failed");
@@ -99,6 +100,7 @@ export function createGitHubAppClient({
         Accept: "application/vnd.github+json",
         "X-GitHub-Api-Version": API_VERSION,
       },
+      signal: AbortSignal.timeout(15_000),
     });
     if (!response.ok) throw new Error("github_api_request_failed");
     return { data: await response.json(), link: response.headers?.get?.("link") || "" };
