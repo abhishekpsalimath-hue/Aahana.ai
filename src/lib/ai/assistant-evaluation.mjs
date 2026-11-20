@@ -548,6 +548,34 @@ export function summarizeEvaluation(results) {
     const scoreTotal = valid.reduce((sum, item) => sum + item.scores[dimension], 0);
     return [dimension, valid.length ? Number((scoreTotal / valid.length).toFixed(2)) : null];
   }));
+  const categorySummaries = Object.fromEntries(
+    [...new Set(ASSISTANT_EVALUATION_CASES.map((item) => item.category))].map((category) => {
+      const categoryIds = new Set(
+        ASSISTANT_EVALUATION_CASES.filter((item) => item.category === category).map((item) => item.id)
+      );
+      const categoryResults = valid.filter((item) => categoryIds.has(item.id));
+      const categoryAverage = categoryResults.length
+        ? categoryResults.reduce((sum, item) =>
+          sum + dimensions.reduce((caseSum, dimension) => caseSum + item.scores[dimension], 0) / dimensions.length, 0
+        ) / categoryResults.length
+        : null;
+      const dimensionAverages = Object.fromEntries(dimensions.map((dimension) => {
+        const scoreTotal = categoryResults.reduce((sum, item) => sum + item.scores[dimension], 0);
+        return [dimension, categoryResults.length ? Number((scoreTotal / categoryResults.length).toFixed(2)) : null];
+      }));
+      return [category, {
+        expected: categoryIds.size,
+        scored: categoryResults.length,
+        average: categoryAverage === null ? null : Number(categoryAverage.toFixed(2)),
+        dimensionAverages,
+        criticalFailures: entries.reduce((sum, item) =>
+          categoryIds.has(item?.id) && Array.isArray(item?.criticalFailures)
+            ? sum + item.criticalFailures.filter((failure) => ASSISTANT_EVALUATION_RUBRIC.criticalFailures.includes(failure)).length
+            : sum, 0
+        ),
+      }];
+    })
+  );
   const atLeastFour = valid.filter((item) => {
     const caseAverage = dimensions.reduce((sum, dimension) => sum + item.scores[dimension], 0) / dimensions.length;
     return caseAverage >= 4;
@@ -565,6 +593,7 @@ export function summarizeEvaluation(results) {
     dimensionScores: dimensionScoreCount,
     average: average === null ? null : Number(average.toFixed(2)),
     dimensionAverages,
+    categorySummaries,
     atLeastFour,
     criticalFailures,
     releaseEligible:
