@@ -77,3 +77,16 @@ test("recognizes Ganesha, Krishna, and Rama with their defining visual attribute
   assert.match(parseImageGenerationInput({ prompt: "Lord Krishna" }).prompt, /peacock feather/i);
   assert.match(parseImageGenerationInput({ prompt: "Lord Rama" }).prompt, /bow/i);
 });
+
+
+test("validates conversational reference-image edits and bounded uploads", async () => {
+  const { parseImageEditInput, MAX_IMAGE_EDIT_BYTES } = await import("./image-generation.mjs");
+  assert.deepEqual(parseImageEditInput({
+    prompt: "Make the background cinematic",
+    imageType: "image/jpeg",
+    imageSize: 120_000,
+  }), { ok: true, prompt: "Make the background cinematic" });
+  assert.equal(parseImageEditInput({ prompt: " ", imageType: "image/jpeg", imageSize: 20 }).ok, false);
+  assert.equal(parseImageEditInput({ prompt: "Change it", imageType: "image/gif", imageSize: 20 }).ok, false);
+  assert.equal(parseImageEditInput({ prompt: "Change it", imageType: "image/jpeg", imageSize: MAX_IMAGE_EDIT_BYTES + 1 }).ok, false);
+});
