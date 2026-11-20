@@ -35,7 +35,7 @@ async function complete(messages, maxTokens) {
     signal: AbortSignal.timeout(60000),
   });
   if (!response.ok) {
-    const detail = (await response.text().catch(() => "")).replace(/[\\r\\n\\t]+/g, " ").slice(0, 240);
+    const detail = (await response.text().catch(() => "")).replace(/[\\r\n\\t]+/g, " ").slice(0, 240);
     const error = new Error(`Groq request failed (${response.status}): ${detail}`);
     error.status = response.status;
     throw error;
@@ -48,7 +48,7 @@ async function complete(messages, maxTokens) {
 
 function parseJson(text) {
   const triple = "`".repeat(3);
-  const cleaned = text.replace(new RegExp("^" + triple + "(?:json)?\\\\s*", "i"), "").replace(new RegExp("\\\\s*" + triple + "$"), "").trim();
+  const cleaned = text.replace(new RegExp("^" + triple + "(?:json)?\s*", "i"), "").replace(new RegExp("\s*" + triple + "$"), "").trim();
   return JSON.parse(cleaned);
 }
 
@@ -124,7 +124,7 @@ for (let index = 0; index < ASSISTANT_EVALUATION_CASES.length; index += 1) {
       criticalFailures: judgement.criticalFailures,
       judgeRationale: String(judgement.rationale || "").slice(0, 1200),
     });
-    process.stdout.write(`[${index + 1}/${ASSISTANT_EVALUATION_CASES.length}] ${item.id}: scored\\n`);
+    process.stdout.write(`[${index + 1}/${ASSISTANT_EVALUATION_CASES.length}] ${item.id}: scored\n`);
   } catch (error) {
     results.push({
       id: item.id,
@@ -134,7 +134,7 @@ for (let index = 0; index < ASSISTANT_EVALUATION_CASES.length; index += 1) {
       criticalFailures: [],
       evaluationError: String(error?.message || error).slice(0, 500),
     });
-    process.stderr.write(`[${index + 1}/${ASSISTANT_EVALUATION_CASES.length}] ${item.id}: ${String(error?.message || error)}\\n`);
+    process.stderr.write(`[${index + 1}/${ASSISTANT_EVALUATION_CASES.length}] ${item.id}: ${String(error?.message || error)}\n`);
     if ([401, 403, 429].includes(error?.status)) {
       stoppedEarly = true;
       break;
@@ -155,4 +155,4 @@ process.stdout.write(JSON.stringify({
   criticalFailures: summary.criticalFailures,
   scoreGateEligible: summary.releaseEligible,
   releaseEligible: false,
-}, null, 2) + "\\n");
+}, null, 2) + "\n");
