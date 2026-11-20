@@ -76,3 +76,17 @@ test("Experience Lab aborts pending microphone permission startup and stops late
   assert.match(page, /if \(recordingStartRef\.current === startController\) recordingStartRef\.current = null/);
   assert.match(page, /const hadStartup = Boolean\(recordingStartRef\.current\)/);
 });
+
+
+test("Experience Lab loads authenticated SraVaani capabilities and only offers configured locales", () => {
+  assert.match(page, /fetch\("\/api\/voice\/transcribe", \{ method: "GET", cache: "no-store"/);
+  assert.match(page, /setVoiceLocales\(data\.enabled === true \? locales : \[\]\)/);
+  assert.match(page, /voiceLocales\.map\(\(locale\)/);
+  assert.match(page, /!voiceLocales\.includes\(voiceLocale\)/);
+  assert.doesNotMatch(page, /<option value="kn-IN">Kannada<\/option>/);
+});
+
+
+test("browser speech recognition keeps a usable fallback locale when SraVaani is disabled", () => {
+  assert.match(page, /recognition\.lang = voiceLocale \|\| "en-IN"/);
+});
