@@ -1575,11 +1575,11 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                 <strong>Opened file: {selfBuildFile.path}</strong>
                 <label htmlFor="self-build-source">Review and edit source</label>
                 <textarea id="self-build-source" rows={12} spellCheck={false} value={selfBuildDraft} onChange={(event) => { setSelfBuildDraft(event.target.value); setSelfBuildProposal(null); setSelfBuildValidation(null); }} disabled={selfBuildBusy || selfBuildValidationBusy} />
-                <button type="button" onClick={createSelfBuildPullRequest} disabled={selfBuildBusy || selfBuildDraft === selfBuildFile.originalContent}>Add edited file to draft pull request</button>
+                <button type="button" onClick={createSelfBuildPullRequest} disabled={selfBuildBusy || selfBuildValidationBusy || selfBuildDraft === selfBuildFile.originalContent}>Add edited file to draft pull request</button>
               </div>}
               {selfBuildStatus?.validationEnabled === true && (selfBuildReviews.length > 0 || selfBuildFile) && <div className="self-build-validation">
                 <button type="button" onClick={validateSelfBuildChanges} disabled={selfBuildBusy || selfBuildValidationBusy || (!selfBuildReviews.some((file) => file.content !== file.originalContent) && (!selfBuildFile || selfBuildDraft === selfBuildFile.originalContent))}>{selfBuildValidationBusy ? "Running isolated tests & build…" : "Run isolated tests & build"}</button>
-                {selfBuildValidation && <div role="status"><p>{selfBuildValidation.message}</p>{selfBuildValidation.output && <pre>{[selfBuildValidation.output.stdout, selfBuildValidation.output.stderr].filter(Boolean).join("\\n")}</pre>}</div>}
+                {selfBuildValidation && <div role="status"><p>{selfBuildValidation.message}</p>{selfBuildValidation.output && <pre>{[selfBuildValidation.output.stdout, selfBuildValidation.output.stderr].filter(Boolean).join("\n")}</pre>}</div>}
               </div>}
               {selfBuildPullRequest && <p className="notice" role="status">Draft pull request created: <a href={selfBuildPullRequest.url} target="_blank" rel="noopener noreferrer">#{selfBuildPullRequest.number} — review on GitHub</a>. It has not been merged or deployed.</p>}
             </section>
