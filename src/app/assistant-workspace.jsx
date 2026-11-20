@@ -1132,6 +1132,12 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
             <span className="active-mode">Assistance</span>
             <span className="assistance-context-note">Ask naturally — create, write, research, build and improve in one conversation.</span>
           </div>
+          <div className="assistance-tool-launchers" role="group" aria-label="Assistance tools">
+            <button type="button" onClick={() => { setMode("build"); setError(""); }}>Build workspace <span aria-hidden="true">↗</span></button>
+            <button type="button" onClick={() => { setMode("create"); setError(""); }}>Creative tools <span aria-hidden="true">✧</span></button>
+            <button type="button" onClick={() => { setPrompt("Research this topic thoroughly, compare reliable sources and summarize the evidence: "); setError(""); }}>Research <span aria-hidden="true">⌕</span></button>
+            <button type="button" onClick={startVoiceInput} disabled={listening || busy}>{listening ? "Listening…" : "Voice"} <span aria-hidden="true">◖</span></button>
+          </div>
 
           {messages.length > 0 && (
             <div className="conversation" aria-live="polite">
