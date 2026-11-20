@@ -31,6 +31,8 @@ export async function POST(request) {
     return NextResponse.json({ error: "Describe the image in 1–2,048 characters." }, { status: 400 });
   }
 
+  if (request.signal.aborted) return new Response(null, { status: 499 });
+
   try {
     const response = await fetch(
       `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/ai/run/${MODEL}`,
@@ -42,7 +44,7 @@ export async function POST(request) {
         },
         body: JSON.stringify({ prompt, steps: 4 }),
         cache: "no-store",
-        signal: AbortSignal.timeout(55000),
+        signal: AbortSignal.any([request.signal, AbortSignal.timeout(55000)]),
       }
     );
 
@@ -65,6 +67,7 @@ export async function POST(request) {
       { headers: { "Cache-Control": "no-store" } }
     );
   } catch (error) {
+    if (request.signal.aborted) return new Response(null, { status: 499 });
     console.error("Aahana image generation request failed:", error?.name || "unknown error");
     return NextResponse.json({ error: "Image generation timed out or the provider is unavailable. Please try again." }, { status: 503 });
   }
