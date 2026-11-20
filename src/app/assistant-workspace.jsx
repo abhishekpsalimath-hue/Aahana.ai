@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getSourceFileMimeType, isSupportedSourceFile } from "@/lib/build/source-file-policy.mjs";
+import { isImageGenerationRequest, isImageEditRequest } from "@/lib/creative/creative-intent.mjs";
 
 const modes = [
   { id: "solve", label: "Solve", hint: "Work through a problem" },
@@ -157,13 +158,6 @@ function renderAssistantContent(content, onCopyCode) {
   return nodes;
 }
 
-function isImageEditRequest(value) {
-  const text = String(value || "").trim();
-  if (!text) return false;
-  return /\b(?:change|make|replace|remove|add|adjust|edit|modify|transform|put|move|brighten|darken|blur|sharpen|crop|recolor|restyle)\b/i.test(text) ||
-    /\b(?:more|less)\s+(?:cinematic|realistic|bright|dark|detailed|vibrant|dramatic|colorful|minimal)\b/i.test(text);
-}
-
 async function createReferenceImageFile(dataUrl) {
   const image = new Image();
   image.src = dataUrl;
@@ -181,37 +175,6 @@ async function createReferenceImageFile(dataUrl) {
     0.88
   ));
   return new File([blob], "aahana-reference.jpg", { type: "image/jpeg" });
-}
-
-function isImageGenerationRequest(value) {
-  const text = String(value || "").trim();
-  if (!text) return false;
-
-  // Natural creation requests can include descriptive words before the subject.
-  if (/\b(?:generate|create|draw|paint|illustrate|render|make)\b[\s\S]{0,100}\b(?:shiva|mahadev|mahadeva|shankar|hanuman|anjaneya|maruti|ganesha|ganapati|vinayaka|krishna|rama|ram)\b/i.test(text)) return true;
-
-  // Short, natural commands for well-known visual subjects should work
-  // without forcing users to append the word "image".
-  if (/^\s*(?:please\s+)?(?:generate|create|draw|paint|illustrate|render|make)\s+(?:(?:a|an|the)\s+)?(?:(?:lord|shri|sri)\s+)?(?:shiva|mahadev|mahadeva|shankar|hanuman|anjaneya|maruti|ganesha|ganapati|vinayaka|krishna|rama|ram)\b/i.test(text)) return true;
-
-  // Explicit image-generation instructions.
-  if (/\b(?:generate|create|draw|paint|illustrate|render|make)\b[\s\S]{0,180}\b(?:image|picture|illustration|artwork|portrait|wallpaper|logo|poster|cover|banner|icon|thumbnail|scene|landscape|cityscape|character|diagram)\b/i.test(text)) return true;
-  if (/\b(?:show me|visuali[sz]e|turn this into|text[- ]to[- ]image)\b/i.test(text) && /\b(?:image|picture|art|illustration|render|visual)\b/i.test(text)) return true;
-  if (/\b(?:please|can you|could you|i want|i need)\b[\s\S]{0,120}\b(?:generate|create|draw|paint|illustrate|render|make)\b/i.test(text) && /\b(?:image|picture|art|visual|logo|poster|wallpaper)\b/i.test(text)) return true;
-
-  // Finished prompts pasted without an instruction. Require several visual
-  // generation cues and a recognizable visual subject to avoid false positives.
-  const visualMarkers = [
-    /\b(?:photorealistic|ultra[- ]realistic)\b/i,
-    /\b(?:cinematic|wide[- ]shot|close[- ]up|wide[- ]angle)\b/i,
-    /\b(?:volumetric lighting|depth of field|anamorphic|ray tracing)\b/i,
-    /\b(?:8k|4k|high[- ]detail|ultra[- ]detailed)\b/i,
-    /\b(?:negative prompt|aspect ratio|text[- ]to[- ]image)\b/i,
-    /\b(?:bioluminescent|neon lighting|dramatic lighting|realistic reflections)\b/i,
-  ];
-  const markerCount = visualMarkers.filter((pattern) => pattern.test(text)).length;
-  const hasVisualSubject = /\b(?:city|metropolis|landscape|ocean|underwater|space station|planet|portrait|character|architecture|skyscraper|forest|mountain|vehicle|spaceship|animal|interior|exterior|scene|coral|submarine|building)\b/i.test(text);
-  return text.length >= 100 && markerCount >= 2 && hasVisualSubject;
 }
 
 function evaluateArithmetic(input) {
