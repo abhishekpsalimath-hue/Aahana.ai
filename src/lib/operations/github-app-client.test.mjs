@@ -98,3 +98,14 @@ test("rejects an installation token that grants write permissions", async () => 
   const client = createGitHubAppClient({ env, fetchImpl, now: () => Date.parse("2026-11-20T00:00:00Z") });
   await assert.rejects(() => client.getPullRequest({ pullRequestNumber: 7 }), /github_installation_token_permissions_invalid/);
 });
+
+
+test("bounds GitHub App token and API requests with abort deadlines", async () => {
+  const { fetchImpl, calls } = makeFetch();
+  const client = createGitHubAppClient({ env, fetchImpl, now: () => Date.parse("2026-11-20T00:00:00Z") });
+  await client.getPullRequest({ pullRequestNumber: 7 });
+  assert.equal(calls.length, 2);
+  assert.ok(calls.every((call) => call.options.signal instanceof AbortSignal));
+  assert.equal(calls[0].options.signal.aborted, false);
+  assert.equal(calls[1].options.signal.aborted, false);
+});

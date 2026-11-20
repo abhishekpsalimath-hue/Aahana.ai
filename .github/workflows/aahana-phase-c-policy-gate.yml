@@ -8,6 +8,7 @@ on:
       - feat/phase-c-trusted-github-evidence
       - fix/phase-c-detect-renamed-protected-paths
       - fix/phase-c-evidence-invalid-criteria
+      - fix/phase-c-github-api-timeouts
     paths:
       - "src/lib/operations/autonomous-policy.*"
       - "src/lib/operations/autonomous-github-evidence.*"
@@ -25,6 +26,7 @@ on:
       - feat/phase-c-github-app-minimum-permissions
       - fix/phase-c-detect-renamed-protected-paths
       - fix/phase-c-evidence-invalid-criteria
+      - fix/phase-c-github-api-timeouts
   workflow_dispatch:
 
 permissions:
