@@ -2,7 +2,19 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { executeBuildTask } from "./build-engine.mjs";
 
-function createFakeSandbox({ installExitCode = 0, taskExitCode = 0 } = {}) {
+function writeOutput(stream, value) {
+  if (!stream) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    stream.end(value, (error) => error ? reject(error) : resolve());
+  });
+}
+
+function createFakeSandbox({
+  installExitCode = 0,
+  taskExitCode = 0,
+  taskStdout = "task output\\n",
+  taskStderr = "",
+} = {}) {
   const calls = [];
   const sandbox = {
     async writeFiles(files) {
@@ -14,11 +26,11 @@ function createFakeSandbox({ installExitCode = 0, taskExitCode = 0 } = {}) {
     async runCommand(options) {
       calls.push({ type: "runCommand", options });
       const isInstall = options.cmd === "npm" && options.args[0] === "install";
-      return {
-        exitCode: isInstall ? installExitCode : taskExitCode,
-        async stdout() { return isInstall ? "installed\n" : "task output\n"; },
-        async stderr() { return isInstall && installExitCode ? "install failed\n" : ""; },
-      };
+      await Promise.all([
+        writeOutput(options.stdout, isInstall ? "installed\\n" : taskStdout),
+        writeOutput(options.stderr, isInstall && installExitCode ? "install failed\\n" : taskStderr),
+      ]);
+      return { exitCode: isInstall ? installExitCode : taskExitCode };
     },
     async stop() {
       calls.push({ type: "stop" });
@@ -29,7 +41,6 @@ function createFakeSandbox({ installExitCode = 0, taskExitCode = 0 } = {}) {
     return sandbox;
   } } };
 }
-
 test("runs a simple JavaScript entrypoint in a disposable deny-all sandbox", async () => {
   const fake = createFakeSandbox();
   const result = await executeBuildTask({
@@ -46,6 +57,7 @@ test("runs a simple JavaScript entrypoint in a disposable deny-all sandbox", asy
   assert.equal(fake.calls[0].options.networkPolicy, "deny-all");
   assert.equal(fake.calls[0].options.persistent, false);
   assert.equal(fake.calls[0].options.resources.vcpus, 1);
+  assert.equal(fake.calls[0].options.timeout, 120_000);
   assert.equal(fake.calls.at(-1).type, "stop");
   assert.equal(fake.calls.some((call) => call.type === "update"), true);
 });
@@ -267,4 +279,41 @@ test("does not create a sandbox when the caller is already disconnected", async 
     signal: controller.signal,
   }), /Build cancelled before sandbox creation/);
   assert.equal(createCount, 0);
+});
+
+
+test("bounds streamed stdout and stderr before retaining command output", async () => {
+  const fake = createFakeSandbox({
+    taskStdout: "o".repeat(50_000),
+    taskStderr: "e".repeat(50_000),
+  });
+  const result = await executeBuildTask({
+    files: [{ path: "src/main.js", content: "console.log('hello')" }],
+    operation: "run",
+    entrypoint: "src/main.js",
+    projectId: "prj_12345678",
+    sandboxName: "aahana-build-output-cap",
+    SandboxClient: fake.SandboxClient,
+  });
+
+  assert.equal(result.status, "passed");
+  assert.equal(result.stdout.length, 12_000);
+  assert.equal(result.stderr.length, 12_000);
+  assert.equal(result.stdout, "o".repeat(12_000));
+  assert.equal(result.stderr, "e".repeat(12_000));
+});
+
+test("passes the hard wall-clock timeout to the Vercel Sandbox provider", async () => {
+  const fake = createFakeSandbox();
+  await executeBuildTask({
+    files: [{ path: "src/main.js", content: "console.log('hello')" }],
+    operation: "run",
+    entrypoint: "src/main.js",
+    projectId: "prj_12345678",
+    sandboxName: "aahana-build-timeout",
+    SandboxClient: fake.SandboxClient,
+  });
+
+  const createCall = fake.calls.find((call) => call.type === "create");
+  assert.equal(createCall.options.timeout, 120_000);
 });
