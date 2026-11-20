@@ -4,7 +4,7 @@ import { parseImageGenerationInput } from "./image-generation.mjs";
 
 test("defaults to automatic masterpiece image direction without asking the user to choose settings", () => {
   assert.deepEqual(parseImageGenerationInput({ prompt: "A moonlit forest" }), {
-    ok: true, prompt: "A moonlit forest\\n\\nCreative direction: produce a premium, portfolio-worthy hero image. Establish one unmistakable focal subject and a deliberate visual hierarchy. Use intentional composition, believable perspective, rich but controlled color, nuanced lighting, dimensional depth, tactile material detail, and crisp subject separation. Make fine details coherent and purposeful; avoid visual clutter, accidental text, malformed anatomy, duplicate objects, plastic-looking textures, and oversharpening. Preserve the subject and specific details requested by the user. Do not add logos, words, or extra objects unless requested.", steps: 8, style: "none", quality: "masterpiece",
+    ok: true, prompt: "A moonlit forest\n\nCreative direction: produce a premium, portfolio-worthy hero image. Establish one unmistakable focal subject and a deliberate visual hierarchy. Use intentional composition, believable perspective, rich but controlled color, nuanced lighting, dimensional depth, tactile material detail, and crisp subject separation. Make fine details coherent and purposeful; avoid visual clutter, accidental text, malformed anatomy, duplicate objects, plastic-looking textures, and oversharpening. Preserve the subject and specific details requested by the user. Do not add logos, words, or extra objects unless requested.", steps: 8, style: "none", quality: "masterpiece",
   });
 });
 
