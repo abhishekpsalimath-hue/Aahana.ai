@@ -7,6 +7,7 @@ const REPOSITORY_PATTERN = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
 // Student Mode, authentication, database, and deployment code are intentionally excluded.
 const ALLOWED_ROOTS = [
   "src/app/experience-lab/",
+  "src/app/assistant-workspace.jsx",
   "src/lib/build/",
 ];
 
