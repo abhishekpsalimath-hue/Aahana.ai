@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Allura&family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=Syne:wght@500;600;700;800&display=swap');
 
 :root{color-scheme:dark;--bg:#09090d;--panel:#101016;--panel-2:#15151e;--line:#252431;--text:#f3f0f8;--muted:#9691a4;--lilac:#c4a7ff;--lilac-2:#a987f2}
 *{box-sizing:border-box}
@@ -357,3 +357,80 @@ button:focus-visible,a:focus-visible{outline-color:#c4a7ff}
 @media(max-width:760px){.discover-hero{min-height:550px;padding:75px 22px}.discover-hero h1{letter-spacing:-3px}.discover-lead{font-size:14px}.discover-modes,.discover-detail,.discover-final{width:calc(100% - 40px);padding:60px 0}.discover-mode-grid{grid-template-columns:1fr 1fr}.discover-mode-card{min-height:150px}.discover-detail{grid-template-columns:1fr;gap:18px}.discover-footer{padding:20px}}
 @media(max-width:420px){.discover-mode-grid{grid-template-columns:1fr}.discover-mode-card{min-height:125px}.discover-mode-card h3{margin-top:18px}}
 @media(prefers-reduced-motion:reduce){.discover-primary{transition:none}}
+
+
+/* Aahana AI — launch cosmic experience */
+.welcome{width:min(900px,calc(100% - 48px));margin:clamp(48px,8vh,92px) auto 68px;animation:welcome-arrive 1.05s cubic-bezier(.16,1,.3,1) both}
+@keyframes welcome-arrive{from{opacity:0;transform:translate3d(0,18px,0);filter:blur(8px)}to{opacity:1;transform:translate3d(0,0,0);filter:blur(0)}}
+.space-background{background:radial-gradient(ellipse at 50% 34%,rgba(110,75,157,.18),transparent 43%),radial-gradient(ellipse at 15% 72%,rgba(93,68,142,.11),transparent 36%),radial-gradient(ellipse at 88% 20%,rgba(173,143,229,.09),transparent 30%)}
+.cosmic-star-canvas{position:absolute;inset:0;width:100%;height:100%;display:block;opacity:.92}
+.cosmic-nebula{position:absolute;display:block;pointer-events:none;border-radius:50%;filter:blur(65px);opacity:.22;mix-blend-mode:screen}
+.cosmic-nebula-one{width:min(46vw,560px);height:min(34vw,420px);left:8%;top:15%;background:radial-gradient(ellipse,#8060b7 0%,rgba(128,96,183,.22) 42%,transparent 72%);animation:nebula-drift 22s ease-in-out infinite alternate}
+.cosmic-nebula-two{width:min(42vw,500px);height:min(32vw,380px);right:5%;bottom:8%;background:radial-gradient(ellipse,#6e5aa5 0%,rgba(110,90,165,.18) 42%,transparent 72%);animation:nebula-drift 28s ease-in-out infinite alternate-reverse}
+@keyframes nebula-drift{from{transform:translate3d(-2%,1%,0) scale(.94)}to{transform:translate3d(3%,-2%,0) scale(1.08)}}
+.welcome h1{position:relative;max-width:850px;font-family:'Syne','Space Grotesk',Manrope,sans-serif;font-size:clamp(54px,8.1vw,94px);font-weight:800;line-height:.99;letter-spacing:-.075em;text-wrap:balance;margin:25px 0 21px;text-shadow:0 10px 55px rgba(160,125,220,.12)}
+.welcome h1 em{display:inline-block;background:linear-gradient(100deg,#f4edff 0%,#d9c5ff 32%,#a98af0 70%,#e5d8ff 100%);background-size:220% 100%;background-clip:text;-webkit-background-clip:text;color:transparent;animation:title-shimmer 9s ease-in-out infinite alternate}
+@keyframes title-shimmer{from{background-position:0% 50%}to{background-position:100% 50%}}
+.welcome>.eyebrow{font-family:'Space Grotesk',sans-serif;font-size:10px;letter-spacing:2.8px;color:#c5b2e5}
+.welcome>p{max-width:600px;font-size:clamp(14px,1.6vw,17px);line-height:1.85;color:#c0b7d0}
+.welcome-signal{width:100px;height:100px;margin-bottom:25px}
+.signal-core{width:24px;height:24px;box-shadow:0 0 20px #bd9affcc,0 0 55px #9e76e988,0 0 105px #9e76e933}
+.signal-orbit{border-color:#c5a9ff77;box-shadow:0 0 18px #b99aff1c}
+.signal-orbit-two{border-color:#e5d6ff55}
+.mode-row{gap:9px;flex-wrap:wrap;margin:0 0 15px}
+.mode{position:relative;overflow:hidden;border:1px solid #ffffff12;border-radius:999px;background:rgba(18,15,27,.7);backdrop-filter:blur(12px);color:#bdb3ce;padding:10px 18px;font:600 12px 'Space Grotesk',sans-serif;transition:transform .24s ease,border-color .24s ease,background .24s ease,color .24s ease,box-shadow .24s ease}
+.mode:hover{transform:translateY(-3px);border-color:#a98af066;background:#211a30;color:#fff;box-shadow:0 8px 25px #9f7bd522}
+.active-mode{border-color:#b89bfa88;background:linear-gradient(120deg,#35274b,#211a30);color:#f0e7ff;box-shadow:0 0 24px #ad8cf522,inset 0 1px #ffffff19}
+.composer{position:relative;border:1px solid #9b7acb88;border-radius:20px;background:linear-gradient(145deg,rgba(25,20,36,.94),rgba(12,12,19,.96));box-shadow:0 24px 90px #0008,0 0 0 1px #b89bfa0c,0 0 55px #a98af01a,inset 0 1px #ffffff12;backdrop-filter:blur(22px);transition:border-color .28s ease,box-shadow .28s ease,transform .28s ease}
+.composer:focus-within{border-color:#d0b8ff;box-shadow:0 26px 95px #0009,0 0 0 4px #b89bfa18,0 0 75px #a98af033;transform:translateY(-2px)}
+.composer textarea{min-height:88px;font:15px/1.7 'DM Sans',sans-serif}
+.starter-grid{gap:12px;margin-top:4px}
+.starter{position:relative;overflow:hidden;min-height:74px;border:1px solid #ffffff18;border-radius:15px;background:linear-gradient(135deg,rgba(25,21,36,.88),rgba(14,14,21,.86));color:#ddd5eb;padding:17px;font:500 12px/1.5 'Space Grotesk',sans-serif;backdrop-filter:blur(14px);transition:transform .28s cubic-bezier(.2,.8,.2,1),border-color .28s ease,background .28s ease,box-shadow .28s ease}
+.starter::before{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 15%,#d7c4ff0d 48%,transparent 80%);transform:translateX(-120%);transition:transform .7s ease}
+.starter:hover{transform:translateY(-5px) scale(1.012);border-color:#b89bfa77;background:linear-gradient(135deg,#211a30,#12111a);box-shadow:0 14px 36px #0005,0 0 28px #a98af018}
+.starter:hover::before{transform:translateX(120%)}
+.starter-icon{font-size:19px;text-shadow:0 0 18px #c4a7ff88}
+.starter-arrow{transition:transform .24s ease,color .24s ease}
+.starter:hover .starter-arrow{transform:translate(3px,-3px);color:#e6d7ff}
+.astronaut-float{filter:drop-shadow(0 14px 38px #a98af066);animation:astronaut-drift 6.5s ease-in-out infinite}
+.footer{position:relative;z-index:1}
+@media(max-width:760px){.welcome{width:calc(100% - 36px);margin:48px auto 48px}.welcome h1{font-size:clamp(43px,11.2vw,62px);letter-spacing:-.07em;max-width:calc(100% - 30px)}.welcome-signal{width:78px;height:78px}.mode-row{gap:6px}.mode{padding:9px 13px;font-size:11px}.composer{border-radius:17px;padding:13px}.composer textarea{min-height:76px;font-size:14px}.starter{min-height:65px;padding:14px}.cosmic-nebula{filter:blur(48px);opacity:.16}}
+@media(prefers-reduced-motion:reduce){.welcome,.welcome h1 em,.cosmic-nebula,.mode,.starter,.starter::before,.composer{animation:none!important;transition:none!important}.welcome{opacity:1;filter:none;transform:none}}
+
+/* Founder signature — elegant handwritten mark */
+.footer{align-items:center;gap:18px;flex-wrap:wrap}
+.footer-brand{letter-spacing:2px;color:#8c829e;font:700 11px Manrope,sans-serif}
+.footer-note{margin-left:auto}
+.founder-signature{position:relative;display:inline-block;color:#d8c5ff;font:400 clamp(25px,3vw,34px)/1 'Allura','Segoe Script',cursive;letter-spacing:.15px;white-space:nowrap;text-shadow:0 0 18px #b99aff35;transform:rotate(-3deg);padding:0 8px 4px}
+.founder-signature::after{content:"";position:absolute;left:8px;right:4px;bottom:0;height:1px;background:linear-gradient(90deg,transparent,#b99affaa 18%,#d9c8ff 70%,transparent);transform:skewX(-24deg);transform-origin:left}
+@media(max-width:760px){.footer{gap:10px}.footer-note{margin-left:0;flex:1 1 100%;order:3}.founder-signature{font-size:29px;margin-left:auto}}
+
+
+/* Free-floating Assistance welcome; astronaut gently travels around the content */
+.welcome-intro{position:relative;isolation:isolate;overflow:visible;width:100%;min-height:330px;margin:0 auto 34px;padding:clamp(18px,3vw,30px) 0 26px;text-align:left;background:none;border:0;border-radius:0;box-shadow:none;backdrop-filter:none}
+.welcome-intro .welcome-signal{margin-top:2px}
+.welcome-intro .eyebrow{margin-top:8px}
+.welcome-intro h1{max-width:700px;margin-top:22px}
+.welcome-intro>p{max-width:560px;margin-bottom:0}
+.welcome-intro .astronaut-float{position:absolute;z-index:2;top:0;left:78%;right:auto;width:112px;height:112px;opacity:1;animation:astronaut-roam 24s ease-in-out infinite;filter:drop-shadow(0 10px 22px #9d7bd944)}
+@keyframes astronaut-roam{
+  0%,100%{top:0;left:78%;transform:translate3d(0,0,0) rotate(-8deg)}
+  20%{top:5%;left:3%;transform:translate3d(0,0,0) rotate(9deg)}
+  42%{top:58%;left:9%;transform:translate3d(0,0,0) rotate(-12deg)}
+  66%{top:62%;left:76%;transform:translate3d(0,0,0) rotate(10deg)}
+  84%{top:26%;left:88%;transform:translate3d(0,0,0) rotate(-5deg)}
+}
+@media(max-width:760px){
+ .welcome-intro{min-height:300px;padding:14px 0 22px;margin-bottom:26px}
+ .welcome-intro .astronaut-float{width:78px;height:78px;animation-name:astronaut-roam-mobile}
+ .welcome-intro .welcome-signal{width:68px;height:68px;margin-bottom:16px}
+ .welcome-intro h1{max-width:calc(100% - 12px);font-size:clamp(38px,10vw,54px);margin-top:18px}
+ .welcome-intro>p{max-width:100%;font-size:14px}
+}
+@keyframes astronaut-roam-mobile{
+  0%,100%{top:0;left:76%;transform:rotate(-8deg)}
+  25%{top:4%;left:2%;transform:rotate(9deg)}
+  50%{top:70%;left:5%;transform:rotate(-12deg)}
+  75%{top:72%;left:76%;transform:rotate(10deg)}
+}
+@media(prefers-reduced-motion:reduce){.welcome-intro .astronaut-float{animation:none;top:0;left:auto;right:0}}
