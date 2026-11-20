@@ -51,3 +51,12 @@ test("Experience Lab exposes video creation, playback and download without bypas
 test("video generation stops processing a provider response after caller cancellation", () => {
   assert.match(route, /const result = await response\.json\(\)\.catch\(\(\) => null\);\s*if \(request\.signal\.aborted\) return new Response\(null, \{ status: 499 \}\);/);
 });
+
+
+test("video generation distinguishes caller cancellation from the provider deadline", () => {
+  assert.match(route, /providerSignal = AbortSignal\.any\(\[request\.signal, AbortSignal\.timeout\(165000\)\]\)/);
+  assert.match(route, /if \(request\.signal\.aborted\) return new Response\(null, \{ status: 499 \}\);\s*if \(providerSignal\.aborted\)/);
+  assert.match(route, /status: 504/);
+  assert.match(route, /status: 503/);
+  assert.match(route, /providerSignal\?\.aborted/);
+});

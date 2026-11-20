@@ -52,7 +52,10 @@ export async function POST(request) {
     return NextResponse.json({ error: error.message || "Invalid video settings." }, { status: 400 });
   }
 
+  let providerSignal;
   try {
+    if (request.signal.aborted) return new Response(null, { status: 499 });
+    providerSignal = AbortSignal.any([request.signal, AbortSignal.timeout(165000)]);
     const response = await fetch(
       "https://api.cloudflare.com/client/v4/accounts/" + encodeURIComponent(accountId) + "/ai/run",
       {
@@ -73,12 +76,15 @@ export async function POST(request) {
           },
         }),
         cache: "no-store",
-        signal: AbortSignal.any([request.signal, AbortSignal.timeout(165000)]),
+        signal: providerSignal,
       },
     );
 
     const result = await response.json().catch(() => null);
     if (request.signal.aborted) return new Response(null, { status: 499 });
+    if (providerSignal.aborted) {
+      return NextResponse.json({ error: "Video generation timed out. Try a shorter duration or try again." }, { status: 504 });
+    }
     const videoUrl = extractVideoUrl(result);
     if (!response.ok || result?.success === false || !isTrustedGeneratedVideoUrl(videoUrl)) {
       const providerStatus = response.status;
@@ -104,12 +110,13 @@ export async function POST(request) {
       expiresIn: "The provider's signed video URL is temporary; save the video promptly.",
     }, { headers: { "Cache-Control": "private, no-store" } });
   } catch (error) {
-    if (request.signal.aborted) {
-      return new Response(null, { status: 499 });
+    if (request.signal.aborted) return new Response(null, { status: 499 });
+    if (providerSignal?.aborted) {
+      return NextResponse.json({ error: "Video generation timed out. Try a shorter duration or try again." }, { status: 504 });
     }
     console.error("Aahana video generation request failed:", error?.name || "unknown error");
     return NextResponse.json({
-      error: "Video generation timed out or the provider is unavailable. Please try again.",
+      error: "The video provider is temporarily unavailable. Please try again.",
     }, { status: 503 });
   }
 }
