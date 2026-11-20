@@ -1,4 +1,4 @@
-name: Media generation guards
+name: Media and Experience Lab guards
 
 on:
   pull_request:
