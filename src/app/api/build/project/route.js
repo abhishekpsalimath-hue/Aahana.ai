@@ -3,25 +3,14 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { executeBuildTask } from "@/lib/build/build-engine.mjs";
 import { validateWorkspaceFiles } from "@/lib/build/sandbox-policy.mjs";
+import { isSupportedSourceFile, isSafePrivateObjectPath } from "@/lib/build/source-file-policy.mjs";
 export const runtime = "nodejs";
 export const maxDuration = 180;
 const MAX_SOURCE_FILES = 100;
 const MAX_PROJECT_FILE_ROWS = 500;
 const MAX_SOURCE_BYTES = 3 * 1024 * 1024;
-const SOURCE_EXTENSIONS = /^(?:js|jsx|ts|tsx|mjs|cjs|css|html|htm|json|md|txt|py|toml|yaml|yml|sql)$/;
-const SOURCE_MIME_TYPES = new Set(["text/plain", "text/markdown", "text/x-python", "application/json", "text/javascript", "application/javascript", "text/css", "text/html"]);
 function isProjectSourceFile(file) {
-  const extension = String(file.original_filename || "").toLowerCase().split(".").pop();
-  return SOURCE_MIME_TYPES.has(file.mime_type) || SOURCE_EXTENSIONS.test(extension);
-}
-
-function isSafePrivateObjectPath(objectPath, userId, projectId) {
-  const prefix = userId + "/" + projectId + "/";
-  if (typeof objectPath !== "string" || objectPath.length > 1024 ||
-      !objectPath.startsWith(prefix) || objectPath.includes("%") || objectPath.includes("\\") || /[\u0000-\u001f\u007f]/u.test(objectPath)) return false;
-  const suffix = objectPath.slice(prefix.length);
-  if (!suffix) return false;
-  return suffix.split("/").every((segment) => segment && segment !== "." && segment !== "..");
+  return isSupportedSourceFile(file.original_filename, file.mime_type);
 }
 export async function POST(request) {
   const supabase = await createClient();
