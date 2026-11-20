@@ -262,6 +262,7 @@ export async function POST(request) {
       }
     }
   } catch (memoryError) {
+    if (request.signal.aborted) return new Response(null, { status: 499 });
     console.error("Aahana private memory retrieval failed:", memoryError?.message || "unknown error");
   }
 
