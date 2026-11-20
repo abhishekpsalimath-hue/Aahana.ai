@@ -38,6 +38,10 @@ export async function POST(request) {
     file.size_bytes <= 0
   );
   if (hasInvalidSourceMetadata) return NextResponse.json({ error: "A project source file has invalid private-storage metadata. Reload the project and repair or remove that file before building." }, { status: 409 });
+  const declaredSourceBytes = sourceCandidates.reduce((total, file) => total + file.size_bytes, 0);
+  if (sourceCandidates.some((file) => file.size_bytes > 1024 * 1024) || declaredSourceBytes > MAX_SOURCE_BYTES) {
+    return NextResponse.json({ error: "Project source files exceed the 3 MB build workspace limit. Remove or reduce files and retry." }, { status: 413 });
+  }
   const eligible = sourceCandidates;
   if (!eligible.length) return NextResponse.json({ error: "Upload project source files first. A package.json file is required." }, { status: 400 });
   const lockToken = randomUUID();
