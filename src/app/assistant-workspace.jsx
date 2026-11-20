@@ -1473,7 +1473,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
             <button type="button" onClick={() => { setMode("create"); setError(""); }}>Creative tools <span aria-hidden="true">✧</span></button>
             <button type="button" onClick={() => { setPrompt("Research this topic thoroughly, compare reliable sources and summarize the evidence: "); setError(""); }}>Research <span aria-hidden="true">⌕</span></button>
             <button type="button" onClick={startVoiceInput} disabled={listening || busy}>{listening ? "Listening…" : "Voice"} <span aria-hidden="true">◖</span></button>
-            {selfBuildStatus?.enabled === true && <button type="button" onClick={toggleSelfBuild}>Work on Aahana <span aria-hidden="true">↗</span></button>}
+            {selfBuildStatus?.enabled === true && selfBuildStatus?.agentReady === true && <button type="button" onClick={toggleSelfBuild}>Work on Aahana <span aria-hidden="true">↗</span></button>}
           </div>
 
           {selfBuildOpen && (
