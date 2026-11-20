@@ -29,6 +29,7 @@ on:
       - feat/aahana-autonomous-assistance
     paths:
       - "src/app/experience-lab/**"
+      - "src/app/assistant-workspace.jsx"
       - "src/app/api/build/**"
       - "src/app/api/files/**"
       - "src/lib/build/**"
