@@ -245,7 +245,20 @@ function evaluateArithmetic(input) {
 export default function Home({ userEmail = "", aiEnabled = false }) {
   const router = useRouter();
   const conversationEndRef = useRef(null);
+  const modeTabRefs = useRef({});
   const [mode, setMode] = useState("solve");
+  function handleModeTabKeyDown(event, currentIndex) {
+    let nextIndex = currentIndex;
+    if (event.key === "ArrowRight") nextIndex = (currentIndex + 1) % modes.length;
+    else if (event.key === "ArrowLeft") nextIndex = (currentIndex - 1 + modes.length) % modes.length;
+    else if (event.key === "Home") nextIndex = 0;
+    else if (event.key === "End") nextIndex = modes.length - 1;
+    else return;
+    event.preventDefault();
+    const nextMode = modes[nextIndex];
+    setMode(nextMode.id);
+    modeTabRefs.current[nextMode.id]?.focus();
+  }
   const [prompt, setPrompt] = useState("");
   const [imageFile, setImageFile] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -1127,9 +1140,12 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
           </>}
 
           <div className="mode-row" role="tablist" aria-label="Choose a mode">
-            {modes.map((item) => (
-              <button key={item.id} type="button" role="tab" aria-selected={mode === item.id}
+            {modes.map((item, index) => (
+              <button key={item.id} ref={(node) => { modeTabRefs.current[item.id] = node; }}
+                type="button" role="tab" aria-selected={mode === item.id}
+                tabIndex={mode === item.id ? 0 : -1}
                 className={mode === item.id ? "mode active-mode" : "mode"}
+                onKeyDown={(event) => handleModeTabKeyDown(event, index)}
                 onClick={() => setMode(item.id)}>
                 {item.label}
               </button>
