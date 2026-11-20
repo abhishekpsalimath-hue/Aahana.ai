@@ -17,6 +17,8 @@ test("agent exposes only inventory, approved source reading, and reviewed propos
   assert.match(route, /propose_source_change/);
   assert.match(route, /isAllowedSelfBuildPath/);
   assert.match(route, /validateSelfBuildChangeSet/);
+  assert.match(route, /patches/);
+  assert.match(route, /occurrences !== 1/);
   assert.doesNotMatch(route, /createSelfBuildPullRequest|\/merge\b|vercel\.com\/api\/deployments/);
 });
 
