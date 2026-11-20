@@ -533,6 +533,8 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
 
   async function proposeSelfBuildChange() {
     if (!selfBuildInstruction.trim() || selfBuildBusy) return;
+    const controller = new AbortController();
+    selfBuildAbortRef.current = controller;
     setSelfBuildBusy(true);
     setSelfBuildError("");
     setSelfBuildAgentResponse("");
@@ -543,6 +545,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ task: selfBuildInstruction.trim(), pathHint: selfBuildFile?.path || null }),
+        signal: controller.signal,
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || "Aahana could not work on this task.");
@@ -571,8 +574,9 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         });
       }
     } catch (error) {
-      setSelfBuildError(error.message || "Could not complete the self-improvement task.");
+      setSelfBuildError(error?.name === "AbortError" ? "Aahana stopped the self-improvement task." : error.message || "Could not complete the self-improvement task.");
     } finally {
+      if (selfBuildAbortRef.current === controller) selfBuildAbortRef.current = null;
       setSelfBuildBusy(false);
     }
   }
