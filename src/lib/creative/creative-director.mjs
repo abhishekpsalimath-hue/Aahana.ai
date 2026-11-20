@@ -35,7 +35,9 @@ const PROVIDERS = Object.freeze([
   { id: "elevenlabs", label: "ElevenLabs", capabilities: ["text-to-speech", "voice-design", "dubbing", "sound-effects", "music-generation"], env: ["ELEVENLABS_API_KEY"] },
   { id: "luma", label: "Luma", capabilities: ["image-generation", "image-editing", "text-to-video", "image-to-video", "character-reference"], env: ["LUMA_API_KEY"] },
   { id: "runway", label: "Runway", capabilities: ["image-generation", "video-generation", "video-editing", "audio"], env: ["RUNWAY_API_KEY"] },
-  { id: "llama", label: "Meta Llama", capabilities: ["text-generation", "reasoning", "vision"], env: ["LLAMA_API_KEY"] },
+  { id: "llama", label: "Llama-compatible model endpoint", capabilities: ["text-generation", "reasoning", "vision"], env: ["LLAMA_API_BASE_URL", "LLAMA_API_KEY"] },
+  { id: "fal", label: "fal", capabilities: ["image-generation", "image-editing", "video-generation", "audio-generation", "3d-generation"], env: ["FAL_KEY"] },
+  { id: "replicate", label: "Replicate", capabilities: ["image-generation", "image-editing", "video-generation", "audio-generation", "3d-generation"], env: ["REPLICATE_API_TOKEN"] },
 ]);
 
 export function getCreativeProviderStatus(env = {}) {
