@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 
 const page = readFileSync(new URL("../../app/experience-lab/page.jsx", import.meta.url), "utf8");
 const styles = readFileSync(new URL("../../app/experience-lab/experience-lab.css", import.meta.url), "utf8");
+const speechRoute = readFileSync(new URL("../../app/api/voice/speech/route.js", import.meta.url), "utf8");
 
 test("Experience Lab provides browser voice input with a selectable locale", () => {
   assert.match(page, /window\.SpeechRecognition \|\| window\.webkitSpeechRecognition/);
@@ -28,4 +29,14 @@ test("voice panel discloses local browser processing and has responsive interact
   assert.match(styles, /\.voice-panel-action/);
   assert.match(styles, /\.voice-panel-status/);
   assert.match(styles, /\.voice-panel-error/);
+});
+
+test("Experience Lab prefers private Maya speech and safely falls back to device voice", () => {
+  assert.match(page, /api\/voice\/speech/);
+  assert.match(page, /shouldFallbackToDeviceSpeech/);
+  assert.match(page, /speechRequestRef\.current\?\.abort/);
+  assert.match(page, /audioPlaybackRef\.current\?\.pause/);
+  assert.match(speechRoute, /supabase\.auth\.getUser/);
+  assert.match(speechRoute, /AAHANA_MAYA_TTS_ENABLED/);
+  assert.match(speechRoute, /signal: request\.signal/);
 });
