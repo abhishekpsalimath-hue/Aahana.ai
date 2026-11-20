@@ -54,6 +54,21 @@ test("only a complete 100-case, five-dimension benchmark can pass", () => {
       clarity_and_language_match: 5,
       honesty_about_uncertainty: 5,
     },
+    categorySummaries: Object.fromEntries(
+      [...new Set(ASSISTANT_EVALUATION_CASES.map((item) => item.category))].map((category) => [category, {
+        expected: 10,
+        scored: 10,
+        average: 5,
+        dimensionAverages: {
+          correctness_and_evidence: 5,
+          completeness_and_relevance: 5,
+          reasoning_quality: 5,
+          clarity_and_language_match: 5,
+          honesty_about_uncertainty: 5,
+        },
+        criticalFailures: 0,
+      }])
+    ),
     atLeastFour: 100,
     criticalFailures: 0,
     releaseEligible: true,
@@ -96,6 +111,32 @@ test("dimension averages expose uneven quality instead of hiding it in the overa
   });
   assert.equal(summary.atLeastFour, 0);
   assert.equal(summary.releaseEligible, false);
+});
+
+test("category summaries isolate incomplete categories and their weakest dimensions", () => {
+  const results = scoredCases();
+  for (const item of results.filter((result) => result.id.startsWith("reasoning-"))) {
+    item.scores.reasoning_quality = 2;
+  }
+  const summary = summarizeEvaluation(results);
+  assert.deepEqual(summary.categorySummaries.reasoning, {
+    expected: 10,
+    scored: 10,
+    average: 4.4,
+    dimensionAverages: {
+      correctness_and_evidence: 5,
+      completeness_and_relevance: 5,
+      reasoning_quality: 2,
+      clarity_and_language_match: 5,
+      honesty_about_uncertainty: 5,
+    },
+    criticalFailures: 0,
+  });
+  const partial = summarizeEvaluation(results.filter((item) => !item.id.startsWith("reasoning-")));
+  assert.equal(partial.categorySummaries.reasoning.scored, 0);
+  assert.equal(partial.categorySummaries.reasoning.average, null);
+  assert.equal(partial.categorySummaries.reasoning.dimensionAverages.reasoning_quality, null);
+  assert.equal(partial.releaseEligible, false);
 });
 
 test("90 percent of case averages at four passes while 89 percent fails", () => {
