@@ -10,7 +10,7 @@ test("switching Experience Lab modes aborts and invalidates an in-flight assista
   assert.match(switchMode, /activeRequest\.current = null;/);
   assert.match(switchMode, /setMode\(nextMode\);/);
   assert.match(page, /onClick=\{\(\) => switchMode\(item\.id\)\}/);
-  assert.match(page, /onClick=\{\(\) => \{ switchMode\("chat"\); startNewSession\\(true\\);/);
+  assert.ok(page.includes('onClick={() => { switchMode("chat"); startNewSession(true); setActivePanel("tools"); }'), "Home should switch to chat, force a fresh session, and open Tools");
 });
 
 test("mode switching retains the existing Learn-to-learn API mapping", () => {
