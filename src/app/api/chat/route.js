@@ -402,6 +402,8 @@ export async function POST(request) {
     let researchPayload;
     try {
       researchPayload = await upstream.json();
+      const abortResponse = getClientAbortResponse(request.signal);
+      if (abortResponse) return abortResponse;
     } catch {
       const abortResponse = getClientAbortResponse(request.signal);
       if (abortResponse) return abortResponse;
@@ -441,6 +443,8 @@ export async function POST(request) {
       });
       return NextResponse.json({ error: "Aahana retrieved sources but could not produce a verifiable citation. Please retry your research question.", code: "RESEARCH_CITATION_VALIDATION_FAILED" }, { status: 502 });
     }
+    const abortBeforeSave = getClientAbortResponse(request.signal);
+    if (abortBeforeSave) return abortBeforeSave;
     const { error: saveError } = await supabase.rpc("save_ai_reply", {
       p_conversation_id: conversationId,
       p_content: verifiedResearchReply.slice(0, 16000),
