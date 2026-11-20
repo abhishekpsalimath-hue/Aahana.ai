@@ -102,14 +102,14 @@ test("AI source proposals are version-bound, reviewed as a diff, and never auto-
 
 
 test("Build workspace assembly fails closed and shares strict source/path validation", () => {
-  assert.match(buildRoute, /MAX_PROJECT_FILE_ROWS \\+ 1/);
-  assert.match(buildRoute, /sourceCandidates\\.length > MAX_SOURCE_FILES/);
-  assert.match(buildRoute, /hasInvalidSourceMetadata/);
-  assert.match(buildRoute, /isSupportedSourceFile, isSafePrivateObjectPath/);
-  assert.match(buildRoute, /isSafePrivateObjectPath\\(file\\.object_path, user\\.id, projectId\\)/);
-  assert.doesNotMatch(buildRoute, /function isSafePrivateObjectPath/);
-  assert.match(buildRoute, /const eligible = sourceCandidates/);
-  assert.match(buildRoute, /No partial build was started/);
+  assert.ok(buildRoute.includes("limit(MAX_PROJECT_FILE_ROWS + 1)"));
+  assert.ok(buildRoute.includes("sourceCandidates.length > MAX_SOURCE_FILES"));
+  assert.ok(buildRoute.includes("hasInvalidSourceMetadata"));
+  assert.ok(buildRoute.includes("isSupportedSourceFile, isSafePrivateObjectPath"));
+  assert.ok(buildRoute.includes("isSafePrivateObjectPath(file.object_path, user.id, projectId)"));
+  assert.ok(!buildRoute.includes("function isSafePrivateObjectPath"));
+  assert.ok(buildRoute.includes("const eligible = sourceCandidates"));
+  assert.ok(buildRoute.includes("No partial build was started"));
 });
 
 
