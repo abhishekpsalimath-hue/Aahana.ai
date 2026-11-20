@@ -154,14 +154,14 @@ export async function GET(request) {
     const [eventsResult, priorTasksResult] = await Promise.all([
       supabase.from("aahana_system_events")
         .select("id,event_type,severity,source,summary,metadata,created_at")
-        .gte("created_at", since).order("created_at", { ascending: false }).limit(40),
+        .gte("created_at", since).order("created_at", { ascending: false }).limit(40).abortSignal(request.signal),
       supabase.from("aahana_agent_tasks")
         .select("role,title,status,result,finished_at")
         .eq("status", "completed").neq("id", task.id)
-        .order("finished_at", { ascending: false }).limit(8),
+        .order("finished_at", { ascending: false }).limit(8).abortSignal(request.signal),
     ]);
-    if (eventsResult.error || priorTasksResult.error) throw new Error("system_context_read_failed");
     if (request.signal.aborted) throw new Error("worker_cancelled");
+    if (eventsResult.error || priorTasksResult.error) throw new Error("system_context_read_failed");
 
     const generated = await generateInternalDeliverable(config, task, eventsResult.data || [], priorTasksResult.data || [], request.signal);
     if (request.signal.aborted) throw new Error("worker_cancelled");
