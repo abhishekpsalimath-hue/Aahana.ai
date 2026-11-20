@@ -33,6 +33,8 @@ test("owner access is an exact case-insensitive email allowlist match", () => {
 
 test("only approved Experience Lab and non-security Build source paths are writable", () => {
   assert.equal(isAllowedSelfBuildPath("src/app/experience-lab/page.jsx"), true);
+  assert.equal(isAllowedSelfBuildPath("src/app/assistant-workspace.jsx"), true);
+  assert.equal(isAllowedSelfBuildPath("src/app/student-mode/page.jsx"), false);
   assert.equal(isAllowedSelfBuildPath("src/lib/build/source-proposal.mjs"), true);
   assert.equal(isAllowedSelfBuildPath("src/lib/build/self-build-policy.mjs"), false);
   assert.equal(isAllowedSelfBuildPath("src/lib/build/sandbox-policy.mjs"), false);
