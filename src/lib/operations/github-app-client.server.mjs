@@ -168,6 +168,7 @@ export function createGitHubAppClient({
           status: check.status,
           conclusion: check.conclusion,
           headSha: check.head_sha,
+          appSlug: check.app?.slug || "",
           url: check.html_url,
         })),
       };

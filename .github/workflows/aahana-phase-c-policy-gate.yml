@@ -10,6 +10,8 @@ on:
       - fix/phase-c-evidence-invalid-criteria
       - fix/phase-c-github-api-timeouts
       - fix/phase-c-verify-diff-tree-statuses
+      - fix/phase-c-reject-ambiguous-diff-entries
+      - fix/phase-c-require-trusted-check-app
     paths:
       - "src/lib/operations/autonomous-policy.*"
       - "src/lib/operations/autonomous-github-evidence.*"
@@ -29,6 +31,7 @@ on:
       - fix/phase-c-evidence-invalid-criteria
       - fix/phase-c-github-api-timeouts
       - fix/phase-c-reject-ambiguous-diff-entries
+      - fix/phase-c-require-trusted-check-app
   workflow_dispatch:
 
 permissions:

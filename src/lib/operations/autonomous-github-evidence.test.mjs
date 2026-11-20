@@ -23,7 +23,7 @@ function makeGithub(overrides = {}) {
     },
     async getCommitCheckRuns() {
       return { complete: true, checkRuns: [{
-        name: "Unit tests", status: "completed", conclusion: "success",
+        name: "Unit tests", status: "completed", conclusion: "success", appSlug: "github-actions",
         headSha, url: "https://github.com/example/repo/actions/runs/1",
       }], ...(overrides.checks || {}) };
     },
@@ -67,8 +67,8 @@ test("rejects incomplete pagination and truncated Git trees", async () => {
 
 test("rejects pending or failed checks", async () => {
   for (const check of [
-    { name: "Unit tests", status: "in_progress", conclusion: null, headSha },
-    { name: "Unit tests", status: "completed", conclusion: "failure", headSha },
+    { name: "Unit tests", status: "in_progress", conclusion: null, headSha, appSlug: "github-actions" },
+    { name: "Unit tests", status: "completed", conclusion: "failure", headSha, appSlug: "github-actions" },
   ]) {
     const result = await evaluateTrustedPullRequest({
       github: makeGithub({ checks: { checkRuns: [check] } }), task, pullRequestNumber: 12,
@@ -262,3 +262,19 @@ test("fails closed on unrecognized copied-file status", async () => {
   });
   assert.equal(result.ok, false);
 });
+
+
+test("does not accept a same-named check run from an untrusted CI application", async () => {
+  const result = await evaluateTrustedPullRequest({
+    github: makeGithub({ checks: { checkRuns: [{
+      name: "Unit tests", status: "completed", conclusion: "success",
+      headSha, appSlug: "untrusted-third-party-app", url: "https://example.invalid/check",
+    }] } }),
+    task, pullRequestNumber: 12,
+  });
+  assert.equal(result.ok, false);
+  assert.ok(result.errors.some((error) => error.includes("acceptance criterion")));
+});
+
+
+
