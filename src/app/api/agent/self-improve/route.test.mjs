@@ -42,7 +42,7 @@ test("agent execution is bounded and uses the existing Groq provider only", () =
 
 test("Assistance exposes the self-improvement task runner only after server-side status approval", () => {
   assert.match(workspace, /\/api\/build\/self\/status/);
-  assert.match(workspace, /selfBuildStatus\?\.enabled === true/);
+  assert.match(workspace, /selfBuildStatus\?\.enabled === true && selfBuildStatus\?\.agentReady === true/);
   assert.match(workspace, /\/api\/agent\/self-improve/);
   assert.match(workspace, /selfBuildAbortRef\.current\?\.abort\(\)/);
 });
