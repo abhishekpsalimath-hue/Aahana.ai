@@ -299,8 +299,6 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [analyzingFileId, setAnalyzingFileId] = useState(null);
   const [imageGenerating, setImageGenerating] = useState(false);
   const [imageSaving, setImageSaving] = useState(false);
-  const [imageQuality, setImageQuality] = useState("standard");
-  const [imageStyle, setImageStyle] = useState("none");
   const [generatedImage, setGeneratedImage] = useState(null);
   const [videoEnabled, setVideoEnabled] = useState(false);
   const [videoGenerating, setVideoGenerating] = useState(false);
@@ -634,7 +632,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       const response = await fetch("/api/images/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: imagePrompt, steps: imageQuality === "enhanced" ? 8 : 4, style: imageStyle, quality: imageQuality === "enhanced" ? "masterpiece" : "standard" }),
+        body: JSON.stringify({ prompt: imagePrompt, steps: 8, quality: "masterpiece" }),
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || "Could not generate the image.");
@@ -881,7 +879,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         const response = await fetch("/api/images/generate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt: text, steps: imageQuality === "enhanced" ? 8 : 4, style: imageStyle, quality: imageQuality === "enhanced" ? "masterpiece" : "standard" }),
+          body: JSON.stringify({ prompt: text, steps: 8, quality: "masterpiece" }),
         });
         const result = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(result.error || "Could not generate the image.");
@@ -1350,19 +1348,6 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
               </div>
             )}
             <div className="image-attach-row">
-              <select aria-label="Image generation quality" value={imageQuality} onChange={(event) => setImageQuality(event.target.value)} className="copy-message">
-                <option value="standard">Standard image</option>
-                <option value="enhanced">Masterpiece direction · 8 steps</option>
-              </select>
-              <select aria-label="Visual style" value={imageStyle} onChange={(event) => setImageStyle(event.target.value)} className="copy-message">
-                <option value="none">Original style</option>
-                <option value="cinematic">Cinematic</option>
-                <option value="photorealistic">Photorealistic</option>
-                <option value="3d-render">3D render</option>
-                <option value="product-studio">Product studio</option>
-                <option value="illustration">Digital illustration</option>
-                <option value="editorial">Editorial design</option>
-              </select>
               {videoEnabled && (
                 <>
                   <select aria-label="Video duration" value={videoDuration} onChange={(event) => setVideoDuration(Number(event.target.value))} className="copy-message">
