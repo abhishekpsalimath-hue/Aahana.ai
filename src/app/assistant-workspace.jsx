@@ -533,18 +533,22 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
 
   async function proposeSelfBuildChange() {
     if (!selfBuildInstruction.trim() || selfBuildBusy) return;
+    const pathHint = selfBuildFile?.path || null;
+    const task = selfBuildInstruction.trim();
     const controller = new AbortController();
     selfBuildAbortRef.current = controller;
     setSelfBuildBusy(true);
     setSelfBuildError("");
     setSelfBuildAgentResponse("");
+    setSelfBuildFile(null);
+    setSelfBuildDraft("");
     setSelfBuildProposal(null);
     setSelfBuildPullRequest(null);
     try {
       const response = await fetch("/api/agent/self-improve", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ task: selfBuildInstruction.trim(), pathHint: selfBuildFile?.path || null }),
+        body: JSON.stringify({ task, pathHint }),
         signal: controller.signal,
       });
       const result = await response.json().catch(() => ({}));
