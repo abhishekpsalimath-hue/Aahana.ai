@@ -35,3 +35,8 @@ test("aborted user-message insert cleans up only an empty newly-created conversa
 test("private-memory lookup exceptions stop immediately when the client disconnects", () => {
   assert.match(route, /\} catch \(memoryError\) \{\s*if \(request\.signal\.aborted\) return new Response\(null, \{ status: 499 \}\);\s*console\.error\("Aahana private memory retrieval failed:"/);
 });
+
+test("assistant reply timestamp updates are scoped to the authenticated conversation owner", () => {
+  const timestampUpdates = route.match(/\\.update\\(\\{ updated_at: new Date\\(\\)\\.toISOString\\(\\) \\}\\)[\\s\\S]{0,160}?\\.eq\\("id", conversationId\\)[\\s\\S]{0,100}?\\.eq\\("user_id", user\\.id\\)/g) || [];
+  assert.equal(timestampUpdates.length, 2);
+});
