@@ -34,7 +34,7 @@ export function parseImageGenerationInput(body) {
 
   const qualityPrompt = buildImagePrompt(prompt, quality);
   const styledPrompt = style === "none" ? qualityPrompt : `${qualityPrompt}\n\nArt direction: ${IMAGE_STYLE_PROMPTS[style]}`;
-  if (styledPrompt.length > MAX_IMAGE_PROMPT_LENGTH) {
+  if (styledPrompt.length > MAX_IMAGE_PROMPT_LENGTH + 1400) {
     return { ok: false, error: "This prompt is too long for the selected style. Shorten it and try again." };
   }
 
