@@ -34,7 +34,7 @@ if (dryRun) {
     categories: [...new Set(ASSISTANT_EVALUATION_CASES.map((item) => item.category))],
     dimensions,
     systemPromptCharacters: buildAahanaSystemPrompt("solve").length,
-    networkRequests: 0,
+  }, null, 2) + "\n");
     databaseWrites: 0,
     requiresApiKey: false,
   }, null, 2) + "\\n");
