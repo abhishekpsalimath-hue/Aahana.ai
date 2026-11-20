@@ -5,6 +5,7 @@ import { readFileSync } from "node:fs";
 const route = readFileSync(new URL("./route.js", import.meta.url), "utf8");
 const workspace = readFileSync(new URL("../../../assistant-workspace.jsx", import.meta.url), "utf8");
 const pullRequestRoute = readFileSync(new URL("../../build/self/pull-request/route.js", import.meta.url), "utf8");
+const validationRoute = readFileSync(new URL("./validate/route.js", import.meta.url), "utf8");
 
 test("self-improvement agent is authenticated and owner-gated", () => {
   assert.match(route, /supabase\.auth\.getUser\(\)/);
@@ -74,4 +75,28 @@ test("Assistance reviews each proposed file and submits one consolidated draft P
   assert.match(workspace, /Create one draft pull request for reviewed files/);
   assert.match(pullRequestRoute, /MAX_REVIEW_FILES = 3/);
   assert.match(pullRequestRoute, /body\.files\.length > MAX_REVIEW_FILES/);
+});
+
+test("isolated self-validation is Preview-only, owner-gated, bounded, and ephemeral", () => {
+  assert.match(validationRoute, /supabase\\.auth\\.getUser\\(\\)/);
+  assert.match(validationRoute, /isSelfBuildOwner\\(user\\.email, config\\)/);
+  assert.match(validationRoute, /VERCEL_ENV !== "preview"/);
+  assert.match(validationRoute, /AAHANA_SELF_BUILD_VALIDATION_ENABLED !== "true"/);
+  assert.match(validationRoute, /files\\.length > MAX_FILES/);
+  assert.match(validationRoute, /original\\.sha !== item\\.baseVersion/);
+  assert.match(validationRoute, /validateSelfBuildChangeSet/);
+  assert.match(validationRoute, /source: \\{ type: "git", url: REPOSITORY_URL, depth: 1, revision: baseSha \\}/);
+  assert.match(validationRoute, /persistent: false/);
+  assert.match(validationRoute, /networkPolicy: "deny-all"/);
+  assert.match(validationRoute, /--ignore-scripts/);
+  assert.match(validationRoute, /npm run build/);
+  assert.match(validationRoute, /sandbox\\.stop\\(\\)/);
+  assert.doesNotMatch(validationRoute, /process\\.env\\.[A-Z0-9_]+\\s*[,}]/);
+});
+
+test("Assistance only offers isolated validation when Preview validation is enabled", () => {
+  assert.match(workspace, /selfBuildStatus\\?\\.validationEnabled === true/);
+  assert.match(workspace, /Run isolated tests & build/);
+  assert.match(workspace, /validateSelfBuildChanges/);
+  assert.match(workspace, /\\/api\\/agent\\/self-improve\\/validate/);
 });
