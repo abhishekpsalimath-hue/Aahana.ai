@@ -4,6 +4,7 @@ on:
     branches:
       - feat/aahana-agent-worker-phase-b
       - fix/agent-worker-provider-credential-boundary
+      - fix/agent-worker-requeue-on-caller-cancel
   workflow_dispatch:
 
 permissions:
