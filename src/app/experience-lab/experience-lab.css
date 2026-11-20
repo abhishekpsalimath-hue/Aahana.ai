@@ -95,3 +95,15 @@
 .voice-panel-status { min-height:18px; color:#cbb9eb; font-size:11px; text-align:center; }
 .voice-panel-error { color:#ffb9c7 !important; font-size:11px !important; }
 .voice-panel-privacy { color:#82778f; font-size:10px; line-height:1.55; }
+
+.video-options { margin: 0 0 12px; border: 1px solid rgba(174,151,224,.25); border-radius: 13px; background: rgba(255,255,255,.48); color: #514761; }
+.video-options summary { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:11px 13px; cursor:pointer; list-style:none; font-size:12px; font-weight:700; }
+.video-options summary::-webkit-details-marker { display:none; }
+.video-options summary span { color:#837a90; font-size:10px; font-weight:500; }
+.video-options-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; padding:0 12px 10px; }
+.video-options-grid label { display:grid; gap:5px; color:#6f657f; font-size:10px; }
+.video-options-grid select { min-width:0; width:100%; padding:8px; border:1px solid rgba(145,120,183,.24); border-radius:8px; background:#fff; color:#453b54; font:inherit; font-size:11px; }
+.video-options-grid .video-audio-toggle { display:flex; align-items:center; align-self:end; gap:7px; min-height:34px; }
+.video-options-grid .video-audio-toggle input { accent-color:#8061b5; }
+.video-options>p { margin:0; padding:0 12px 12px; color:#847a91; font-size:10px; line-height:1.5; }
+@media(max-width:620px){.video-options-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
