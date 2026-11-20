@@ -1,3 +1,4 @@
+import { buildVideoPrompt, VIDEO_DIRECTOR_PRESETS } from "./creative-director.mjs";
 export const VIDEO_MODEL = "xai/grok-imagine-video";
 export const MAX_VIDEO_PROMPT_LENGTH = 2000;
 export const MAX_VIDEO_DURATION_SECONDS = 15;
@@ -25,5 +26,14 @@ export function parseVideoGenerationInput(body) {
     return { ok: false, error: "Choose 480p or 720p video resolution." };
   }
 
-  return { ok: true, prompt, duration, aspectRatio, resolution };
+  const director = body?.director === undefined ? "cinematic" : body.director;
+  if (!VIDEO_DIRECTOR_PRESETS.includes(director)) {
+    return { ok: false, error: "Choose a supported video direction." };
+  }
+  const directedPrompt = buildVideoPrompt(prompt, director);
+  if (!directedPrompt || directedPrompt.length > MAX_VIDEO_PROMPT_LENGTH) {
+    return { ok: false, error: "This video prompt is too long for the selected direction. Shorten it and try again." };
+  }
+
+  return { ok: true, prompt: directedPrompt, duration, aspectRatio, resolution, director };
 }

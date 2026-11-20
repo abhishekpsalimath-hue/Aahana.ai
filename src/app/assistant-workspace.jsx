@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getSourceFileMimeType, isSupportedSourceFile } from "@/lib/build/source-file-policy.mjs";
+import { isImageGenerationRequest, isImageEditRequest } from "@/lib/creative/creative-intent.mjs";
 
 const modes = [
   { id: "solve", label: "Solve", hint: "Work through a problem" },
@@ -157,28 +158,23 @@ function renderAssistantContent(content, onCopyCode) {
   return nodes;
 }
 
-function isImageGenerationRequest(value) {
-  const text = String(value || "").trim();
-  if (!text) return false;
-
-  // Explicit image-generation instructions.
-  if (/\b(?:generate|create|draw|paint|illustrate|render|make)\b[\s\S]{0,180}\b(?:image|picture|illustration|artwork|portrait|wallpaper|logo|poster|cover|banner|icon|thumbnail|scene|landscape|cityscape|character|diagram)\b/i.test(text)) return true;
-  if (/\b(?:show me|visuali[sz]e|turn this into|text[- ]to[- ]image)\b/i.test(text) && /\b(?:image|picture|art|illustration|render|visual)\b/i.test(text)) return true;
-  if (/\b(?:please|can you|could you|i want|i need)\b[\s\S]{0,120}\b(?:generate|create|draw|paint|illustrate|render|make)\b/i.test(text) && /\b(?:image|picture|art|visual|logo|poster|wallpaper)\b/i.test(text)) return true;
-
-  // Finished prompts pasted without an instruction. Require several visual
-  // generation cues and a recognizable visual subject to avoid false positives.
-  const visualMarkers = [
-    /\b(?:photorealistic|ultra[- ]realistic)\b/i,
-    /\b(?:cinematic|wide[- ]shot|close[- ]up|wide[- ]angle)\b/i,
-    /\b(?:volumetric lighting|depth of field|anamorphic|ray tracing)\b/i,
-    /\b(?:8k|4k|high[- ]detail|ultra[- ]detailed)\b/i,
-    /\b(?:negative prompt|aspect ratio|text[- ]to[- ]image)\b/i,
-    /\b(?:bioluminescent|neon lighting|dramatic lighting|realistic reflections)\b/i,
-  ];
-  const markerCount = visualMarkers.filter((pattern) => pattern.test(text)).length;
-  const hasVisualSubject = /\b(?:city|metropolis|landscape|ocean|underwater|space station|planet|portrait|character|architecture|skyscraper|forest|mountain|vehicle|spaceship|animal|interior|exterior|scene|coral|submarine|building)\b/i.test(text);
-  return text.length >= 100 && markerCount >= 2 && hasVisualSubject;
+async function createReferenceImageFile(dataUrl) {
+  const image = new Image();
+  image.src = dataUrl;
+  await image.decode();
+  const scale = Math.min(1, 511 / Math.max(image.naturalWidth, image.naturalHeight));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+  canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("Could not prepare the reference image.");
+  context.drawImage(image, 0, 0, canvas.width, canvas.height);
+  const blob = await new Promise((resolve, reject) => canvas.toBlob(
+    (value) => value ? resolve(value) : reject(new Error("Could not prepare the reference image.")),
+    "image/jpeg",
+    0.88
+  ));
+  return new File([blob], "aahana-reference.jpg", { type: "image/jpeg" });
 }
 
 function evaluateArithmetic(input) {
@@ -261,9 +257,10 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
           setBuildEnabled(status?.enabled === true && status?.sandboxIdentityAvailable === true);
           setPreviewEnabled(status?.previewEnabled === true);
           setVideoEnabled(status?.videoEnabled === true);
+          setImageEditingEnabled(status?.imageEditingEnabled === true);
         }
       })
-      .catch(() => { if (active) { setBuildEnabled(false); setPreviewEnabled(false); setVideoEnabled(false); } })
+      .catch(() => { if (active) { setBuildEnabled(false); setPreviewEnabled(false); setVideoEnabled(false); setImageEditingEnabled(false); } })
       .finally(() => { if (active) setBuildStatusLoading(false); });
     return () => { active = false; };
   }, []);
@@ -278,6 +275,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [previewError, setPreviewError] = useState("");
   const [buildStatusLoading, setBuildStatusLoading] = useState(true);
   const [error, setError] = useState("");
+  const [imageSaveNotice, setImageSaveNotice] = useState("");
   const [history, setHistory] = useState([]);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -299,9 +297,8 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [analyzingFileId, setAnalyzingFileId] = useState(null);
   const [imageGenerating, setImageGenerating] = useState(false);
   const [imageSaving, setImageSaving] = useState(false);
-  const [imageQuality, setImageQuality] = useState("standard");
-  const [imageStyle, setImageStyle] = useState("none");
   const [generatedImage, setGeneratedImage] = useState(null);
+  const [imageEditingEnabled, setImageEditingEnabled] = useState(false);
   const [videoEnabled, setVideoEnabled] = useState(false);
   const [videoGenerating, setVideoGenerating] = useState(false);
   const [videoDuration, setVideoDuration] = useState(5);
@@ -634,7 +631,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       const response = await fetch("/api/images/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: imagePrompt, steps: imageQuality === "enhanced" ? 8 : 4, style: imageStyle }),
+        body: JSON.stringify({ prompt: imagePrompt, steps: 8, quality: "masterpiece" }),
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || "Could not generate the image.");
@@ -649,10 +646,46 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     }
   }
 
+  async function editGeneratedImage(editPrompt) {
+    if (!generatedImage || !imageEditingEnabled || imageGenerating || busy) return;
+    setImageGenerating(true);
+    setError("");
+    setGeneratedVideo(null);
+    setMessages((current) => [...current,
+      { role: "user", content: editPrompt },
+      { role: "assistant", content: "Applying your changes while preserving the reference image…" },
+    ]);
+    try {
+      const referenceFile = await createReferenceImageFile(generatedImage.dataUrl);
+      const form = new FormData();
+      form.set("prompt", editPrompt);
+      form.set("referencePrompt", String(generatedImage.prompt || "").slice(0, 1200));
+      form.set("image", referenceFile);
+      const response = await fetch("/api/images/edit", { method: "POST", body: form });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Could not edit the image.");
+      if (typeof result.imageDataUrl !== "string" || !result.imageDataUrl.startsWith("data:image/jpeg;base64,")) {
+        throw new Error("The image editor returned an invalid image.");
+      }
+      setGeneratedImage({ dataUrl: result.imageDataUrl, prompt: generatedImage.prompt || editPrompt });
+      setMessages((current) => current.map((item, index) =>
+        index === current.length - 1 ? { ...item, content: "Updated your image. You can keep refining it with another instruction." } : item
+      ));
+    } catch (err) {
+      setMessages((current) => current.map((item, index) =>
+        index === current.length - 1 ? { ...item, content: "I couldn't apply that image change." } : item
+      ));
+      setError(err.message || "Image editing failed.");
+    } finally {
+      setImageGenerating(false);
+    }
+  }
+
   async function saveGeneratedImage() {
     if (!generatedImage || imageSaving) return;
     setImageSaving(true);
     setError("");
+    setImageSaveNotice("");
     try {
       const response = await fetch(generatedImage.dataUrl);
       const blob = await response.blob();
@@ -680,8 +713,9 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         throw new Error(result.error || "Could not save the image details.");
       }
       setFiles((items) => [result.file, ...items]);
-      setError("Image saved to your Aahana Files.");
+      setImageSaveNotice("Image saved to your Aahana Files.");
     } catch (err) {
+      setImageSaveNotice("");
       setError(err.message || "Could not save the generated image.");
     } finally {
       setImageSaving(false);
@@ -881,7 +915,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         const response = await fetch("/api/images/generate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt: text, steps: imageQuality === "enhanced" ? 8 : 4, style: imageStyle }),
+          body: JSON.stringify({ prompt: text, steps: 8, quality: "masterpiece" }),
         });
         const result = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(result.error || "Could not generate the image.");
@@ -900,6 +934,19 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       } finally {
         setImageGenerating(false);
       }
+      return;
+    }
+
+    if (generatedImage && isImageEditRequest(text)) {
+      setPrompt("");
+      if (!imageEditingEnabled) {
+        setMessages((current) => [...current,
+          { role: "user", content: text },
+          { role: "assistant", content: "Reference-based image editing is prepared but not enabled yet. Your current image is preserved." },
+        ]);
+        return;
+      }
+      await editGeneratedImage(text);
       return;
     }
 
@@ -1338,6 +1385,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                   <button className="copy-message" type="button" onClick={saveGeneratedImage} disabled={imageSaving}>{imageSaving ? "Saving…" : "Save to Files"}</button>
                   <button className="copy-message" type="button" onClick={() => setGeneratedImage(null)}>Remove</button>
                 </div>
+                {imageSaveNotice && <div className="notice" role="status">{imageSaveNotice}</div>}
               </div>
             )}
             {generatedVideo && (
@@ -1350,19 +1398,6 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
               </div>
             )}
             <div className="image-attach-row">
-              <select aria-label="Image generation quality" value={imageQuality} onChange={(event) => setImageQuality(event.target.value)} className="copy-message">
-                <option value="standard">Standard image</option>
-                <option value="enhanced">Enhanced detail</option>
-              </select>
-              <select aria-label="Visual style" value={imageStyle} onChange={(event) => setImageStyle(event.target.value)} className="copy-message">
-                <option value="none">Original style</option>
-                <option value="cinematic">Cinematic</option>
-                <option value="photorealistic">Photorealistic</option>
-                <option value="3d-render">3D render</option>
-                <option value="product-studio">Product studio</option>
-                <option value="illustration">Digital illustration</option>
-                <option value="editorial">Editorial design</option>
-              </select>
               {videoEnabled && (
                 <>
                   <select aria-label="Video duration" value={videoDuration} onChange={(event) => setVideoDuration(Number(event.target.value))} className="copy-message">
