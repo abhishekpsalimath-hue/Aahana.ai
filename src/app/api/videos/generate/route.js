@@ -78,6 +78,7 @@ export async function POST(request) {
     );
 
     const result = await response.json().catch(() => null);
+    if (request.signal.aborted) return new Response(null, { status: 499 });
     const videoUrl = extractVideoUrl(result);
     if (!response.ok || result?.success === false || !isTrustedGeneratedVideoUrl(videoUrl)) {
       const providerStatus = response.status;
