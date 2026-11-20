@@ -357,3 +357,88 @@ button:focus-visible,a:focus-visible{outline-color:#c4a7ff}
 @media(max-width:760px){.discover-hero{min-height:550px;padding:75px 22px}.discover-hero h1{letter-spacing:-3px}.discover-lead{font-size:14px}.discover-modes,.discover-detail,.discover-final{width:calc(100% - 40px);padding:60px 0}.discover-mode-grid{grid-template-columns:1fr 1fr}.discover-mode-card{min-height:150px}.discover-detail{grid-template-columns:1fr;gap:18px}.discover-footer{padding:20px}}
 @media(max-width:420px){.discover-mode-grid{grid-template-columns:1fr}.discover-mode-card{min-height:125px}.discover-mode-card h3{margin-top:18px}}
 @media(prefers-reduced-motion:reduce){.discover-primary{transition:none}}
+
+
+/* Aahana interaction polish: visible focus, comfortable touch targets and
+   restrained motion that respects the visitor's system preferences. */
+:where(button, a, input, textarea, select, [role="button"], [role="tab"]):focus-visible {
+  outline: 2px solid var(--lilac);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 4px rgba(196, 167, 255, .16);
+}
+
+:where(button, a, input, textarea, select) {
+  -webkit-tap-highlight-color: transparent;
+}
+
+:where(button, [role="button"], [role="tab"], .image-attach) {
+  touch-action: manipulation;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .mode,
+  .side-item,
+  .starter,
+  .history-entry,
+  .project-entry,
+  .copy-message,
+  .image-attach,
+  .send {
+    transition: transform 160ms ease, border-color 160ms ease,
+      background-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+  }
+
+  .starter:hover,
+  .history-entry:hover,
+  .project-entry:hover {
+    transform: translateY(-2px);
+  }
+
+  .send:not(:disabled):hover {
+    transform: translateY(-1px);
+    box-shadow: 0 7px 22px rgba(196, 167, 255, .24);
+  }
+
+  .mode:not(.active-mode):hover,
+  .copy-message:hover,
+  .image-attach:hover {
+    border-color: rgba(196, 167, 255, .55);
+  }
+}
+
+::selection {
+  color: #17111f;
+  background: #d9c8ff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+  }
+
+  .space-star,
+  .astronaut-float,
+  .welcome-signal,
+  .signal-orbit,
+  .signal-spark {
+    animation: none !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .top-actions {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .mobile-history-toggle,
+  .send,
+  .sign-out {
+    min-height: 40px;
+  }
+}
