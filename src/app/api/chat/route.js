@@ -449,9 +449,11 @@ export async function POST(request) {
       });
       return NextResponse.json({ error: "Aahana retrieved sources but could not produce a verifiable citation. Please retry your research question.", code: "RESEARCH_CITATION_VALIDATION_FAILED" }, { status: 502 });
     }
+    const abortBeforeValidationLog = getClientAbortResponse(request.signal);
+    if (abortBeforeValidationLog) return abortBeforeValidationLog;
+    await recordReliabilityEvent(supabase, user.id, { eventType: "research_answer_validated", severity: "info", source: "chat_research", summary: "A source-backed research answer passed citation validation.", metadata: { retrieved_source_count: allowedResearchUrls.length, citation_count: citationMatches.length, answer_length: verifiedResearchReply.length } }).catch(() => {});
     const abortBeforeSave = getClientAbortResponse(request.signal);
     if (abortBeforeSave) return abortBeforeSave;
-    await recordReliabilityEvent(supabase, user.id, { eventType: "research_answer_validated", severity: "info", source: "chat_research", summary: "A source-backed research answer passed citation validation.", metadata: { retrieved_source_count: allowedResearchUrls.length, citation_count: citationMatches.length, answer_length: verifiedResearchReply.length } }).catch(() => {});
     const { error: saveError } = await supabase.rpc("save_ai_reply", {
       p_conversation_id: conversationId,
       p_content: verifiedResearchReply.slice(0, 16000),
