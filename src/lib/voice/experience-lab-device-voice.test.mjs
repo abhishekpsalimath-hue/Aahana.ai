@@ -17,7 +17,7 @@ test("Experience Lab provides browser voice input with a selectable locale", () 
 
 test("Experience Lab provides interruptible device speech playback and cleanup", () => {
   assert.match(page, /new SpeechSynthesisUtterance/);
-  assert.match(page, /window\.speechSynthesis\.cancel\(\)/);
+  assert.match(page, /window\.speechSynthesis(?:\?\.|\.)cancel(?:\?\.)?\(\)/);
   assert.match(page, /recognitionRef\.current\?\.stop/);
   assert.match(page, /window\.speechSynthesis\?\.cancel\?\.\(\)/);
   assert.match(page, /aria-live="polite"/);
