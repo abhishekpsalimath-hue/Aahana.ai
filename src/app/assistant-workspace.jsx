@@ -1367,7 +1367,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
             </>
           )}
         </div>
-        <footer className="footer"><span>Aahana</span><span>Thoughtfully made for what’s next.</span></footer>
+        <footer className="footer"><span className="footer-brand">Aahana</span><span className="footer-note">Thoughtfully made for what’s next.</span><span className="founder-signature" aria-label="Founder signature: Abhishekayya Salimath">Abhishekayya Salimath</span></footer>
       </section>
     </main>
   );
