@@ -172,7 +172,8 @@ export default function Creative3DStage() {
       setError("This device could not start a WebGL preview. Try a browser with hardware acceleration enabled.");
       return () => {
         disposed = true;
-        meshRef.current = null;\n        if (renderer) renderer.dispose();
+        meshRef.current = null;
+        if (renderer) renderer.dispose();
       };
     }
   }, [shape, wireframe]);
@@ -193,9 +194,11 @@ export default function Creative3DStage() {
           </select>
         </label>
         <label className="creative-3d-toggle"><input type="checkbox" checked={wireframe} onChange={(event) => setWireframe(event.target.checked)} /> Wireframe</label>
-        <span className="creative-3d-hint">{dragging ? "Drag to rotate" : "Drag object to explore"}</span>\n        <button type="button" className="creative-3d-export" onClick={exportModel} disabled={exporting || Boolean(error)}>{exporting ? "Preparing GLB…" : "Export .GLB"}</button>
+        <span className="creative-3d-hint">{dragging ? "Drag to rotate" : "Drag object to explore"}</span>
+        <button type="button" className="creative-3d-export" onClick={exportModel} disabled={exporting || Boolean(error)}>{exporting ? "Preparing GLB…" : "Export .GLB"}</button>
       </div>
-      {exportMessage && <p className="creative-3d-export-status" role="status">{exportMessage}</p>}\n      <p className="creative-3d-note">Real-time Three.js preview · Exportable GLB model · Runs in your browser</p>
+      {exportMessage && <p className="creative-3d-export-status" role="status">{exportMessage}</p>}
+      <p className="creative-3d-note">Real-time Three.js preview · Exportable GLB model · Runs in your browser</p>
     </section>
   );
 }
