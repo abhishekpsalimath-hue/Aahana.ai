@@ -28,7 +28,9 @@ function shouldSearchWeb(prompt, image) {
 
 export async function POST(request) {
   const supabase = await createClient();
+  if (request.signal.aborted) return new Response(null, { status: 499 });
   const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (request.signal.aborted) return new Response(null, { status: 499 });
 
   if (authError || !user) {
     return NextResponse.json({ error: "Please sign in to use Aahana." }, { status: 401 });
@@ -58,8 +60,10 @@ export async function POST(request) {
   try {
     body = await request.json();
   } catch {
+    if (request.signal.aborted) return new Response(null, { status: 499 });
     return NextResponse.json({ error: "Invalid request." }, { status: 400 });
   }
+  if (request.signal.aborted) return new Response(null, { status: 499 });
 
   const prompt = typeof body?.message === "string" ? body.message.trim() : "";
   const image = body?.image && typeof body.image === "object" ? body.image : null;
@@ -85,6 +89,7 @@ export async function POST(request) {
       .eq("user_id", user.id)
       .neq("status", "archived")
       .maybeSingle();
+    if (request.signal.aborted) return new Response(null, { status: 499 });
     if (projectError || !ownedProject) return NextResponse.json({ error: "Project not found." }, { status: 404 });
   }
 
@@ -98,6 +103,7 @@ export async function POST(request) {
       .eq("id", conversationId)
       .eq("user_id", user.id)
       .maybeSingle();
+    if (request.signal.aborted) return new Response(null, { status: 499 });
     if (error || !existing) {
       return NextResponse.json({ error: "Conversation not found." }, { status: 404 });
     }
@@ -105,12 +111,14 @@ export async function POST(request) {
     if (projectId) updates.project_id = projectId;
     else projectId = existing.project_id || null;
     await supabase.from("conversations").update(updates).eq("id", conversationId).eq("user_id", user.id);
+    if (request.signal.aborted) return new Response(null, { status: 499 });
   } else {
     const { data: created, error } = await supabase
       .from("conversations")
       .insert({ user_id: user.id, mode, project_id: projectId, title: prompt.slice(0, 72) || "New conversation" })
       .select("id")
       .single();
+    if (request.signal.aborted) return new Response(null, { status: 499 });
     if (error || !created) {
       return NextResponse.json({ error: "Could not create your conversation." }, { status: 500 });
     }
@@ -124,6 +132,7 @@ export async function POST(request) {
     role: "user",
     content: image ? `${prompt}\n[Image attached: ${imageMatch[1]}]` : prompt,
   }).select("id").single();
+  if (request.signal.aborted) return new Response(null, { status: 499 });
 
   if (messageError || !savedUserMessage) {
     if (createdConversation) await supabase.from("conversations").delete().eq("id", conversationId);
@@ -137,6 +146,7 @@ export async function POST(request) {
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .limit(20);
+  if (request.signal.aborted) return new Response(null, { status: 499 });
 
   if (historyError || !history?.length) {
     return NextResponse.json({ error: "Could not load conversation context." }, { status: 500 });
@@ -204,6 +214,7 @@ export async function POST(request) {
       .select("enabled")
       .eq("user_id", user.id)
       .maybeSingle();
+    if (request.signal.aborted) return new Response(null, { status: 499 });
     if (memorySettingsError) {
       console.error("Aahana memory settings lookup failed:", memorySettingsError.message);
     } else if (memorySettings?.enabled === true) {
@@ -213,6 +224,7 @@ export async function POST(request) {
         .eq("user_id", user.id)
         .order("updated_at", { ascending: false })
         .limit(30);
+      if (request.signal.aborted) return new Response(null, { status: 499 });
       if (memoriesError) {
         console.error("Aahana private memory lookup failed:", memoriesError.message);
       } else if (memories?.length) {
