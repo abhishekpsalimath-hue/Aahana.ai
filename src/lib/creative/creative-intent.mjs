@@ -1,10 +1,8 @@
-const SACRED_IMAGE_SUBJECT = /\b(?:shiva|mahadev|mahadeva|shankar|hanuman|anjaneya|maruti|ganesha|ganapati|vinayaka|krishna|rama|ram)\b/i;
 export function isImageGenerationRequest(value) {
   const text = String(value || "").trim();
   if (!text) return false;
 
   if (/\b(?:generate|create|draw|paint|illustrate|render|make)\b[\s\S]{0,100}\b(?:shiva|mahadev|mahadeva|shankar|hanuman|anjaneya|maruti|ganesha|ganapati|vinayaka|krishna|rama|ram)\b/i.test(text)) return true;
-  if (/^\s*(?:please\s+)?(?:generate|create|draw|paint|illustrate|render|make)\s+(?:(?:a|an|the)\s+)?(?:(?:lord|shri|sri)\s+)?(?:shiva|mahadev|mahadeva|shankar|hanuman|anjaneya|maruti|ganesha|ganapati|vinayaka|krishna|rama|ram)\b/i.test(text)) return true;
   if (/\b(?:generate|create|draw|paint|illustrate|render|make)\b[\s\S]{0,180}\b(?:image|picture|illustration|artwork|portrait|wallpaper|logo|poster|cover|banner|icon|thumbnail|scene|landscape|cityscape|character|diagram)\b/i.test(text)) return true;
   if (/\b(?:show me|visuali[sz]e|turn this into|text[- ]to[- ]image)\b/i.test(text) && /\b(?:image|picture|art|illustration|render|visual)\b/i.test(text)) return true;
   if (/\b(?:please|can you|could you|i want|i need)\b[\s\S]{0,120}\b(?:generate|create|draw|paint|illustrate|render|make)\b/i.test(text) && /\b(?:image|picture|art|visual|logo|poster|wallpaper)\b/i.test(text)) return true;
