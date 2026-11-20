@@ -162,3 +162,27 @@ test("Build workspace rejects oversized declared source metadata before download
   assert.match(buildRoute, /declaredSourceBytes > MAX_SOURCE_BYTES/);
   assert.match(buildRoute, /status: 413/);
 });
+
+
+test("Aahana Self-Build is owner-gated and proposes repository changes only through draft PRs", () => {
+  const selfBuildStatus = readFileSync(new URL("../api/build/self/status/route.js", import.meta.url), "utf8");
+  const selfBuildRepository = readFileSync(new URL("../api/build/self/repository/route.js", import.meta.url), "utf8");
+  const selfBuildFile = readFileSync(new URL("../api/build/self/file/route.js", import.meta.url), "utf8");
+  const selfBuildPullRequest = readFileSync(new URL("../api/build/self/pull-request/route.js", import.meta.url), "utf8");
+  const selfBuildPolicy = readFileSync(new URL("../../lib/build/self-build-policy.mjs", import.meta.url), "utf8");
+  assert.match(page, /\/api\/build\/self\/status/);
+  assert.match(page, /\/api\/build\/self\/repository/);
+  assert.match(page, /\/api\/build\/self\/file/);
+  assert.match(page, /\/api\/build\/self\/pull-request/);
+  assert.match(page, /Create draft pull request/);
+  assert.match(page, /Nothing is committed until you explicitly create a draft pull request/);
+  for (const route of [selfBuildStatus, selfBuildRepository, selfBuildFile, selfBuildPullRequest]) {
+    assert.match(route, /supabase\.auth\.getUser\(\)/);
+    assert.match(route, /isSelfBuildOwner/);
+  }
+  assert.match(selfBuildPullRequest, /createSelfBuildPullRequest/);
+  assert.match(selfBuildPolicy, /src\/app\/experience-lab\//);
+  assert.match(selfBuildPolicy, /src\/lib\/build\//);
+  assert.match(selfBuildPolicy, /includes\("student"\)/);
+  assert.match(selfBuildPolicy, /Student Mode/);
+});
