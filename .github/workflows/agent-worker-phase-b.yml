@@ -17,7 +17,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: aahana-agent-worker-phase-b
+  group: aahana-agent-worker-phase-b-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
