@@ -237,8 +237,9 @@ function Starfield() {
   useEffect(() => {
     const canvas = canvasRef.current;
     const context = canvas?.getContext("2d", { alpha: true });
-    const surface = canvas?.parentElement;
-    if (!canvas || !context || !surface) return undefined;
+    const layer = canvas?.parentElement;
+    const surface = layer?.parentElement;
+    if (!canvas || !context || !layer || !surface) return undefined;
 
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     const STAR_COUNT = 20000;
@@ -247,7 +248,7 @@ function Starfield() {
     let pixelRatio = 1;
     let stars = [];
     let frame = 0;
-    let lastFrame = 0;
+    let previousTime = 0;
     let pointerX = 0;
     let pointerY = 0;
     let targetX = 0;
@@ -260,32 +261,50 @@ function Starfield() {
       return (seed - 1) / 2147483646;
     };
 
-    const draw = (time, staticFrame = false) => {
+    const draw = (time, delta = 0, animate = false) => {
       if (disposed || !width || !height) return;
       context.clearRect(0, 0, width, height);
-      pointerX += (targetX - pointerX) * 0.035;
-      pointerY += (targetY - pointerY) * 0.035;
+      pointerX += (targetX - pointerX) * 0.045;
+      pointerY += (targetY - pointerY) * 0.045;
+      const centerX = width / 2;
+      const centerY = height / 2;
+      const focalLength = Math.max(width, height) * 0.72;
+
       for (let index = 0; index < stars.length; index += 1) {
         const star = stars[index];
-        const twinkle = staticFrame || reducedMotion.matches ? 1 : 0.72 + Math.sin(time * 0.0007 * star.speed + star.phase) * 0.28;
-        const alpha = Math.min(1, star.alpha * twinkle);
-        const x = star.x + pointerX * star.depth * 7;
-        const y = star.y + pointerY * star.depth * 7;
+        if (animate) {
+          star.z += star.speed * delta;
+          if (star.z >= 1) {
+            star.z = 0.015;
+            star.x = random();
+            star.y = random();
+          }
+          star.phase += delta * 0.0012 * star.twinkleSpeed;
+        }
+        const depth = 0.12 + star.z * 2.15;
+        const perspective = focalLength / (focalLength + (1 - star.z) * focalLength * 1.6);
+        const drift = star.z * star.z;
+        const x = centerX + (star.x * width - centerX) * depth + pointerX * star.parallax * 16 * drift;
+        const y = centerY + (star.y * height - centerY) * depth + pointerY * star.parallax * 16 * drift;
+        const size = star.radius * (0.45 + star.z * 1.75);
+        const twinkle = reducedMotion.matches ? 1 : 0.72 + Math.sin(star.phase + time * 0.00015) * 0.28;
+        const alpha = Math.min(1, star.alpha * twinkle * (0.35 + star.z * 0.8));
+        if (x < -8 || x > width + 8 || y < -8 || y > height + 8) continue;
         context.globalAlpha = alpha;
-        context.fillStyle = star.bright ? "#f5eaff" : "#d9c9ff";
-        const size = star.radius * (star.bright ? 1.25 : 1);
-        context.fillRect(x, y, size, size);
+        context.fillStyle = star.bright ? "#fffaff" : "#d9c9ff";
+        context.fillRect(x, y, size * perspective, size * perspective);
         if (star.bright) {
-          context.globalAlpha = alpha * 0.24;
-          context.fillRect(x - 2.1, y + size / 2, size + 4.2, 0.55);
-          context.fillRect(x + size / 2, y - 2.1, 0.55, size + 4.2);
+          context.globalAlpha = alpha * 0.28;
+          const glint = size * (1.8 + star.z);
+          context.fillRect(x - glint, y + size / 2, glint * 2 + size, 0.55 + star.z * 0.5);
+          context.fillRect(x + size / 2, y - glint, 0.55 + star.z * 0.5, glint * 2 + size);
         }
       }
       context.globalAlpha = 1;
     };
 
     const resize = () => {
-      const bounds = surface.getBoundingClientRect();
+      const bounds = layer.getBoundingClientRect();
       width = Math.max(1, bounds.width);
       height = Math.max(1, bounds.height);
       pixelRatio = Math.min(window.devicePixelRatio || 1, 1.5);
@@ -293,24 +312,25 @@ function Starfield() {
       canvas.height = Math.round(height * pixelRatio);
       context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
       stars = Array.from({ length: STAR_COUNT }, (_, index) => ({
-        x: random() * width,
-        y: random() * height,
-        radius: 0.28 + random() * (index % 97 === 0 ? 1.25 : 0.72),
-        alpha: 0.16 + random() * 0.62,
+        x: random(),
+        y: random(),
+        z: random(),
+        radius: 0.35 + random() * (index % 97 === 0 ? 1.4 : 0.72),
+        alpha: 0.2 + random() * 0.68,
         phase: random() * Math.PI * 2,
-        speed: 0.35 + random() * 1.1,
-        depth: 0.15 + random() * 0.85,
+        speed: 0.000025 + random() * 0.000065,
+        twinkleSpeed: 0.5 + random() * 1.5,
+        parallax: 0.2 + random() * 0.8,
         bright: index % 97 === 0,
       }));
-      draw(0, true);
+      draw(0, 0, false);
     };
 
     const animate = (time) => {
       if (disposed || !isVisible || reducedMotion.matches) return;
-      if (time - lastFrame >= 33) {
-        draw(time);
-        lastFrame = time;
-      }
+      const delta = previousTime ? Math.min(48, time - previousTime) : 16;
+      previousTime = time;
+      draw(time, delta, true);
       frame = window.requestAnimationFrame(animate);
     };
     const handlePointer = (event) => {
@@ -318,22 +338,28 @@ function Starfield() {
       targetX = ((event.clientX - bounds.left) / Math.max(1, bounds.width) - 0.5) * 2;
       targetY = ((event.clientY - bounds.top) / Math.max(1, bounds.height) - 0.5) * 2;
     };
-    const handlePointerOut = () => { targetX = 0; targetY = 0; };
+    const handlePointerOut = (event) => {
+      if (!surface.contains(event.relatedTarget)) { targetX = 0; targetY = 0; }
+    };
+    const stopAnimation = () => {
+      window.cancelAnimationFrame(frame);
+      previousTime = 0;
+    };
     const handleVisibility = () => {
       isVisible = !document.hidden;
-      window.cancelAnimationFrame(frame);
+      stopAnimation();
       if (isVisible && !reducedMotion.matches) frame = window.requestAnimationFrame(animate);
     };
     const handleMotionPreference = () => {
-      window.cancelAnimationFrame(frame);
-      if (reducedMotion.matches) draw(0, true);
+      stopAnimation();
+      if (reducedMotion.matches) draw(0, 0, false);
       else if (isVisible) frame = window.requestAnimationFrame(animate);
     };
 
     const observer = new ResizeObserver(resize);
-    observer.observe(surface);
+    observer.observe(layer);
     surface.addEventListener("pointermove", handlePointer, { passive: true });
-    surface.addEventListener("pointerleave", handlePointerOut);
+    surface.addEventListener("pointerout", handlePointerOut);
     document.addEventListener("visibilitychange", handleVisibility);
     reducedMotion.addEventListener?.("change", handleMotionPreference);
     resize();
@@ -343,10 +369,10 @@ function Starfield() {
       disposed = true;
       observer.disconnect();
       surface.removeEventListener("pointermove", handlePointer);
-      surface.removeEventListener("pointerleave", handlePointerOut);
+      surface.removeEventListener("pointerout", handlePointerOut);
       document.removeEventListener("visibilitychange", handleVisibility);
       reducedMotion.removeEventListener?.("change", handleMotionPreference);
-      window.cancelAnimationFrame(frame);
+      stopAnimation();
     };
   }, []);
 
@@ -1187,7 +1213,8 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
 
         <div className="welcome">
           {!messages.length && (
-            <div className="astronaut-float" aria-hidden="true">
+            <section className="welcome-card" aria-label="Welcome to Aahana AI">
+              <div className="astronaut-float" aria-hidden="true">
               <svg viewBox="0 0 180 180" role="presentation">
                 <defs>
                   <linearGradient id="astronautSuit" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#fffaff" /><stop offset="1" stopColor="#b9a6d8" /></linearGradient>
@@ -1223,10 +1250,11 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
             <span className="signal-spark signal-spark-two" />
           </div>
           <div className="eyebrow"><span /> YOUR THINKING SPACE</div>
-          {!messages.length && <>
-            <h1>Good ideas<br /><em>start somewhere.</em></h1>
-            <p>Think freely. Explore ideas. Build something real.</p>
-          </>}
+              <div className="eyebrow"><span /> WELCOME TO AAHANA</div>
+              <h1>Good ideas<br /><em>start somewhere.</em></h1>
+              <p>Your space to think bigger, ask freely, and turn ideas into something real.</p>
+            </section>
+          )}
 
           <div className="mode-row" role="tablist" aria-label="Choose a mode">
             {modes.map((item) => (
