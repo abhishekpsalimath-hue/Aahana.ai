@@ -71,6 +71,7 @@ function OrbitMark() {
 
 export default function ExperienceLab() {
   const [mode, setMode] = useState("chat");
+  const [topMode, setTopMode] = useState("assistance");
   const [prompt, setPrompt] = useState("");
   const [thread, setThread] = useState([]);
   const [conversationId, setConversationId] = useState(null);
@@ -485,10 +486,11 @@ export default function ExperienceLab() {
       </aside>
 
       <section className="lab-main">
-        <div className="lab-heading-row"><div><div className="lab-kicker">YOUR SPACE TO THINK BIGGER</div><h1>What shall we <span>imagine?</span></h1><p>One intelligence. Infinite ways to explore, create and build.</p></div><div className="lab-heading-orb"><OrbitMark /></div></div>
+        <div className="lab-heading-row"><div><div className="lab-kicker">{topMode === "student" ? "STUDENT MODE" : "ASSISTANCE MODE"}</div><h1>What shall we <span>imagine?</span></h1><p>One intelligence. Infinite ways to explore, create and build.</p></div><div className="lab-heading-orb"><OrbitMark /></div></div>
 
-        <nav className="lab-modebar" aria-label="Choose an experience">
-          {modes.map((item) => <button type="button" key={item.id} onClick={() => { setMode(item.id); setRequestError(""); }} className={mode === item.id ? "lab-mode active" : "lab-mode"} aria-pressed={mode === item.id}><span>{item.mark}</span>{item.label}</button>)}
+        <nav className="lab-modebar" aria-label="Choose a mode">
+          <button type="button" onClick={() => { setTopMode("assistance"); setMode("chat"); setRequestError(""); }} className={topMode === "assistance" ? "lab-mode active" : "lab-mode"} aria-pressed={topMode === "assistance"}><span>✳</span>Assistance</button>
+          <button type="button" onClick={() => { setTopMode("student"); setMode("learn"); setRequestError(""); }} className={topMode === "student" ? "lab-mode active" : "lab-mode"} aria-pressed={topMode === "student"}><span>⌁</span>Student</button>
         </nav>
 
         <div className="lab-workspace">
@@ -510,7 +512,7 @@ export default function ExperienceLab() {
           <form className="lab-composer" onSubmit={previewFlow}>
             <label className="sr-only" htmlFor="lab-composer">Write a message for the preview</label>
             <textarea id="lab-composer" value={prompt} onChange={(event) => setPrompt(event.target.value)} placeholder={mode === "build" ? "Describe the product you want to bring to life..." : mode === "create" ? "Describe the world you want to create..." : "Ask anything. Start anywhere..."} rows={3} />
-            <div className="composer-controls"><div className="composer-tools"><button type="button" onClick={() => setActivePanel(activePanel === "attach" ? "tools" : "attach")} title="Add context">＋ <span>Attach</span></button><button type="button" onClick={() => setActivePanel(activePanel === "tools" ? "discover" : "tools")} title="Explore tools">◈ <span>Tools</span></button><span className="composer-divider" /><span className="composer-mode-label">{current.label} mode</span></div><div className="composer-submit"><button type="button" className="voice-button" title="Voice preview" onClick={() => setActivePanel("voice")}>◖</button>{busy ? <button type="button" className="lab-send lab-stop" onClick={stopGeneration}>Stop <span>■</span></button> : <button type="submit" className="lab-send" disabled={!prompt.trim()}>Send <span>↗</span></button>}</div></div>
+            <div className="composer-controls"><div className="composer-tools"><button type="button" onClick={() => setActivePanel(activePanel === "attach" ? "tools" : "attach")} title="Add context">＋ <span>Attach</span></button><button type="button" onClick={() => setActivePanel(activePanel === "tools" ? "discover" : "tools")} title="Explore tools">◈ <span>Tools</span></button><span className="composer-divider" /><span className="composer-mode-label">{topMode === "student" ? "Student Mode" : "Assistance"}</span></div><div className="composer-submit"><button type="button" className="voice-button" title="Voice preview" onClick={() => setActivePanel("voice")}>◖</button>{busy ? <button type="button" className="lab-send lab-stop" onClick={stopGeneration}>Stop <span>■</span></button> : <button type="submit" className="lab-send" disabled={!prompt.trim()}>Send <span>↗</span></button>}</div></div>
           </form>
           {mode === "create" && <Creative3DStage />}
           {mode === "build" && <section className="build-console" aria-label="Project build workspace">
@@ -568,8 +570,8 @@ export default function ExperienceLab() {
         <div className="inspector-profile"><div className="inspector-orb"><OrbitMark /></div><div><strong>Aahana</strong><small>Ready to explore <span className="ready-dot" /></small></div></div>
         <div className="inspector-tabs" role="group" aria-label="Co-pilot panel"><button type="button" className={activePanel === "tools" ? "active" : ""} aria-pressed={activePanel === "tools"} onClick={() => setActivePanel("tools")}>Tools</button><button type="button" className={activePanel === "discover" ? "active" : ""} aria-pressed={activePanel === "discover"} onClick={() => setActivePanel("discover")}>Discover</button><button type="button" className={activePanel === "library" ? "active" : ""} aria-pressed={activePanel === "library"} onClick={() => setActivePanel("library")}>Library</button></div>
         <div className="inspector-content">
-          {activePanel === "tools" && <><div className="inspector-section-label">CAPABILITIES</div>{[["⌘","Build workspace","Product guidance · engine in development"],["✧","Creative studio","Creative direction · media tools in development"],["⌕","Deep research","Source-backed answers when available"],["◖","Voice conversation","Voice runtime in development"]].map(([mark,title,detail]) => <button type="button" className="capability-row" key={title} onClick={() => setActivePanel(title === "Voice conversation" ? "voice" : "discover")}><span className="capability-mark">{mark}</span><span><strong>{title}</strong><small>{detail}</small></span><b>↗</b></button>)}</>}
-          {activePanel === "discover" && <div className="inspector-empty"><span>✧</span><strong>Discover your next move</strong><p>Explore connected experiences from one calm, intelligent workspace.</p><button type="button" onClick={() => setMode("research")}>Explore research mode</button></div>}
+          {activePanel === "tools" && <><div className="inspector-section-label">CAPABILITIES</div>{[["⌘","Build workspace","Build and preview websites or apps"],["✧","Creative studio","Create visuals and work with media"],["⌕","Deep research","Explore evidence and sources"],["◖","Voice conversation","Continue naturally with voice"]].map(([mark,title,detail]) => <button type="button" className="capability-row" key={title} onClick={() => { if (title === "Voice conversation") { setActivePanel("voice"); return; } setTopMode("assistance"); setMode(title === "Build workspace" ? "build" : title === "Creative studio" ? "create" : "research"); setActivePanel("tools"); setRequestError(""); }}><span className="capability-mark">{mark}</span><span><strong>{title}</strong><small>{detail}</small></span><b>↗</b></button>)}</>}
+          {activePanel === "discover" && <div className="inspector-empty"><span>✧</span><strong>Discover your next move</strong><p>Explore connected experiences from one calm, intelligent workspace.</p><button type="button" onClick={() => { setTopMode("assistance"); setMode("research"); setActivePanel("tools"); }}>Explore research</button></div>}
           {activePanel === "library" && <div className="inspector-empty"><span>▤</span><strong>Your creative memory</strong><p>A home for saved ideas, projects and useful discoveries.</p><small>Library preview · no data stored</small></div>}
           {activePanel === "attach" && <div className="inspector-empty"><span>＋</span><strong>Bring context in</strong><p>Files, images and links can become part of the same conversation.</p><small>Attachment controls are visual only in this concept.</small></div>}
           {activePanel === "voice" && <div className="inspector-empty"><span>◖</span><strong>Voice, in the flow</strong><p>Imagine speaking, interrupting and switching between voice and text without losing context.</p><small>Voice is not connected in this preview.</small></div>}
