@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { getSourceFileMimeType, isSupportedSourceFile } from "@/lib/build/source-file-policy.mjs";
 import { createSourceDiff, MAX_PROPOSAL_SOURCE_BYTES, validateSourceProposal } from "@/lib/build/source-proposal.mjs";
@@ -136,10 +137,7 @@ export default function ExperienceLab() {
   }, [mode]);
 
   useEffect(() => {
-    if (mode !== "build" || !selectedProjectId) {
-      setBuildFiles([]);
-      return;
-    }
+    if (mode !== "build" || !selectedProjectId) return;
     let active = true;
     setFilesLoading(true);
     fetch(`/api/files?projectId=${encodeURIComponent(selectedProjectId)}`, { cache: "no-store" })
@@ -492,9 +490,9 @@ export default function ExperienceLab() {
   return <main className={`experience-lab ${focus ? "focus-mode" : ""}`}>
     <div className="lab-ambient ambient-one" /><div className="lab-ambient ambient-two" />
     <header className="lab-topbar">
-      <a className="lab-brand" href="/" aria-label="Aahana AI home"><span className="lab-brand-symbol">a</span><span>Aahana <i>ai</i></span></a>
+      <Link className="lab-brand" href="/" aria-label="Aahana AI home"><span className="lab-brand-symbol">a</span><span>Aahana <i>ai</i></span></Link>
       <div className="lab-top-center"><span className="live-pulse" /> INTERACTIVE EXPERIENCE LAB <span className="lab-preview-tag">AI CHAT INTEGRATION</span></div>
-      <div className="lab-top-actions"><button type="button" className={focus ? "top-icon selected" : "top-icon"} onClick={() => setFocus(!focus)} aria-pressed={focus} aria-label={focus ? "Exit focus mode" : "Enter focus mode"} title="Toggle focus mode">⛶</button><a href="/" className="lab-exit">Exit preview <span>↗</span></a></div>
+      <div className="lab-top-actions"><button type="button" className={focus ? "top-icon selected" : "top-icon"} onClick={() => setFocus(!focus)} aria-pressed={focus} aria-label={focus ? "Exit focus mode" : "Enter focus mode"} title="Toggle focus mode">⛶</button><Link href="/" className="lab-exit">Exit preview <span>↗</span></Link></div>
     </header>
 
     <div className="lab-layout">
@@ -528,7 +526,7 @@ export default function ExperienceLab() {
           </div> : <div className="lab-empty">
             <div className="empty-orb"><OrbitMark /></div>
             <div className="empty-title">A thought is a beginning.</div>
-            <p>Ask a question, drop an idea, attach a direction. We'll shape the next step together.</p>
+            <p>Ask a question, drop an idea, attach a direction. We&apos;ll shape the next step together.</p>
           </div>}
 
           <form className="lab-composer" onSubmit={previewFlow}>
