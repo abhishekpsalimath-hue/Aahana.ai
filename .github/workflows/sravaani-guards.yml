@@ -10,6 +10,7 @@ on:
       - "src/app/api/voice/transcribe/route.js"
       - "src/app/api/voice/speech/route.js"
       - "src/app/api/chat/route.js"
+      - "src/app/api/learning-journey/**"
       - "src/app/assistant-workspace.jsx"
       - "src/app/learn/**"
       - "src/lib/learning/**"
