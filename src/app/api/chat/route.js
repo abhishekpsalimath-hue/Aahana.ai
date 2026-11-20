@@ -147,7 +147,9 @@ export async function POST(request) {
   }
 
   if (messageError || !savedUserMessage) {
-    if (createdConversation) await supabase.from("conversations").delete().eq("id", conversationId);
+    if (createdConversation) {
+      await supabase.from("conversations").delete().eq("id", conversationId).eq("user_id", user.id);
+    }
     return NextResponse.json({ error: "Could not save your message." }, { status: 500 });
   }
 
@@ -476,7 +478,7 @@ export async function POST(request) {
       p_content: verifiedResearchReply.slice(0, 16000),
     });
     if (request.signal.aborted) return new Response(null, { status: 499 });
-    await supabase.from("conversations").update({ updated_at: new Date().toISOString() }).eq("id", conversationId);
+    await supabase.from("conversations").update({ updated_at: new Date().toISOString() }).eq("id", conversationId).eq("user_id", user.id);
     if (saveError) console.error("Aahana research reply persistence failed:", saveError.message);
     return new Response(verifiedResearchReply, {
       headers: {
@@ -501,7 +503,8 @@ export async function POST(request) {
       });
       const { error: updateError } = await supabase.from("conversations")
         .update({ updated_at: new Date().toISOString() })
-        .eq("id", conversationId);
+        .eq("id", conversationId)
+        .eq("user_id", user.id);
       if (saveError) throw saveError;
       if (updateError) throw updateError;
     },
