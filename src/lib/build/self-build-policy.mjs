@@ -4,7 +4,7 @@ const MAX_TOTAL_BYTES = 2 * 1024 * 1024;
 const SHA_PATTERN = /^[a-f0-9]{40}$/i;
 const REPOSITORY_PATTERN = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
 
-const ALLOWED_ROOTS = [
+// Student Mode, authentication, database, and deployment code are intentionally excluded.\nconst ALLOWED_ROOTS = [
   "src/app/experience-lab/",
   "src/lib/build/",
 ];
