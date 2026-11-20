@@ -10,5 +10,5 @@ test("buffered research checks client cancellation after provider parsing and be
 });
 
 test("live search stops before processing results or calling the model when the client disconnects during response parsing", () => {
-  assert.match(route, /const searchData = await searchResponse\.json\(\);\\s*if \(request\.signal\.aborted\) return new Response\(null, \{ status: 499 \}\);/);
+  assert.match(route, /const searchData = await searchResponse\.json\(\);\s*if \(request\.signal\.aborted\) return new Response\(null, \{ status: 499 \}\);/);
 });
