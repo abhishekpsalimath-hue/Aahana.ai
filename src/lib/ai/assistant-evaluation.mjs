@@ -563,11 +563,19 @@ export function summarizeEvaluation(results) {
         const scoreTotal = categoryResults.reduce((sum, item) => sum + item.scores[dimension], 0);
         return [dimension, categoryResults.length ? Number((scoreTotal / categoryResults.length).toFixed(2)) : null];
       }));
+      const weakestScore = categoryResults.length
+        ? Math.min(...Object.values(dimensionAverages))
+        : null;
+      const weakestDimensions = weakestScore === null
+        ? []
+        : dimensions.filter((dimension) => dimensionAverages[dimension] === weakestScore);
       return [category, {
         expected: categoryIds.size,
         scored: categoryResults.length,
+        coverage: Number(((categoryResults.length / categoryIds.size) * 100).toFixed(1)),
         average: categoryAverage === null ? null : Number(categoryAverage.toFixed(2)),
         dimensionAverages,
+        weakestDimensions,
         criticalFailures: entries.reduce((sum, item) =>
           categoryIds.has(item?.id) && Array.isArray(item?.criticalFailures)
             ? sum + item.criticalFailures.filter((failure) => ASSISTANT_EVALUATION_RUBRIC.criticalFailures.includes(failure)).length
