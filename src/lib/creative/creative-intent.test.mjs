@@ -25,6 +25,8 @@ test("does not route ordinary deity questions into image generation", () => {
 test("recognizes image refinement instructions", () => {
   for (const prompt of [
     "Make the background cinematic",
+    "Make background cinematic",
+    "Make the lighting more dramatic",
     "Change the sky to a starry night",
     "Remove the extra person",
     "Add a trident beside Shiva",
