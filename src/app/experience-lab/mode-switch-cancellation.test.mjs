@@ -10,7 +10,7 @@ test("switching Experience Lab modes aborts and invalidates an in-flight assista
   assert.match(switchMode, /activeRequest\.current = null;/);
   assert.match(switchMode, /setMode\(nextMode\);/);
   assert.match(page, /onClick=\{\(\) => switchMode\(item\.id\)\}/);
-  assert.match(page, /onClick=\{\(\) => \{ switchMode\("chat"\); startNewSession\(\);/);
+  assert.ok(page.includes('onClick={() => { switchMode("chat"); startNewSession(true); setActivePanel("tools"); }'), "Home should switch to chat, force a fresh session, and open Tools");
 });
 
 test("mode switching retains the existing Learn-to-learn API mapping", () => {
@@ -20,4 +20,12 @@ test("mode switching retains the existing Learn-to-learn API mapping", () => {
 
 test("stopped requests keep the existing response-stopped feedback", () => {
   assert.match(page, /content: "Response stopped\."/);
+});
+
+test("Home starts a fresh session after cancelling an in-flight response", () => {
+  const startNewSession = page.slice(page.indexOf("  function startNewSession"), page.indexOf("\n  return <main"));
+  assert.match(startNewSession, /function startNewSession\(force = false\)/);
+  assert.match(startNewSession, /if \(busy && !force\) return;/);
+  assert.match(page, /switchMode\("chat"\); startNewSession\(true\); setActivePanel\("tools"\)/);
+  assert.match(startNewSession, /setThread\(\[\]\);[\s\S]*setConversationId\(null\);/);
 });

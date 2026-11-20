@@ -480,8 +480,8 @@ export default function ExperienceLab() {
     activeRequest.current?.abort();
   }
 
-  function startNewSession() {
-    if (busy) return;
+  function startNewSession(force = false) {
+    if (busy && !force) return;
     setThread([]);
     setGeneratedImage(null);
     setConversationId(null);
@@ -501,7 +501,7 @@ export default function ExperienceLab() {
       <aside className="lab-rail" aria-label="Workspace navigation">
         <button className="rail-new" type="button" onClick={startNewSession} aria-label="New session">＋</button>
         <span className="rail-separator" />
-        <button className={mode === "chat" && activePanel === "tools" ? "rail-button active" : "rail-button"} type="button" title="Home" aria-label="Home" aria-current={mode === "chat" && activePanel === "tools" ? "page" : undefined} onClick={() => { switchMode("chat"); startNewSession(); setActivePanel("tools"); }}>⌂</button>
+        <button className={mode === "chat" && activePanel === "tools" ? "rail-button active" : "rail-button"} type="button" title="Home" aria-label="Home" aria-current={mode === "chat" && activePanel === "tools" ? "page" : undefined} onClick={() => { switchMode("chat"); startNewSession(true); setActivePanel("tools"); }}>⌂</button>
         <button className={activePanel === "discover" ? "rail-button active" : "rail-button"} type="button" title="Discover" aria-pressed={activePanel === "discover"} onClick={() => setActivePanel("discover")}>✧</button>
         <button className={activePanel === "library" ? "rail-button active" : "rail-button"} type="button" title="Library" aria-pressed={activePanel === "library"} onClick={() => setActivePanel("library")}>▤</button>
         <div className="rail-bottom"><button className="rail-button" type="button" title="Settings" onClick={() => setActivePanel("settings")}>⚙</button><span className="rail-avatar">A</span></div>
