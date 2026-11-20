@@ -174,6 +174,19 @@ export function createGitHubAppClient({
       };
     },
 
+    async getBlob({ sha }) {
+      if (!FULL_SHA.test(sha || "")) throw new Error("github_blob_sha_invalid");
+      const { data } = await getJson(
+        `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/git/blobs/${sha}`,
+      );
+      return {
+        sha: data.sha,
+        size: data.size,
+        encoding: data.encoding,
+        content: data.content,
+      };
+    },
+
     async getCommitTree({ sha }) {
       if (!FULL_SHA.test(sha || "")) throw new Error("github_commit_sha_invalid");
       const { data } = await getJson(
@@ -183,7 +196,7 @@ export function createGitHubAppClient({
         complete: data.truncated !== true && Array.isArray(data.tree),
         truncated: data.truncated === true,
         entries: Array.isArray(data.tree)
-          ? data.tree.map((entry) => ({ path: entry.path, mode: entry.mode }))
+          ? data.tree.map((entry) => ({ path: entry.path, mode: entry.mode, type: entry.type, sha: entry.sha, size: entry.size }))
           : [],
       };
     },

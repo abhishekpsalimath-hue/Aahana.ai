@@ -33,8 +33,11 @@ function makeFetch() {
     if (url.includes("/check-runs")) return response({ check_runs: [{
       name: "Unit tests", status: "completed", conclusion: "success", head_sha: headSha, app: { slug: "github-actions" }, html_url: "https://github.com/owner/repo/actions/runs/1",
     }] });
+    if (url.includes("/git/blobs/")) return response({
+      sha: "c".repeat(40), size: 4, encoding: "base64", content: Buffer.from("test").toString("base64"),
+    });
     if (url.includes("/git/trees/")) return response({
-      truncated: false, tree: [{ path: "src/demo.js", mode: "100644" }],
+      truncated: false, tree: [{ path: "src/demo.js", mode: "100644", type: "blob", sha: "c".repeat(40), size: 4 }],
     });
     return response({}, { ok: false });
   };
@@ -68,7 +71,13 @@ test("collects pull request files, checks and trees in the evidence adapter shap
   assert.equal(checks.checkRuns[0].headSha, headSha);
   assert.equal(checks.checkRuns[0].appSlug, "github-actions");
   assert.equal(tree.entries[0].mode, "100644");
+  assert.equal(tree.entries[0].type, "blob");
+  assert.equal(tree.entries[0].sha, "c".repeat(40));
+  assert.equal(tree.entries[0].size, 4);
   assert.equal(tree.complete, true);
+  const blob = await client.getBlob({ sha: "c".repeat(40) });
+  assert.equal(blob.encoding, "base64");
+  assert.equal(Buffer.from(blob.content, "base64").toString("utf8"), "test");
 });
 
 test("reuses the installation token until it approaches expiry", async () => {
