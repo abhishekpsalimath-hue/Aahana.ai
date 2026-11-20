@@ -147,7 +147,9 @@ export async function POST(request) {
   }
 
   if (messageError || !savedUserMessage) {
-    if (createdConversation) await supabase.from("conversations").delete().eq("id", conversationId);
+    if (createdConversation) {
+      await supabase.from("conversations").delete().eq("id", conversationId).eq("user_id", user.id);
+    }
     return NextResponse.json({ error: "Could not save your message." }, { status: 500 });
   }
 
