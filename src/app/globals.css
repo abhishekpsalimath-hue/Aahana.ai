@@ -39,6 +39,17 @@ h1 em{font-style:normal;color:var(--lilac)}
 .assistance-tool-launchers button:focus-visible{outline:2px solid #bda5e8;outline-offset:2px}
 .assistance-tool-launchers button:disabled{opacity:.55;cursor:not-allowed}
 .assistance-tool-launchers button span{color:#bda5e8}
+.live-preview-panel{margin-top:18px;border:1px solid #373044;border-radius:16px;overflow:hidden;background:#111018}
+.live-preview-toolbar{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 15px;border-bottom:1px solid #302a3b}
+.live-preview-toolbar>div{display:flex;flex-direction:column;gap:3px}
+.live-preview-toolbar strong{font-size:13px;color:#eee8f7}
+.live-preview-toolbar small{font-size:11px;color:#9d96aa}
+.live-preview-toolbar a{color:#c9b3f2;font-size:12px;text-decoration:none}
+.live-preview-toolbar a:hover{text-decoration:underline}
+.live-preview-frame{display:block;width:100%;height:min(68vh,760px);min-height:420px;border:0;background:#fff}
+.build-tools-error{margin-top:12px;color:#f0a5ad;font-size:12px;line-height:1.5}
+@media(max-width:640px){.live-preview-toolbar{align-items:flex-start;flex-direction:column}.live-preview-frame{height:65vh;min-height:360px}}
+
 .composer{border:1px solid #40364f;background:#111117;border-radius:15px;padding:15px;box-shadow:0 18px 60px #0005}
 .composer:focus-within{border-color:#8c70c1}
 .composer textarea{width:100%;resize:vertical;min-height:76px;border:0;outline:0;background:transparent;color:var(--text);font-size:14px;line-height:1.6}
