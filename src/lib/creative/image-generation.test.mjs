@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { parseImageGenerationInput, parseImageEditInput, MAX_IMAGE_EDIT_BYTES } from "./image-generation.mjs";
+import { parseImageGenerationInput, parseImageEditInput, MAX_IMAGE_EDIT_BYTES, MAX_IMAGE_EDIT_PROMPT_LENGTH } from "./image-generation.mjs";
 
 test("defaults to automatic masterpiece image direction without asking the user to choose settings", () => {
   assert.deepEqual(parseImageGenerationInput({ prompt: "A moonlit forest" }), {
@@ -88,4 +88,5 @@ test("validates conversational reference-image edits and bounded uploads", () =>
   assert.equal(parseImageEditInput({ prompt: " ", imageType: "image/jpeg", imageSize: 20 }).ok, false);
   assert.equal(parseImageEditInput({ prompt: "Change it", imageType: "image/gif", imageSize: 20 }).ok, false);
   assert.equal(parseImageEditInput({ prompt: "Change it", imageType: "image/jpeg", imageSize: MAX_IMAGE_EDIT_BYTES + 1 }).ok, false);
+  assert.equal(parseImageEditInput({ prompt: "x".repeat(MAX_IMAGE_EDIT_PROMPT_LENGTH + 1), imageType: "image/jpeg", imageSize: 20 }).ok, false);
 });
