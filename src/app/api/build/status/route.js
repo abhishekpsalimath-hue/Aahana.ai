@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { getCreativeProviderStatus } from "@/lib/creative/creative-director.mjs";
 export const runtime = "nodejs";
 export async function GET(request) {
   const supabase = await createClient();
@@ -15,6 +16,7 @@ export async function GET(request) {
     previewEnabled: process.env.AAHANA_PREVIEW_ENGINE_ENABLED === "true" && sandboxIdentityAvailable,
     videoEnabled: process.env.AAHANA_VIDEO_GENERATION_ENABLED === "true" &&
       Boolean(process.env.CLOUDFLARE_ACCOUNT_ID && process.env.CLOUDFLARE_API_TOKEN),
+    creativeProviders: getCreativeProviderStatus(process.env),
     sandboxIdentityAvailable,
     environment: process.env.VERCEL_ENV === "preview" ? "preview" : process.env.VERCEL_ENV === "production" ? "production" : "development",
   }, { headers: { "Cache-Control": "private, no-store" } });
