@@ -4,8 +4,9 @@ on:
   pull_request:
     branches:
       - main
-      - feat/aahana-contextual-interaction-cards
       - feat/experience-lab-live-assistant
+      - feat/experience-lab-build-workspace
+      - fix/experience-lab-source-edit-conflicts
     paths:
       - "src/app/experience-lab/**"
       - "src/app/api/build/**"
@@ -19,6 +20,7 @@ on:
       - feat/aahana-contextual-interaction-cards
       - feat/experience-lab-live-assistant
       - feat/experience-lab-build-workspace
+      - fix/experience-lab-source-edit-conflicts
     paths:
       - "src/app/experience-lab/**"
       - "src/app/api/build/**"
