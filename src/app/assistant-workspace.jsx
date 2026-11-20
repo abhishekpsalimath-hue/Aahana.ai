@@ -22,20 +22,7 @@ const starters = [
   "Help me design an app or website",
 ];
 
-const spaceStars = [
-  { startX: "-26px", startY: "-18px", endX: "-48vw", endY: "-35vh", delay: "-1s", size: "2px" },
-  { startX: "34px", startY: "-42px", endX: "52vw", endY: "-38vh", delay: "-5s", size: "2px" },
-  { startX: "-18px", startY: "36px", endX: "-55vw", endY: "42vh", delay: "-8s", size: "3px" },
-  { startX: "22px", startY: "18px", endX: "54vw", endY: "44vh", delay: "-3s", size: "2px" },
-  { startX: "-64px", startY: "-12px", endX: "-58vw", endY: "-8vh", delay: "-10s", size: "2px" },
-  { startX: "58px", startY: "8px", endX: "59vw", endY: "12vh", delay: "-6s", size: "3px" },
-  { startX: "-12px", startY: "-62px", endX: "-12vw", endY: "-48vh", delay: "-4s", size: "2px" },
-  { startX: "14px", startY: "60px", endX: "15vw", endY: "49vh", delay: "-9s", size: "2px" },
-  { startX: "-44px", startY: "54px", endX: "-42vw", endY: "50vh", delay: "-7s", size: "2px" },
-  { startX: "48px", startY: "-56px", endX: "43vw", endY: "-50vh", delay: "-2s", size: "2px" },
-  { startX: "-76px", startY: "22px", endX: "-61vw", endY: "23vh", delay: "-11s", size: "2px" },
-  { startX: "74px", startY: "-24px", endX: "62vw", endY: "-20vh", delay: "-12s", size: "3px" },
-];
+
 
 function renderInlineMarkdown(value, prefix) {
   const nodes = [];
@@ -242,6 +229,140 @@ function evaluateArithmetic(input) {
   } catch {
     return null;
   }
+}
+
+
+function Starfield() {
+  const canvasRef = useRef(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const context = canvas?.getContext("2d", { alpha: true });
+    const surface = canvas?.parentElement;
+    if (!canvas || !context || !surface) return undefined;
+
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const STAR_COUNT = 20000;
+    let width = 0;
+    let height = 0;
+    let pixelRatio = 1;
+    let stars = [];
+    let frame = 0;
+    let lastFrame = 0;
+    let pointerX = 0;
+    let pointerY = 0;
+    let targetX = 0;
+    let targetY = 0;
+    let isVisible = !document.hidden;
+    let disposed = false;
+
+    let seed = 20261120;
+    const random = () => {
+      seed = (seed * 16807) % 2147483647;
+      return (seed - 1) / 2147483646;
+    };
+
+    const resize = () => {
+      const bounds = surface.getBoundingClientRect();
+      width = Math.max(1, bounds.width);
+      height = Math.max(1, bounds.height);
+      pixelRatio = Math.min(window.devicePixelRatio || 1, 1.5);
+      canvas.width = Math.round(width * pixelRatio);
+      canvas.height = Math.round(height * pixelRatio);
+      context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+      stars = Array.from({ length: STAR_COUNT }, (_, index) => ({
+        x: random() * width,
+        y: random() * height,
+        radius: 0.28 + random() * (index % 97 === 0 ? 1.25 : 0.72),
+        alpha: 0.16 + random() * 0.62,
+        phase: random() * Math.PI * 2,
+        speed: 0.35 + random() * 1.1,
+        depth: 0.15 + random() * 0.85,
+        bright: index % 97 === 0,
+      }));
+      draw(0, true);
+    };
+
+    const draw = (time, staticFrame = false) => {
+      if (disposed || !width || !height) return;
+      context.clearRect(0, 0, width, height);
+      pointerX += (targetX - pointerX) * 0.035;
+      pointerY += (targetY - pointerY) * 0.035;
+
+      for (let index = 0; index < stars.length; index += 1) {
+        const star = stars[index];
+        const twinkle = staticFrame || reducedMotion.matches
+          ? 1
+          : 0.72 + Math.sin(time * 0.0007 * star.speed + star.phase) * 0.28;
+        const alpha = Math.min(1, star.alpha * twinkle);
+        const x = star.x + pointerX * star.depth * 7;
+        const y = star.y + pointerY * star.depth * 7;
+        context.globalAlpha = alpha;
+        context.fillStyle = star.bright ? "#f5eaff" : "#d9c9ff";
+        const size = star.radius * (star.bright ? 1.25 : 1);
+        context.fillRect(x, y, size, size);
+        if (star.bright) {
+          context.globalAlpha = alpha * 0.24;
+          context.fillRect(x - 2.1, y + size / 2, size + 4.2, 0.55);
+          context.fillRect(x + size / 2, y - 2.1, 0.55, size + 4.2);
+        }
+      }
+      context.globalAlpha = 1;
+    };
+
+    const animate = (time) => {
+      if (disposed || !isVisible || reducedMotion.matches) return;
+      if (time - lastFrame >= 33) {
+        draw(time);
+        lastFrame = time;
+      }
+      frame = window.requestAnimationFrame(animate);
+    };
+
+    const handlePointer = (event) => {
+      const bounds = surface.getBoundingClientRect();
+      targetX = ((event.clientX - bounds.left) / Math.max(1, bounds.width) - 0.5) * 2;
+      targetY = ((event.clientY - bounds.top) / Math.max(1, bounds.height) - 0.5) * 2;
+    };
+    const handlePointerOut = () => { targetX = 0; targetY = 0; };
+    const handleVisibility = () => {
+      isVisible = !document.hidden;
+      window.cancelAnimationFrame(frame);
+      if (isVisible && !reducedMotion.matches) frame = window.requestAnimationFrame(animate);
+    };
+    const handleMotionPreference = () => {
+      window.cancelAnimationFrame(frame);
+      if (reducedMotion.matches) draw(0, true);
+      else if (isVisible) frame = window.requestAnimationFrame(animate);
+    };
+
+    const observer = new ResizeObserver(resize);
+    observer.observe(surface);
+    surface.addEventListener("pointermove", handlePointer, { passive: true });
+    surface.addEventListener("pointerleave", handlePointerOut);
+    document.addEventListener("visibilitychange", handleVisibility);
+    reducedMotion.addEventListener?.("change", handleMotionPreference);
+    resize();
+    if (!reducedMotion.matches && isVisible) frame = window.requestAnimationFrame(animate);
+
+    return () => {
+      disposed = true;
+      observer.disconnect();
+      surface.removeEventListener("pointermove", handlePointer);
+      surface.removeEventListener("pointerleave", handlePointerOut);
+      document.removeEventListener("visibilitychange", handleVisibility);
+      reducedMotion.removeEventListener?.("change", handleMotionPreference);
+      window.cancelAnimationFrame(frame);
+    };
+  }, []);
+
+  return (
+    <div className="space-background" aria-hidden="true">
+      <canvas ref={canvasRef} className="cosmic-star-canvas" />
+      <span className="cosmic-nebula cosmic-nebula-one" />
+      <span className="cosmic-nebula cosmic-nebula-two" />
+    </div>
+  );
 }
 
 export default function Home({ userEmail = "", aiEnabled = false }) {
@@ -1031,22 +1152,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       </aside>
 
       <section className="main-panel">
-        <div className="space-background" aria-hidden="true">
-          {spaceStars.map((star, index) => (
-            <span
-              className="space-star"
-              key={index}
-              style={{
-                "--start-x": star.startX,
-                "--start-y": star.startY,
-                "--end-x": star.endX,
-                "--end-y": star.endY,
-                "--delay": star.delay,
-                "--size": star.size,
-              }}
-            />
-          ))}
-        </div>
+        <Starfield />
         <header className="topbar">
           <div className="topbar-leading">
             <button className="menu-toggle" type="button" onClick={() => setSidebarOpen((value) => !value)} aria-label={sidebarOpen ? "Hide navigation" : "Show navigation"} aria-expanded={sidebarOpen} aria-controls="aahana-sidebar">
