@@ -82,7 +82,7 @@ export async function POST(request) {
   if (image && (!imageMatch || imageDataUrl.length > 2_850_000)) {
     return NextResponse.json({ error: "Please attach one PNG, JPEG or WebP image under 2 MB." }, { status: 400 });
   }
-  const mode = ["solve", "create", "write", "build", "improve"].includes(body?.mode) ? body.mode : "solve";
+  const mode = ["solve", "create", "write", "build", "improve", "learn"].includes(body?.mode) ? body.mode : "solve";
   const requestedConversationId = typeof body?.conversationId === "string" ? body.conversationId : null;
   const requestedProjectId = typeof body?.projectId === "string" ? body.projectId : null;
 
