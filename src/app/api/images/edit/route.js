@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { buildImageEditPrompt } from "@/lib/creative/creative-director.mjs";
-import { parseImageEditInput } from "@/lib/creative/image-generation.mjs";
+import { getReferenceImageDimensions, isReferenceImageWithinProviderBounds, parseImageEditInput } from "@/lib/creative/image-generation.mjs";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -44,11 +44,16 @@ export async function POST(request) {
   if (referencePrompt !== null && (typeof referencePrompt !== "string" || referencePrompt.length > 1200)) {
     return NextResponse.json({ error: "The reference image context is too long." }, { status: 400 });
   }
+  const imageBytes = new Uint8Array(await image.arrayBuffer());
+  const dimensions = getReferenceImageDimensions(imageBytes, image.type);
+  if (!isReferenceImageWithinProviderBounds(dimensions)) {
+    return NextResponse.json({ error: "The reference image must be smaller than 512 × 512 pixels. Please retry with a smaller image." }, { status: 400 });
+  }
   const prompt = buildImageEditPrompt(referencePrompt || "", input.prompt);
   if (!prompt) return NextResponse.json({ error: "Describe the change you want to make." }, { status: 400 });
   const providerForm = new FormData();
   providerForm.set("prompt", prompt);
-  providerForm.set("input_image_0", new Blob([await image.arrayBuffer()], { type: image.type }), "reference-image");
+  providerForm.set("input_image_0", new Blob([imageBytes], { type: image.type }), "reference-image");
   providerForm.set("width", "1024");
   providerForm.set("height", "1024");
 
