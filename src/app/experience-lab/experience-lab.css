@@ -95,7 +95,6 @@
 .voice-panel-status { min-height:18px; color:#cbb9eb; font-size:11px; text-align:center; }
 .voice-panel-error { color:#ffb9c7 !important; font-size:11px !important; }
 .voice-panel-privacy { color:#82778f; font-size:10px; line-height:1.55; }
-
 .video-options { margin: 0 0 12px; border: 1px solid rgba(174,151,224,.25); border-radius: 13px; background: rgba(255,255,255,.48); color: #514761; }
 .video-options summary { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:11px 13px; cursor:pointer; list-style:none; font-size:12px; font-weight:700; }
 .video-options summary::-webkit-details-marker { display:none; }
