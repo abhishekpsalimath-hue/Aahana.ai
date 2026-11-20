@@ -11,7 +11,7 @@ test("blocks external and malformed destinations", () => {
   assert.equal(getSafeAuthNext("https://example.com"), "/");
   assert.equal(getSafeAuthNext("//example.com"), "/");
   assert.equal(getSafeAuthNext("settings"), "/");
-  assert.equal(getSafeAuthNext("/\\\\evil.example"), "/");
+  assert.equal(getSafeAuthNext("/\\evil.example"), "/");
 });
 
 test("accepts supported Supabase email verification types only", () => {
