@@ -117,14 +117,21 @@ export async function executeBuildTask({
         const abortInstallOnOverflow = () => installController.abort(new Error("Build output exceeded the 12 KB limit."));
         const installStdout = createBoundedOutputSink(OUTPUT_LIMIT, abortInstallOnOverflow);
         const installStderr = createBoundedOutputSink(OUTPUT_LIMIT, abortInstallOnOverflow);
-        installResult = await sandbox.runCommand({
-          cmd: "npm",
-          args: INSTALL_ARGS,
-          cwd: "/vercel/sandbox",
-          stdout: installStdout.stream,
-          stderr: installStderr.stream,
-          signal: installSignal,
-        });
+        try {
+          installResult = await sandbox.runCommand({
+            cmd: "npm",
+            args: INSTALL_ARGS,
+            cwd: "/vercel/sandbox",
+            stdout: installStdout.stream,
+            stderr: installStderr.stream,
+            signal: installSignal,
+          });
+        } catch (error) {
+          if (installController.signal.aborted && !signal?.aborted) {
+            throw new Error("Build output exceeded the 12 KB limit.", { cause: error });
+          }
+          throw error;
+        }
         // Drain excess output without retaining it, bounding server memory.
         installOutput = (installStdout.text() + "\n" + installStderr.text()).slice(0, OUTPUT_LIMIT);
       } finally {
@@ -148,14 +155,22 @@ export async function executeBuildTask({
     const abortTaskOnOverflow = () => taskController.abort(new Error("Build output exceeded the 12 KB limit."));
     const taskStdout = createBoundedOutputSink(OUTPUT_LIMIT, abortTaskOnOverflow);
     const taskStderr = createBoundedOutputSink(OUTPUT_LIMIT, abortTaskOnOverflow);
-    const result = await sandbox.runCommand({
-      cmd: command,
-      args,
-      cwd: "/vercel/sandbox",
-      stdout: taskStdout.stream,
-      stderr: taskStderr.stream,
-      signal: taskSignal,
-    });
+    let result;
+    try {
+      result = await sandbox.runCommand({
+        cmd: command,
+        args,
+        cwd: "/vercel/sandbox",
+        stdout: taskStdout.stream,
+        stderr: taskStderr.stream,
+        signal: taskSignal,
+      });
+    } catch (error) {
+      if (taskController.signal.aborted && !signal?.aborted) {
+        throw new Error("Build output exceeded the 12 KB limit.", { cause: error });
+      }
+      throw error;
+    }
     return {
       status: result.exitCode === 0 ? "passed" : "failed",
       operation,
