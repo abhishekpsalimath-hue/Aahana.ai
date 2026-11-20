@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { getSourceFileMimeType, isSupportedSourceFile } from "@/lib/build/source-file-policy.mjs";
 import { createSourceDiff, MAX_PROPOSAL_SOURCE_BYTES, validateSourceProposal } from "@/lib/build/source-proposal.mjs";
+import { isVideoGenerationRequest } from "@/lib/ai/video-generation-policy.mjs";
 import "./experience-lab.css";
 
 const modes = [
@@ -58,16 +59,6 @@ function requestsImage(value) {
   const text = String(value || "").trim();
   return /\b(?:generate|create|draw|render|make)\b[\s\S]{0,120}\b(?:image|picture|illustration|artwork|portrait|wallpaper|logo|poster|cover|banner|thumbnail|scene|landscape)\b/i.test(text)
     || /\b(?:image|picture|illustration|artwork)\b[\s\S]{0,80}\b(?:generate|create|draw|render)\b/i.test(text);
-}
-
-function requestsVideo(value) {
-  const text = String(value || "").normalize("NFKC").trim();
-  if (!text || text.length > 8000) return false;
-  if (/\b(?:video player|video editor|video website|video app|website|web app|mobile app|application|component|code|coding|program|html|css|javascript|react|next\.js|api|embed|stream|streaming|upload|player)\b/i.test(text)) return false;
-  if (/\b(?:explain|what is|how does|how do i|ideas for|script for|storyboard for|plan for|write a)\b/i.test(text) && !/\b(?:animate|make it move|bring to life|turn this into a video)\b/i.test(text)) return false;
-  return /\b(?:video|clip|film|animation|animated video|short film|reel)\b/i.test(text)
-    && /\b(?:generate|create|make|render|produce|animate)\b/i.test(text)
-    || /\b(?:animate|make it move|bring to life|turn this into a video)\b/i.test(text);
 }
 
 function OrbitMark() {
@@ -397,7 +388,7 @@ export default function ExperienceLab() {
     activeRequest.current = controller;
     setBusy(true);
     try {
-      if (mode === "create" && requestsVideo(message)) {
+      if (mode === "create" && isVideoGenerationRequest(message)) {
         const videoResponse = await fetch("/api/videos/generate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
