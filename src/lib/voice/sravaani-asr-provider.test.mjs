@@ -61,6 +61,7 @@ test("posts WAV as multipart with bearer token and returns transcript", async ()
   assert.equal(request.options.headers.Authorization, `Bearer ${token}`);
   assert.equal(request.options.body instanceof FormData, true);
   assert.equal(request.options.body.get("file").type, "audio/wav");
+  assert.equal(request.options.redirect, "error");
 });
 
 test("rejects locales not explicitly enabled", async () => {
@@ -120,4 +121,19 @@ test("maps an upstream request deadline to PROVIDER_TIMEOUT", async () => {
     provider.transcribe({ audio: wavBytes(), locale: "kn-IN" }),
     { code: "PROVIDER_TIMEOUT" },
   );
+});
+
+test("rejects a non-WAV payload even when its Blob MIME type claims WAV", async () => {
+  let called = false;
+  const provider = createSraVaaniAsrProvider({
+    baseUrl: "https://asr.example.com",
+    authorizationToken: token,
+    supportedLocales: locale,
+    fetchImpl: async () => { called = true; return response({ text: "ignored" }); },
+  });
+  await assert.rejects(
+    provider.transcribe({ audio: new Blob(["not a wav"], { type: "audio/wav" }), locale: "kn-IN" }),
+    { code: "INVALID_AUDIO" },
+  );
+  assert.equal(called, false);
 });

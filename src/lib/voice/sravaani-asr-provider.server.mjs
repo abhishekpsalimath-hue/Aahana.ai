@@ -1,4 +1,5 @@
 import { SpeechProviderError, normalizeLocale, createProviderRequestSignal, isProviderTimeout } from "./speech-runtime.mjs";
+import { hasWavContainerHeader } from "./wav-validation.mjs";
 
 const MAX_AUDIO_BYTES = 15 * 1024 * 1024;
 
@@ -84,6 +85,11 @@ export function createSraVaaniAsrProvider({
         throw new SpeechProviderError("SraVaani accepts WAV audio only.", "INVALID_AUDIO");
       }
 
+      const wavHeader = new Uint8Array(await audioBlob.slice(0, 12).arrayBuffer());
+      if (!hasWavContainerHeader(wavHeader)) {
+        throw new SpeechProviderError("SraVaani requires a valid WAV container.", "INVALID_AUDIO");
+      }
+
       const form = new FormData();
       form.append("file", audioBlob, "speech.wav");
 
@@ -95,6 +101,7 @@ export function createSraVaaniAsrProvider({
           headers: { Authorization: `Bearer ${authorizationToken}` },
           body: form,
           signal: requestSignal,
+          redirect: "error",
         });
       } catch (error) {
         if (isProviderTimeout(error, requestSignal, signal)) {
@@ -104,6 +111,10 @@ export function createSraVaaniAsrProvider({
         throw new SpeechProviderError("Could not reach the private SraVaani service.", "PROVIDER_CONNECTION_FAILED");
       }
 
+      if (signal?.aborted) throw signal.reason || new DOMException("Aborted", "AbortError");
+      if (requestSignal.aborted && isProviderTimeout(requestSignal.reason, requestSignal, signal)) {
+        throw new SpeechProviderError("SraVaani request exceeded its time limit.", "PROVIDER_TIMEOUT");
+      }
       if (!response.ok) {
         throw new SpeechProviderError(`SraVaani service returned HTTP ${response.status}.`, "PROVIDER_REQUEST_FAILED");
       }
@@ -114,9 +125,14 @@ export function createSraVaaniAsrProvider({
       let payload;
       try {
         payload = await response.json();
-      } catch {
+      } catch (error) {
+        if (signal?.aborted) throw signal.reason || new DOMException("Aborted", "AbortError");
+        if (isProviderTimeout(error, requestSignal, signal)) {
+          throw new SpeechProviderError("SraVaani request exceeded its time limit.", "PROVIDER_TIMEOUT");
+        }
         throw new SpeechProviderError("SraVaani returned invalid JSON.", "INVALID_PROVIDER_RESPONSE");
       }
+      if (signal?.aborted) throw signal.reason || new DOMException("Aborted", "AbortError");
       if (typeof payload?.text !== "string" || !payload.text.trim()) {
         throw new SpeechProviderError("SraVaani returned no transcript.", "EMPTY_TRANSCRIPT");
       }

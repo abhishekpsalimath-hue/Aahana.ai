@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createSraVaaniAsrProvider } from "@/lib/voice/sravaani-asr-provider.server.mjs";
+import { hasWavContainerHeader } from "@/lib/voice/wav-validation.mjs";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -43,7 +44,13 @@ export async function POST(request) {
     return jsonError("Multilingual voice recognition is not enabled on this deployment.", 503);
   }
 
-  const contentLength = Number(request.headers.get("content-length") || 0);
+  if (request.signal.aborted) return new Response(null, { status: 499 });
+
+  const rawContentLength = request.headers.get("content-length");
+  const contentLength = rawContentLength == null ? 0 : Number(rawContentLength);
+  if (rawContentLength != null && (!Number.isSafeInteger(contentLength) || contentLength < 0)) {
+    return jsonError("Invalid audio upload size.", 400);
+  }
   if (contentLength > MAX_AUDIO_BYTES + 64 * 1024) {
     return jsonError("Audio upload exceeds the 15 MB limit.", 413);
   }
@@ -52,8 +59,10 @@ export async function POST(request) {
   try {
     form = await request.formData();
   } catch {
+    if (request.signal.aborted) return new Response(null, { status: 499 });
     return jsonError("Invalid audio upload.", 400);
   }
+  if (request.signal.aborted) return new Response(null, { status: 499 });
 
   // Uploading audio to a remote model requires a deliberate per-request consent.
   if (form.get("consent") !== "true") {
@@ -66,6 +75,9 @@ export async function POST(request) {
   if (typeof locale !== "string" || !locale.trim()) return jsonError("Choose a speech language.", 400);
   if (!ALLOWED_TYPES.has(file.type)) return jsonError("Only WAV audio is accepted.", 415);
   if (!file.size || file.size > MAX_AUDIO_BYTES) return jsonError("Audio must be between 1 byte and 15 MB.", 413);
+  const wavHeader = new Uint8Array(await file.slice(0, 12).arrayBuffer());
+  if (!hasWavContainerHeader(wavHeader)) return jsonError("The uploaded file is not a valid WAV audio container.", 415);
+  if (request.signal.aborted) return new Response(null, { status: 499 });
 
   const provider = configuredProvider();
   if (!provider || !provider.isAvailable()) {
@@ -78,6 +90,7 @@ export async function POST(request) {
       locale,
       signal: request.signal,
     });
+    if (request.signal.aborted) return new Response(null, { status: 499 });
     return NextResponse.json({
       text: result.text,
       locale: result.locale,
