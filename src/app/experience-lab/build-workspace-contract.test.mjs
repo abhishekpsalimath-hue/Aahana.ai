@@ -32,6 +32,7 @@ test("Build execution controls stay disabled without enabled engine and sandbox 
 
 test("Private file registration rejects ambiguous and traversing storage paths", () => {
   assert.match(filesRoute, /isSafePrivateObjectPath\(objectPath, user\.id, projectId \|\| "personal"\)/);
+  assert.match(filesRoute, /\.neq\("status", "archived"\)/);
   assert.match(filesRoute, /projectId !== null && \(typeof projectId !== "string" \|\| !projectId\.trim\(\) \|\| projectId\.length > 128\)/);
   assert.equal(isSafePrivateObjectPath("user-1/project-1/source.js", "user-1", "project-1"), true);
   assert.equal(isSafePrivateObjectPath("user-2/project-1/source.js", "user-1", "project-1"), false);
