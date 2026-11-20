@@ -36,7 +36,7 @@ const tools = [
     type: "function",
     function: {
       name: "propose_source_change",
-      description: "Submit one complete replacement for a source file you already read. This only stages a proposal for human review; it does not commit, merge, or deploy.",
+      description: "Submit exact search/replace patches for one source file you already read. Every search must match exactly once. This only stages a proposal for human review; it does not commit, merge, or deploy.",
       parameters: {
         type: "object",
         properties: {
@@ -85,7 +85,7 @@ export async function POST(request) {
     return NextResponse.json({ error: "The self-improvement agent is currently configured for the existing Groq provider only. No paid provider fallback is enabled." }, { status: 503 });
   }
   const apiKey = process.env.GROQ_API_KEY;
-  const model = process.env.AAHANA_MODEL || "openai/gpt-oss-120b";
+  const model = process.env.AAHANA_AGENT_MODEL || "openai/gpt-oss-120b";
   if (!apiKey) return NextResponse.json({ error: "The existing Groq AI connection is not configured." }, { status: 503 });
 
   let raw;
@@ -139,6 +139,7 @@ export async function POST(request) {
   ];
 
   let toolCallsExecuted = 0;
+  let inventoryListed = false;
   let finalResponse = "";
   let rounds = 0;
 
@@ -195,6 +196,7 @@ export async function POST(request) {
           if (!args || typeof args !== "object" || Array.isArray(args)) throw new Error("Tool arguments must be a JSON object.");
 
           if (name === "list_approved_source_files") {
+            inventoryListed = true;
             result = {
               repository: repository.repository,
               branch: repository.branch,
@@ -202,6 +204,7 @@ export async function POST(request) {
               files: repository.files.map(({ path, size }) => ({ path, size })),
             };
           } else if (name === "read_approved_source_file") {
+            if (!inventoryListed) throw new Error("Inspect the approved file inventory before reading a source file.");
             const path = args.path;
             if (!isAllowedSelfBuildPath(path) || !repository.files.some((file) => file.path === path)) {
               throw new Error("The requested path is not in the approved repository inventory.");
