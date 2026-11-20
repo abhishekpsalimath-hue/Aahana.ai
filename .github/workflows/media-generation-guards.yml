@@ -1,0 +1,57 @@
+name: Media generation guards
+
+on:
+  pull_request:
+    paths:
+      - "src/app/api/videos/**"
+      - "src/app/assistant-workspace*"
+      - "src/app/globals.css"
+      - "src/lib/ai/video-generation-policy.*"
+      - "src/lib/ai/media-route-contract.test.mjs"
+      - ".github/workflows/media-generation-guards.yml"
+      - "package.json"
+  push:
+    branches:
+      - feat/video-generation-and-distinctive-typography
+    paths:
+      - "src/app/api/videos/**"
+      - "src/app/assistant-workspace*"
+      - "src/app/globals.css"
+      - "src/lib/ai/video-generation-policy.*"
+      - "src/lib/ai/media-route-contract.test.mjs"
+      - ".github/workflows/media-generation-guards.yml"
+      - "package.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: media-generation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - run: node --test src/lib/ai/video-generation-policy.test.mjs src/lib/ai/media-route-contract.test.mjs
+      # The flat ESLint config lands with the Stage 2 workspace foundation.
+      # Supply the same config temporarily so this parallel branch can lint independently.
+      - name: Prepare shared ESLint config for verification
+        run: |
+          cat > eslint.config.mjs <<'EOF'
+          import { defineConfig, globalIgnores } from "eslint/config";
+          import nextVitals from "eslint-config-next/core-web-vitals";
+
+          export default defineConfig([
+            ...nextVitals,
+            globalIgnores([".next/**", "out/**", "build/**", "next-env.d.ts", "src/app/learn/**"]),
+          ]);
+          EOF
+      - run: npm run lint
+      - run: npm run build
