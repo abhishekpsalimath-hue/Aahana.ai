@@ -1,6 +1,7 @@
 import { evaluateAutonomousTask } from "./autonomous-policy.mjs";
 
 const FULL_SHA = /^[a-f0-9]{40}$/i;
+const TRUSTED_CHECK_APP_SLUG = "github-actions";
 
 /**
  * Collects review evidence from a trusted GitHub API adapter.
@@ -127,7 +128,7 @@ export async function evaluateTrustedPullRequest({ github, task, pullRequestNumb
   const checks = checkResult.checkRuns;
   const successfulChecks = checks.filter((check) =>
     check.status === "completed" && check.conclusion === "success" &&
-    check.headSha === pr.head.sha
+    check.headSha === pr.head.sha && check.appSlug === TRUSTED_CHECK_APP_SLUG
   );
   const failedOrPending = checks.some((check) =>
     check.status !== "completed" || check.conclusion !== "success"
@@ -171,7 +172,7 @@ export async function evaluateTrustedPullRequest({ github, task, pullRequestNumb
       baseSha: pr.base.sha,
       headSha: pr.head.sha,
       changedFiles,
-      successfulChecks: successfulChecks.map(({ name, url }) => ({ name, url })),
+      successfulChecks: successfulChecks.map(({ name, url, appSlug }) => ({ name, url, appSlug })),
     },
   };
 }

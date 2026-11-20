@@ -31,7 +31,7 @@ function makeFetch() {
       filename: "src/demo.js", patch: "+export default true;", additions: 1, deletions: 0,
     }]);
     if (url.includes("/check-runs")) return response({ check_runs: [{
-      name: "Unit tests", status: "completed", conclusion: "success", head_sha: headSha, html_url: "https://github.com/owner/repo/actions/runs/1",
+      name: "Unit tests", status: "completed", conclusion: "success", head_sha: headSha, app: { slug: "github-actions" }, html_url: "https://github.com/owner/repo/actions/runs/1",
     }] });
     if (url.includes("/git/trees/")) return response({
       truncated: false, tree: [{ path: "src/demo.js", mode: "100644" }],
@@ -66,6 +66,7 @@ test("collects pull request files, checks and trees in the evidence adapter shap
   assert.equal(files.complete, true);
   assert.equal(files.files[0].filename, "src/demo.js");
   assert.equal(checks.checkRuns[0].headSha, headSha);
+  assert.equal(checks.checkRuns[0].appSlug, "github-actions");
   assert.equal(tree.entries[0].mode, "100644");
   assert.equal(tree.complete, true);
 });
