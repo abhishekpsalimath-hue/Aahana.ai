@@ -7,6 +7,7 @@ import { getSourceFileMimeType, isSupportedSourceFile } from "@/lib/build/source
 import { createSourceDiff, MAX_PROPOSAL_SOURCE_BYTES, validateSourceProposal } from "@/lib/build/source-proposal.mjs";
 import { isVideoGenerationRequest } from "@/lib/ai/video-generation-policy.mjs";
 import { shouldFallbackToDeviceSpeech } from "@/lib/voice/speech-fallback-policy.mjs";
+import { encodePcm16Wav } from "@/lib/voice/wav-encoding.mjs";
 import "./experience-lab.css";
 
 const modes = [
@@ -71,6 +72,19 @@ function OrbitMark() {
   </div>;
 }
 
+function releaseAudioCapture(capture) {
+  if (!capture) return;
+  if (capture.timer) clearTimeout(capture.timer);
+  if (capture.processor) {
+    capture.processor.onaudioprocess = null;
+    try { capture.processor.disconnect(); } catch {}
+  }
+  try { capture.source?.disconnect(); } catch {}
+  try { capture.silence?.disconnect(); } catch {}
+  capture.stream?.getTracks?.().forEach((track) => track.stop());
+  if (capture.context && capture.context.state !== "closed") capture.context.close().catch(() => {});
+}
+
 export default function ExperienceLab() {
   const [mode, setMode] = useState("chat");
   const [prompt, setPrompt] = useState("");
@@ -109,9 +123,14 @@ export default function ExperienceLab() {
   const [voiceLocale, setVoiceLocale] = useState("en-IN");
   const [voiceListening, setVoiceListening] = useState(false);
   const [voiceSpeaking, setVoiceSpeaking] = useState(false);
+  const [voiceRecording, setVoiceRecording] = useState(false);
+  const [voiceTranscribing, setVoiceTranscribing] = useState(false);
+  const [voiceConsent, setVoiceConsent] = useState(false);
   const [voiceError, setVoiceError] = useState("");
   const [voiceSource, setVoiceSource] = useState("");
   const recognitionRef = useRef(null);
+  const recordingRef = useRef(null);
+  const transcriptionRequestRef = useRef(null);
   const speechRequestRef = useRef(null);
   const audioPlaybackRef = useRef(null);
   const audioObjectUrlRef = useRef(null);
@@ -123,6 +142,9 @@ export default function ExperienceLab() {
     proposalRequest.current?.abort();
     buildRequest.current?.abort();
     recognitionRef.current?.stop?.();
+    releaseAudioCapture(recordingRef.current);
+    recordingRef.current = null;
+    transcriptionRequestRef.current?.abort();
     speechRequestRef.current?.abort();
     audioPlaybackRef.current?.pause?.();
     if (audioObjectUrlRef.current) URL.revokeObjectURL(audioObjectUrlRef.current);
@@ -495,6 +517,118 @@ export default function ExperienceLab() {
     activeRequest.current?.abort();
   }
 
+  async function startSraVaaniRecording() {
+    if (!voiceConsent) {
+      setVoiceError("Confirm the audio-sharing consent before recording.");
+      return;
+    }
+    if (recordingRef.current || voiceTranscribing) return;
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setVoiceError("Microphone recording is unavailable in this browser or connection. Use device speech recognition or type instead.");
+      return;
+    }
+    setVoiceError("");
+    stopVoicePlayback();
+    recognitionRef.current?.stop?.();
+    setVoiceListening(false);
+    let stream;
+    let context;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) throw new Error("Audio recording is not supported in this browser.");
+      context = new AudioContextClass();
+      if (context.state === "suspended") await context.resume();
+      const source = context.createMediaStreamSource(stream);
+      const processor = context.createScriptProcessor(4096, 1, 1);
+      const silence = context.createGain();
+      silence.gain.value = 0;
+      const capture = { stream, context, source, processor, silence, chunks: [], sampleRate: context.sampleRate, timer: null };
+      processor.onaudioprocess = (event) => {
+        if (recordingRef.current !== capture) return;
+        const samples = event.inputBuffer.getChannelData(0);
+        capture.chunks.push(new Float32Array(samples));
+      };
+      source.connect(processor);
+      processor.connect(silence);
+      silence.connect(context.destination);
+      recordingRef.current = capture;
+      setVoiceRecording(true);
+      setVoiceSource("sravaani");
+      capture.timer = setTimeout(() => { void finishSraVaaniRecording(); }, 30_000);
+    } catch (error) {
+      stream?.getTracks?.().forEach((track) => track.stop());
+      if (context && context.state !== "closed") context.close().catch(() => {});
+      setVoiceRecording(false);
+      setVoiceError(error?.name === "NotAllowedError"
+        ? "Microphone permission was denied. Allow access in browser settings."
+        : error?.message || "Could not start microphone recording.");
+    }
+  }
+
+  async function finishSraVaaniRecording() {
+    const capture = recordingRef.current;
+    if (!capture || voiceTranscribing) return;
+    recordingRef.current = null;
+    releaseAudioCapture(capture);
+    setVoiceRecording(false);
+    if (!capture.chunks.length) {
+      setVoiceError("No audio was captured. Try recording again.");
+      return;
+    }
+    let wav;
+    try {
+      wav = encodePcm16Wav(capture.chunks, capture.sampleRate);
+    } catch (error) {
+      setVoiceError(error.message || "Could not prepare the audio recording.");
+      return;
+    }
+    if (wav.byteLength > 15 * 1024 * 1024) {
+      setVoiceError("This recording exceeds the 15 MB upload limit. Try a shorter recording.");
+      return;
+    }
+    const controller = new AbortController();
+    transcriptionRequestRef.current = controller;
+    setVoiceTranscribing(true);
+    setVoiceError("");
+    try {
+      const form = new FormData();
+      form.append("file", new Blob([wav], { type: "audio/wav" }), "aahana-speech.wav");
+      form.append("locale", voiceLocale);
+      form.append("consent", "true");
+      const response = await fetch("/api/voice/transcribe", {
+        method: "POST",
+        body: form,
+        signal: controller.signal,
+        cache: "no-store",
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Speech recognition could not complete.");
+      const transcript = String(result.text || "").trim();
+      if (!transcript) throw new Error("No speech could be transcribed. Try again.");
+      setPrompt((current) => current ? current + " " + transcript : transcript);
+      setVoiceSource("sravaani");
+    } catch (error) {
+      if (!controller.signal.aborted) setVoiceError(error.message || "Speech recognition failed. You can use device speech or type instead.");
+    } finally {
+      if (transcriptionRequestRef.current === controller) transcriptionRequestRef.current = null;
+      setVoiceTranscribing(false);
+    }
+  }
+
+  function cancelSraVaaniRecording() {
+    const hadRecording = Boolean(recordingRef.current);
+    const hadTranscription = Boolean(transcriptionRequestRef.current);
+    if (!hadRecording && !hadTranscription) return;
+    releaseAudioCapture(recordingRef.current);
+    recordingRef.current = null;
+    setVoiceRecording(false);
+    transcriptionRequestRef.current?.abort();
+    transcriptionRequestRef.current = null;
+    setVoiceTranscribing(false);
+    setVoiceError("Recording or transcription cancelled. The audio was not added to your conversation.");
+  }
+
   function startVoiceInput() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) { setVoiceError("Voice input is not supported in this browser. Try Chrome, or keep typing."); return; }
@@ -521,6 +655,7 @@ export default function ExperienceLab() {
   function changePanel(panel) {
     if (panel !== "voice") {
       recognitionRef.current?.stop?.();
+      cancelSraVaaniRecording();
       stopVoicePlayback();
       setVoiceListening(false);
     }
@@ -616,6 +751,7 @@ export default function ExperienceLab() {
   function startNewSession() {
     if (busy) return;
     recognitionRef.current?.stop?.();
+    cancelSraVaaniRecording();
     stopVoicePlayback();
     setVoiceListening(false);
     setVoiceSpeaking(false);
@@ -669,17 +805,17 @@ export default function ExperienceLab() {
             <p>Ask a question, drop an idea, attach a direction. We&apos;ll shape the next step together.</p>
           </div>}
 
-          {mode === "create" && <details className="video-options">
-            <summary>Video settings <span>Duration · quality · frame</span></summary>
-            <div className="video-options-grid">
-              <label>Duration<select value={videoDuration} onChange={(event) => setVideoDuration(Number(event.target.value))}><option value={5}>5 seconds</option><option value={10}>10 seconds</option><option value={15}>15 seconds</option><option value={20}>20 seconds</option></select></label>
-              <label>Quality<select value={videoResolution} onChange={(event) => setVideoResolution(event.target.value)}><option value="hd">HD</option><option value="fhd">Full HD</option></select></label>
-              <label>Frame<select value={videoAspectRatio} onChange={(event) => setVideoAspectRatio(event.target.value)}><option value="16:9">Landscape · 16:9</option><option value="9:16">Portrait · 9:16</option><option value="1:1">Square · 1:1</option></select></label>
-              <label className="video-audio-toggle"><input type="checkbox" checked={videoAudio} onChange={(event) => setVideoAudio(event.target.checked)} /> Generate audio</label>
-            </div>
-            <p>Longer and higher-quality videos may take more time or use more provider resources. Availability depends on your connected video provider.</p>
-          </details>}
           <form className="lab-composer" onSubmit={previewFlow}>
+            {mode === "create" && <details className="video-options">
+              <summary>Video settings <span>Duration · quality · frame</span></summary>
+              <div className="video-options-grid">
+                <label>Duration<select value={videoDuration} onChange={(event) => setVideoDuration(Number(event.target.value))}><option value={5}>5 seconds</option><option value={10}>10 seconds</option><option value={15}>15 seconds</option><option value={20}>20 seconds</option></select></label>
+                <label>Quality<select value={videoResolution} onChange={(event) => setVideoResolution(event.target.value)}><option value="hd">HD</option><option value="fhd">Full HD</option></select></label>
+                <label>Frame<select value={videoAspectRatio} onChange={(event) => setVideoAspectRatio(event.target.value)}><option value="16:9">Landscape · 16:9</option><option value="9:16">Portrait · 9:16</option><option value="1:1">Square · 1:1</option></select></label>
+                <label className="video-audio-toggle"><input type="checkbox" checked={videoAudio} onChange={(event) => setVideoAudio(event.target.checked)} /> Generate audio</label>
+              </div>
+              <p>Longer and higher-quality videos may take more time or use more provider resources. Availability depends on your connected video provider.</p>
+            </details>}
             <label className="sr-only" htmlFor="lab-composer">Write a message for the preview</label>
             <textarea id="lab-composer" value={prompt} onChange={(event) => setPrompt(event.target.value)} placeholder={mode === "build" ? "Describe the product you want to bring to life..." : mode === "create" ? "Describe the world you want to create..." : "Ask anything. Start anywhere..."} rows={3} />
             <div className="composer-controls"><div className="composer-tools"><button type="button" onClick={() => changePanel(activePanel === "attach" ? "tools" : "attach")} title="Add context">＋ <span>Attach</span></button><button type="button" onClick={() => changePanel(activePanel === "tools" ? "discover" : "tools")} title="Explore tools">◈ <span>Tools</span></button><span className="composer-divider" /><span className="composer-mode-label">{current.label} mode</span></div><div className="composer-submit"><button type="button" className="voice-button" title="Voice preview" onClick={() => changePanel("voice")}>◖</button>{busy ? <button type="button" className="lab-send lab-stop" onClick={stopGeneration}>Stop <span>■</span></button> : <button type="submit" className="lab-send" disabled={!prompt.trim()}>Send <span>↗</span></button>}</div></div>
@@ -744,16 +880,19 @@ export default function ExperienceLab() {
           {activePanel === "attach" && <div className="inspector-empty"><span>＋</span><strong>Bring context in</strong><p>Files, images and links can become part of the same conversation.</p><small>Attachment controls are visual only in this concept.</small></div>}
           {activePanel === "voice" && <section className="voice-panel" aria-label="Voice controls">
             <span className="voice-panel-kicker">SPEAK NATURALLY</span><h2>Voice, in the flow.</h2>
-            <p>Speak a prompt or listen to Aahana’s latest reply. These controls use your browser and device.</p>
+            <p>Record a short prompt for Aahana. With your explicit consent, the audio is sent to the configured SraVaani speech service and the transcript is inserted into your composer for review.</p>
             <label htmlFor="lab-voice-language">Speech language</label>
             <select id="lab-voice-language" value={voiceLocale} onChange={(event) => setVoiceLocale(event.target.value)}>
               <option value="en-IN">English (India)</option><option value="kn-IN">Kannada</option><option value="hi-IN">Hindi</option><option value="ta-IN">Tamil</option><option value="te-IN">Telugu</option><option value="ml-IN">Malayalam</option><option value="bn-IN">Bengali</option><option value="en-US">English (US)</option>
             </select>
-            <button type="button" className={voiceListening ? "voice-panel-action listening" : "voice-panel-action"} onClick={startVoiceInput} aria-pressed={voiceListening}>{voiceListening ? "■ Stop listening" : "◖ Speak a prompt"}</button>
-            <button type="button" className="voice-panel-action secondary" onClick={speakLatestResponse} disabled={!thread.some((item) => item.role === "assistant" && String(item.content || "").trim())}>{voiceSpeaking ? "■ Stop speaking" : "♫ Listen to Aahana"}</button>
-            <div className="voice-panel-status" role="status" aria-live="polite">{voiceListening ? "Listening on this device…" : voiceSpeaking ? (voiceSource === "maya" ? "Aahana's private voice is speaking…" : "Device voice is speaking…") : "Ready when you are."}</div>
+            <label className="voice-panel-consent"><input type="checkbox" checked={voiceConsent} onChange={(event) => setVoiceConsent(event.target.checked)} disabled={voiceRecording || voiceTranscribing} /> I agree to send this microphone audio to Aahana&apos;s configured speech service for transcription.</label>
+            <button type="button" className="voice-panel-action" onClick={startSraVaaniRecording} disabled={!voiceConsent || voiceRecording || voiceTranscribing}>{voiceTranscribing ? "Transcribing…" : "◖ Start SraVaani recording"}</button>
+            {voiceRecording && <><button type="button" className="voice-panel-action listening" onClick={finishSraVaaniRecording}>■ Stop &amp; transcribe</button><button type="button" className="voice-panel-action secondary" onClick={cancelSraVaaniRecording}>Cancel recording</button></>}
+            <button type="button" className="voice-panel-action secondary" onClick={startVoiceInput} disabled={voiceRecording || voiceTranscribing}>{voiceListening ? "■ Stop device listening" : "Use browser speech recognition"}</button>
+            <button type="button" className="voice-panel-action secondary" onClick={speakLatestResponse} disabled={!thread.some((item) => item.role === "assistant" && String(item.content || "").trim()) || voiceRecording || voiceTranscribing}>{voiceSpeaking ? "■ Stop speaking" : "♫ Listen to Aahana"}</button>
+            <div className="voice-panel-status" role="status" aria-live="polite">{voiceRecording ? "Recording on this device · maximum 30 seconds" : voiceTranscribing ? "Sending audio securely for transcription…" : voiceListening ? "Browser speech recognition is listening…" : voiceSpeaking ? (voiceSource === "maya" ? "Aahana's private voice is speaking…" : "Device voice is speaking…") : voiceSource === "sravaani" ? "SraVaani transcript is ready in your composer." : "Ready when you are."}</div>
             {voiceError && <p className="voice-panel-error" role="alert">{voiceError}</p>}
-            <small className="voice-panel-privacy">Device speech preview. Aahana does not directly upload or store a raw recording here. Your browser&apos;s speech service may process audio under its own privacy terms; browser support and installed voices vary.</small>
+            <small className="voice-panel-privacy">Your audio is sent to the configured SraVaani service only after you check the consent box and start recording. Aahana does not save the raw audio to your conversation. Recordings are limited to 30 seconds and 15 MB, and are discarded after transcription. Browser speech recognition is a separate device/browser service with its own privacy terms.</small>
           </section>}
           {activePanel === "settings" && <div className="inspector-empty"><span>⚙</span><strong>Your space, your rules</strong><p>Shape how Aahana responds, remembers and works with you.</p></div>}
         </div>

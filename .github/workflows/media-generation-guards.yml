@@ -16,9 +16,11 @@ on:
       - "src/lib/voice/speech-runtime.mjs"
       - "src/lib/voice/sravaani-asr-provider.*"
       - "src/lib/voice/wav-validation.*"
+      - "src/lib/voice/wav-encoding.*"
       - "src/lib/voice/speech-fallback-policy.mjs"
       - "src/lib/voice/voice-route-cancellation.test.mjs"
       - "src/lib/voice/wav-validation.test.mjs"
+      - "src/lib/voice/wav-encoding.test.mjs"
       - "src/app/api/voice/transcribe/route.test.mjs"
       - "src/lib/voice/sravaani-asr-provider.test.mjs"
       - ".github/workflows/media-generation-guards.yml"
@@ -53,7 +55,7 @@ jobs:
         with:
           node-version: 22
       - run: npm install --no-audit --no-fund
-      - run: node --test src/lib/ai/video-generation-policy.test.mjs src/lib/ai/media-route-contract.test.mjs src/lib/voice/experience-lab-device-voice.test.mjs src/lib/voice/maya-tts-provider.test.mjs src/lib/voice/voice-route-cancellation.test.mjs src/lib/voice/wav-validation.test.mjs src/app/api/voice/transcribe/route.test.mjs src/lib/voice/sravaani-asr-provider.test.mjs
+      - run: node --test src/lib/ai/video-generation-policy.test.mjs src/lib/ai/media-route-contract.test.mjs src/lib/voice/experience-lab-device-voice.test.mjs src/lib/voice/maya-tts-provider.test.mjs src/lib/voice/voice-route-cancellation.test.mjs src/lib/voice/wav-validation.test.mjs src/app/api/voice/transcribe/route.test.mjs src/lib/voice/sravaani-asr-provider.test.mjs src/lib/voice/wav-encoding.test.mjs
       # The flat ESLint config lands with the Stage 2 workspace foundation.
       # Supply the same config temporarily so this parallel branch can lint independently.
       - name: Prepare shared ESLint config for verification
