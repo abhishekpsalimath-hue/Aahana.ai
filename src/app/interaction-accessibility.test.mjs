@@ -59,3 +59,10 @@ test("mode launchpad motion respects reduced-motion preferences", () => {
   assert.match(workspaceCss, /\.launch-orbit-one,\.launch-orbit-two,\.launch-core\{animation:none!important\}/);
   assert.match(workspaceCss, /@media\(max-width:620px\)/);
 });
+
+test("starter prompts move keyboard focus to the composer after filling it", () => {
+  const workspace = readFileSync(new URL("./assistant-workspace.jsx", import.meta.url), "utf8");
+  assert.match(workspace, /function applyStarterPrompt\(value\)\s*\{\s*setPrompt\(value\);\s*promptInputRef\.current\?\.focus\(\);\s*\}/);
+  assert.match(workspace, /<textarea ref=\{promptInputRef\} id="prompt"/);
+  assert.match(workspace, /onClick=\{\(\) => applyStarterPrompt\(item\)\}/);
+});
