@@ -8,3 +8,7 @@ test("buffered research checks client cancellation after provider parsing and be
   assert.match(route, /researchPayload = await upstream\.json\(\);\s*const abortResponse = getClientAbortResponse\(request\.signal\);\s*if \(abortResponse\) return abortResponse;/);
   assert.match(route, /const abortBeforeSave = getClientAbortResponse\(request\.signal\);\s*if \(abortBeforeSave\) return abortBeforeSave;\s*const \{ error: saveError \} = await supabase\.rpc\("save_ai_reply"/);
 });
+
+test("live search stops before processing results or calling the model when the client disconnects during response parsing", () => {
+  assert.match(route, /const searchData = await searchResponse\.json\(\);\\s*if \(request\.signal\.aborted\) return new Response\(null, \{ status: 499 \}\);/);
+});
