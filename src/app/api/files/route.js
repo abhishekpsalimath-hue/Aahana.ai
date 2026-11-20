@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { isSupportedSourceFile } from "@/lib/build/source-file-policy.mjs";
+import { isSupportedSourceFile, isSafePrivateObjectPath } from "@/lib/build/source-file-policy.mjs";
 
 const BUCKET = "aahana-private";
 const MAX_BYTES = 10 * 1024 * 1024;
@@ -45,7 +45,7 @@ export async function POST(request) {
       typeof originalFilename !== "string" || !originalFilename.trim() || originalFilename.length > 255 ||
       typeof mimeType !== "string" || (!ALLOWED_TYPES.has(mimeType) && !sourceFile) ||
       !Number.isInteger(sizeBytes) || sizeBytes < 1 || sizeBytes > maxUploadBytes ||
-      (projectId !== null && typeof projectId !== "string")) {
+      (projectId !== null && (typeof projectId !== "string" || !projectId.trim() || projectId.length > 128))) {
     return NextResponse.json({ error: "Invalid file details. Source files must be 1 MB or smaller." }, { status: 400 });
   }
 
@@ -56,7 +56,9 @@ export async function POST(request) {
   }
 
   const parts = objectPath.split("/");
-  if (parts.length !== 3 || !parts[2] || parts[1] !== (projectId || "personal")) return NextResponse.json({ error: "Invalid storage path." }, { status: 400 });
+  if (!isSafePrivateObjectPath(objectPath, user.id, projectId || "personal")) {
+    return NextResponse.json({ error: "Invalid storage path." }, { status: 400 });
+  }
   const { data: objects, error: listError } = await supabase.storage.from(BUCKET)
     .list(`${parts[0]}/${parts[1]}`, { search: parts[2], limit: 10 });
   const storedObject = objects?.find((item) => item.name === parts[2]);
