@@ -17,8 +17,9 @@ test("Experience Lab provides browser voice input with a selectable locale", () 
 
 test("Experience Lab provides interruptible device speech playback and cleanup", () => {
   assert.match(page, /new SpeechSynthesisUtterance/);
-  assert.match(page, /window\.speechSynthesis\?\.cancel\?\.\(\)/);
+  assert.match(page, /window\.speechSynthesis(?:\?\.|\.)cancel(?:\?\.)?\(\)/);
   assert.match(page, /recognitionRef\.current\?\.stop/);
+  assert.match(page, /window\.speechSynthesis\?\.cancel\?\.\(\)/);
   assert.match(page, /aria-live="polite"/);
 });
 
@@ -40,6 +41,7 @@ test("Experience Lab prefers private Maya speech and safely falls back to device
   assert.match(speechRoute, /signal: request\.signal/);
 });
 
+
 test("Create mode exposes bounded video settings and passes them to the video route", () => {
   assert.ok(page.includes("const [videoDuration, setVideoDuration] = useState(5)"));
   assert.ok(page.includes('const [videoResolution, setVideoResolution] = useState("hd")'));
@@ -54,11 +56,23 @@ test("Experience Lab wires consent-gated SraVaani recording to the authenticated
   assert.match(page, /encodePcm16Wav/);
   assert.match(page, /getUserMedia/);
   assert.match(page, /voiceConsent/);
-  assert.ok(page.includes('form.append("consent", "true")'));
+  assert.match(page, /form\.append\("consent", "true"\)/);
   assert.ok(page.includes("api/voice/transcribe"));
   assert.match(page, /finishSraVaaniRecording/);
   assert.match(page, /cancelSraVaaniRecording/);
   assert.match(page, /30_000/);
-  assert.ok(page.includes("15 * 1024 * 1024"));
-  assert.ok(page.includes('setPrompt((current) => current ? current + " " + transcript : transcript)'));
+  assert.match(page, /15 \* 1024 \* 1024/);
+  assert.match(page, /setPrompt\(\(current\) => current \? current \+ " " \+ transcript : transcript\)/);
+});
+
+
+test("Experience Lab aborts pending microphone permission startup and stops late permission grants", () => {
+  assert.match(page, /const recordingStartRef = useRef\(null\)/);
+  assert.match(page, /recordingStartRef\.current\?\.abort\(\)/);
+  assert.match(page, /const startController = new AbortController\(\)/);
+  assert.match(page, /recordingStartRef\.current \|\| voiceTranscribing/);
+  assert.match(page, /voiceStarting/);
+  assert.match(page, /if \(startController\.signal\.aborted\) \{\s*stream\.getTracks\(\)\.forEach\(\(track\) => track\.stop\(\)\)/);
+  assert.match(page, /if \(recordingStartRef\.current === startController\) recordingStartRef\.current = null/);
+  assert.match(page, /const hadStartup = Boolean\(recordingStartRef\.current\)/);
 });
