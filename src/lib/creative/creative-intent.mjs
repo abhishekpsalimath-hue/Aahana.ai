@@ -26,6 +26,6 @@ export function isImageEditRequest(value) {
   const visualTarget = /\b(?:background|foreground|lighting|light|shadow|color|colour|sky|moon|sun|clouds?|mountains?|stars?|water|ocean|hair|clothes|outfit|face|eyes|skin|object|person|subject|trident|gada|jewelry|ornaments?|composition|framing|camera|texture|style)\b/i;
   const editAction = /\b(?:change|replace|remove|add|adjust|edit|modify|transform|put|move|brighten|darken|blur|sharpen|crop|recolor|restyle)\b/i;
   return (editAction.test(text) && visualTarget.test(text)) ||
-    /\bmake\b[\s\S]{0,35}\b(?:it|the background|the lighting|the colors?|the sky)\b[\s\S]{0,35}\b(?:cinematic|realistic|bright|brighter|dark|darker|detailed|vibrant|dramatic|colorful|minimal|soft|warm|cool)\b/i.test(text) ||
+    /\bmake\b[\s\S]{0,35}\b(?:it|(?:the\\s+)?background|(?:the\\s+)?lighting|(?:the\\s+)?colors?|(?:the\\s+)?sky)\b[\s\S]{0,35}\b(?:cinematic|realistic|bright|brighter|dark|darker|detailed|vibrant|dramatic|colorful|minimal|soft|warm|cool)\b/i.test(text) ||
     /\b(?:more|less)\s+(?:cinematic|realistic|bright|dark|detailed|vibrant|dramatic|colorful|minimal|soft|warm|cool)\b/i.test(text);
 }
