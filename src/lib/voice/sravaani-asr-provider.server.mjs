@@ -1,5 +1,5 @@
 import { SpeechProviderError, normalizeLocale, createProviderRequestSignal, isProviderTimeout } from "./speech-runtime.mjs";
-import { hasWavContainerHeader } from "./wav-validation.mjs";
+import { hasPcm16MonoWavHeader } from "./wav-validation.mjs";
 
 const MAX_AUDIO_BYTES = 15 * 1024 * 1024;
 
@@ -85,9 +85,9 @@ export function createSraVaaniAsrProvider({
         throw new SpeechProviderError("SraVaani accepts WAV audio only.", "INVALID_AUDIO");
       }
 
-      const wavHeader = new Uint8Array(await audioBlob.slice(0, 12).arrayBuffer());
-      if (!hasWavContainerHeader(wavHeader)) {
-        throw new SpeechProviderError("SraVaani requires a valid WAV container.", "INVALID_AUDIO");
+      const wavHeader = new Uint8Array(await audioBlob.slice(0, 44).arrayBuffer());
+      if (!hasPcm16MonoWavHeader(wavHeader, audioBlob.size)) {
+        throw new SpeechProviderError("SraVaani requires a valid mono PCM16 WAV recording.", "INVALID_AUDIO");
       }
 
       const form = new FormData();

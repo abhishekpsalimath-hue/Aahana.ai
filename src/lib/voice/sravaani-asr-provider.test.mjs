@@ -6,7 +6,15 @@ const token = "private-test-token-" + "x".repeat(32);
 const locale = ["kn-IN"];
 
 function wavBytes() {
-  return new Uint8Array([82, 73, 70, 70, 0, 0, 0, 0, 87, 65, 86, 69]);
+  const bytes = new Uint8Array(46);
+  const view = new DataView(bytes.buffer);
+  const tag = (offset, value) => [...value].forEach((character, index) => { bytes[offset + index] = character.charCodeAt(0); });
+  tag(0, "RIFF"); view.setUint32(4, 38, true); tag(8, "WAVE");
+  tag(12, "fmt "); view.setUint32(16, 16, true); view.setUint16(20, 1, true);
+  view.setUint16(22, 1, true); view.setUint32(24, 16000, true);
+  view.setUint32(28, 32000, true); view.setUint16(32, 2, true); view.setUint16(34, 16, true);
+  tag(36, "data"); view.setUint32(40, 2, true);
+  return bytes;
 }
 
 function response(payload, { status = 200, contentType = "application/json" } = {}) {
@@ -135,5 +143,18 @@ test("rejects a non-WAV payload even when its Blob MIME type claims WAV", async 
     provider.transcribe({ audio: new Blob(["not a wav"], { type: "audio/wav" }), locale: "kn-IN" }),
     { code: "INVALID_AUDIO" },
   );
+  assert.equal(called, false);
+});
+
+
+test("rejects malformed PCM format metadata before network access", async () => {
+  let called = false;
+  const wav = wavBytes();
+  new DataView(wav.buffer).setUint16(34, 8, true);
+  const provider = createSraVaaniAsrProvider({
+    baseUrl: "https://asr.example.com", authorizationToken: token, supportedLocales: locale,
+    fetchImpl: async () => { called = true; return response({ text: "ignored" }); },
+  });
+  await assert.rejects(provider.transcribe({ audio: wav, locale: "kn-IN" }), { code: "INVALID_AUDIO" });
   assert.equal(called, false);
 });

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createSraVaaniAsrProvider } from "@/lib/voice/sravaani-asr-provider.server.mjs";
-import { hasWavContainerHeader } from "@/lib/voice/wav-validation.mjs";
+import { hasPcm16MonoWavHeader } from "@/lib/voice/wav-validation.mjs";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -89,8 +89,8 @@ export async function POST(request) {
   if (typeof locale !== "string" || !locale.trim()) return jsonError("Choose a speech language.", 400);
   if (!ALLOWED_TYPES.has(file.type)) return jsonError("Only WAV audio is accepted.", 415);
   if (!file.size || file.size > MAX_AUDIO_BYTES) return jsonError("Audio must be between 1 byte and 15 MB.", 413);
-  const wavHeader = new Uint8Array(await file.slice(0, 12).arrayBuffer());
-  if (!hasWavContainerHeader(wavHeader)) return jsonError("The uploaded file is not a valid WAV audio container.", 415);
+  const wavHeader = new Uint8Array(await file.slice(0, 44).arrayBuffer());
+  if (!hasPcm16MonoWavHeader(wavHeader, file.size)) return jsonError("Upload a valid mono PCM16 WAV recording.", 415);
   if (request.signal.aborted) return new Response(null, { status: 499 });
 
   const provider = configuredProvider();
