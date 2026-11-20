@@ -28,6 +28,7 @@ on:
       - fix/phase-c-detect-renamed-protected-paths
       - fix/phase-c-evidence-invalid-criteria
       - fix/phase-c-github-api-timeouts
+      - fix/phase-c-reject-ambiguous-diff-entries
   workflow_dispatch:
 
 permissions:
