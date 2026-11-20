@@ -1,0 +1,38 @@
+name: Stage 1 chat reliability checks
+on:
+  pull_request:
+    branches: [main, feat/experience-lab-ai-code-proposals]
+    paths:
+      - "src/app/api/chat/route.js"
+      - "src/lib/ai/request-timeout.*"
+      - "src/lib/ai/stream-persistence.*"
+      - "src/lib/ai/stream-parser.*"
+      - "src/lib/ai/chat-research-cancellation.test.mjs"
+      - "package.json"
+      - ".github/workflows/stage1-chat-reliability.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: stage1-chat-reliability-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Run research cancellation contract
+        run: node --test src/lib/ai/chat-research-cancellation.test.mjs
+      - name: Run all automated tests
+        run: npm test
+      - name: Build application
+        run: npm run build
