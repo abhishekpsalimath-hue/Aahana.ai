@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 
 const workspaceCss = readFileSync(new URL("./globals.css", import.meta.url), "utf8");
 const learningCss = readFileSync(new URL("./learn/learning-studio.css", import.meta.url), "utf8");
+const learningStudio = readFileSync(new URL("./learn/learning-studio.jsx", import.meta.url), "utf8");
 
 test("workspace exposes visible keyboard focus for interactive controls", () => {
   assert.match(workspaceCss, /:where\(button, a, input, textarea, select, \[role="button"\], \[role="tab"\]\):focus-visible/);
@@ -19,6 +20,20 @@ test("workspace respects reduced motion and disables ambient animation", () => {
   assert.match(workspaceCss, /@media \(prefers-reduced-motion: reduce\)/);
   assert.match(workspaceCss, /\.space-star,[\s\S]*?\.signal-spark \{\s*animation: none !important;/);
   assert.match(workspaceCss, /transition-duration: 0\.01ms !important/);
+});
+
+test("Student Mode accessibility selectors target real learning studio controls", () => {
+  for (const className of [
+    "learning-mode-picker",
+    "learning-topic-actions",
+    "learning-quiz-options",
+    "learning-quiz-feedback",
+    "learning-quiz-finish",
+    "learning-memory-panel",
+    "learning-discovery-selects",
+  ]) {
+    assert.ok(learningStudio.includes(`className="${className}"`), `${className} must exist in the rendered learning studio`);
+  }
 });
 
 test("Student Mode has visible focus, touch handling and reduced-motion rules", () => {
