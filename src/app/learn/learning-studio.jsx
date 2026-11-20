@@ -422,7 +422,7 @@ export default function LearningStudio({ userEmail = "" }) {
                         <p>Your quiz needs at least 10 valid questions. Nothing incomplete will be shown as a finished quiz.</p>
                         <button type="button" disabled={busy} onClick={() => {
                           const previousQuestion = messages.slice(0, index).reverse().find((message) => message.role === "user")?.content;
-                          if (previousQuestion) startLearning(null, previousQuestion, false, item.profile || { gradeBand, subject, curriculum, language, learningMode: messageMode });
+                          if (previousQuestion) startLearning(null, `Regenerate a complete Play & Solve quiz for this exact topic: ${previousQuestion}. The previous response was incomplete. Return exactly 10 complete, distinct questions in the required aahana_quiz_v1 JSON format. Include four distinct options, one correct answer, a concise explanation, one hint and a relevant visual for every question. Do not return a partial quiz.`, false, item.profile || { gradeBand, subject, curriculum, language, learningMode: messageMode });
                         }}>Try generating the quiz again</button>
                       </div>
                   : item.role === "assistant" && messageMode !== "play"
