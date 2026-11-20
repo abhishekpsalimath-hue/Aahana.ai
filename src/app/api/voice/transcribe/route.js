@@ -85,6 +85,7 @@ export async function POST(request) {
       audioSavedToConversation: false,
     });
   } catch (error) {
+    if (request.signal.aborted || error?.name === "AbortError") return new Response(null, { status: 499 });
     const status = error?.code === "UNSUPPORTED_LOCALE" ? 400
       : error?.code === "PROVIDER_UNAVAILABLE" ? 503
       : error?.code === "PROVIDER_CONNECTION_FAILED" ? 502
