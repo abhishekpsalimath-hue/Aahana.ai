@@ -4,13 +4,13 @@ import { parseImageGenerationInput } from "./image-generation.mjs";
 
 test("defaults image generation to the existing standard four-step mode", () => {
   assert.deepEqual(parseImageGenerationInput({ prompt: "A moonlit forest" }), {
-    ok: true, prompt: "A moonlit forest", steps: 4, style: "none",
+    ok: true, prompt: "A moonlit forest", steps: 4, style: "none", quality: "standard",
   });
 });
 
 test("accepts enhanced eight-step image generation", () => {
   assert.deepEqual(parseImageGenerationInput({ prompt: "A moonlit forest", steps: 8 }), {
-    ok: true, prompt: "A moonlit forest", steps: 8, style: "none",
+    ok: true, prompt: "A moonlit forest", steps: 8, style: "none", quality: "standard",
   });
 });
 
@@ -31,6 +31,14 @@ test("applies an approved visual art direction preset to the prompt", () => {
   assert.equal(result.ok, true);
   assert.match(result.prompt, /premium commercial product photography/i);
   assert.equal(result.style, "product-studio");
+});
+
+test("masterpiece quality adds art direction and rejects unknown quality", () => {
+  const result = parseImageGenerationInput({ prompt: "A perfume bottle", steps: 8, quality: "masterpiece" });
+  assert.equal(result.ok, true);
+  assert.equal(result.quality, "masterpiece");
+  assert.match(result.prompt, /portfolio-worthy hero image/i);
+  assert.equal(parseImageGenerationInput({ prompt: "A portrait", quality: "ultra" }).ok, false);
 });
 
 test("rejects unknown styles and styled prompts that exceed the provider limit", () => {
