@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { isSafePrivateObjectPath } from "../../lib/build/source-file-policy.mjs";
 
 const page = readFileSync(new URL("./page.jsx", import.meta.url), "utf8");
 const buildRoute = readFileSync(new URL("../api/build/project/route.js", import.meta.url), "utf8");
@@ -29,12 +30,14 @@ test("Build execution controls stay disabled without enabled engine and sandbox 
 });
 
 test("Private file registration rejects ambiguous and traversing storage paths", () => {
-  assert.match(filesRoute, /objectPath\.length > 1024/);
-  assert.match(filesRoute, /objectPath\.includes\("%"\)/);
-  assert.ok(filesRoute.includes(String.raw`objectPath.includes("\\")`));
-  assert.match(filesRoute, /parts\.some\(\(segment\) => !segment \|\| segment === "\." \|\| segment === "\.\."\)/);
-  assert.match(filesRoute, /parts\[0\] !== user\.id/);
-  assert.match(filesRoute, /parts\[1\] !== \(projectId \|\| "personal"\)/);
+  assert.match(filesRoute, /isSafePrivateObjectPath\(objectPath, user\.id, projectId \|\| "personal"\)/);
+  assert.equal(isSafePrivateObjectPath("user-1/project-1/source.js", "user-1", "project-1"), true);
+  assert.equal(isSafePrivateObjectPath("user-2/project-1/source.js", "user-1", "project-1"), false);
+  assert.equal(isSafePrivateObjectPath("user-1/project-1/../source.js", "user-1", "project-1"), false);
+  assert.equal(isSafePrivateObjectPath("user-1/project-1/%2e%2e", "user-1", "project-1"), false);
+  assert.equal(isSafePrivateObjectPath("user-1/project-1/a\\\\b.js", "user-1", "project-1"), false);
+  assert.equal(isSafePrivateObjectPath("user-1/project-1/\\u0000.js", "user-1", "project-1"), false);
+  assert.equal(isSafePrivateObjectPath("user-1/project-1/" + "a".repeat(1025), "user-1", "project-1"), false);
 });
 
 test("Build Mode uploads only supported project source files through authenticated storage", () => {
