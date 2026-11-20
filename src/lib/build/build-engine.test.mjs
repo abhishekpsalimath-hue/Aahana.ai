@@ -330,3 +330,34 @@ test("passes the hard wall-clock timeout to the Vercel Sandbox provider", async 
   const createCall = fake.calls.find((call) => call.type === "create");
   assert.equal(createCall.options.timeout, 120_000);
 });
+
+test("does not upload workspace files if the caller disconnects while sandbox creation is pending", async () => {
+  const controller = new AbortController();
+  const calls = [];
+  const sandbox = {
+    async writeFiles() { calls.push("writeFiles"); },
+    async update() { calls.push("update"); },
+    async runCommand() { calls.push("runCommand"); return { exitCode: 0, async stdout() { return ""; }, async stderr() { return ""; } }; },
+    async stop() { calls.push("stop"); },
+  };
+  const SandboxClient = {
+    async create() {
+      controller.abort();
+      return sandbox;
+    },
+  };
+
+  await assert.rejects(() => executeBuildTask({
+    files: [{ path: "src/main.js", content: "console.log('must not upload')" }],
+    operation: "run",
+    entrypoint: "src/main.js",
+    projectId: "prj_12345678",
+    sandboxName: "aahana-build-cancel-create",
+    SandboxClient,
+    signal: controller.signal,
+  }), /Build cancelled before workspace upload/);
+
+  assert.equal(calls.includes("writeFiles"), false);
+  assert.equal(calls.includes("runCommand"), false);
+  assert.equal(calls.filter((call) => call === "stop").length, 1);
+});
