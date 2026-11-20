@@ -631,7 +631,7 @@ export default function ExperienceLab() {
             <button type="button" className="voice-panel-action secondary" onClick={speakLatestResponse} disabled={!thread.some((item) => item.role === "assistant" && String(item.content || "").trim())}>{voiceSpeaking ? "■ Stop speaking" : "♫ Listen to Aahana"}</button>
             <div className="voice-panel-status" role="status" aria-live="polite">{voiceListening ? "Listening on this device…" : voiceSpeaking ? "Aahana is speaking…" : "Ready when you are."}</div>
             {voiceError && <p className="voice-panel-error" role="alert">{voiceError}</p>}
-            <small className="voice-panel-privacy">Device speech preview. Microphone audio is not uploaded or saved by these controls. Browser support and installed voices vary.</small>
+            <small className="voice-panel-privacy">Device speech preview. Aahana does not directly upload or store a raw recording here. Your browser's speech service may process audio under its own privacy terms; browser support and installed voices vary.</small>
           </section>}
           {activePanel === "settings" && <div className="inspector-empty"><span>⚙</span><strong>Your space, your rules</strong><p>Shape how Aahana responds, remembers and works with you.</p></div>}
         </div>
