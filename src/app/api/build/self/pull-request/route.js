@@ -5,6 +5,7 @@ import { createSelfBuildPullRequest } from "@/lib/build/github-app.mjs";
 
 export const runtime = "nodejs";
 const MAX_BODY_BYTES = 3 * 1024 * 1024;
+const MAX_REVIEW_FILES = 3;
 
 export async function POST(request) {
   const supabase = await createClient();
@@ -25,6 +26,10 @@ export async function POST(request) {
     body = JSON.parse(raw);
   } catch {
     return NextResponse.json({ error: "Invalid self-build proposal." }, { status: 400 });
+  }
+
+  if (!Array.isArray(body?.files) || body.files.length < 1 || body.files.length > MAX_REVIEW_FILES) {
+    return NextResponse.json({ error: "Aahana review pull requests may contain one to three approved files." }, { status: 400 });
   }
 
   try {
