@@ -13,6 +13,8 @@ export async function GET(request) {
   return NextResponse.json({
     enabled: process.env.AAHANA_BUILD_ENGINE_ENABLED === "true",
     previewEnabled: process.env.AAHANA_PREVIEW_ENGINE_ENABLED === "true" && sandboxIdentityAvailable,
+    videoEnabled: process.env.AAHANA_VIDEO_GENERATION_ENABLED === "true" &&
+      Boolean(process.env.CLOUDFLARE_ACCOUNT_ID && process.env.CLOUDFLARE_API_TOKEN),
     sandboxIdentityAvailable,
     environment: process.env.VERCEL_ENV === "preview" ? "preview" : process.env.VERCEL_ENV === "production" ? "production" : "development",
   }, { headers: { "Cache-Control": "private, no-store" } });
