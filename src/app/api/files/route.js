@@ -45,7 +45,7 @@ export async function POST(request) {
       typeof originalFilename !== "string" || !originalFilename.trim() || originalFilename.length > 255 ||
       typeof mimeType !== "string" || (!ALLOWED_TYPES.has(mimeType) && !sourceFile) ||
       !Number.isInteger(sizeBytes) || sizeBytes < 1 || sizeBytes > maxUploadBytes ||
-      (projectId !== null && typeof projectId !== "string")) {
+      (projectId !== null && (typeof projectId !== "string" || !projectId.trim() || projectId.length > 128))) {
     return NextResponse.json({ error: "Invalid file details. Source files must be 1 MB or smaller." }, { status: 400 });
   }
 
