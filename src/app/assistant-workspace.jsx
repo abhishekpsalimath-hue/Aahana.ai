@@ -643,7 +643,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   }
 
   function updateSelfBuildReview(path, content) {
-    setSelfBuildReviews((current) => current.map((file) => file.path === path ? { ...file, content } : file));
+    setSelfBuildReviews((current) => current.map((file) => file.path === path ? { ...file, content, diff: createSourceDiff(file.originalContent, content) } : file));
   }
 
   function stopSelfBuildProposal() {
