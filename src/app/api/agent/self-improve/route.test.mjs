@@ -14,7 +14,7 @@ test("self-improvement agent is authenticated and owner-gated", () => {
 test("agent exposes only inventory, approved source reading, and reviewed proposal tools", () => {
   assert.match(route, /list_approved_source_files/);
   assert.match(route, /read_approved_source_file/);
-  assert.match(route, /propose_source_change/);
+  assert.match(route, /propose_source_changes/);
   assert.match(route, /isAllowedSelfBuildPath/);
   assert.match(route, /validateSelfBuildChangeSet/);
   assert.match(route, /patches/);
@@ -31,8 +31,8 @@ test("agent treats repository content as untrusted and never commits, merges, or
 });
 
 test("agent execution is bounded and uses the existing Groq provider only", () => {
-  assert.match(route, /MAX_TOOL_ROUNDS = 4/);
-  assert.match(route, /MAX_TOOL_CALLS = 4/);
+  assert.match(route, /MAX_TOOL_ROUNDS = 8/);
+  assert.match(route, /MAX_TOOL_CALLS = 8/);
   assert.match(route, /AbortSignal\.timeout\(12000\)/);
   assert.match(route, /GROQ_API_KEY/);
   assert.ok(route.includes('process.env.AAHANA_AGENT_MODEL || "openai/gpt-oss-120b"'));
@@ -48,4 +48,27 @@ test("Assistance exposes the self-improvement task runner only after server-side
   assert.match(workspace, /selfBuildStatus\?\.enabled === true && selfBuildStatus\?\.agentReady === true/);
   assert.match(workspace, /\/api\/agent\/self-improve/);
   assert.match(workspace, /selfBuildAbortRef\.current\?\.abort\(\)/);
+});
+
+test("agent supports coordinated proposals for up to three inspected files with bounded context", () => {
+  assert.match(route, /MAX_PROPOSED_FILES = 3/);
+  assert.match(route, /MAX_TOTAL_SOURCE_BYTES = 180 \* 1024/);
+  assert.match(route, /MAX_TOOL_ROUNDS = 8/);
+  assert.match(route, /MAX_TOOL_CALLS = 8/);
+  assert.match(route, /name: "propose_source_changes"/);
+  assert.match(route, /maxItems: 3/);
+  assert.match(route, /proposals\.size \+ args\.files\.length > MAX_PROPOSED_FILES/);
+  assert.match(route, /readFiles\.get\(item\.path\)/);
+  assert.match(route, /combined 180 KB source context limit/);
+  assert.match(route, /coordinated change set is staged for human review only/);
+  assert.doesNotMatch(route, /name: "propose_source_change",/);
+});
+
+test("Assistance reviews each proposed file and submits one consolidated draft PR", () => {
+  assert.match(workspace, /selfBuildReviews/);
+  assert.match(workspace, /Review coordinated changes/);
+  assert.match(workspace, /updateSelfBuildReview/);
+  assert.match(workspace, /files: reviewedFiles/);
+  assert.match(workspace, /reviewedFiles\.length > 3/);
+  assert.match(workspace, /Create one draft pull request for reviewed files/);
 });
