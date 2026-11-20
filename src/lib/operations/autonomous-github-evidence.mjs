@@ -60,8 +60,9 @@ export async function evaluateTrustedPullRequest({ github, task, pullRequestNumb
   let deletions = 0;
 
   for (const file of fileResult.files) {
-    if (typeof file?.filename !== "string" || typeof file.patch !== "string") {
-      errors.push("every changed file must include a path and text patch");
+    if (typeof file?.filename !== "string" || typeof file.patch !== "string" ||
+        !["added", "modified", "removed", "renamed", "copied", "changed"].includes(file.status)) {
+      errors.push("every changed file must include a path, supported change status and text patch");
       continue;
     }
     const headMode = headModes.get(file.filename);
@@ -73,6 +74,16 @@ export async function evaluateTrustedPullRequest({ github, task, pullRequestNumb
       errors.push("symbolic-link changes are not eligible for autonomous review");
     }
     changedFiles.push({ path: file.filename, mode: headMode || baseMode });
+    if (file.status === "renamed") {
+      if (typeof file.previousFilename !== "string" || !file.previousFilename) {
+        errors.push("renamed files must include their previous path");
+      } else {
+        const previousMode = baseModes.get(file.previousFilename);
+        if (previousMode === undefined) errors.push("renamed source path is absent from the complete base tree");
+        if (previousMode === "120000") errors.push("symbolic-link rename sources are not eligible for autonomous review");
+        changedFiles.push({ path: file.previousFilename, mode: previousMode });
+      }
+    }
     patches.push(file.patch);
     if (!Number.isInteger(file.additions) || !Number.isInteger(file.deletions)) {
       errors.push("GitHub file change counts are incomplete");
