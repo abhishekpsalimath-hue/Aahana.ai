@@ -39,3 +39,12 @@ test("Experience Lab prefers private Maya speech and safely falls back to device
   assert.match(speechRoute, /AAHANA_MAYA_TTS_ENABLED/);
   assert.match(speechRoute, /signal: request\.signal/);
 });
+
+test("Create mode exposes bounded video settings and passes them to the video route", () => {
+  assert.ok(page.includes("const [videoDuration, setVideoDuration] = useState(5)"));
+  assert.ok(page.includes('const [videoResolution, setVideoResolution] = useState("hd")'));
+  assert.ok(page.includes('const [videoAspectRatio, setVideoAspectRatio] = useState("16:9")'));
+  assert.ok(page.includes("const [videoAudio, setVideoAudio] = useState(true)"));
+  assert.match(page, /duration: videoDuration, resolution: videoResolution, aspectRatio: videoAspectRatio, generateAudio: videoAudio/);
+  for (const value of ["5", "10", "15", "20", "hd", "fhd", "16:9", "9:16", "1:1"]) assert.ok(page.includes(`value={${value}}`) || page.includes(`value="${value}"`), `missing option ${value}`);
+});
