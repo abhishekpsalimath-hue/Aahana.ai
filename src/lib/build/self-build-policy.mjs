@@ -8,7 +8,6 @@ const REPOSITORY_PATTERN = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
 const ALLOWED_FILES = new Set(["src/app/assistant-workspace.jsx"]);
 const ALLOWED_ROOTS = [
   "src/app/experience-lab/",
-  "src/app/assistant-workspace.jsx",
   "src/lib/build/",
 ];
 
