@@ -47,6 +47,13 @@ test("only a complete 100-case, five-dimension benchmark can pass", () => {
     dimensionsPerCase: 5,
     dimensionScores: 500,
     average: 5,
+    dimensionAverages: {
+      correctness_and_evidence: 5,
+      completeness_and_relevance: 5,
+      reasoning_quality: 5,
+      clarity_and_language_match: 5,
+      honesty_about_uncertainty: 5,
+    },
     atLeastFour: 100,
     criticalFailures: 0,
     releaseEligible: true,
