@@ -157,9 +157,38 @@ function renderAssistantContent(content, onCopyCode) {
   return nodes;
 }
 
+function isImageEditRequest(value) {
+  const text = String(value || "").trim();
+  if (!text) return false;
+  return /\b(?:change|make|replace|remove|add|adjust|edit|modify|transform|put|move|brighten|darken|blur|sharpen|crop|recolor|restyle)\b/i.test(text) ||
+    /\b(?:more|less)\s+(?:cinematic|realistic|bright|dark|detailed|vibrant|dramatic|colorful|minimal)\b/i.test(text);
+}
+
+async function createReferenceImageFile(dataUrl) {
+  const image = new Image();
+  image.src = dataUrl;
+  await image.decode();
+  const scale = Math.min(1, 511 / Math.max(image.naturalWidth, image.naturalHeight));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+  canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("Could not prepare the reference image.");
+  context.drawImage(image, 0, 0, canvas.width, canvas.height);
+  const blob = await new Promise((resolve, reject) => canvas.toBlob(
+    (value) => value ? resolve(value) : reject(new Error("Could not prepare the reference image.")),
+    "image/jpeg",
+    0.88
+  ));
+  return new File([blob], "aahana-reference.jpg", { type: "image/jpeg" });
+}
+
 function isImageGenerationRequest(value) {
   const text = String(value || "").trim();
   if (!text) return false;
+
+  // Natural creation requests can include descriptive words before the subject.
+  if (/\b(?:generate|create|draw|paint|illustrate|render|make)\b[\s\S]{0,100}\b(?:shiva|mahadev|mahadeva|shankar|hanuman|anjaneya|maruti|ganesha|ganapati|vinayaka|krishna|rama|ram)\b/i.test(text)) return true;
 
   // Short, natural commands for well-known visual subjects should work
   // without forcing users to append the word "image".
@@ -265,9 +294,10 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
           setBuildEnabled(status?.enabled === true && status?.sandboxIdentityAvailable === true);
           setPreviewEnabled(status?.previewEnabled === true);
           setVideoEnabled(status?.videoEnabled === true);
+          setImageEditingEnabled(status?.imageEditingEnabled === true);
         }
       })
-      .catch(() => { if (active) { setBuildEnabled(false); setPreviewEnabled(false); setVideoEnabled(false); } })
+      .catch(() => { if (active) { setBuildEnabled(false); setPreviewEnabled(false); setVideoEnabled(false); setImageEditingEnabled(false); } })
       .finally(() => { if (active) setBuildStatusLoading(false); });
     return () => { active = false; };
   }, []);
@@ -304,6 +334,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [imageGenerating, setImageGenerating] = useState(false);
   const [imageSaving, setImageSaving] = useState(false);
   const [generatedImage, setGeneratedImage] = useState(null);
+  const [imageEditingEnabled, setImageEditingEnabled] = useState(false);
   const [videoEnabled, setVideoEnabled] = useState(false);
   const [videoGenerating, setVideoGenerating] = useState(false);
   const [videoDuration, setVideoDuration] = useState(5);
@@ -646,6 +677,40 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       setGeneratedImage({ dataUrl: result.imageDataUrl, prompt: imagePrompt });
     } catch (err) {
       setError(err.message || "Image generation failed.");
+    } finally {
+      setImageGenerating(false);
+    }
+  }
+
+  async function editGeneratedImage(editPrompt) {
+    if (!generatedImage || !imageEditingEnabled || imageGenerating || busy) return;
+    setImageGenerating(true);
+    setError("");
+    setGeneratedVideo(null);
+    setMessages((current) => [...current,
+      { role: "user", content: editPrompt },
+      { role: "assistant", content: "Applying your changes while preserving the reference image…" },
+    ]);
+    try {
+      const referenceFile = await createReferenceImageFile(generatedImage.dataUrl);
+      const form = new FormData();
+      form.set("prompt", editPrompt);
+      form.set("image", referenceFile);
+      const response = await fetch("/api/images/edit", { method: "POST", body: form });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Could not edit the image.");
+      if (typeof result.imageDataUrl !== "string" || !result.imageDataUrl.startsWith("data:image/jpeg;base64,")) {
+        throw new Error("The image editor returned an invalid image.");
+      }
+      setGeneratedImage({ dataUrl: result.imageDataUrl, prompt: editPrompt });
+      setMessages((current) => current.map((item, index) =>
+        index === current.length - 1 ? { ...item, content: "Updated your image. You can keep refining it with another instruction." } : item
+      ));
+    } catch (err) {
+      setMessages((current) => current.map((item, index) =>
+        index === current.length - 1 ? { ...item, content: "I couldn't apply that image change." } : item
+      ));
+      setError(err.message || "Image editing failed.");
     } finally {
       setImageGenerating(false);
     }
