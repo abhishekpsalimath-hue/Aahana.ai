@@ -1,6 +1,4 @@
 const SACRED_IMAGE_SUBJECT = /\b(?:shiva|mahadev|mahadeva|shankar|hanuman|anjaneya|maruti|ganesha|ganapati|vinayaka|krishna|rama|ram)\b/i;
-const IMAGE_ACTION = /\b(?:generate|create|draw|paint|illustrate|render|make)\b/i;
-
 export function isImageGenerationRequest(value) {
   const text = String(value || "").trim();
   if (!text) return false;
