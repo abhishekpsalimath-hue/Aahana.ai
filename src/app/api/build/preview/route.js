@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { Sandbox } from "@vercel/sandbox";
 import { createClient } from "@/lib/supabase/server";
 import { validateWorkspaceFiles, validatePackageManifest } from "@/lib/build/sandbox-policy.mjs";
+import { getPreviewCommand } from "@/lib/build/preview-policy.mjs";
 import { isSupportedSourceFile, isSafePrivateObjectPath } from "@/lib/build/source-file-policy.mjs";
 
 export const runtime = "nodejs";
@@ -11,17 +12,6 @@ const MAX_SOURCE_FILES = 100;
 const MAX_PROJECT_FILE_ROWS = 500;
 const MAX_SOURCE_BYTES = 3 * 1024 * 1024;
 const INSTALL_ARGS = ["install", "--ignore-scripts", "--package-lock=false", "--no-audit", "--no-fund", "--registry=https://registry.npmjs.org/"];
-
-function previewCommand(manifest) {
-  const script = manifest?.scripts?.dev;
-  if (typeof script !== "string" || !script.trim() || script.length > 500) {
-    throw new Error("Add a dev script to package.json before opening a live preview.");
-  }
-  const deps = { ...manifest.dependencies, ...manifest.devDependencies };
-  if (typeof deps.next === "string") return ["npm", ["run", "dev", "--", "--hostname", "0.0.0.0", "--port", "3000"]];
-  if (typeof deps.vite === "string") return ["npm", ["run", "dev", "--", "--host", "0.0.0.0", "--port", "3000", "--strictPort"]];
-  throw new Error("Live preview currently supports Next.js and Vite projects with a dev script.");
-}
 
 export async function POST(request) {
   const supabase = await createClient();
@@ -92,7 +82,7 @@ export async function POST(request) {
     const validated = validatePackageManifest(files);
     manifest = validated.manifest;
     if (!manifest) throw new Error("A package.json file is required to run a website preview.");
-    command = previewCommand(manifest);
+    command = getPreviewCommand(manifest);
   } catch (error) {
     return NextResponse.json({ error: error.message || "Project files are not ready for preview." }, { status: 400 });
   }
@@ -131,7 +121,7 @@ export async function POST(request) {
     }
 
     if (request.signal.aborted) throw new Error("Preview cancelled.");
-    const server = await sandbox.runCommand({ cmd: command[0], args: command[1], cwd: "/vercel/sandbox", detached: true, signal: request.signal });
+    const server = await sandbox.runCommand({ cmd: command.command, args: command.args, cwd: "/vercel/sandbox", detached: true, signal: request.signal });
     if (server.exitCode && server.exitCode !== 0) {
       const diagnostic = (await server.stderr().catch(() => "")).slice(0, 3000);
       await sandbox.stop();
