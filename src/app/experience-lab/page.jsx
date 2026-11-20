@@ -120,10 +120,7 @@ export default function ExperienceLab() {
   useEffect(() => {
     if (activePanel === "voice") return;
     if (voiceListening) recognitionRef.current?.stop?.();
-    if (voiceSpeaking) {
-      window.speechSynthesis?.cancel?.();
-      setVoiceSpeaking(false);
-    }
+    if (voiceSpeaking) window.speechSynthesis?.cancel?.();
   }, [activePanel, voiceListening, voiceSpeaking]);
 
   useEffect(() => {
