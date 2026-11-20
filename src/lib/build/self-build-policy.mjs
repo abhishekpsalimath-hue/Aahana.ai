@@ -6,7 +6,6 @@ const REPOSITORY_PATTERN = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
 
 const ALLOWED_ROOTS = [
   "src/app/experience-lab/",
-  "src/components/",
   "src/lib/build/",
 ];
 
@@ -35,6 +34,8 @@ export function getSelfBuildConfig(env = process.env) {
     "AAHANA_SELF_BUILD_ALLOWED_EMAILS",
   ];
   const missing = required.filter((key) => !String(env[key] || "").trim());
+  if (!/^\\d+$/.test(String(env.AAHANA_GITHUB_APP_ID || "")) && !missing.includes("AAHANA_GITHUB_APP_ID")) missing.push("AAHANA_GITHUB_APP_ID");
+  if (!/^\\d+$/.test(String(env.AAHANA_GITHUB_INSTALLATION_ID || "")) && !missing.includes("AAHANA_GITHUB_INSTALLATION_ID")) missing.push("AAHANA_GITHUB_INSTALLATION_ID");
   const validRepository = REPOSITORY_PATTERN.test(repository) &&
     repository.split("/").every((part) => part !== "." && part !== "..");
   return Object.freeze({
@@ -59,7 +60,7 @@ export function isAllowedSelfBuildPath(input) {
   if (segments.some((segment) =>
     !segment || segment === "." || segment === ".." ||
     segment.startsWith(".") ||
-    BLOCKED_SEGMENTS.has(segment.toLowerCase()) ||
+    BLOCKED_SEGMENTS.has(segment.toLowerCase()) || segment.toLowerCase().includes("student") ||
     /^(?:\.env|package(?:-lock)?\.json|pnpm-lock\.yaml|yarn\.lock|bun\.lockb?)$/i.test(segment)
   )) return false;
 
