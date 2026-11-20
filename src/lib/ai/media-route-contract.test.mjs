@@ -54,3 +54,7 @@ test("Aahana typography uses the distinctive display and interface font pair", (
   assert.match(styles, /Space\+Grotesk/);
   assert.doesNotMatch(styles, /DM\s+Sans|Manrope/);
 });
+
+test("video generation stops processing a provider response after caller cancellation", () => {
+  assert.match(route, /const result = await response\.json\(\)\.catch\(\(\) => null\);\s*if \(request\.signal\.aborted\) return new Response\(null, \{ status: 499 \}\);/);
+});
