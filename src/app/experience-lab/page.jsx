@@ -126,12 +126,6 @@ export default function ExperienceLab() {
   }, []);
 
   useEffect(() => {
-    if (activePanel === "voice") return;
-    if (voiceListening) recognitionRef.current?.stop?.();
-    if (voiceSpeaking) window.speechSynthesis?.cancel?.();
-  }, [activePanel, voiceListening, voiceSpeaking]);
-
-  useEffect(() => {
     if (mode !== "build") return;
     let active = true;
     Promise.all([
@@ -520,6 +514,15 @@ export default function ExperienceLab() {
     setVoiceSpeaking(false);
   }
 
+  function changePanel(panel) {
+    if (panel !== "voice") {
+      recognitionRef.current?.stop?.();
+      stopVoicePlayback();
+      setVoiceListening(false);
+    }
+    setActivePanel(panel);
+  }
+
   function speakWithDevice(text) {
     if (!("speechSynthesis" in window)) throw new Error("Spoken playback is not supported in this browser.");
     const utterance = new SpeechSynthesisUtterance(text);
@@ -591,11 +594,9 @@ export default function ExperienceLab() {
     } catch (error) {
       if (controller.signal.aborted) return;
       if (error instanceof Error && !/Failed to fetch|NetworkError/i.test(error.message)) {
-        if (error.message.includes("returned invalid audio")) {
-          setVoiceError(error.message);
-          setVoiceSpeaking(false);
-          return;
-        }
+        setVoiceError(error.message || "Spoken playback failed.");
+        setVoiceSpeaking(false);
+        return;
       }
     }
     if (controller.signal.aborted) return;
@@ -634,10 +635,10 @@ export default function ExperienceLab() {
       <aside className="lab-rail" aria-label="Workspace navigation">
         <button className="rail-new" type="button" onClick={startNewSession} aria-label="New session">＋</button>
         <span className="rail-separator" />
-        <button className={mode === "chat" && activePanel === "tools" ? "rail-button active" : "rail-button"} type="button" title="Home" aria-label="Home" aria-current={mode === "chat" && activePanel === "tools" ? "page" : undefined} onClick={() => { setMode("chat"); startNewSession(); setActivePanel("tools"); }}>⌂</button>
-        <button className={activePanel === "discover" ? "rail-button active" : "rail-button"} type="button" title="Discover" aria-pressed={activePanel === "discover"} onClick={() => setActivePanel("discover")}>✧</button>
-        <button className={activePanel === "library" ? "rail-button active" : "rail-button"} type="button" title="Library" aria-pressed={activePanel === "library"} onClick={() => setActivePanel("library")}>▤</button>
-        <div className="rail-bottom"><button className="rail-button" type="button" title="Settings" onClick={() => setActivePanel("settings")}>⚙</button><span className="rail-avatar">A</span></div>
+        <button className={mode === "chat" && activePanel === "tools" ? "rail-button active" : "rail-button"} type="button" title="Home" aria-label="Home" aria-current={mode === "chat" && activePanel === "tools" ? "page" : undefined} onClick={() => { setMode("chat"); startNewSession(); changePanel("tools"); }}>⌂</button>
+        <button className={activePanel === "discover" ? "rail-button active" : "rail-button"} type="button" title="Discover" aria-pressed={activePanel === "discover"} onClick={() => changePanel("discover")}>✧</button>
+        <button className={activePanel === "library" ? "rail-button active" : "rail-button"} type="button" title="Library" aria-pressed={activePanel === "library"} onClick={() => changePanel("library")}>▤</button>
+        <div className="rail-bottom"><button className="rail-button" type="button" title="Settings" onClick={() => changePanel("settings")}>⚙</button><span className="rail-avatar">A</span></div>
       </aside>
 
       <section className="lab-main">
@@ -667,7 +668,7 @@ export default function ExperienceLab() {
           <form className="lab-composer" onSubmit={previewFlow}>
             <label className="sr-only" htmlFor="lab-composer">Write a message for the preview</label>
             <textarea id="lab-composer" value={prompt} onChange={(event) => setPrompt(event.target.value)} placeholder={mode === "build" ? "Describe the product you want to bring to life..." : mode === "create" ? "Describe the world you want to create..." : "Ask anything. Start anywhere..."} rows={3} />
-            <div className="composer-controls"><div className="composer-tools"><button type="button" onClick={() => setActivePanel(activePanel === "attach" ? "tools" : "attach")} title="Add context">＋ <span>Attach</span></button><button type="button" onClick={() => setActivePanel(activePanel === "tools" ? "discover" : "tools")} title="Explore tools">◈ <span>Tools</span></button><span className="composer-divider" /><span className="composer-mode-label">{current.label} mode</span></div><div className="composer-submit"><button type="button" className="voice-button" title="Voice preview" onClick={() => setActivePanel("voice")}>◖</button>{busy ? <button type="button" className="lab-send lab-stop" onClick={stopGeneration}>Stop <span>■</span></button> : <button type="submit" className="lab-send" disabled={!prompt.trim()}>Send <span>↗</span></button>}</div></div>
+            <div className="composer-controls"><div className="composer-tools"><button type="button" onClick={() => changePanel(activePanel === "attach" ? "tools" : "attach")} title="Add context">＋ <span>Attach</span></button><button type="button" onClick={() => changePanel(activePanel === "tools" ? "discover" : "tools")} title="Explore tools">◈ <span>Tools</span></button><span className="composer-divider" /><span className="composer-mode-label">{current.label} mode</span></div><div className="composer-submit"><button type="button" className="voice-button" title="Voice preview" onClick={() => changePanel("voice")}>◖</button>{busy ? <button type="button" className="lab-send lab-stop" onClick={stopGeneration}>Stop <span>■</span></button> : <button type="submit" className="lab-send" disabled={!prompt.trim()}>Send <span>↗</span></button>}</div></div>
           </form>
           {mode === "build" && <section className="build-console" aria-label="Project build workspace">
             <div className="build-console-heading"><div><span>PROJECT WORKSPACE</span><h2>Build and verify</h2></div><div className="build-console-heading-actions"><button type="button" onClick={() => buildFileInput.current?.click()} disabled={!selectedProjectId || fileBusy}>{fileBusy ? "Uploading…" : "＋ Add source files"}</button><button type="button" onClick={createBuildProject}>＋ New project</button><input ref={buildFileInput} type="file" multiple accept=".js,.jsx,.ts,.tsx,.mjs,.cjs,.css,.html,.htm,.json,.md,.txt,.py,.toml,.yaml,.yml,.sql" onChange={uploadBuildFiles} hidden /></div></div>
@@ -719,11 +720,11 @@ export default function ExperienceLab() {
       </section>
 
       <aside className="lab-inspector">
-        <div className="inspector-head"><span>YOUR CO-PILOT</span><button type="button" onClick={() => setActivePanel("tools")} aria-label="Reset side panel">···</button></div>
+        <div className="inspector-head"><span>YOUR CO-PILOT</span><button type="button" onClick={() => changePanel("tools")} aria-label="Reset side panel">···</button></div>
         <div className="inspector-profile"><div className="inspector-orb"><OrbitMark /></div><div><strong>Aahana</strong><small>Ready to explore <span className="ready-dot" /></small></div></div>
-        <div className="inspector-tabs" role="group" aria-label="Co-pilot panel"><button type="button" className={activePanel === "tools" ? "active" : ""} aria-pressed={activePanel === "tools"} onClick={() => setActivePanel("tools")}>Tools</button><button type="button" className={activePanel === "discover" ? "active" : ""} aria-pressed={activePanel === "discover"} onClick={() => setActivePanel("discover")}>Discover</button><button type="button" className={activePanel === "library" ? "active" : ""} aria-pressed={activePanel === "library"} onClick={() => setActivePanel("library")}>Library</button></div>
+        <div className="inspector-tabs" role="group" aria-label="Co-pilot panel"><button type="button" className={activePanel === "tools" ? "active" : ""} aria-pressed={activePanel === "tools"} onClick={() => changePanel("tools")}>Tools</button><button type="button" className={activePanel === "discover" ? "active" : ""} aria-pressed={activePanel === "discover"} onClick={() => changePanel("discover")}>Discover</button><button type="button" className={activePanel === "library" ? "active" : ""} aria-pressed={activePanel === "library"} onClick={() => changePanel("library")}>Library</button></div>
         <div className="inspector-content">
-          {activePanel === "tools" && <><div className="inspector-section-label">CAPABILITIES</div>{[["⌘","Build workspace","Product guidance · engine in development"],["✧","Creative studio","Creative direction · media tools in development"],["⌕","Deep research","Source-backed answers when available"],["◖","Voice conversation","Voice runtime in development"]].map(([mark,title,detail]) => <button type="button" className="capability-row" key={title} onClick={() => setActivePanel(title === "Voice conversation" ? "voice" : "discover")}><span className="capability-mark">{mark}</span><span><strong>{title}</strong><small>{detail}</small></span><b>↗</b></button>)}</>}
+          {activePanel === "tools" && <><div className="inspector-section-label">CAPABILITIES</div>{[["⌘","Build workspace","Product guidance · engine in development"],["✧","Creative studio","Creative direction · media tools in development"],["⌕","Deep research","Source-backed answers when available"],["◖","Voice conversation","Voice runtime in development"]].map(([mark,title,detail]) => <button type="button" className="capability-row" key={title} onClick={() => changePanel(title === "Voice conversation" ? "voice" : "discover")}><span className="capability-mark">{mark}</span><span><strong>{title}</strong><small>{detail}</small></span><b>↗</b></button>)}</>}
           {activePanel === "discover" && <div className="inspector-empty"><span>✧</span><strong>Discover your next move</strong><p>Explore connected experiences from one calm, intelligent workspace.</p><button type="button" onClick={() => setMode("research")}>Explore research mode</button></div>}
           {activePanel === "library" && <div className="inspector-empty"><span>▤</span><strong>Your creative memory</strong><p>A home for saved ideas, projects and useful discoveries.</p><small>Library preview · no data stored</small></div>}
           {activePanel === "attach" && <div className="inspector-empty"><span>＋</span><strong>Bring context in</strong><p>Files, images and links can become part of the same conversation.</p><small>Attachment controls are visual only in this concept.</small></div>}
