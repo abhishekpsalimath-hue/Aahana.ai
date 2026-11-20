@@ -32,6 +32,9 @@ export async function POST(request) {
   if (authError || !user) return NextResponse.json({ error: "Please sign in to validate Aahana's proposed changes." }, { status: 401 });
 
   const config = getSelfBuildConfig();
+  if (config.repository !== "abhishekpsalimath-hue/Aahana.ai") {
+    return NextResponse.json({ error: "Self-validation is restricted to the configured Aahana repository." }, { status: 503 });
+  }
   if (!isSelfBuildOwner(user.email, config)) {
     return NextResponse.json({ error: "Isolated self-validation is available only to its authorized owner." }, { status: 403 });
   }
@@ -98,6 +101,9 @@ export async function POST(request) {
       path: REPOSITORY_DIR + "/" + file.path,
       content: Buffer.from(file.content, "utf8"),
     })));
+
+    // Remove any committed environment or npm config files before dependency resolution.
+    await sandbox.runCommand({ cmd: "find", args: [".", "-type", "f", "(", "-name", ".env*", "-o", "-name", ".npmrc", ")", "-delete"], cwd: REPOSITORY_DIR, timeout: 5000 });
 
     // Dependencies may come only from the public npm registry. Lifecycle scripts are disabled.
     await sandbox.update({ networkPolicy: { mode: "custom", allowedDomains: ["registry.npmjs.org"] } });
