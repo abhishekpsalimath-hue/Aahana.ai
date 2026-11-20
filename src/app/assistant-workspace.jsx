@@ -658,6 +658,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       const referenceFile = await createReferenceImageFile(generatedImage.dataUrl);
       const form = new FormData();
       form.set("prompt", editPrompt);
+      form.set("referencePrompt", String(generatedImage.prompt || "").slice(0, 1200));
       form.set("image", referenceFile);
       const response = await fetch("/api/images/edit", { method: "POST", body: form });
       const result = await response.json().catch(() => ({}));
@@ -665,7 +666,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       if (typeof result.imageDataUrl !== "string" || !result.imageDataUrl.startsWith("data:image/jpeg;base64,")) {
         throw new Error("The image editor returned an invalid image.");
       }
-      setGeneratedImage({ dataUrl: result.imageDataUrl, prompt: editPrompt });
+      setGeneratedImage({ dataUrl: result.imageDataUrl, prompt: generatedImage.prompt || editPrompt });
       setMessages((current) => current.map((item, index) =>
         index === current.length - 1 ? { ...item, content: "Updated your image. You can keep refining it with another instruction." } : item
       ));
