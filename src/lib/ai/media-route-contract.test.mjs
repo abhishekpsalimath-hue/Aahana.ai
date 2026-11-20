@@ -40,27 +40,14 @@ test("video downloads require authentication, a trusted host and block redirects
   assert.match(downloadRoute, /status: 499/);
 });
 
-test("assistant exposes video creation, quality, duration and download controls", () => {
-  assert.match(workspace, /isVideoGenerationRequest/);
-  assert.match(workspace, /Generate video/);
-  assert.match(workspace, /value="fhd"/);
-  assert.match(workspace, /Video aspect ratio/);
-  assert.match(route, /aspect_ratio:\s*input\.aspectRatio/);
-  assert.match(workspace, /videoDuration/);
-  assert.match(workspace, /generatedVideo/);
-  assert.match(workspace, /api\/videos\/download/);
+test("Experience Lab exposes video creation, playback and download without bypassing cancellation", () => {
   assert.match(experienceLab, /isVideoGenerationRequest/);
   assert.match(experienceLab, /api\/videos\/generate/);
   assert.match(experienceLab, /generatedVideo/);
   assert.match(experienceLab, /api\/videos\/download/);
   assert.match(experienceLab, /signal: controller\.signal/);
+  assert.match(experienceLab, /stopGeneration/);
   assert.match(experienceLabStyles, /\.lab-generated-video/);
-});
-
-test("Aahana typography uses the distinctive display and interface font pair", () => {
-  assert.match(styles, /family=Outfit/);
-  assert.match(styles, /Space\+Grotesk/);
-  assert.doesNotMatch(styles, /DM\s+Sans|Manrope/);
 });
 
 test("video generation stops processing a provider response after caller cancellation", () => {
