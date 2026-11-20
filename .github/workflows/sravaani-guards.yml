@@ -16,7 +16,7 @@ on:
       - "src/lib/voice/audio-wav.*"
       - "src/lib/voice/locale-detection.*"
       - "src/lib/voice/locale-support.*"
-      - "src/lib/voice/speech-fallback-policy.*"
+      - "src/lib/voice/speech-fallback-policy.*"\n      - "src/lib/voice/voice-route-cancellation.test.mjs"
   push:
     branches:
       - "feat/aahana-voice-runtime-adapters"
@@ -73,7 +73,7 @@ jobs:
         run: node --test ../../src/lib/voice/chat-language-policy.test.mjs
       - name: Test device speech fallback policy
         run: node --test ../../src/lib/voice/speech-fallback-policy.test.mjs
-      - name: Syntax-check authenticated transcription route
+      - name: Test voice route cancellation contract\n        run: node --test ../../src/lib/voice/voice-route-cancellation.test.mjs\n      - name: Syntax-check authenticated transcription route
         run: node --check ../../src/app/api/voice/transcribe/route.js
       - name: Syntax-check authenticated speech synthesis route
         run: node --check ../../src/app/api/voice/speech/route.js
