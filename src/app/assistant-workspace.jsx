@@ -275,6 +275,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [previewError, setPreviewError] = useState("");
   const [buildStatusLoading, setBuildStatusLoading] = useState(true);
   const [error, setError] = useState("");
+  const [imageSaveNotice, setImageSaveNotice] = useState("");
   const [history, setHistory] = useState([]);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -684,6 +685,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     if (!generatedImage || imageSaving) return;
     setImageSaving(true);
     setError("");
+    setImageSaveNotice("");
     try {
       const response = await fetch(generatedImage.dataUrl);
       const blob = await response.blob();
@@ -711,8 +713,9 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         throw new Error(result.error || "Could not save the image details.");
       }
       setFiles((items) => [result.file, ...items]);
-      setError("Image saved to your Aahana Files.");
+      setImageSaveNotice("Image saved to your Aahana Files.");
     } catch (err) {
+      setImageSaveNotice("");
       setError(err.message || "Could not save the generated image.");
     } finally {
       setImageSaving(false);
@@ -1382,6 +1385,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                   <button className="copy-message" type="button" onClick={saveGeneratedImage} disabled={imageSaving}>{imageSaving ? "Saving…" : "Save to Files"}</button>
                   <button className="copy-message" type="button" onClick={() => setGeneratedImage(null)}>Remove</button>
                 </div>
+                {imageSaveNotice && <div className="notice" role="status">{imageSaveNotice}</div>}
               </div>
             )}
             {generatedVideo && (
