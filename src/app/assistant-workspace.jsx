@@ -1213,7 +1213,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
 
         <div className="welcome">
           {!messages.length && (
-            <section className="welcome-card" aria-label="Welcome to Aahana AI">
+            <section className="welcome-intro" aria-label="Welcome to Aahana AI">
               <div className="astronaut-float" aria-hidden="true">
               <svg viewBox="0 0 180 180" role="presentation">
                 <defs>
