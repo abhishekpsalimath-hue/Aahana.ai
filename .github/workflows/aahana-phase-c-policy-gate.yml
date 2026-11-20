@@ -13,10 +13,12 @@ on:
       - fix/phase-c-reject-ambiguous-diff-entries
       - fix/phase-c-require-trusted-check-app
       - feat/phase-c-readonly-repository-snapshot
+      - fix/repository-snapshot-strict-blob-validation
     paths:
       - "src/lib/operations/autonomous-policy.*"
       - "src/lib/operations/autonomous-github-evidence.*"
       - "src/lib/operations/github-app-client.*"
+      - "src/lib/operations/repository-snapshot.server.*"
       - "src/lib/operations/autonomous-review.*"
       - "docs/aahana-github-app-readonly-integration.md"
       - "package.json"
@@ -34,6 +36,7 @@ on:
       - fix/phase-c-reject-ambiguous-diff-entries
       - fix/phase-c-require-trusted-check-app
       - feat/phase-c-readonly-repository-snapshot
+      - fix/repository-snapshot-strict-blob-validation
   workflow_dispatch:
 
 permissions:

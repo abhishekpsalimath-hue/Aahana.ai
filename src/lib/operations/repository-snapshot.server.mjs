@@ -86,7 +86,14 @@ export async function collectReadOnlyRepositorySnapshot({
         typeof blob.content !== "string") {
       throw new Error("repository_blob_response_mismatch");
     }
-    const bytes = Buffer.from(blob.content.replace(/\\s/g, ""), "base64");
+    const encoded = blob.content.replace(/\s/g, "");
+    if (!/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(encoded)) {
+      throw new Error("repository_blob_base64_invalid");
+    }
+    const bytes = Buffer.from(encoded, "base64");
+    if (bytes.toString("base64") !== encoded) {
+      throw new Error("repository_blob_base64_noncanonical");
+    }
     if (bytes.byteLength !== entry.size) {
       throw new Error("repository_blob_size_mismatch");
     }
@@ -95,6 +102,9 @@ export async function collectReadOnlyRepositorySnapshot({
       content = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
     } catch {
       throw new Error("binary_repository_files_are_not_supported");
+    }
+    if (content.startsWith("version https://git-lfs.github.com/spec/v1\n")) {
+      throw new Error("git_lfs_pointer_files_are_not_supported");
     }
     files.push({ path, content, bytes: bytes.byteLength });
   }

@@ -92,3 +92,43 @@ test("rejects unsafe paths before reading any blob", async () => {
   }));
   assert.equal(github.calls.length, 0);
 });
+
+
+test("accepts line-wrapped base64 but rejects malformed or non-canonical encodings", async () => {
+  const encoded = Buffer.from(source).toString("base64");
+  const wrapped = encoded.match(/.{1,8}/g).join("\n");
+  const github = makeGithub({ blob: {
+    sha: blobSha, size: Buffer.byteLength(source), encoding: "base64", content: wrapped,
+  } });
+  const files = await collectReadOnlyRepositorySnapshot({
+    github, sourceSha, allowedPaths: ["src/index.mjs"],
+  });
+  assert.equal(files[0].content, source);
+
+  for (const invalid of ["!!!!", "YWJj====", "YQ"]) {
+    await assert.rejects(() => collectReadOnlyRepositorySnapshot({
+      github: makeGithub({ blob: {
+        sha: blobSha, size: Buffer.byteLength(source), encoding: "base64", content: invalid,
+      } }),
+      sourceSha, allowedPaths: ["src/index.mjs"],
+    }), /repository_blob_base64_invalid/);
+  }
+});
+
+test("rejects Git LFS pointer files instead of passing pointers as source", async () => {
+  const pointer = "version https://git-lfs.github.com/spec/v1\n" +
+    "oid sha256:" + "a".repeat(64) + "\nsize 4096\n";
+  const github = makeGithub({
+    entries: [{
+      path: "src/index.mjs", mode: "100644", type: "blob", sha: blobSha,
+      size: Buffer.byteLength(pointer),
+    }],
+    blob: {
+      sha: blobSha, size: Buffer.byteLength(pointer), encoding: "base64",
+      content: Buffer.from(pointer).toString("base64"),
+    },
+  });
+  await assert.rejects(() => collectReadOnlyRepositorySnapshot({
+    github, sourceSha, allowedPaths: ["src/index.mjs"],
+  }), /git_lfs_pointer_files_are_not_supported/);
+});
