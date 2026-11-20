@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { getSourceFileMimeType, isSupportedSourceFile } from "@/lib/build/source-file-policy.mjs";
 import { createSourceDiff, MAX_PROPOSAL_SOURCE_BYTES, validateSourceProposal } from "@/lib/build/source-proposal.mjs";
 import { isVideoGenerationRequest } from "@/lib/ai/video-generation-policy.mjs";
+import { shouldFallbackToDeviceSpeech } from "@/lib/voice/speech-fallback-policy.mjs";
 import "./experience-lab.css";
 
 const modes = [
@@ -105,7 +106,11 @@ export default function ExperienceLab() {
   const [voiceListening, setVoiceListening] = useState(false);
   const [voiceSpeaking, setVoiceSpeaking] = useState(false);
   const [voiceError, setVoiceError] = useState("");
+  const [voiceSource, setVoiceSource] = useState("");
   const recognitionRef = useRef(null);
+  const speechRequestRef = useRef(null);
+  const audioPlaybackRef = useRef(null);
+  const audioObjectUrlRef = useRef(null);
   const current = modes.find((item) => item.id === mode) || modes[0];
   const currentPrompts = promptsByMode[mode] || promptsByMode.chat;
 
@@ -114,6 +119,9 @@ export default function ExperienceLab() {
     proposalRequest.current?.abort();
     buildRequest.current?.abort();
     recognitionRef.current?.stop?.();
+    speechRequestRef.current?.abort();
+    audioPlaybackRef.current?.pause?.();
+    if (audioObjectUrlRef.current) URL.revokeObjectURL(audioObjectUrlRef.current);
     window.speechSynthesis?.cancel?.();
   }, []);
 
@@ -501,20 +509,109 @@ export default function ExperienceLab() {
     recognitionRef.current = recognition; try { recognition.start(); setVoiceListening(true); } catch { recognitionRef.current = null; setVoiceListening(false); setVoiceError("Voice input could not start. Please try again."); }
   }
 
-  function speakLatestResponse() {
+  function stopVoicePlayback() {
+    speechRequestRef.current?.abort();
+    speechRequestRef.current = null;
+    audioPlaybackRef.current?.pause?.();
+    audioPlaybackRef.current = null;
+    if (audioObjectUrlRef.current) URL.revokeObjectURL(audioObjectUrlRef.current);
+    audioObjectUrlRef.current = null;
+    window.speechSynthesis?.cancel?.();
+    setVoiceSpeaking(false);
+  }
+
+  function speakWithDevice(text) {
+    if (!("speechSynthesis" in window)) throw new Error("Spoken playback is not supported in this browser.");
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = voiceLocale;
+    utterance.rate = 1;
+    utterance.onend = () => setVoiceSpeaking(false);
+    utterance.onerror = () => { setVoiceSpeaking(false); setVoiceError("Device speech playback could not complete."); };
+    setVoiceSource("device");
+    window.speechSynthesis.speak(utterance);
+  }
+
+  async function speakLatestResponse() {
     const latest = [...thread].reverse().find((item) => item.role === "assistant" && String(item.content || "").trim());
     if (!latest) { setVoiceError("Ask Aahana something first, then listen to the reply."); return; }
-    if (!("speechSynthesis" in window)) { setVoiceError("Spoken playback is not supported in this browser."); return; }
-    if (voiceSpeaking) { window.speechSynthesis.cancel(); setVoiceSpeaking(false); return; }
-    recognitionRef.current?.stop?.(); setVoiceListening(false); window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(latest.content.slice(0, 6000)); utterance.lang = voiceLocale; utterance.rate = 1;
-    utterance.onend = () => setVoiceSpeaking(false); utterance.onerror = () => { setVoiceSpeaking(false); setVoiceError("Speech playback could not complete on this device."); };
-    setVoiceError(""); setVoiceSpeaking(true); window.speechSynthesis.speak(utterance);
+    if (voiceSpeaking) { stopVoicePlayback(); return; }
+    recognitionRef.current?.stop?.();
+    setVoiceListening(false);
+    window.speechSynthesis?.cancel?.();
+    setVoiceError("");
+    setVoiceSpeaking(true);
+    const controller = new AbortController();
+    speechRequestRef.current = controller;
+    const textToSpeak = latest.content.slice(0, 6000);
+    try {
+      const response = await fetch("/api/voice/speech", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: textToSpeak, locale: voiceLocale }),
+        signal: controller.signal,
+      });
+      if (response.ok) {
+        const audioBlob = await response.blob();
+        if (!audioBlob.size || !audioBlob.type.startsWith("audio/")) throw new Error("Aahana's speech service returned invalid audio.");
+        const objectUrl = URL.createObjectURL(audioBlob);
+        audioObjectUrlRef.current = objectUrl;
+        const audio = new Audio(objectUrl);
+        audioPlaybackRef.current = audio;
+        audio.onended = () => {
+          if (audioObjectUrlRef.current === objectUrl) {
+            URL.revokeObjectURL(objectUrl);
+            audioObjectUrlRef.current = null;
+            audioPlaybackRef.current = null;
+          }
+          speechRequestRef.current = null;
+          setVoiceSpeaking(false);
+        };
+        audio.onerror = () => {
+          if (audioObjectUrlRef.current === objectUrl) {
+            URL.revokeObjectURL(objectUrl);
+            audioObjectUrlRef.current = null;
+            audioPlaybackRef.current = null;
+          }
+          speechRequestRef.current = null;
+          setVoiceSpeaking(false);
+          setVoiceError("Aahana's generated speech could not be played.");
+        };
+        setVoiceSource("maya");
+        await audio.play();
+        return;
+      }
+      if (response.status === 401 || response.status === 413) {
+        const result = await response.json().catch(() => ({}));
+        throw new Error(result.error || "Spoken response could not be authorised.");
+      }
+      if (!shouldFallbackToDeviceSpeech(response.status)) {
+        const result = await response.json().catch(() => ({}));
+        throw new Error(result.error || "Aahana's speech service could not complete this request.");
+      }
+    } catch (error) {
+      if (controller.signal.aborted) return;
+      if (error instanceof Error && !/Failed to fetch|NetworkError/i.test(error.message)) {
+        if (error.message.includes("returned invalid audio")) {
+          setVoiceError(error.message);
+          setVoiceSpeaking(false);
+          return;
+        }
+      }
+    }
+    if (controller.signal.aborted) return;
+    speechRequestRef.current = null;
+    try {
+      speakWithDevice(textToSpeak);
+      setVoiceError("Using your browser's speech voice because Aahana's private voice service is unavailable.");
+    } catch (error) {
+      setVoiceSpeaking(false);
+      setVoiceError(error.message || "Spoken playback is unavailable.");
+    }
   }
   function startNewSession() {
     if (busy) return;
     recognitionRef.current?.stop?.();
-    window.speechSynthesis?.cancel?.();
+    stopVoicePlayback();
     setVoiceListening(false);
     setVoiceSpeaking(false);
     setThread([]);
@@ -639,7 +736,7 @@ export default function ExperienceLab() {
             </select>
             <button type="button" className={voiceListening ? "voice-panel-action listening" : "voice-panel-action"} onClick={startVoiceInput} aria-pressed={voiceListening}>{voiceListening ? "■ Stop listening" : "◖ Speak a prompt"}</button>
             <button type="button" className="voice-panel-action secondary" onClick={speakLatestResponse} disabled={!thread.some((item) => item.role === "assistant" && String(item.content || "").trim())}>{voiceSpeaking ? "■ Stop speaking" : "♫ Listen to Aahana"}</button>
-            <div className="voice-panel-status" role="status" aria-live="polite">{voiceListening ? "Listening on this device…" : voiceSpeaking ? "Aahana is speaking…" : "Ready when you are."}</div>
+            <div className="voice-panel-status" role="status" aria-live="polite">{voiceListening ? "Listening on this device…" : voiceSpeaking ? (voiceSource === "maya" ? "Aahana's private voice is speaking…" : "Device voice is speaking…") : "Ready when you are."}</div>
             {voiceError && <p className="voice-panel-error" role="alert">{voiceError}</p>}
             <small className="voice-panel-privacy">Device speech preview. Aahana does not directly upload or store a raw recording here. Your browser&apos;s speech service may process audio under its own privacy terms; browser support and installed voices vary.</small>
           </section>}
