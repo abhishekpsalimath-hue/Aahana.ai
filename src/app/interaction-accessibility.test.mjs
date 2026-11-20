@@ -46,3 +46,16 @@ test("Student Mode has visible focus, touch handling and reduced-motion rules", 
   assert.match(learningCss, /@media \(prefers-reduced-motion: reduce\)/);
   assert.match(learningCss, /transition: none !important/);
 });
+
+
+test("assistant mode launchpad changes guidance and offers a usable starter prompt", () => {
+  const workspace = readFileSync(new URL("./assistant-workspace.jsx", import.meta.url), "utf8");
+  assert.match(workspace, /className="mode-launchpad"/);
+  assert.match(workspace, /modes\.find\(\(item\) => item\.id === mode\)\?\.description/);
+  assert.match(workspace, /setPrompt\(modes\.find\(\(item\) => item\.id === mode\)\?\.prompt/);
+});
+
+test("mode launchpad motion respects reduced-motion preferences", () => {
+  assert.match(workspaceCss, /\.launch-orbit-one,\.launch-orbit-two,\.launch-core\{animation:none!important\}/);
+  assert.match(workspaceCss, /@media\(max-width:620px\)/);
+});
