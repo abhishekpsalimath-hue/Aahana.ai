@@ -54,11 +54,11 @@ test("Experience Lab wires consent-gated SraVaani recording to the authenticated
   assert.match(page, /encodePcm16Wav/);
   assert.match(page, /getUserMedia/);
   assert.match(page, /voiceConsent/);
-  assert.match(page, /form\\.append\\("consent", "true"\\)/);
+  assert.ok(page.includes('form.append("consent", "true")'));
   assert.ok(page.includes("api/voice/transcribe"));
   assert.match(page, /finishSraVaaniRecording/);
   assert.match(page, /cancelSraVaaniRecording/);
   assert.match(page, /30_000/);
-  assert.match(page, /15 \\* 1024 \\* 1024/);
-  assert.match(page, /setPrompt\\(\\(current\\) => current \\? current \\+ " " \\+ transcript : transcript\\)/);
+  assert.ok(page.includes("15 * 1024 * 1024"));
+  assert.ok(page.includes('setPrompt((current) => current ? current + " " + transcript : transcript)'));
 });
