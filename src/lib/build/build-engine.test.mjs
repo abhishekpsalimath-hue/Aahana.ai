@@ -264,3 +264,52 @@ test("reports cancellation when the sandbox command finishes after caller abort"
   }), /cancelled/);
   assert.equal(fake.calls.filter((call) => call.type === "stop").length, 1);
 });
+
+
+test("propagates the request AbortSignal into sandbox creation and every project command", async () => {
+  const fake = createFakeSandbox();
+  const controller = new AbortController();
+  await executeBuildTask({
+    files: [
+      { path: "package.json", content: JSON.stringify({
+        dependencies: { react: "^19.1.0" },
+        scripts: { build: "node build.js" },
+      }) },
+      { path: "build.js", content: "console.log('built')" },
+    ],
+    operation: "build",
+    projectId: "prj_12345678",
+    sandboxName: "aahana-build-signal-forward",
+    SandboxClient: fake.SandboxClient,
+    signal: controller.signal,
+  });
+  assert.equal(fake.calls.find((call) => call.type === "create").options.signal, controller.signal);
+  const commands = fake.calls.filter((call) => call.type === "runCommand");
+  assert.equal(commands.length, 2);
+  assert.ok(commands.every((call) => call.options.signal === controller.signal));
+});
+
+test("cancels sandbox provisioning when the request is aborted during creation", async () => {
+  const controller = new AbortController();
+  let receivedSignal = null;
+  const SandboxClient = {
+    create(options) {
+      receivedSignal = options.signal;
+      return new Promise((_resolve, reject) => {
+        options.signal.addEventListener("abort", () => reject(new Error("sandbox creation aborted")), { once: true });
+      });
+    },
+  };
+  const pending = executeBuildTask({
+    files: [{ path: "src/main.js", content: "console.log('hello')" }],
+    operation: "run",
+    entrypoint: "src/main.js",
+    projectId: "prj_12345678",
+    sandboxName: "aahana-build-create-cancel",
+    SandboxClient,
+    signal: controller.signal,
+  });
+  controller.abort();
+  await assert.rejects(pending, /sandbox creation aborted/);
+  assert.equal(receivedSignal, controller.signal);
+});

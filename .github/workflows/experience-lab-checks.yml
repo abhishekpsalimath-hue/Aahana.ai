@@ -8,6 +8,7 @@ on:
       - fix/experience-lab-source-edit-conflicts
       - feat/experience-lab-ai-code-proposals
       - fix/build-workspace-size-preflight
+      - fix/build-preview-oidc-runtime-detection
     paths:
       - "src/app/experience-lab/**"
       - "src/app/api/build/**"

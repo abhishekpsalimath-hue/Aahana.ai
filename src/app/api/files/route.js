@@ -51,7 +51,7 @@ export async function POST(request) {
 
   if (projectId) {
     const { data: project, error } = await supabase.from("projects").select("id")
-      .eq("id", projectId).eq("user_id", user.id).maybeSingle();
+      .eq("id", projectId).eq("user_id", user.id).neq("status", "archived").maybeSingle();
     if (error || !project) return NextResponse.json({ error: "Project not found." }, { status: 404 });
   }
 

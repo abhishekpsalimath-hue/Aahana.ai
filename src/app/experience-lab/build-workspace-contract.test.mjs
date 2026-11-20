@@ -26,11 +26,13 @@ test("Build and Test actions call the authenticated isolated project endpoint", 
 test("Build execution controls stay disabled without enabled engine and sandbox identity", () => {
   assert.match(page, /!buildStatus\?\.enabled \|\| !buildStatus\?\.sandboxIdentityAvailable/);
   assert.match(page, /disabled=\{!selectedProjectId \|\| buildBusy \|\| !buildStatus\?\.enabled \|\| !buildStatus\?\.sandboxIdentityAvailable\} onClick=\{\(\) => runBuildOperation\("test"\)\}/);
-  assert.match(statusRoute, /sandboxIdentityAvailable: Boolean\(process\.env\.VERCEL_OIDC_TOKEN\)/);
+  assert.match(statusRoute, /request\.headers\.get\("x-vercel-oidc-token"\)/);
+  assert.match(statusRoute, /process\.env\.VERCEL_OIDC_TOKEN/);
 });
 
 test("Private file registration rejects ambiguous and traversing storage paths", () => {
   assert.match(filesRoute, /isSafePrivateObjectPath\(objectPath, user\.id, projectId \|\| "personal"\)/);
+  assert.match(filesRoute, /\.neq\("status", "archived"\)/);
   assert.match(filesRoute, /projectId !== null && \(typeof projectId !== "string" \|\| !projectId\.trim\(\) \|\| projectId\.length > 128\)/);
   assert.equal(isSafePrivateObjectPath("user-1/project-1/source.js", "user-1", "project-1"), true);
   assert.equal(isSafePrivateObjectPath("user-2/project-1/source.js", "user-1", "project-1"), false);
