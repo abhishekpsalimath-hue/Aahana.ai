@@ -3,7 +3,9 @@ import { createClient } from "@/lib/supabase/server";
 
 export async function GET(request) {
   const supabase = await createClient();
+  if (request.signal.aborted) return new Response(null, { status: 499 });
   const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (request.signal.aborted) return new Response(null, { status: 499 });
 
   if (authError || !user) {
     return NextResponse.json({ error: "Please sign in." }, { status: 401 });
@@ -17,7 +19,8 @@ export async function GET(request) {
     .eq("user_id", user.id)
     .eq("is_archived", false);
   if (projectId) query = query.eq("project_id", projectId);
-  const { data, error } = await query.order("updated_at", { ascending: false }).limit(50);
+  const { data, error } = await query.order("updated_at", { ascending: false }).limit(50).abortSignal(request.signal);
+  if (request.signal.aborted) return new Response(null, { status: 499 });
 
   if (error) {
     console.error("Aahana history load failed:", error.message);
