@@ -28,3 +28,11 @@ test("build route passes request cancellation into the sandbox and returns 499 o
   assert.match(route, /signal:\s*request\.signal/);
   assert.match(route, /if \(request\.signal\.aborted\) return new Response\(null, \{ status: 499 \}\)/);
 });
+
+
+test("Build Mode stops loading private project files after the caller disconnects", () => {
+  assert.match(route, /for \(const file of eligible\) \{\s*if \(request\.signal\.aborted\) return new Response\(null, \{ status: 499 \}\)/);
+  assert.match(route, /storage\.from\("aahana-private"\)\.download\(file\.object_path\);\s*if \(request\.signal\.aborted\) return new Response\(null, \{ status: 499 \}\)/);
+  assert.match(route, /const content = await blob\.text\(\);\s*if \(request\.signal\.aborted\) return new Response\(null, \{ status: 499 \}\)/);
+  assert.match(route, /if \(request\.signal\.aborted\) return new Response\(null, \{ status: 499 \}\);\s*const files = validateWorkspaceFiles/);
+});

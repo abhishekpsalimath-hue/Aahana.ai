@@ -44,18 +44,22 @@ export async function POST(request) {
     let totalBytes = 0;
     const usedPaths = new Set();
     for (const file of eligible) {
+      if (request.signal.aborted) return new Response(null, { status: 499 });
       if (workspace.length >= MAX_SOURCE_FILES) break;
       const filename = String(file.original_filename || "").replace(/[^a-zA-Z0-9._/-]/g, "_").replace(/^\/+/, "");
       if (!filename || filename.split("/").some((part) => !part || part === "." || part === "..") || usedPaths.has(filename)) continue;
       const { data: blob, error: downloadError } = await supabase.storage.from("aahana-private").download(file.object_path);
+      if (request.signal.aborted) return new Response(null, { status: 499 });
       if (downloadError || !blob) continue;
       const content = await blob.text();
+      if (request.signal.aborted) return new Response(null, { status: 499 });
       const bytes = new TextEncoder().encode(content).byteLength;
       if (bytes < 1 || bytes > 1024 * 1024 || totalBytes + bytes > MAX_SOURCE_BYTES) continue;
       workspace.push({ path: filename, content });
       usedPaths.add(filename);
       totalBytes += bytes;
     }
+    if (request.signal.aborted) return new Response(null, { status: 499 });
     const files = validateWorkspaceFiles(workspace);
     if (!files.some((file) => file.path === "package.json")) return NextResponse.json({ error: "This project needs a package.json file before Aahana can run its build or tests." }, { status: 400 });
     const result = await executeBuildTask({ files, operation, entrypoint, projectId: process.env.VERCEL_PROJECT_ID || "prj_Ts4f4dcI3IPvBOw5IWPdsfmumbHK", sandboxName: "aahana-project-" + randomUUID().replace(/-/g, "").slice(0, 20), signal: request.signal });
