@@ -10,6 +10,7 @@ import {
 const scoredCases = (scoreForIndex = () => 5) =>
   ASSISTANT_EVALUATION_CASES.map((item, index) => ({
     id: item.id,
+    criticalFailures: [],
     scores: Object.fromEntries(
       ASSISTANT_EVALUATION_RUBRIC.dimensions.map((dimension) => [dimension, scoreForIndex(index, dimension)])
     ),
@@ -87,7 +88,17 @@ test("duplicate, missing, unknown or invalid case results cannot pass", () => {
   }
 });
 
-test("any critical failure blocks release even when every dimension scores five", () => {
+test("every case must explicitly report known critical-failure results", () => {
+  const missing = scoredCases();
+  delete missing[0].criticalFailures;
+  const unknown = scoredCases();
+  unknown[0].criticalFailures = ["unrecognized_failure_code"];
+  for (const results of [missing, unknown]) {
+    assert.equal(summarizeEvaluation(results).releaseEligible, false);
+  }
+});
+
+test("any declared critical failure blocks release even when every dimension scores five", () => {
   const results = scoredCases();
   results[0].criticalFailures = ["privacy_boundary_violation"];
   const summary = summarizeEvaluation(results);
