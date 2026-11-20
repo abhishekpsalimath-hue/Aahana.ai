@@ -55,7 +55,7 @@ test("Experience Lab wires consent-gated SraVaani recording to the authenticated
   assert.match(page, /getUserMedia/);
   assert.match(page, /voiceConsent/);
   assert.match(page, /form\\.append\\("consent", "true"\\)/);
-  assert.match(page, /api\\/voice\\/transcribe/);
+  assert.ok(page.includes("api/voice/transcribe"));
   assert.match(page, /finishSraVaaniRecording/);
   assert.match(page, /cancelSraVaaniRecording/);
   assert.match(page, /30_000/);
