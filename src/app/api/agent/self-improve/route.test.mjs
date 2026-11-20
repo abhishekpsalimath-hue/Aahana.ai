@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 
 const route = readFileSync(new URL("./route.js", import.meta.url), "utf8");
 const workspace = readFileSync(new URL("../../../assistant-workspace.jsx", import.meta.url), "utf8");
+const pullRequestRoute = readFileSync(new URL("../../build/self/pull-request/route.js", import.meta.url), "utf8");
 
 test("self-improvement agent is authenticated and owner-gated", () => {
   assert.match(route, /supabase\.auth\.getUser\(\)/);
@@ -71,4 +72,6 @@ test("Assistance reviews each proposed file and submits one consolidated draft P
   assert.match(workspace, /files: reviewedFiles/);
   assert.match(workspace, /reviewedFiles\.length > 3/);
   assert.match(workspace, /Create one draft pull request for reviewed files/);
+  assert.match(pullRequestRoute, /MAX_REVIEW_FILES = 3/);
+  assert.match(pullRequestRoute, /body\.files\.length > MAX_REVIEW_FILES/);
 });
