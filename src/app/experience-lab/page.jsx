@@ -120,7 +120,10 @@ export default function ExperienceLab() {
   const [buildError, setBuildError] = useState("");
   const [focus, setFocus] = useState(false);
   const [activePanel, setActivePanel] = useState("tools");
-  const [voiceLocale, setVoiceLocale] = useState("en-IN");
+  const [voiceLocale, setVoiceLocale] = useState("");
+  const [voiceLocales, setVoiceLocales] = useState([]);
+  const [voiceCapabilitiesLoading, setVoiceCapabilitiesLoading] = useState(true);
+  const [voiceCapabilitiesError, setVoiceCapabilitiesError] = useState("");
   const [voiceListening, setVoiceListening] = useState(false);
   const [voiceSpeaking, setVoiceSpeaking] = useState(false);
   const [voiceRecording, setVoiceRecording] = useState(false);
@@ -154,6 +157,32 @@ export default function ExperienceLab() {
     audioPlaybackRef.current?.pause?.();
     if (audioObjectUrlRef.current) URL.revokeObjectURL(audioObjectUrlRef.current);
     window.speechSynthesis?.cancel?.();
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch("/api/voice/transcribe", { method: "GET", cache: "no-store", signal: controller.signal })
+      .then(async (response) => {
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || "Voice capabilities could not be loaded.");
+        const locales = Array.isArray(data.locales)
+          ? data.locales.filter((locale) => typeof locale === "string" && locale.length > 0 && locale.length <= 35)
+          : [];
+        setVoiceLocales(data.enabled === true ? locales : []);
+        setVoiceLocale((current) => locales.includes(current) ? current : locales[0] || "");
+        setVoiceCapabilitiesError("");
+      })
+      .catch((error) => {
+        if (!controller.signal.aborted) {
+          setVoiceLocales([]);
+          setVoiceLocale("");
+          setVoiceCapabilitiesError(error.message || "Voice capabilities could not be loaded.");
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setVoiceCapabilitiesLoading(false);
+      });
+    return () => controller.abort();
   }, []);
 
   useEffect(() => {
@@ -663,7 +692,7 @@ export default function ExperienceLab() {
     if (!SpeechRecognition) { setVoiceError("Voice input is not supported in this browser. Try Chrome, or keep typing."); return; }
     if (voiceListening) { recognitionRef.current?.stop?.(); setVoiceListening(false); return; }
     window.speechSynthesis?.cancel?.(); setVoiceSpeaking(false); setVoiceError("");
-    const recognition = new SpeechRecognition(); recognition.lang = voiceLocale; recognition.continuous = false; recognition.interimResults = true;
+    const recognition = new SpeechRecognition(); recognition.lang = voiceLocale || "en-IN"; recognition.continuous = false; recognition.interimResults = true;
     recognition.onresult = (event) => { let transcript = ""; for (let i = event.resultIndex; i < event.results.length; i += 1) if (event.results[i].isFinal) transcript += event.results[i][0]?.transcript || ""; if (transcript.trim()) setPrompt((current) => current ? current + " " + transcript.trim() : transcript.trim()); };
     recognition.onerror = (event) => { setVoiceError(event.error === "not-allowed" ? "Microphone permission was denied. Allow access in browser settings." : event.error === "no-speech" ? "No speech detected. Try again." : "Voice input stopped. You can continue by typing."); setVoiceListening(false); };
     recognition.onend = () => { setVoiceListening(false); recognitionRef.current = null; };
@@ -911,11 +940,17 @@ export default function ExperienceLab() {
             <span className="voice-panel-kicker">SPEAK NATURALLY</span><h2>Voice, in the flow.</h2>
             <p>Record a short prompt for Aahana. With your explicit consent, the audio is sent to the configured SraVaani speech service and the transcript is inserted into your composer for review.</p>
             <label htmlFor="lab-voice-language">Speech language</label>
-            <select id="lab-voice-language" value={voiceLocale} onChange={(event) => setVoiceLocale(event.target.value)}>
-              <option value="en-IN">English (India)</option><option value="kn-IN">Kannada</option><option value="hi-IN">Hindi</option><option value="ta-IN">Tamil</option><option value="te-IN">Telugu</option><option value="ml-IN">Malayalam</option><option value="bn-IN">Bengali</option><option value="en-US">English (US)</option>
+            <select id="lab-voice-language" value={voiceLocale} onChange={(event) => setVoiceLocale(event.target.value)} disabled={voiceCapabilitiesLoading || voiceLocales.length === 0}>
+              {voiceCapabilitiesLoading && <option value="">Loading available languages…</option>}
+              {!voiceCapabilitiesLoading && !voiceLocales.length && <option value="">No SraVaani languages enabled</option>}
+              {voiceLocales.map((locale) => <option key={locale} value={locale}>{({
+                "en-IN": "English (India)", "kn-IN": "Kannada", "hi-IN": "Hindi", "ta-IN": "Tamil",
+                "te-IN": "Telugu", "ml-IN": "Malayalam", "bn-IN": "Bengali", "en-US": "English (US)",
+              })[locale] || locale}</option>)}
             </select>
+            {!voiceCapabilitiesLoading && !voiceLocales.length && <p className="voice-panel-error" role="status">{voiceCapabilitiesError || "SraVaani transcription is not enabled for this deployment. Browser speech recognition remains available."}</p>}
             <label className="voice-panel-consent"><input type="checkbox" checked={voiceConsent} onChange={(event) => setVoiceConsent(event.target.checked)} disabled={voiceRecording || voiceTranscribing} /> I agree to send this microphone audio to Aahana&apos;s configured speech service for transcription.</label>
-            <button type="button" className="voice-panel-action" onClick={startSraVaaniRecording} disabled={!voiceConsent || voiceStarting || voiceRecording || voiceTranscribing}>{voiceStarting ? "Waiting for microphone…" : voiceTranscribing ? "Transcribing…" : "◖ Start SraVaani recording"}</button>
+            <button type="button" className="voice-panel-action" onClick={startSraVaaniRecording} disabled={!voiceConsent || !voiceLocale || !voiceLocales.includes(voiceLocale) || voiceStarting || voiceRecording || voiceTranscribing}>{voiceStarting ? "Waiting for microphone…" : voiceTranscribing ? "Transcribing…" : "◖ Start SraVaani recording"}</button>
             {voiceRecording && <><button type="button" className="voice-panel-action listening" onClick={finishSraVaaniRecording}>■ Stop &amp; transcribe</button><button type="button" className="voice-panel-action secondary" onClick={cancelSraVaaniRecording}>Cancel recording</button></>}
             <button type="button" className="voice-panel-action secondary" onClick={startVoiceInput} disabled={voiceRecording || voiceTranscribing}>{voiceListening ? "■ Stop device listening" : "Use browser speech recognition"}</button>
             <button type="button" className="voice-panel-action secondary" onClick={speakLatestResponse} disabled={!thread.some((item) => item.role === "assistant" && String(item.content || "").trim()) || voiceRecording || voiceTranscribing}>{voiceSpeaking ? "■ Stop speaking" : "♫ Listen to Aahana"}</button>

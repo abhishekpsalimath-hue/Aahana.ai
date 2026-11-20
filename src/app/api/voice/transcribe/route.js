@@ -35,6 +35,20 @@ function configuredProvider() {
   }
 }
 
+export async function GET() {
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) return jsonError("Please sign in to inspect voice capabilities.", 401);
+
+  const provider = configuredProvider();
+  return NextResponse.json({
+    enabled: Boolean(provider?.isAvailable()),
+    locales: provider?.isAvailable() ? provider.supportedLocales : [],
+  }, {
+    headers: { "Cache-Control": "private, no-store" },
+  });
+}
+
 export async function POST(request) {
   const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
