@@ -23,7 +23,7 @@ function makeFetch() {
   const calls = [];
   const fetchImpl = async (url, options) => {
     calls.push({ url, options });
-    if (url.includes("/app/installations/")) return response({ token: "installation-token", expires_at: "2027-01-01T00:00:00Z" });
+    if (url.includes("/app/installations/")) return response({ token: "installation-token", expires_at: "2027-01-01T00:00:00Z", permissions: { contents: "read", pull_requests: "read", checks: "read" } });
     if (url.endsWith("/pulls/7")) return response({
       state: "open", merged: false, base: { sha: baseSha }, head: { sha: headSha },
     });
@@ -48,6 +48,7 @@ test("creates an installation token and uses it only for fixed GitHub API reques
   assert.equal(pr.base.sha, baseSha);
   assert.equal(pr.head.sha, headSha);
   assert.equal(calls[0].options.method, "POST");
+  assert.deepEqual(JSON.parse(calls[0].options.body), { permissions: { contents: "read", pull_requests: "read", checks: "read" } });
   assert.match(calls[0].options.headers.Authorization, /^Bearer /);
   const tokenRequest = calls.find((call) => call.url.endsWith("/pulls/7"));
   assert.equal(tokenRequest.options.headers.Authorization, "Bearer installation-token");
@@ -88,4 +89,12 @@ test("rejects invalid pull request numbers and mutable commit refs", async () =>
   await assert.rejects(() => client.getPullRequest({ pullRequestNumber: 0 }), /github_pull_request_number_invalid/);
   await assert.rejects(() => client.getCommitTree({ sha: "main" }), /github_commit_sha_invalid/);
   await assert.rejects(() => client.getCommitCheckRuns({ sha: "main" }), /github_commit_sha_invalid/);
+});
+
+test("rejects an installation token that grants write permissions", async () => {
+  const fetchImpl = async (url) => url.includes("/app/installations/")
+    ? response({ token: "installation-token", expires_at: "2027-01-01T00:00:00Z", permissions: { contents: "write", pull_requests: "read", checks: "read" } })
+    : response({ state: "open", merged: false, base: { sha: baseSha }, head: { sha: headSha } });
+  const client = createGitHubAppClient({ env, fetchImpl, now: () => Date.parse("2026-11-20T00:00:00Z") });
+  await assert.rejects(() => client.getPullRequest({ pullRequestNumber: 7 }), /github_installation_token_permissions_invalid/);
 });
