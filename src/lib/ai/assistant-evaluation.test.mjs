@@ -58,6 +58,7 @@ test("only a complete 100-case, five-dimension benchmark can pass", () => {
       [...new Set(ASSISTANT_EVALUATION_CASES.map((item) => item.category))].map((category) => [category, {
         expected: 10,
         scored: 10,
+        coverage: 100,
         average: 5,
         dimensionAverages: {
           correctness_and_evidence: 5,
@@ -66,6 +67,13 @@ test("only a complete 100-case, five-dimension benchmark can pass", () => {
           clarity_and_language_match: 5,
           honesty_about_uncertainty: 5,
         },
+        weakestDimensions: [
+          "correctness_and_evidence",
+          "completeness_and_relevance",
+          "reasoning_quality",
+          "clarity_and_language_match",
+          "honesty_about_uncertainty",
+        ],
         criticalFailures: 0,
       }])
     ),
@@ -122,6 +130,7 @@ test("category summaries isolate incomplete categories and their weakest dimensi
   assert.deepEqual(summary.categorySummaries.reasoning, {
     expected: 10,
     scored: 10,
+    coverage: 100,
     average: 4.4,
     dimensionAverages: {
       correctness_and_evidence: 5,
@@ -130,11 +139,14 @@ test("category summaries isolate incomplete categories and their weakest dimensi
       clarity_and_language_match: 5,
       honesty_about_uncertainty: 5,
     },
+    weakestDimensions: ["reasoning_quality"],
     criticalFailures: 0,
   });
   const partial = summarizeEvaluation(results.filter((item) => !item.id.startsWith("reasoning-")));
   assert.equal(partial.categorySummaries.reasoning.scored, 0);
+  assert.equal(partial.categorySummaries.reasoning.coverage, 0);
   assert.equal(partial.categorySummaries.reasoning.average, null);
+  assert.deepEqual(partial.categorySummaries.reasoning.weakestDimensions, []);
   assert.equal(partial.categorySummaries.reasoning.dimensionAverages.reasoning_quality, null);
   assert.equal(partial.releaseEligible, false);
 });
