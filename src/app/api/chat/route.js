@@ -282,6 +282,7 @@ export async function POST(request) {
         });
         if (searchResponse.ok) {
           const searchData = await searchResponse.json();
+          if (request.signal.aborted) return new Response(null, { status: 499 });
           const rankedResults = (Array.isArray(searchData.results) ? searchData.results : [])
             .filter((item) => {
               if (typeof item?.url !== "string" || typeof item?.content !== "string" || !item.content.trim()) return false;
