@@ -324,6 +324,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [selfBuildDraft, setSelfBuildDraft] = useState("");
   const [selfBuildInstruction, setSelfBuildInstruction] = useState("");
   const [selfBuildProposal, setSelfBuildProposal] = useState(null);
+  const [selfBuildReviews, setSelfBuildReviews] = useState([]);
   const [selfBuildAgentResponse, setSelfBuildAgentResponse] = useState("");
   const [selfBuildBusy, setSelfBuildBusy] = useState(false);
   const [selfBuildError, setSelfBuildError] = useState("");
@@ -497,6 +498,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     setSelfBuildError("");
     setSelfBuildFile(null);
     setSelfBuildProposal(null);
+    setSelfBuildReviews([]);
     setSelfBuildPullRequest(null);
     try {
       const response = await fetch("/api/build/self/repository", { cache: "no-store" });
@@ -515,6 +517,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     setSelfBuildBusy(true);
     setSelfBuildError("");
     setSelfBuildProposal(null);
+    setSelfBuildReviews([]);
     setSelfBuildPullRequest(null);
     try {
       const query = new URLSearchParams({ path, ref: selfBuildRepository.baseSha });
@@ -543,6 +546,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     setSelfBuildFile(null);
     setSelfBuildDraft("");
     setSelfBuildProposal(null);
+    setSelfBuildReviews([]);
     setSelfBuildPullRequest(null);
     try {
       const response = await fetch("/api/agent/self-improve", {
@@ -557,26 +561,28 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       if (result.repository?.baseSha) {
         setSelfBuildRepository((current) => current ? { ...current, branch: result.repository.branch, baseSha: result.repository.baseSha } : current);
       }
-      const proposed = Array.isArray(result.proposals) ? result.proposals[0] : null;
-      if (proposed) {
+      const proposedFiles = Array.isArray(result.proposals) ? result.proposals : [];
+      if (proposedFiles.length > 3) throw new Error("Aahana returned more than the three-file review limit.");
+      const reviews = proposedFiles.map((proposed) => {
+        if (!proposed || typeof proposed.path !== "string" || typeof proposed.originalContent !== "string") {
+          throw new Error("Aahana returned an incomplete file proposal.");
+        }
         const validated = validateSourceProposal(JSON.stringify({
           fileName: proposed.path,
           baseVersion: proposed.baseVersion,
           summary: proposed.summary,
           updatedContent: proposed.updatedContent,
         }), { fileName: proposed.path, version: proposed.baseVersion });
-        setSelfBuildFile({
+        return {
           path: proposed.path,
-          sha: proposed.baseVersion,
+          baseVersion: validated.baseVersion,
+          summary: validated.summary,
           originalContent: proposed.originalContent,
-        });
-        setSelfBuildDraft(proposed.originalContent);
-        setSelfBuildProposal({
-          ...validated,
-          baseContent: proposed.originalContent,
-          diff: createSourceDiff(proposed.originalContent, proposed.updatedContent),
-        });
-      }
+          content: validated.updatedContent,
+          diff: createSourceDiff(proposed.originalContent, validated.updatedContent),
+        };
+      });
+      setSelfBuildReviews(reviews);
     } catch (error) {
       setSelfBuildError(error?.name === "AbortError" ? "Aahana stopped the self-improvement task." : error.message || "Could not complete the self-improvement task.");
     } finally {
@@ -600,8 +606,18 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   }
 
   async function createSelfBuildPullRequest() {
-    if (!selfBuildFile || !selfBuildRepository?.baseSha || selfBuildBusy ||
-        selfBuildDraft === selfBuildFile.originalContent) return;
+    if (!selfBuildRepository?.baseSha || selfBuildBusy) return;
+    const reviewedFiles = selfBuildReviews
+      .filter((file) => file.content !== file.originalContent)
+      .map((file) => ({ path: file.path, content: file.content }));
+    if (selfBuildFile && selfBuildDraft !== selfBuildFile.originalContent) {
+      if (reviewedFiles.some((file) => file.path === selfBuildFile.path)) {
+        setSelfBuildError("A file can only appear once in a review set. Close the duplicate manual editor first.");
+        return;
+      }
+      reviewedFiles.push({ path: selfBuildFile.path, content: selfBuildDraft });
+    }
+    if (!reviewedFiles.length || reviewedFiles.length > 3) return;
     setSelfBuildBusy(true);
     setSelfBuildError("");
     setSelfBuildPullRequest(null);
@@ -611,9 +627,9 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           baseSha: selfBuildRepository.baseSha,
-          files: [{ path: selfBuildFile.path, content: selfBuildDraft }],
-          title: "Improve " + selfBuildFile.path,
-          summary: selfBuildProposal?.summary || selfBuildInstruction.trim() || "A reviewed Aahana self-improvement.",
+          files: reviewedFiles,
+          title: "Improve Aahana: " + reviewedFiles.map((file) => file.path.split("/").pop()).join(", "),
+          summary: selfBuildInstruction.trim() || "A reviewed coordinated Aahana self-improvement.",
         }),
       });
       const result = await response.json().catch(() => ({}));
@@ -624,6 +640,10 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     } finally {
       setSelfBuildBusy(false);
     }
+  }
+
+  function updateSelfBuildReview(path, content) {
+    setSelfBuildReviews((current) => current.map((file) => file.path === path ? { ...file, content } : file));
   }
 
   function stopSelfBuildProposal() {
@@ -1502,12 +1522,24 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                 </div>
                 {selfBuildAgentResponse && <p className="build-tools-note" role="status">{selfBuildAgentResponse}</p>}
               </div>
+              {selfBuildReviews.length > 0 && <div className="self-build-editor">
+                <strong>Review coordinated changes ({selfBuildReviews.length}/3 files)</strong>
+                <p className="build-tools-note">Review each complete file and its diff. You can edit any proposal before creating one draft pull request.</p>
+                {selfBuildReviews.map((file, index) => <section className="self-build-diff" key={file.path} aria-label={"Review " + file.path}>
+                  <strong>{index + 1}. {file.path}</strong>
+                  <p>{file.summary}</p>
+                  <pre>{file.diff}</pre>
+                  <label htmlFor={"self-build-review-" + index}>Proposed source (editable)</label>
+                  <textarea id={"self-build-review-" + index} rows={12} spellCheck={false} value={file.content} onChange={(event) => updateSelfBuildReview(file.path, event.target.value)} disabled={selfBuildBusy} />
+                  <p className="build-tools-note">{file.content === file.originalContent ? "No changes currently staged for this file." : "Edited source differs from the original."}</p>
+                </section>)}
+                <button type="button" onClick={createSelfBuildPullRequest} disabled={selfBuildBusy || !selfBuildReviews.some((file) => file.content !== file.originalContent)}>Create one draft pull request for reviewed files</button>
+              </div>}
               {selfBuildFile && <div className="self-build-editor">
-                <strong>Proposed file: {selfBuildFile.path}</strong>
-                <label htmlFor="self-build-source">Review and edit the proposed source</label>
+                <strong>Opened file: {selfBuildFile.path}</strong>
+                <label htmlFor="self-build-source">Review and edit source</label>
                 <textarea id="self-build-source" rows={12} spellCheck={false} value={selfBuildDraft} onChange={(event) => { setSelfBuildDraft(event.target.value); setSelfBuildProposal(null); }} disabled={selfBuildBusy} />
-                {selfBuildProposal && <div className="self-build-diff"><strong>{selfBuildProposal.summary}</strong><pre>{selfBuildProposal.diff}</pre><button type="button" onClick={acceptSelfBuildProposal}>Accept proposal into editor</button></div>}
-                <button type="button" onClick={createSelfBuildPullRequest} disabled={selfBuildBusy || selfBuildDraft === selfBuildFile.originalContent}>Create draft pull request</button>
+                <button type="button" onClick={createSelfBuildPullRequest} disabled={selfBuildBusy || selfBuildDraft === selfBuildFile.originalContent}>Add edited file to draft pull request</button>
               </div>}
               {selfBuildPullRequest && <p className="notice" role="status">Draft pull request created: <a href={selfBuildPullRequest.url} target="_blank" rel="noopener noreferrer">#{selfBuildPullRequest.number} — review on GitHub</a>. It has not been merged or deployed.</p>}
             </section>
