@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { buildImagePrompt } from "@/lib/creative/creative-director.mjs";
+import { buildImageEditPrompt } from "@/lib/creative/creative-director.mjs";
 import { parseImageEditInput } from "@/lib/creative/image-generation.mjs";
 
 export const runtime = "nodejs";
@@ -40,7 +40,12 @@ export async function POST(request) {
     return NextResponse.json({ error: input.error || "Attach a valid reference image." }, { status: 400 });
   }
 
-  const prompt = buildImagePrompt(input.prompt);
+  const referencePrompt = form.get("referencePrompt");
+  if (referencePrompt !== null && (typeof referencePrompt !== "string" || referencePrompt.length > 1200)) {
+    return NextResponse.json({ error: "The reference image context is too long." }, { status: 400 });
+  }
+  const prompt = buildImageEditPrompt(referencePrompt || "", input.prompt);
+  if (!prompt) return NextResponse.json({ error: "Describe the change you want to make." }, { status: 400 });
   const providerForm = new FormData();
   providerForm.set("prompt", prompt);
   providerForm.set("input_image_0", new Blob([await image.arrayBuffer()], { type: image.type }), "reference-image");
