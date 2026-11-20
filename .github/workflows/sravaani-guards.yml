@@ -77,8 +77,6 @@ jobs:
         run: node --test ../../src/lib/voice/speech-fallback-policy.test.mjs
       - name: Test voice route cancellation contract
         run: node --test ../../src/lib/voice/voice-route-cancellation.test.mjs
-      - name: Test voice route cancellation contract
-        run: node --test ../../src/lib/voice/voice-route-cancellation.test.mjs
       - name: Syntax-check authenticated transcription route
         run: node --check ../../src/app/api/voice/transcribe/route.js
       - name: Syntax-check authenticated speech synthesis route
