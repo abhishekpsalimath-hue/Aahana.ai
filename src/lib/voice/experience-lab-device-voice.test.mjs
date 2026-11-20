@@ -24,7 +24,7 @@ test("Experience Lab provides interruptible device speech playback and cleanup",
 
 test("voice panel discloses local browser processing and has responsive interaction styling", () => {
   assert.match(page, /Aahana does not directly upload or store a raw recording/);
-  assert.match(page, /browser.s speech service may process audio under its own privacy terms/);
+  assert.match(page, /browser&amp;apos;s speech service may process audio under its own privacy terms/);
   assert.match(styles, /\.voice-panel-action/);
   assert.match(styles, /\.voice-panel-status/);
   assert.match(styles, /\.voice-panel-error/);
