@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { getSourceFileMimeType, isSupportedSourceFile } from "@/lib/build/source-file-policy.mjs";
 import { createSourceDiff, MAX_PROPOSAL_SOURCE_BYTES, validateSourceProposal } from "@/lib/build/source-proposal.mjs";
 import { isVideoGenerationRequest } from "@/lib/ai/video-generation-policy.mjs";
+import { shouldFallbackToDeviceSpeech } from "@/lib/voice/speech-fallback-policy.mjs";
 import "./experience-lab.css";
 
 const modes = [
@@ -101,6 +102,15 @@ export default function ExperienceLab() {
   const [buildError, setBuildError] = useState("");
   const [focus, setFocus] = useState(false);
   const [activePanel, setActivePanel] = useState("tools");
+  const [voiceLocale, setVoiceLocale] = useState("en-IN");
+  const [voiceListening, setVoiceListening] = useState(false);
+  const [voiceSpeaking, setVoiceSpeaking] = useState(false);
+  const [voiceError, setVoiceError] = useState("");
+  const [voiceSource, setVoiceSource] = useState("");
+  const recognitionRef = useRef(null);
+  const speechRequestRef = useRef(null);
+  const audioPlaybackRef = useRef(null);
+  const audioObjectUrlRef = useRef(null);
   const current = modes.find((item) => item.id === mode) || modes[0];
   const currentPrompts = promptsByMode[mode] || promptsByMode.chat;
 
@@ -108,6 +118,11 @@ export default function ExperienceLab() {
     activeRequest.current?.abort();
     proposalRequest.current?.abort();
     buildRequest.current?.abort();
+    recognitionRef.current?.stop?.();
+    speechRequestRef.current?.abort();
+    audioPlaybackRef.current?.pause?.();
+    if (audioObjectUrlRef.current) URL.revokeObjectURL(audioObjectUrlRef.current);
+    window.speechSynthesis?.cancel?.();
   }, []);
 
   useEffect(() => {
@@ -476,8 +491,130 @@ export default function ExperienceLab() {
     activeRequest.current?.abort();
   }
 
+  function startVoiceInput() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) { setVoiceError("Voice input is not supported in this browser. Try Chrome, or keep typing."); return; }
+    if (voiceListening) { recognitionRef.current?.stop?.(); setVoiceListening(false); return; }
+    window.speechSynthesis?.cancel?.(); setVoiceSpeaking(false); setVoiceError("");
+    const recognition = new SpeechRecognition(); recognition.lang = voiceLocale; recognition.continuous = false; recognition.interimResults = true;
+    recognition.onresult = (event) => { let transcript = ""; for (let i = event.resultIndex; i < event.results.length; i += 1) if (event.results[i].isFinal) transcript += event.results[i][0]?.transcript || ""; if (transcript.trim()) setPrompt((current) => current ? current + " " + transcript.trim() : transcript.trim()); };
+    recognition.onerror = (event) => { setVoiceError(event.error === "not-allowed" ? "Microphone permission was denied. Allow access in browser settings." : event.error === "no-speech" ? "No speech detected. Try again." : "Voice input stopped. You can continue by typing."); setVoiceListening(false); };
+    recognition.onend = () => { setVoiceListening(false); recognitionRef.current = null; };
+    recognitionRef.current = recognition; try { recognition.start(); setVoiceListening(true); } catch { recognitionRef.current = null; setVoiceListening(false); setVoiceError("Voice input could not start. Please try again."); }
+  }
+
+  function stopVoicePlayback() {
+    speechRequestRef.current?.abort();
+    speechRequestRef.current = null;
+    audioPlaybackRef.current?.pause?.();
+    audioPlaybackRef.current = null;
+    if (audioObjectUrlRef.current) URL.revokeObjectURL(audioObjectUrlRef.current);
+    audioObjectUrlRef.current = null;
+    window.speechSynthesis?.cancel?.();
+    setVoiceSpeaking(false);
+  }
+
+  function changePanel(panel) {
+    if (panel !== "voice") {
+      recognitionRef.current?.stop?.();
+      stopVoicePlayback();
+      setVoiceListening(false);
+    }
+    setActivePanel(panel);
+  }
+
+  function speakWithDevice(text) {
+    if (!("speechSynthesis" in window)) throw new Error("Spoken playback is not supported in this browser.");
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = voiceLocale;
+    utterance.rate = 1;
+    utterance.onend = () => setVoiceSpeaking(false);
+    utterance.onerror = () => { setVoiceSpeaking(false); setVoiceError("Device speech playback could not complete."); };
+    setVoiceSource("device");
+    window.speechSynthesis.speak(utterance);
+  }
+
+  async function speakLatestResponse() {
+    const latest = [...thread].reverse().find((item) => item.role === "assistant" && String(item.content || "").trim());
+    if (!latest) { setVoiceError("Ask Aahana something first, then listen to the reply."); return; }
+    if (voiceSpeaking) { stopVoicePlayback(); return; }
+    recognitionRef.current?.stop?.();
+    setVoiceListening(false);
+    window.speechSynthesis?.cancel?.();
+    setVoiceError("");
+    setVoiceSpeaking(true);
+    const controller = new AbortController();
+    speechRequestRef.current = controller;
+    const textToSpeak = latest.content.slice(0, 6000);
+    try {
+      const response = await fetch("/api/voice/speech", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: textToSpeak, locale: voiceLocale }),
+        signal: controller.signal,
+      });
+      if (response.ok) {
+        const audioBlob = await response.blob();
+        if (!audioBlob.size || !audioBlob.type.startsWith("audio/")) throw new Error("Aahana's speech service returned invalid audio.");
+        const objectUrl = URL.createObjectURL(audioBlob);
+        audioObjectUrlRef.current = objectUrl;
+        const audio = new Audio(objectUrl);
+        audioPlaybackRef.current = audio;
+        audio.onended = () => {
+          if (audioObjectUrlRef.current === objectUrl) {
+            URL.revokeObjectURL(objectUrl);
+            audioObjectUrlRef.current = null;
+            audioPlaybackRef.current = null;
+          }
+          speechRequestRef.current = null;
+          setVoiceSpeaking(false);
+        };
+        audio.onerror = () => {
+          if (audioObjectUrlRef.current === objectUrl) {
+            URL.revokeObjectURL(objectUrl);
+            audioObjectUrlRef.current = null;
+            audioPlaybackRef.current = null;
+          }
+          speechRequestRef.current = null;
+          setVoiceSpeaking(false);
+          setVoiceError("Aahana's generated speech could not be played.");
+        };
+        setVoiceSource("maya");
+        await audio.play();
+        return;
+      }
+      if (response.status === 401 || response.status === 413) {
+        const result = await response.json().catch(() => ({}));
+        throw new Error(result.error || "Spoken response could not be authorised.");
+      }
+      if (!shouldFallbackToDeviceSpeech(response.status)) {
+        const result = await response.json().catch(() => ({}));
+        throw new Error(result.error || "Aahana's speech service could not complete this request.");
+      }
+    } catch (error) {
+      if (controller.signal.aborted) return;
+      if (error instanceof Error && !/Failed to fetch|NetworkError/i.test(error.message)) {
+        setVoiceError(error.message || "Spoken playback failed.");
+        setVoiceSpeaking(false);
+        return;
+      }
+    }
+    if (controller.signal.aborted) return;
+    speechRequestRef.current = null;
+    try {
+      speakWithDevice(textToSpeak);
+      setVoiceError("Using your browser's speech voice because Aahana's private voice service is unavailable.");
+    } catch (error) {
+      setVoiceSpeaking(false);
+      setVoiceError(error.message || "Spoken playback is unavailable.");
+    }
+  }
   function startNewSession() {
     if (busy) return;
+    recognitionRef.current?.stop?.();
+    stopVoicePlayback();
+    setVoiceListening(false);
+    setVoiceSpeaking(false);
     setThread([]);
     setGeneratedImage(null);
     setGeneratedVideo(null);
@@ -498,10 +635,10 @@ export default function ExperienceLab() {
       <aside className="lab-rail" aria-label="Workspace navigation">
         <button className="rail-new" type="button" onClick={startNewSession} aria-label="New session">＋</button>
         <span className="rail-separator" />
-        <button className={mode === "chat" && activePanel === "tools" ? "rail-button active" : "rail-button"} type="button" title="Home" aria-label="Home" aria-current={mode === "chat" && activePanel === "tools" ? "page" : undefined} onClick={() => { setMode("chat"); startNewSession(); setActivePanel("tools"); }}>⌂</button>
-        <button className={activePanel === "discover" ? "rail-button active" : "rail-button"} type="button" title="Discover" aria-pressed={activePanel === "discover"} onClick={() => setActivePanel("discover")}>✧</button>
-        <button className={activePanel === "library" ? "rail-button active" : "rail-button"} type="button" title="Library" aria-pressed={activePanel === "library"} onClick={() => setActivePanel("library")}>▤</button>
-        <div className="rail-bottom"><button className="rail-button" type="button" title="Settings" onClick={() => setActivePanel("settings")}>⚙</button><span className="rail-avatar">A</span></div>
+        <button className={mode === "chat" && activePanel === "tools" ? "rail-button active" : "rail-button"} type="button" title="Home" aria-label="Home" aria-current={mode === "chat" && activePanel === "tools" ? "page" : undefined} onClick={() => { setMode("chat"); startNewSession(); changePanel("tools"); }}>⌂</button>
+        <button className={activePanel === "discover" ? "rail-button active" : "rail-button"} type="button" title="Discover" aria-pressed={activePanel === "discover"} onClick={() => changePanel("discover")}>✧</button>
+        <button className={activePanel === "library" ? "rail-button active" : "rail-button"} type="button" title="Library" aria-pressed={activePanel === "library"} onClick={() => changePanel("library")}>▤</button>
+        <div className="rail-bottom"><button className="rail-button" type="button" title="Settings" onClick={() => changePanel("settings")}>⚙</button><span className="rail-avatar">A</span></div>
       </aside>
 
       <section className="lab-main">
@@ -531,7 +668,7 @@ export default function ExperienceLab() {
           <form className="lab-composer" onSubmit={previewFlow}>
             <label className="sr-only" htmlFor="lab-composer">Write a message for the preview</label>
             <textarea id="lab-composer" value={prompt} onChange={(event) => setPrompt(event.target.value)} placeholder={mode === "build" ? "Describe the product you want to bring to life..." : mode === "create" ? "Describe the world you want to create..." : "Ask anything. Start anywhere..."} rows={3} />
-            <div className="composer-controls"><div className="composer-tools"><button type="button" onClick={() => setActivePanel(activePanel === "attach" ? "tools" : "attach")} title="Add context">＋ <span>Attach</span></button><button type="button" onClick={() => setActivePanel(activePanel === "tools" ? "discover" : "tools")} title="Explore tools">◈ <span>Tools</span></button><span className="composer-divider" /><span className="composer-mode-label">{current.label} mode</span></div><div className="composer-submit"><button type="button" className="voice-button" title="Voice preview" onClick={() => setActivePanel("voice")}>◖</button>{busy ? <button type="button" className="lab-send lab-stop" onClick={stopGeneration}>Stop <span>■</span></button> : <button type="submit" className="lab-send" disabled={!prompt.trim()}>Send <span>↗</span></button>}</div></div>
+            <div className="composer-controls"><div className="composer-tools"><button type="button" onClick={() => changePanel(activePanel === "attach" ? "tools" : "attach")} title="Add context">＋ <span>Attach</span></button><button type="button" onClick={() => changePanel(activePanel === "tools" ? "discover" : "tools")} title="Explore tools">◈ <span>Tools</span></button><span className="composer-divider" /><span className="composer-mode-label">{current.label} mode</span></div><div className="composer-submit"><button type="button" className="voice-button" title="Voice preview" onClick={() => changePanel("voice")}>◖</button>{busy ? <button type="button" className="lab-send lab-stop" onClick={stopGeneration}>Stop <span>■</span></button> : <button type="submit" className="lab-send" disabled={!prompt.trim()}>Send <span>↗</span></button>}</div></div>
           </form>
           {mode === "build" && <section className="build-console" aria-label="Project build workspace">
             <div className="build-console-heading"><div><span>PROJECT WORKSPACE</span><h2>Build and verify</h2></div><div className="build-console-heading-actions"><button type="button" onClick={() => buildFileInput.current?.click()} disabled={!selectedProjectId || fileBusy}>{fileBusy ? "Uploading…" : "＋ Add source files"}</button><button type="button" onClick={createBuildProject}>＋ New project</button><input ref={buildFileInput} type="file" multiple accept=".js,.jsx,.ts,.tsx,.mjs,.cjs,.css,.html,.htm,.json,.md,.txt,.py,.toml,.yaml,.yml,.sql" onChange={uploadBuildFiles} hidden /></div></div>
@@ -583,15 +720,27 @@ export default function ExperienceLab() {
       </section>
 
       <aside className="lab-inspector">
-        <div className="inspector-head"><span>YOUR CO-PILOT</span><button type="button" onClick={() => setActivePanel("tools")} aria-label="Reset side panel">···</button></div>
+        <div className="inspector-head"><span>YOUR CO-PILOT</span><button type="button" onClick={() => changePanel("tools")} aria-label="Reset side panel">···</button></div>
         <div className="inspector-profile"><div className="inspector-orb"><OrbitMark /></div><div><strong>Aahana</strong><small>Ready to explore <span className="ready-dot" /></small></div></div>
-        <div className="inspector-tabs" role="group" aria-label="Co-pilot panel"><button type="button" className={activePanel === "tools" ? "active" : ""} aria-pressed={activePanel === "tools"} onClick={() => setActivePanel("tools")}>Tools</button><button type="button" className={activePanel === "discover" ? "active" : ""} aria-pressed={activePanel === "discover"} onClick={() => setActivePanel("discover")}>Discover</button><button type="button" className={activePanel === "library" ? "active" : ""} aria-pressed={activePanel === "library"} onClick={() => setActivePanel("library")}>Library</button></div>
+        <div className="inspector-tabs" role="group" aria-label="Co-pilot panel"><button type="button" className={activePanel === "tools" ? "active" : ""} aria-pressed={activePanel === "tools"} onClick={() => changePanel("tools")}>Tools</button><button type="button" className={activePanel === "discover" ? "active" : ""} aria-pressed={activePanel === "discover"} onClick={() => changePanel("discover")}>Discover</button><button type="button" className={activePanel === "library" ? "active" : ""} aria-pressed={activePanel === "library"} onClick={() => changePanel("library")}>Library</button></div>
         <div className="inspector-content">
-          {activePanel === "tools" && <><div className="inspector-section-label">CAPABILITIES</div>{[["⌘","Build workspace","Product guidance · engine in development"],["✧","Creative studio","Creative direction · media tools in development"],["⌕","Deep research","Source-backed answers when available"],["◖","Voice conversation","Voice runtime in development"]].map(([mark,title,detail]) => <button type="button" className="capability-row" key={title} onClick={() => setActivePanel(title === "Voice conversation" ? "voice" : "discover")}><span className="capability-mark">{mark}</span><span><strong>{title}</strong><small>{detail}</small></span><b>↗</b></button>)}</>}
+          {activePanel === "tools" && <><div className="inspector-section-label">CAPABILITIES</div>{[["⌘","Build workspace","Product guidance · engine in development"],["✧","Creative studio","Creative direction · media tools in development"],["⌕","Deep research","Source-backed answers when available"],["◖","Voice conversation","Voice runtime in development"]].map(([mark,title,detail]) => <button type="button" className="capability-row" key={title} onClick={() => changePanel(title === "Voice conversation" ? "voice" : "discover")}><span className="capability-mark">{mark}</span><span><strong>{title}</strong><small>{detail}</small></span><b>↗</b></button>)}</>}
           {activePanel === "discover" && <div className="inspector-empty"><span>✧</span><strong>Discover your next move</strong><p>Explore connected experiences from one calm, intelligent workspace.</p><button type="button" onClick={() => setMode("research")}>Explore research mode</button></div>}
           {activePanel === "library" && <div className="inspector-empty"><span>▤</span><strong>Your creative memory</strong><p>A home for saved ideas, projects and useful discoveries.</p><small>Library preview · no data stored</small></div>}
           {activePanel === "attach" && <div className="inspector-empty"><span>＋</span><strong>Bring context in</strong><p>Files, images and links can become part of the same conversation.</p><small>Attachment controls are visual only in this concept.</small></div>}
-          {activePanel === "voice" && <div className="inspector-empty"><span>◖</span><strong>Voice, in the flow</strong><p>Imagine speaking, interrupting and switching between voice and text without losing context.</p><small>Voice is not connected in this preview.</small></div>}
+          {activePanel === "voice" && <section className="voice-panel" aria-label="Voice controls">
+            <span className="voice-panel-kicker">SPEAK NATURALLY</span><h2>Voice, in the flow.</h2>
+            <p>Speak a prompt or listen to Aahana’s latest reply. These controls use your browser and device.</p>
+            <label htmlFor="lab-voice-language">Speech language</label>
+            <select id="lab-voice-language" value={voiceLocale} onChange={(event) => setVoiceLocale(event.target.value)}>
+              <option value="en-IN">English (India)</option><option value="kn-IN">Kannada</option><option value="hi-IN">Hindi</option><option value="ta-IN">Tamil</option><option value="te-IN">Telugu</option><option value="ml-IN">Malayalam</option><option value="bn-IN">Bengali</option><option value="en-US">English (US)</option>
+            </select>
+            <button type="button" className={voiceListening ? "voice-panel-action listening" : "voice-panel-action"} onClick={startVoiceInput} aria-pressed={voiceListening}>{voiceListening ? "■ Stop listening" : "◖ Speak a prompt"}</button>
+            <button type="button" className="voice-panel-action secondary" onClick={speakLatestResponse} disabled={!thread.some((item) => item.role === "assistant" && String(item.content || "").trim())}>{voiceSpeaking ? "■ Stop speaking" : "♫ Listen to Aahana"}</button>
+            <div className="voice-panel-status" role="status" aria-live="polite">{voiceListening ? "Listening on this device…" : voiceSpeaking ? (voiceSource === "maya" ? "Aahana's private voice is speaking…" : "Device voice is speaking…") : "Ready when you are."}</div>
+            {voiceError && <p className="voice-panel-error" role="alert">{voiceError}</p>}
+            <small className="voice-panel-privacy">Device speech preview. Aahana does not directly upload or store a raw recording here. Your browser&apos;s speech service may process audio under its own privacy terms; browser support and installed voices vary.</small>
+          </section>}
           {activePanel === "settings" && <div className="inspector-empty"><span>⚙</span><strong>Your space, your rules</strong><p>Shape how Aahana responds, remembers and works with you.</p></div>}
         </div>
         <div className="inspector-footer"><span className="footer-spark">✳</span><div><strong>One intelligence.</strong><small>Many ways to work together.</small></div></div>
