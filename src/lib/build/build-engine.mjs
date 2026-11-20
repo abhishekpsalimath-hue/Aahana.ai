@@ -29,6 +29,7 @@ export async function executeBuildTask({
   projectId,
   sandboxName,
   SandboxClient,
+  signal,
 }) {
   const workspaceFiles = validateWorkspaceFiles(files);
   const { manifest, hasDependencies } = validatePackageManifest(workspaceFiles);
@@ -63,17 +64,28 @@ export async function executeBuildTask({
     args = ["--", safeEntrypoint];
   }
 
+  if (signal?.aborted) throw new Error("Build cancelled before sandbox creation.");
+
   const Client = SandboxClient || (await import("@vercel/sandbox")).Sandbox;
   const sandbox = await Client.create(
     createSafeSandboxOptions({ name: sandboxName, projectId }),
   );
 
+  let stopPromise;
+  const stopSandbox = () => {
+    if (!stopPromise) stopPromise = Promise.resolve().then(() => sandbox.stop()).catch(() => {});
+    return stopPromise;
+  };
+  const onAbort = () => { void stopSandbox(); };
+  signal?.addEventListener("abort", onAbort, { once: true });
   let installOutput = "";
   try {
+    if (signal?.aborted) throw new Error("Build cancelled before workspace upload.");
     await sandbox.writeFiles(workspaceFiles.map(({ path, content }) => ({
       path,
       content: Buffer.from(content, "utf8"),
     })));
+    if (signal?.aborted) throw new Error("Build cancelled after workspace upload.");
 
     if (hasDependencies) {
       let installResult;
@@ -91,6 +103,8 @@ export async function executeBuildTask({
         await sandbox.update({ networkPolicy: "deny-all" });
       }
 
+      if (signal?.aborted) throw new Error("Build cancelled during dependency installation.");
+
       if (installResult.exitCode !== 0) {
         return {
           status: "failed",
@@ -102,12 +116,14 @@ export async function executeBuildTask({
       }
     }
 
+    if (signal?.aborted) throw new Error("Build cancelled before project execution.");
     const result = await sandbox.runCommand({
       cmd: command,
       args,
       cwd: "/vercel/sandbox",
     });
     const [stdout, stderr] = await readOutput(result);
+    if (signal?.aborted) throw new Error("Build cancelled during project execution.");
     return {
       status: result.exitCode === 0 ? "passed" : "failed",
       operation,
@@ -116,7 +132,8 @@ export async function executeBuildTask({
       stderr: stderr.slice(0, OUTPUT_LIMIT),
     };
   } finally {
+    signal?.removeEventListener("abort", onAbort);
     await sandbox.update({ networkPolicy: "deny-all" }).catch(() => {});
-    await sandbox.stop();
+    await stopSandbox();
   }
 }
