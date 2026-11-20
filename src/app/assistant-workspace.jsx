@@ -245,6 +245,7 @@ function evaluateArithmetic(input) {
 export default function Home({ userEmail = "", aiEnabled = false }) {
   const router = useRouter();
   const conversationEndRef = useRef(null);
+  const promptInputRef = useRef(null);
   const modeTabRefs = useRef({});
   const [mode, setMode] = useState("solve");
   function handleModeTabKeyDown(event, currentIndex) {
@@ -260,6 +261,10 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     modeTabRefs.current[nextMode.id]?.focus();
   }
   const [prompt, setPrompt] = useState("");
+  function applyStarterPrompt(value) {
+    setPrompt(value);
+    promptInputRef.current?.focus();
+  }
   const [imageFile, setImageFile] = useState(null);
   const [messages, setMessages] = useState([]);
   useEffect(() => {
@@ -1167,7 +1172,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                 <h2>{modes.find((item) => item.id === mode)?.label} with Aahana</h2>
                 <p>{modes.find((item) => item.id === mode)?.description}</p>
                 <button className="mode-launchpad-action" type="button"
-                  onClick={() => setPrompt(modes.find((item) => item.id === mode)?.prompt || "")}>
+                  onClick={() => applyStarterPrompt(modes.find((item) => item.id === mode)?.prompt || "")}>
                   Use a starting prompt <span aria-hidden="true">↗</span>
                 </button>
               </div>
@@ -1268,7 +1273,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
               </button>
             </div>
             <label className="sr-only" htmlFor="prompt">What would you like to work on?</label>
-            <textarea id="prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)}
+            <textarea ref={promptInputRef} id="prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); } }}
               placeholder={aiEnabled ? "What would you like to work on today?" : "Try a calculation, e.g. 2 + 2 (offline)"} rows={3} disabled={busy} />
             <div className="composer-footer">
@@ -1282,7 +1287,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
               <div className="notice">{aiEnabled ? "Your workspace is ready. Send a prompt to begin." : "Your workspace is ready. AI activation is pending billing and connection checks. Prompts are not sent yet."}</div>
               <div className="starter-grid">
                 {starters.map((item, index) => (
-                  <button className="starter" type="button" key={item} onClick={() => setPrompt(item)}>
+                  <button className="starter" type="button" key={item} onClick={() => applyStarterPrompt(item)}>
                     <span className="starter-icon">{["◇", "↗", "✎", "⌘"][index]}</span>
                     <span>{item}</span>
                     <span className="starter-arrow">↗</span>
