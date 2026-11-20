@@ -17,6 +17,7 @@ on:
     paths:
       - "src/app/api/videos/**"
       - "src/app/assistant-workspace*"
+      - "src/app/experience-lab/**"
       - "src/app/globals.css"
       - "src/lib/ai/video-generation-policy.*"
       - "src/lib/ai/media-route-contract.test.mjs"
