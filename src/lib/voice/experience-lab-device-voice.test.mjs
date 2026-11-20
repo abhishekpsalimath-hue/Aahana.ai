@@ -24,7 +24,7 @@ test("Experience Lab provides interruptible device speech playback and cleanup",
 
 test("voice panel discloses local browser processing and has responsive interaction styling", () => {
   assert.match(page, /audio is sent to the configured SraVaani service only after you check the consent box/);
-  assert.match(page, /Browser speech recognition is a separate device\\/browser service with its own privacy terms/);
+  assert.ok(page.includes("Browser speech recognition is a separate device/browser service with its own privacy terms"));
   assert.match(styles, /\.voice-panel-action/);
   assert.match(styles, /\.voice-panel-status/);
   assert.match(styles, /\.voice-panel-error/);
