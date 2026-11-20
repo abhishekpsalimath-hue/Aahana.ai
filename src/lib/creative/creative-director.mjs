@@ -16,10 +16,34 @@ const VIDEO_DIRECTIONS = Object.freeze({
   anime: "Animation direction: maintain consistent character design, clean silhouettes, expressive but controlled motion, coherent staging, and stable visual style across every frame.",
 });
 
-export function buildImagePrompt(prompt, quality = "standard") {
-  if (quality === "standard") return prompt;
-  if (quality !== "masterpiece") return null;
-  return `${prompt}\n\n${IMAGE_MASTERPIECE_DIRECTION}`;
+const SACRED_SUBJECT_DIRECTIONS = [
+  {
+    pattern: /\\b(lord\\s+)?shiva\\b|\\bmahadev\\b|\\bmahadeva\\b|\\bshankar\\b/i,
+    direction: "Depict Lord Shiva (Mahadev) unmistakably as the Hindu deity, not a generic saint, monk, guru, or ordinary human. Include recognizable traditional iconography: blue-toned throat (Neelkanth), matted jatā hair with the crescent moon and a stream of the Ganga, tripundra ash stripes and third eye, rudraksha beads, and a trident (trishula); a serene divine presence. If seated, use a yogic Himalayan setting or Mount Kailash. Keep the face divine and dignified, with coherent anatomy and all requested attributes clearly visible."
+  },
+  {
+    pattern: /\\b(hanuman|anjaneya|anjaneya swamy|maruti)\\b/i,
+    direction: "Depict Lord Hanuman (Anjaneya) unmistakably as the Hindu monkey-faced deity, not a human saint, monk, or generic warrior. Preserve the clearly recognizable vanara face and muzzle, expressive compassionate divine eyes, traditional crown or ornaments where appropriate, gada (mace), and devotional strength. If the scene calls for it, include a saffron dhoti and a reverent devotional pose. Do not replace the monkey-faced divine form with an ordinary human face."
+  },
+  {
+    pattern: /\\b(lord\\s+)?ganesha\\b|\\bganapati\\b|\\bvinayaka\\b/i,
+    direction: "Depict Lord Ganesha unmistakably as the elephant-headed Hindu deity, with a clear elephant face and trunk, traditional crown and ornaments, and his characteristic divine form. Never substitute an ordinary human face."
+  },
+  {
+    pattern: /\\b(lord\\s+)?krishna\\b/i,
+    direction: "Depict Lord Krishna unmistakably as the Hindu deity, with a serene youthful divine appearance, blue-toned skin, peacock feather, yellow garments and flute when suitable to the requested scene. Do not substitute a generic human saint."
+  },
+  {
+    pattern: /\\b(lord\\s+)?rama\\b|\\bshri\\s+ram\\b/i,
+    direction: "Depict Lord Rama unmistakably as the Hindu deity, with traditional divine iconography such as a bow, dignified royal-yet-humble presence, and appropriate traditional attire. Do not depict a generic monk or saint."
+  }
+];
+
+export function buildImagePrompt(prompt, quality = "masterpiece") {
+  if (quality !== "standard" && quality !== "masterpiece") return null;
+  const subject = SACRED_SUBJECT_DIRECTIONS.find(({ pattern }) => pattern.test(prompt));
+  const direction = quality === "masterpiece" ? IMAGE_MASTERPIECE_DIRECTION : "";
+  return [prompt, subject?.direction, direction].filter(Boolean).join("\\n\\n");
 }
 
 export function buildVideoPrompt(prompt, director = "cinematic") {
