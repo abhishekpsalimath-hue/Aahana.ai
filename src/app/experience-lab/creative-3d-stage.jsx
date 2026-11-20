@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
+import { GLTFExporter } from "three/addons/exporters/GLTFExporter.js";
 
 const shapes = {
   knot: { label: "Torus knot", geometry: () => new THREE.TorusKnotGeometry(0.92, 0.28, 160, 24) },
@@ -12,10 +13,45 @@ const shapes = {
 
 export default function Creative3DStage() {
   const hostRef = useRef(null);
+  const meshRef = useRef(null);
   const [shape, setShape] = useState("knot");
   const [wireframe, setWireframe] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [error, setError] = useState("");
+  const [exporting, setExporting] = useState(false);
+  const [exportMessage, setExportMessage] = useState("");
+
+  const exportModel = async () => {
+    const source = meshRef.current;
+    if (!source || exporting) return;
+    setExporting(true);
+    setExportMessage("");
+    try {
+      const exportScene = new THREE.Scene();
+      const clone = source.clone();
+      clone.geometry = source.geometry.clone();
+      clone.material = source.material.clone();
+      exportScene.add(clone);
+      const exporter = new GLTFExporter();
+      const result = await exporter.parseAsync(exportScene, { binary: true });
+      const blob = new Blob([result], { type: "model/gltf-binary" });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `aahana-${shape}-studio.glb`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      clone.geometry.dispose();
+      clone.material.dispose();
+      setExportMessage("GLB model exported. Ready for your 3D workflow.");
+    } catch (cause) {
+      setExportMessage("Export could not be completed on this device. Please try again.");
+    } finally {
+      setExporting(false);
+    }
+  };
 
   useEffect(() => {
     const host = hostRef.current;
@@ -136,7 +172,7 @@ export default function Creative3DStage() {
       setError("This device could not start a WebGL preview. Try a browser with hardware acceleration enabled.");
       return () => {
         disposed = true;
-        if (renderer) renderer.dispose();
+        meshRef.current = null;\n        if (renderer) renderer.dispose();
       };
     }
   }, [shape, wireframe]);
@@ -157,9 +193,9 @@ export default function Creative3DStage() {
           </select>
         </label>
         <label className="creative-3d-toggle"><input type="checkbox" checked={wireframe} onChange={(event) => setWireframe(event.target.checked)} /> Wireframe</label>
-        <span className="creative-3d-hint">{dragging ? "Drag to rotate" : "Drag object to explore"}</span>
+        <span className="creative-3d-hint">{dragging ? "Drag to rotate" : "Drag object to explore"}</span>\n        <button type="button" className="creative-3d-export" onClick={exportModel} disabled={exporting || Boolean(error)}>{exporting ? "Preparing GLB…" : "Export .GLB"}</button>
       </div>
-      <p className="creative-3d-note">Real-time Three.js preview · Procedural geometry · Runs in your browser</p>
+      {exportMessage && <p className="creative-3d-export-status" role="status">{exportMessage}</p>}\n      <p className="creative-3d-note">Real-time Three.js preview · Exportable GLB model · Runs in your browser</p>
     </section>
   );
 }
