@@ -113,6 +113,13 @@ test("Build workspace assembly fails closed and shares strict source/path valida
 });
 
 
+test("Experience Lab aborts active chat, proposal, and build requests when unmounted", () => {
+  assert.match(page, /useEffect\(\(\) => \(\) => \{/);
+  assert.match(page, /activeRequest\.current\?\.abort\(\)/);
+  assert.match(page, /proposalRequest\.current\?\.abort\(\)/);
+  assert.match(page, /buildRequest\.current\?\.abort\(\)/);
+});
+
 test("Build Mode exposes cancellation for an in-flight isolated execution", () => {
   assert.match(page, /const buildRequest = useRef\(null\)/);
   assert.match(page, /signal: controller\.signal/);
