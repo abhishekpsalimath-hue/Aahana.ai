@@ -452,6 +452,12 @@ export default function ExperienceLab() {
     }
   }
 
+  function switchMode(nextMode) {
+    if (activeRequest.current) activeRequest.current.abort();
+    setMode(nextMode);
+    setRequestError("");
+  }
+
   function stopGeneration() {
     activeRequest.current?.abort();
   }
@@ -477,7 +483,7 @@ export default function ExperienceLab() {
       <aside className="lab-rail" aria-label="Workspace navigation">
         <button className="rail-new" type="button" onClick={startNewSession} aria-label="New session">＋</button>
         <span className="rail-separator" />
-        <button className={mode === "chat" && activePanel === "tools" ? "rail-button active" : "rail-button"} type="button" title="Home" aria-label="Home" aria-current={mode === "chat" && activePanel === "tools" ? "page" : undefined} onClick={() => { setMode("chat"); startNewSession(); setActivePanel("tools"); }}>⌂</button>
+        <button className={mode === "chat" && activePanel === "tools" ? "rail-button active" : "rail-button"} type="button" title="Home" aria-label="Home" aria-current={mode === "chat" && activePanel === "tools" ? "page" : undefined} onClick={() => { switchMode("chat"); startNewSession(); setActivePanel("tools"); }}>⌂</button>
         <button className={activePanel === "discover" ? "rail-button active" : "rail-button"} type="button" title="Discover" aria-pressed={activePanel === "discover"} onClick={() => setActivePanel("discover")}>✧</button>
         <button className={activePanel === "library" ? "rail-button active" : "rail-button"} type="button" title="Library" aria-pressed={activePanel === "library"} onClick={() => setActivePanel("library")}>▤</button>
         <div className="rail-bottom"><button className="rail-button" type="button" title="Settings" onClick={() => setActivePanel("settings")}>⚙</button><span className="rail-avatar">A</span></div>
@@ -487,7 +493,7 @@ export default function ExperienceLab() {
         <div className="lab-heading-row"><div><div className="lab-kicker">YOUR SPACE TO THINK BIGGER</div><h1>What shall we <span>imagine?</span></h1><p>One intelligence. Infinite ways to explore, create and build.</p></div><div className="lab-heading-orb"><OrbitMark /></div></div>
 
         <nav className="lab-modebar" aria-label="Choose an experience">
-          {modes.map((item) => <button type="button" key={item.id} onClick={() => { setMode(item.id); setRequestError(""); }} className={mode === item.id ? "lab-mode active" : "lab-mode"} aria-pressed={mode === item.id}><span>{item.mark}</span>{item.label}</button>)}
+          {modes.map((item) => <button type="button" key={item.id} onClick={() => switchMode(item.id)} className={mode === item.id ? "lab-mode active" : "lab-mode"} aria-pressed={mode === item.id}><span>{item.mark}</span>{item.label}</button>)}
         </nav>
 
         <div className="lab-workspace">
