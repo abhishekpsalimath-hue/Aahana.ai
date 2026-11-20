@@ -462,6 +462,7 @@ export async function POST(request) {
       p_conversation_id: conversationId,
       p_content: verifiedResearchReply.slice(0, 16000),
     });
+    if (request.signal.aborted) return new Response(null, { status: 499 });
     await supabase.from("conversations").update({ updated_at: new Date().toISOString() }).eq("id", conversationId);
     if (saveError) console.error("Aahana research reply persistence failed:", saveError.message);
     return new Response(verifiedResearchReply, {

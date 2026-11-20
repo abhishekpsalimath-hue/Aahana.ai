@@ -7,6 +7,7 @@ const route = readFileSync(new URL("../../app/api/chat/route.js", import.meta.ur
 test("buffered research checks client cancellation after provider parsing and before persistence", () => {
   assert.match(route, /researchPayload = await upstream\.json\(\);\s*const abortResponse = getClientAbortResponse\(request\.signal\);\s*if \(abortResponse\) return abortResponse;/);
   assert.match(route, /const abortBeforeSave = getClientAbortResponse\(request\.signal\);\s*if \(abortBeforeSave\) return abortBeforeSave;\s*const \{ error: saveError \} = await supabase\.rpc\("save_ai_reply"/);
+  assert.match(route, /await supabase\.rpc\("save_ai_reply", \{[\s\S]*?\}\);\s*if \(request\.signal\.aborted\) return new Response\(null, \{ status: 499 \}\);\s*await supabase\.from\("conversations"\)\.update/);
 });
 
 test("live search stops before processing results or calling the model when the client disconnects during response parsing", () => {
