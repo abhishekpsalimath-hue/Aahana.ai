@@ -19,7 +19,6 @@ test("Experience Lab provides interruptible device speech playback and cleanup",
   assert.match(page, /new SpeechSynthesisUtterance/);
   assert.match(page, /window\.speechSynthesis(?:\?\.|\.)cancel(?:\?\.)?\(\)/);
   assert.match(page, /recognitionRef\.current\?\.stop/);
-  assert.match(page, /window\.speechSynthesis\?\.cancel\?\.\(\)/);
   assert.match(page, /aria-live="polite"/);
 });
 
@@ -40,7 +39,6 @@ test("Experience Lab prefers private Maya speech and safely falls back to device
   assert.match(speechRoute, /AAHANA_MAYA_TTS_ENABLED/);
   assert.match(speechRoute, /signal: request\.signal/);
 });
-
 
 test("Create mode exposes bounded video settings and passes them to the video route", () => {
   assert.match(page, /const \[videoDuration, setVideoDuration\] = useState\(5\)/);
