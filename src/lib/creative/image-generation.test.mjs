@@ -8,16 +8,22 @@ test("defaults to automatic masterpiece image direction without asking the user 
   });
 });
 
-test("accepts explicit supported eight-step image generation", () => {
-  assert.deepEqual(parseImageGenerationInput({ prompt: "A moonlit forest", steps: 8 }), {
-    ok: true, prompt: "A moonlit forest", steps: 8, style: "none", quality: "standard",
-  });
+test("accepts explicit supported eight-step image generation with automatic creative direction", () => {
+  const result = parseImageGenerationInput({ prompt: "A moonlit forest", steps: 8 });
+  assert.equal(result.ok, true);
+  assert.equal(result.steps, 8);
+  assert.equal(result.style, "none");
+  assert.equal(result.quality, "masterpiece");
+  assert.match(result.prompt, /A moonlit forest/);
+  assert.match(result.prompt, /portfolio-worthy hero image/);
 });
 
 test("trims prompts and rejects empty or overlong prompts", () => {
   assert.equal(parseImageGenerationInput({ prompt: "  " }).ok, false);
   assert.equal(parseImageGenerationInput({ prompt: "x".repeat(2049) }).ok, false);
-  assert.equal(parseImageGenerationInput({ prompt: "  a portrait  " }).prompt, "a portrait");
+  const trimmed = parseImageGenerationInput({ prompt: "  a portrait  " });
+  assert.equal(trimmed.ok, true);
+  assert.match(trimmed.prompt, /^a portrait\n\nCreative direction:/);
 });
 
 test("rejects unsupported step values instead of forwarding them to the provider", () => {
