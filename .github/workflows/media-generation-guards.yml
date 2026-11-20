@@ -9,6 +9,7 @@ on:
       - "src/app/globals.css"
       - "src/lib/ai/video-generation-policy.*"
       - "src/lib/ai/media-route-contract.test.mjs"
+      - "src/lib/voice/experience-lab-device-voice.test.mjs"
       - ".github/workflows/media-generation-guards.yml"
       - "package.json"
   push:
@@ -41,7 +42,7 @@ jobs:
         with:
           node-version: 22
       - run: npm install --no-audit --no-fund
-      - run: node --test src/lib/ai/video-generation-policy.test.mjs src/lib/ai/media-route-contract.test.mjs
+      - run: node --test src/lib/ai/video-generation-policy.test.mjs src/lib/ai/media-route-contract.test.mjs src/lib/voice/experience-lab-device-voice.test.mjs
       # The flat ESLint config lands with the Stage 2 workspace foundation.
       # Supply the same config temporarily so this parallel branch can lint independently.
       - name: Prepare shared ESLint config for verification
