@@ -10,6 +10,9 @@ export function encodePcm16Wav(chunks, sampleRate) {
   let sampleCount = 0;
   for (const chunk of chunks) {
     if (!(chunk instanceof Float32Array)) throw new Error("Audio sample data is invalid.");
+    for (let index = 0; index < chunk.length; index += 1) {
+      if (!Number.isFinite(chunk[index])) throw new Error("Audio samples must contain only finite values.");
+    }
     sampleCount += chunk.length;
   }
   const dataBytes = sampleCount * 2;

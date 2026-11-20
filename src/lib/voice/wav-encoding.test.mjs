@@ -20,3 +20,17 @@ test("rejects invalid sample rates, empty audio, non-float chunks and oversized 
   const huge = new Float32Array(8 * 1024 * 1024);
   assert.throws(() => encodePcm16Wav([huge], 16000), /15 MB/);
 });
+
+
+test("rejects NaN and infinite samples instead of silently encoding corrupted audio", () => {
+  assert.throws(() => encodePcm16Wav([new Float32Array([0, Number.NaN])], 16000), /finite values/);
+  assert.throws(() => encodePcm16Wav([new Float32Array([0, Number.POSITIVE_INFINITY])], 16000), /finite values/);
+  assert.throws(() => encodePcm16Wav([new Float32Array([Number.NEGATIVE_INFINITY])], 16000), /finite values/);
+});
+
+test("clamps finite out-of-range PCM samples to the signed 16-bit range", () => {
+  const wav = encodePcm16Wav([new Float32Array([-2, 2])], 16000);
+  const view = new DataView(wav);
+  assert.equal(view.getInt16(44, true), -32768);
+  assert.equal(view.getInt16(46, true), 32767);
+});
