@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { parseImageGenerationInput } from "./image-generation.mjs";
+import { parseImageGenerationInput, parseImageEditInput, MAX_IMAGE_EDIT_BYTES } from "./image-generation.mjs";
 
 test("defaults to automatic masterpiece image direction without asking the user to choose settings", () => {
   assert.deepEqual(parseImageGenerationInput({ prompt: "A moonlit forest" }), {
@@ -79,8 +79,7 @@ test("recognizes Ganesha, Krishna, and Rama with their defining visual attribute
 });
 
 
-test("validates conversational reference-image edits and bounded uploads", async () => {
-  const { parseImageEditInput, MAX_IMAGE_EDIT_BYTES } = await import("./image-generation.mjs");
+test("validates conversational reference-image edits and bounded uploads", () => {
   assert.deepEqual(parseImageEditInput({
     prompt: "Make the background cinematic",
     imageType: "image/jpeg",
