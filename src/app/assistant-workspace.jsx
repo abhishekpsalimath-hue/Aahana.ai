@@ -1402,7 +1402,9 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                 <>
                   <select aria-label="Video duration" value={videoDuration} onChange={(event) => setVideoDuration(Number(event.target.value))} className="copy-message">
                     <option value={3}>3 seconds</option>
-                    <option value={5}>5 seconds</option>\n                    <option value={10}>10 seconds</option>\n                    <option value={15}>15 seconds</option>
+                    <option value={5}>5 seconds</option>
+                    <option value={10}>10 seconds</option>
+                    <option value={15}>15 seconds</option>
                   </select>
                   <select aria-label="Video aspect ratio" value={videoAspectRatio} onChange={(event) => setVideoAspectRatio(event.target.value)} className="copy-message">
                     <option value="16:9">Landscape 16:9</option>
