@@ -357,3 +357,102 @@ button:focus-visible,a:focus-visible{outline-color:#c4a7ff}
 @media(max-width:760px){.discover-hero{min-height:550px;padding:75px 22px}.discover-hero h1{letter-spacing:-3px}.discover-lead{font-size:14px}.discover-modes,.discover-detail,.discover-final{width:calc(100% - 40px);padding:60px 0}.discover-mode-grid{grid-template-columns:1fr 1fr}.discover-mode-card{min-height:150px}.discover-detail{grid-template-columns:1fr;gap:18px}.discover-footer{padding:20px}}
 @media(max-width:420px){.discover-mode-grid{grid-template-columns:1fr}.discover-mode-card{min-height:125px}.discover-mode-card h3{margin-top:18px}}
 @media(prefers-reduced-motion:reduce){.discover-primary{transition:none}}
+
+
+/* Aahana interaction polish: visible focus, comfortable touch targets and
+   restrained motion that respects the visitor's system preferences. */
+:where(button, a, input, textarea, select, [role="button"], [role="tab"]):focus-visible {
+  outline: 2px solid var(--lilac);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 4px rgba(196, 167, 255, .16);
+}
+
+:where(button, a, input, textarea, select) {
+  -webkit-tap-highlight-color: transparent;
+}
+
+:where(button, [role="button"], [role="tab"], .image-attach) {
+  touch-action: manipulation;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .mode,
+  .side-item,
+  .starter,
+  .history-entry,
+  .project-entry,
+  .copy-message,
+  .image-attach,
+  .send {
+    transition: transform 160ms ease, border-color 160ms ease,
+      background-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+  }
+
+  .starter:hover,
+  .history-entry:hover,
+  .project-entry:hover {
+    transform: translateY(-2px);
+  }
+
+  .send:not(:disabled):hover {
+    transform: translateY(-1px);
+    box-shadow: 0 7px 22px rgba(196, 167, 255, .24);
+  }
+
+  .mode:not(.active-mode):hover,
+  .copy-message:hover,
+  .image-attach:hover {
+    border-color: rgba(196, 167, 255, .55);
+  }
+}
+
+::selection {
+  color: #17111f;
+  background: #d9c8ff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+  }
+
+  .space-star,
+  .astronaut-float,
+  .welcome-signal,
+  .signal-orbit,
+  .signal-spark {
+    animation: none !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .top-actions {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .mobile-history-toggle,
+  .send,
+  .sign-out {
+    min-height: 40px;
+  }
+}
+
+
+/* Interactive mode launchpad — responsive lilac starting surface. */
+.mode-launchpad{position:relative;display:grid;grid-template-columns:112px minmax(0,1fr) auto;align-items:center;gap:22px;min-height:150px;margin:16px 0 22px;padding:22px 24px;overflow:hidden;isolation:isolate;border:1px solid rgba(196,167,255,.22);border-radius:18px;background:radial-gradient(ellipse at 12% 50%,rgba(145,111,205,.2),transparent 42%),linear-gradient(112deg,#171321 0%,#111018 64%,#15111e 100%);box-shadow:0 18px 52px rgba(0,0,0,.24),inset 0 1px rgba(255,255,255,.045)}
+.mode-launchpad:after{content:"";position:absolute;z-index:-1;inset:0;opacity:.18;background-image:radial-gradient(rgba(220,205,255,.7) .7px,transparent .7px);background-size:19px 19px;mask-image:linear-gradient(90deg,#000,transparent 75%)}
+.mode-launchpad-visual{position:relative;width:92px;height:92px;display:grid;place-items:center;justify-self:center;filter:drop-shadow(0 0 20px rgba(172,139,235,.2))}
+.launch-orbit{position:absolute;width:72px;height:32px;border:1px solid rgba(204,180,255,.58);border-radius:50%}.launch-orbit-one{transform:rotate(28deg);animation:launch-spin 13s linear infinite}.launch-orbit-two{transform:rotate(-48deg);border-color:rgba(163,132,225,.5);animation:launch-spin-reverse 17s linear infinite}.launch-orbit-three{width:88px;height:46px;transform:rotate(78deg);border-color:rgba(220,205,255,.25)}
+.launch-core{width:17px;height:17px;border-radius:50%;background:radial-gradient(circle at 32% 28%,#fff,#d8c3ff 35%,#8b67c5 78%);box-shadow:0 0 14px #c8aaff,0 0 38px rgba(168,126,235,.7);animation:launch-breathe 3.6s ease-in-out infinite}.launch-spark{position:absolute;width:5px;height:5px;border-radius:50%;background:#f1e8ff;box-shadow:0 0 10px #c9aaff}.launch-spark-one{top:8px;right:17px}.launch-spark-two{bottom:13px;left:12px;width:3px;height:3px}
+.mode-launchpad-copy{min-width:0}.mode-launchpad-kicker{color:#bda5e9;font-size:9px;font-weight:700;letter-spacing:2px}.mode-launchpad-copy h2{margin:7px 0 5px;color:#f3edff;font:600 clamp(18px,2.4vw,23px)/1.2 Manrope,sans-serif;letter-spacing:-.7px}.mode-launchpad-copy p{max-width:480px;margin:0;color:#aaa2b7;font-size:12px;line-height:1.65}
+.mode-launchpad-action{display:inline-flex;align-items:center;gap:14px;margin-top:13px;padding:8px 11px;border:1px solid rgba(196,167,255,.3);border-radius:9px;background:rgba(196,167,255,.08);color:#e2d4ff;font-size:11px;transition:background .18s ease,border-color .18s ease,transform .18s ease}.mode-launchpad-action:hover{transform:translateY(-1px);border-color:rgba(196,167,255,.7);background:rgba(196,167,255,.15)}.mode-launchpad-action span{color:#cbb4ff;font-size:15px}
+.mode-launchpad-index{display:grid;justify-items:end;gap:5px;color:#81758f}.mode-launchpad-index span{color:#d7c6f5;font:500 27px/1 Manrope,sans-serif;letter-spacing:-1px}.mode-launchpad-index i{width:32px;height:1px;background:#8d70bd}.mode-launchpad-index small{font-size:8px;letter-spacing:1.2px}
+@keyframes launch-spin{to{transform:rotate(388deg)}}@keyframes launch-spin-reverse{to{transform:rotate(-408deg)}}@keyframes launch-breathe{50%{transform:scale(1.17);filter:brightness(1.2)}}
+@media(max-width:620px){.mode-launchpad{grid-template-columns:58px minmax(0,1fr);gap:13px;padding:17px 15px;min-height:136px}.mode-launchpad-visual{width:56px;height:72px;transform:scale(.72)}.mode-launchpad-index{display:none}.mode-launchpad-copy p{font-size:11px}}
+@media(prefers-reduced-motion:reduce){.launch-orbit-one,.launch-orbit-two,.launch-core{animation:none!important}.mode-launchpad-action{transition:none!important}}

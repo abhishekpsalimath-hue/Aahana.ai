@@ -6,11 +6,11 @@ import { createClient } from "@/lib/supabase/client";
 import { getSourceFileMimeType, isSupportedSourceFile } from "@/lib/build/source-file-policy.mjs";
 
 const modes = [
-  { id: "solve", label: "Solve", hint: "Work through a problem" },
-  { id: "create", label: "Create", hint: "Make something new" },
-  { id: "write", label: "Write", hint: "Shape your thoughts" },
-  { id: "build", label: "Build", hint: "Turn ideas into products" },
-  { id: "improve", label: "Improve", hint: "Make it better" },
+  { id: "solve", label: "Solve", hint: "Work through a problem", description: "Untangle a question, understand the steps and reach a clear answer.", prompt: "Help me solve this step by step, explain the reasoning, and check the result." },
+  { id: "create", label: "Create", hint: "Make something new", description: "Explore a fresh idea and shape it into something original.", prompt: "Help me develop an original idea, explore three directions, and choose the strongest one." },
+  { id: "write", label: "Write", hint: "Shape your thoughts", description: "Find the right words, structure and tone for what you want to say.", prompt: "Help me write a clear first draft. Ask only for details that are essential." },
+  { id: "build", label: "Build", hint: "Turn ideas into products", description: "Move from concept to architecture, code and a testable product.", prompt: "Help me turn this idea into a working product. Start by defining the smallest useful version." },
+  { id: "improve", label: "Improve", hint: "Make it better", description: "Review what exists, find the friction and make focused improvements.", prompt: "Review this and identify the three highest-impact improvements, with reasons." },
 ];
 
 const starters = [
@@ -245,8 +245,26 @@ function evaluateArithmetic(input) {
 export default function Home({ userEmail = "", aiEnabled = false }) {
   const router = useRouter();
   const conversationEndRef = useRef(null);
+  const promptInputRef = useRef(null);
+  const modeTabRefs = useRef({});
   const [mode, setMode] = useState("solve");
+  function handleModeTabKeyDown(event, currentIndex) {
+    let nextIndex = currentIndex;
+    if (event.key === "ArrowRight") nextIndex = (currentIndex + 1) % modes.length;
+    else if (event.key === "ArrowLeft") nextIndex = (currentIndex - 1 + modes.length) % modes.length;
+    else if (event.key === "Home") nextIndex = 0;
+    else if (event.key === "End") nextIndex = modes.length - 1;
+    else return;
+    event.preventDefault();
+    const nextMode = modes[nextIndex];
+    setMode(nextMode.id);
+    modeTabRefs.current[nextMode.id]?.focus();
+  }
   const [prompt, setPrompt] = useState("");
+  function applyStarterPrompt(value) {
+    setPrompt(value);
+    promptInputRef.current?.focus();
+  }
   const [imageFile, setImageFile] = useState(null);
   const [messages, setMessages] = useState([]);
   useEffect(() => {
@@ -1127,14 +1145,44 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
           </>}
 
           <div className="mode-row" role="tablist" aria-label="Choose a mode">
-            {modes.map((item) => (
-              <button key={item.id} type="button" role="tab" aria-selected={mode === item.id}
+            {modes.map((item, index) => (
+              <button key={item.id} ref={(node) => { modeTabRefs.current[item.id] = node; }}
+                type="button" role="tab" aria-selected={mode === item.id}
+                tabIndex={mode === item.id ? 0 : -1}
                 className={mode === item.id ? "mode active-mode" : "mode"}
+                onKeyDown={(event) => handleModeTabKeyDown(event, index)}
                 onClick={() => setMode(item.id)}>
                 {item.label}
               </button>
             ))}
           </div>
+
+          {!messages.length && (
+            <section className="mode-launchpad" aria-label={modes.find((item) => item.id === mode)?.label + " workspace"}>
+              <div className="mode-launchpad-visual" aria-hidden="true">
+                <span className="launch-orbit launch-orbit-one" />
+                <span className="launch-orbit launch-orbit-two" />
+                <span className="launch-orbit launch-orbit-three" />
+                <span className="launch-core" />
+                <span className="launch-spark launch-spark-one" />
+                <span className="launch-spark launch-spark-two" />
+              </div>
+              <div className="mode-launchpad-copy">
+                <span className="mode-launchpad-kicker">YOUR NEXT MOVE</span>
+                <h2>{modes.find((item) => item.id === mode)?.label} with Aahana</h2>
+                <p>{modes.find((item) => item.id === mode)?.description}</p>
+                <button className="mode-launchpad-action" type="button"
+                  onClick={() => applyStarterPrompt(modes.find((item) => item.id === mode)?.prompt || "")}>
+                  Use a starting prompt <span aria-hidden="true">↗</span>
+                </button>
+              </div>
+              <div className="mode-launchpad-index" aria-hidden="true">
+                <span>0{modes.findIndex((item) => item.id === mode) + 1}</span>
+                <i />
+                <small>05 MODES</small>
+              </div>
+            </section>
+          )}
 
           {messages.length > 0 && (
             <div className="conversation" aria-live="polite">
@@ -1225,7 +1273,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
               </button>
             </div>
             <label className="sr-only" htmlFor="prompt">What would you like to work on?</label>
-            <textarea id="prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)}
+            <textarea ref={promptInputRef} id="prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); } }}
               placeholder={aiEnabled ? "What would you like to work on today?" : "Try a calculation, e.g. 2 + 2 (offline)"} rows={3} disabled={busy} />
             <div className="composer-footer">
@@ -1239,7 +1287,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
               <div className="notice">{aiEnabled ? "Your workspace is ready. Send a prompt to begin." : "Your workspace is ready. AI activation is pending billing and connection checks. Prompts are not sent yet."}</div>
               <div className="starter-grid">
                 {starters.map((item, index) => (
-                  <button className="starter" type="button" key={item} onClick={() => setPrompt(item)}>
+                  <button className="starter" type="button" key={item} onClick={() => applyStarterPrompt(item)}>
                     <span className="starter-icon">{["◇", "↗", "✎", "⌘"][index]}</span>
                     <span>{item}</span>
                     <span className="starter-arrow">↗</span>
