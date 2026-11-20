@@ -58,6 +58,21 @@ test("inspects only approved repository source paths at a pinned base commit", a
   assert.match(calls[0].options.headers.Authorization, /^Bearer /);
 });
 
+test("uses the active deployment branch when no explicit self-build base branch is configured", async () => {
+  const calls = [];
+  const previewEnv = { ...env, AAHANA_SELF_BUILD_BASE_BRANCH: "", VERCEL_GIT_COMMIT_REF: "feat/preview-self-build" };
+  const fetchImpl = async (url) => {
+    calls.push(url);
+    if (url.endsWith("/access_tokens")) return mockResponse({ token: "installation-token" });
+    if (url.includes("/git/ref/heads/feat%2Fpreview-self-build")) return mockResponse({ object: { sha: baseSha } });
+    if (url.includes("/git/trees/")) return mockResponse({ truncated: false, tree: [] });
+    throw new Error("Unexpected GitHub request: " + url);
+  };
+  const result = await getSelfBuildRepository({ env: previewEnv, fetchImpl });
+  assert.equal(result.branch, "feat/preview-self-build");
+  assert.ok(calls.some((url) => url.includes("/git/ref/heads/feat%2Fpreview-self-build")));
+});
+
 test("creates a draft pull request from a pinned base and never merges or deploys", async () => {
   const calls = [];
   const fetchImpl = async (url, options) => {
