@@ -10,11 +10,11 @@ on:
       - fix/build-workspace-size-preflight
       - fix/build-preview-oidc-runtime-detection
       - feat/creative-director-multimodel-foundation
+      - feat/aahana-autonomous-assistance
     paths:
       - "src/app/experience-lab/**"
       - "src/app/assistant-workspace.jsx"
       - "src/app/api/build/**"
-      - "src/app/api/agent/**"
       - "src/app/api/agent/**"
       - "src/app/api/files/**"
       - "src/lib/build/**"
