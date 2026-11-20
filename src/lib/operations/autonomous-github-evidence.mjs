@@ -56,19 +56,31 @@ export async function evaluateTrustedPullRequest({ github, task, pullRequestNumb
   const headModes = new Map(headTree.entries.map((entry) => [entry.path, entry.mode]));
   const changedFiles = [];
   const patches = [];
+  const seenFilePaths = new Set();
+  const seenRenameSources = new Set();
   let additions = 0;
   let deletions = 0;
 
   for (const file of fileResult.files) {
     if (typeof file?.filename !== "string" || typeof file.patch !== "string" ||
-        !["added", "modified", "removed", "renamed", "copied", "changed"].includes(file.status)) {
+        !["added", "modified", "removed", "renamed", "changed"].includes(file.status)) {
       errors.push("every changed file must include a path, supported change status and text patch");
       continue;
     }
+    if (seenFilePaths.has(file.filename)) {
+      errors.push("duplicate pull request file paths are not eligible for autonomous review");
+    }
+    seenFilePaths.add(file.filename);
     const headMode = headModes.get(file.filename);
     const baseMode = baseModes.get(file.filename);
     const previousPath = typeof file.previousFilename === "string" ? file.previousFilename : "";
     const previousMode = previousPath ? baseModes.get(previousPath) : undefined;
+    if (file.status === "renamed" && previousPath) {
+      if (previousPath === file.filename || seenRenameSources.has(previousPath) || seenFilePaths.has(previousPath)) {
+        errors.push("renamed source paths must be unique and distinct from changed destinations");
+      }
+      seenRenameSources.add(previousPath);
+    }
 
     // Cross-check GitHub's PR file status against both complete Git trees.
     // A path merely appearing in either tree is not enough to authenticate a diff.
@@ -87,8 +99,6 @@ export async function evaluateTrustedPullRequest({ github, task, pullRequestNumb
       if (previousPath && headModes.has(previousPath)) {
         errors.push("renamed source path unexpectedly remains in the head tree");
       }
-    } else if (file.status === "copied" && headMode === undefined) {
-      errors.push("copied destination must exist in the head tree");
     }
 
     for (const mode of [headMode, baseMode, previousMode]) {
@@ -108,6 +118,10 @@ export async function evaluateTrustedPullRequest({ github, task, pullRequestNumb
       additions += file.additions;
       deletions += file.deletions;
     }
+  }
+
+  for (const sourcePath of seenRenameSources) {
+    if (seenFilePaths.has(sourcePath)) errors.push("a renamed source path cannot also appear as a separate changed destination");
   }
 
   const checks = checkResult.checkRuns;

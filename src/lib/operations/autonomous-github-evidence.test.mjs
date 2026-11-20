@@ -219,3 +219,46 @@ test("rejects Git submodule entries in changed paths", async () => {
   assert.equal(result.ok, false);
   assert.ok(result.errors.some((error) => error.includes("submodule")));
 });
+
+
+test("rejects duplicate PR file paths and ambiguous rename sources", async () => {
+  const duplicate = await evaluateTrustedPullRequest({
+    github: makeGithub({
+      files: { files: [
+        { filename: "src/features/demo/hello.mjs", status: "added", patch: "+x", additions: 1, deletions: 0 },
+        { filename: "src/features/demo/hello.mjs", status: "added", patch: "+x", additions: 1, deletions: 0 },
+      ] },
+    }), task, pullRequestNumber: 12,
+  });
+  assert.equal(duplicate.ok, false);
+  assert.ok(duplicate.errors.some((error) => error.includes("duplicate")));
+
+  const ambiguousRename = await evaluateTrustedPullRequest({
+    github: makeGithub({
+      files: { files: [
+        { filename: "src/features/demo/new.mjs", previousFilename: "src/features/demo/hello.mjs", status: "renamed", patch: "+x", additions: 1, deletions: 1 },
+        { filename: "src/features/demo/hello.mjs", status: "added", patch: "+x", additions: 1, deletions: 0 },
+      ] },
+      baseTree: { entries: [{ path: "src/features/demo/hello.mjs", mode: "100644" }] },
+      headTree: { entries: [
+        { path: "src/features/demo/new.mjs", mode: "100644" },
+        { path: "src/features/demo/hello.mjs", mode: "100644" },
+      ] },
+    }), task, pullRequestNumber: 12,
+  });
+  assert.equal(ambiguousRename.ok, false);
+  assert.ok(ambiguousRename.errors.some((error) => error.includes("renamed source")));
+});
+
+test("fails closed on unrecognized copied-file status", async () => {
+  const result = await evaluateTrustedPullRequest({
+    github: makeGithub({
+      files: { files: [{
+        filename: "src/features/demo/copied.mjs", previousFilename: "src/features/demo/hello.mjs",
+        status: "copied", patch: "+x", additions: 1, deletions: 0,
+      }] },
+      headTree: { entries: [{ path: "src/features/demo/copied.mjs", mode: "100644" }] },
+    }), task, pullRequestNumber: 12,
+  });
+  assert.equal(result.ok, false);
+});
