@@ -256,8 +256,13 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     let active = true;
     fetch("/api/build/status")
       .then((response) => response.ok ? response.json() : null)
-      .then((status) => { if (active) setBuildEnabled(status?.enabled === true && status?.sandboxIdentityAvailable === true); })
-      .catch(() => { if (active) setBuildEnabled(false); })
+      .then((status) => {
+        if (active) {
+          setBuildEnabled(status?.enabled === true && status?.sandboxIdentityAvailable === true);
+          setPreviewEnabled(status?.previewEnabled === true);
+        }
+      })
+      .catch(() => { if (active) { setBuildEnabled(false); setPreviewEnabled(false); } })
       .finally(() => { if (active) setBuildStatusLoading(false); });
     return () => { active = false; };
   }, []);
@@ -266,6 +271,10 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [busy, setBusy] = useState(false);
   const [buildBusy, setBuildBusy] = useState(false);
   const [buildEnabled, setBuildEnabled] = useState(false);
+  const [previewEnabled, setPreviewEnabled] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState("");
+  const [previewBusy, setPreviewBusy] = useState(false);
+  const [previewError, setPreviewError] = useState("");
   const [buildStatusLoading, setBuildStatusLoading] = useState(true);
   const [error, setError] = useState("");
   const [history, setHistory] = useState([]);
@@ -720,6 +729,30 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       setBuildBusy(false);
     }
   }
+  async function runProjectPreview() {
+    if (!selectedProjectId || !previewEnabled || previewBusy || busy || buildBusy) return;
+    setPreviewBusy(true);
+    setPreviewError("");
+    setPreviewUrl("");
+    try {
+      const response = await fetch("/api/build/preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ projectId: selectedProjectId }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "The live preview could not start.");
+      if (typeof result.previewUrl !== "string" || !/^https:\/\//.test(result.previewUrl)) {
+        throw new Error("The preview service returned an invalid address.");
+      }
+      setPreviewUrl(result.previewUrl);
+    } catch (err) {
+      setPreviewError(err.message || "The live preview could not start.");
+    } finally {
+      setPreviewBusy(false);
+    }
+  }
+
   async function copyCodeBlock(code) {
     try {
       await navigator.clipboard.writeText(code);
@@ -1181,6 +1214,9 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                   <button type="button" disabled={!selectedProjectId || !buildEnabled || buildBusy || busy} onClick={() => runProjectCheck("test")}>
                     Run tests
                   </button>
+                  <button type="button" disabled={!selectedProjectId || !previewEnabled || previewBusy || buildBusy || busy} onClick={runProjectPreview}>
+                    {previewBusy ? "Starting preview…" : "Live preview"}
+                  </button>
                 </div>
               </div>
               <p className="build-tools-note">
@@ -1192,6 +1228,22 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                       ? "Ready. Build and test commands run in a disposable sandbox; nothing is deployed."
                       : "Secure build execution is not activated in this environment yet. Code generation and editing guidance remain available."}
               </p>
+              {previewError && <p className="build-tools-error" role="alert">{previewError}</p>}
+              {previewUrl && (
+                <section className="live-preview-panel" aria-label="Live website preview">
+                  <div className="live-preview-toolbar">
+                    <div><strong>Live preview</strong><small>Temporary isolated session · expires after 10 minutes</small></div>
+                    <a href={previewUrl} target="_blank" rel="noopener noreferrer">Open in new tab ↗</a>
+                  </div>
+                  <iframe
+                    className="live-preview-frame"
+                    title="Your website live preview"
+                    src={previewUrl}
+                    sandbox="allow-scripts allow-forms allow-popups allow-modals"
+                    referrerPolicy="no-referrer"
+                  />
+                </section>
+              )}
             </section>
           )}
           <form className="composer" onSubmit={submitPrompt}>
