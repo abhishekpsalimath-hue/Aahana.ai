@@ -412,8 +412,8 @@ export async function POST(request) {
       if (abortResponse) return abortResponse;
       return NextResponse.json({ error: "The research provider returned an unreadable response.", code: "RESEARCH_RESPONSE_INVALID" }, { status: 502 });
     }
-    const abortAfterResearchResponse = getClientAbortResponse(request.signal);
-    if (abortAfterResearchResponse) return abortAfterResearchResponse;
+    const abortResponse = getClientAbortResponse(request.signal);
+    if (abortResponse) return abortResponse;
     const researchReply = researchPayload?.choices?.[0]?.message?.content;
     if (typeof researchReply !== "string" || !researchReply.trim()) {
       return NextResponse.json({ error: "Aahana could not generate a source-backed research answer. Please retry.", code: "RESEARCH_ANSWER_EMPTY" }, { status: 502 });
