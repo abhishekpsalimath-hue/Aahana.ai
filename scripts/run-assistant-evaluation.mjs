@@ -37,7 +37,7 @@ if (dryRun) {
     networkRequests: 0,
     databaseWrites: 0,
     requiresApiKey: false,
-  }, null, 2) + "\\n");
+  }, null, 2) + "\n");
   process.exit(0);
 }
 if (!apiKey) {
