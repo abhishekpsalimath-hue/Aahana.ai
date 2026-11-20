@@ -7,8 +7,8 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 const MAX_BODY_BYTES = 12 * 1024;
-const MAX_TOOL_ROUNDS = 6;
-const MAX_TOOL_CALLS = 8;
+const MAX_TOOL_ROUNDS = 4;
+const MAX_TOOL_CALLS = 4;
 
 const tools = [
   {
@@ -138,11 +138,12 @@ export async function POST(request) {
           messages,
           tools,
           tool_choice: "auto",
+          parallel_tool_calls: false,
           temperature: 0.2,
           max_completion_tokens: 4096,
           stream: false,
         }),
-        signal: AbortSignal.timeout(45000),
+        signal: AbortSignal.timeout(12000),
       });
       const payload = await upstream.json().catch(() => ({}));
       if (!upstream.ok) {
