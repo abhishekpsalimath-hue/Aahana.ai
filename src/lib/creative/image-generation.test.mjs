@@ -93,7 +93,7 @@ test("validates conversational reference-image edits and bounded uploads", () =>
 
 test("parses PNG reference dimensions and enforces the strict 512px provider limit", () => {
   const png = new Uint8Array(33);
-  png.set([0x89, 0x50, 0x4e, 0x47], 0);
+  png.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a], 0);
   png.set([0x00, 0x00, 0x00, 0x0d], 8);
   png.set([0x49, 0x48, 0x44, 0x52], 12);
   new DataView(png.buffer).setUint32(16, 511);
@@ -103,6 +103,9 @@ test("parses PNG reference dimensions and enforces the strict 512px provider lim
   assert.equal(isReferenceImageWithinProviderBounds(dimensions), true);
   assert.equal(isReferenceImageWithinProviderBounds({ width: 512, height: 480 }), false);
   assert.equal(isReferenceImageWithinProviderBounds(null), false);
+  const malformedPng = png.slice();
+  malformedPng[7] = 0x00;
+  assert.equal(getReferenceImageDimensions(malformedPng, "image/png"), null);
 });
 
 test("parses JPEG and WebP reference dimensions without trusting client metadata", () => {
