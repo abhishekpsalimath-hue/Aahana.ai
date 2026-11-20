@@ -37,6 +37,7 @@ test("only approved Experience Lab and non-security Build source paths are writa
   assert.equal(isAllowedSelfBuildPath("src/app/assistant-workspace.jsx/child.jsx"), false);
   assert.equal(isAllowedSelfBuildPath("src/app/assistant-workspace.jsx.backup"), false);
   assert.equal(isAllowedSelfBuildPath("src/app/assistant-workspace.css"), false);
+  assert.equal(isAllowedSelfBuildPath("src/app/api/agent/self-improve/route.js"), false);
   assert.equal(isAllowedSelfBuildPath("src/app/student-mode/page.jsx"), false);
   assert.equal(isAllowedSelfBuildPath("src/lib/build/source-proposal.mjs"), true);
   assert.equal(isAllowedSelfBuildPath("src/lib/build/self-build-policy.mjs"), false);
