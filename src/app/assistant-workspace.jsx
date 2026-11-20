@@ -1547,7 +1547,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
               {selfBuildError && <p className="build-tools-error" role="alert">{selfBuildError}</p>}
               {selfBuildRepository && <div className="self-build-file-list">
                 <strong>Approved source files</strong>
-                {selfBuildRepository.files.map((file) => <button type="button" className="copy-message" key={file.path} onClick={() => openSelfBuildFile(file.path)} disabled={selfBuildBusy}>{file.path}</button>)}
+                {selfBuildRepository.files.map((file) => <button type="button" className="copy-message" key={file.path} onClick={() => openSelfBuildFile(file.path)} disabled={selfBuildBusy || selfBuildValidationBusy}>{file.path}</button>)}
               </div>}
               <div className="self-build-task">
                 <label htmlFor="self-build-instruction">What should Aahana work on?</label>
