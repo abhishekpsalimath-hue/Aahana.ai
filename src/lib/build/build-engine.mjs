@@ -16,7 +16,7 @@ const INSTALL_ARGS = [
   "--registry=https://registry.npmjs.org/",
 ];
 
-function createBoundedOutputSink(limit = OUTPUT_LIMIT) {
+function createBoundedOutputSink(limit = OUTPUT_LIMIT, onOverflow = () => {}) {
   let remaining = limit;
   let byteLength = 0;
   let truncated = false;
@@ -31,7 +31,10 @@ function createBoundedOutputSink(limit = OUTPUT_LIMIT) {
         byteLength += keptLength;
         remaining -= keptLength;
       }
-      if (keptLength < buffer.length) truncated = true;
+      if (keptLength < buffer.length && !truncated) {
+        truncated = true;
+        onOverflow();
+      }
       callback();
     },
   });
@@ -109,14 +112,18 @@ export async function executeBuildTask({
       let installResult;
       await sandbox.update({ networkPolicy: { allow: ["registry.npmjs.org"] } });
       try {
-        const installStdout = createBoundedOutputSink();
-        const installStderr = createBoundedOutputSink();
+        const installController = new AbortController();
+        const installSignal = signal ? AbortSignal.any([signal, installController.signal]) : installController.signal;
+        const abortInstallOnOverflow = () => installController.abort(new Error("Build output exceeded the 12 KB limit."));
+        const installStdout = createBoundedOutputSink(OUTPUT_LIMIT, abortInstallOnOverflow);
+        const installStderr = createBoundedOutputSink(OUTPUT_LIMIT, abortInstallOnOverflow);
         installResult = await sandbox.runCommand({
           cmd: "npm",
           args: INSTALL_ARGS,
           cwd: "/vercel/sandbox",
           stdout: installStdout.stream,
           stderr: installStderr.stream,
+          signal: installSignal,
         });
         // Drain excess output without retaining it, bounding server memory.
         installOutput = (installStdout.text() + "\n" + installStderr.text()).slice(0, OUTPUT_LIMIT);
@@ -136,14 +143,18 @@ export async function executeBuildTask({
       }
     }
 
-    const taskStdout = createBoundedOutputSink();
-    const taskStderr = createBoundedOutputSink();
+    const taskController = new AbortController();
+    const taskSignal = signal ? AbortSignal.any([signal, taskController.signal]) : taskController.signal;
+    const abortTaskOnOverflow = () => taskController.abort(new Error("Build output exceeded the 12 KB limit."));
+    const taskStdout = createBoundedOutputSink(OUTPUT_LIMIT, abortTaskOnOverflow);
+    const taskStderr = createBoundedOutputSink(OUTPUT_LIMIT, abortTaskOnOverflow);
     const result = await sandbox.runCommand({
       cmd: command,
       args,
       cwd: "/vercel/sandbox",
       stdout: taskStdout.stream,
       stderr: taskStderr.stream,
+      signal: taskSignal,
     });
     return {
       status: result.exitCode === 0 ? "passed" : "failed",
