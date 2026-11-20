@@ -47,9 +47,12 @@ test("masterpiece quality adds art direction and rejects unknown quality", () =>
   assert.equal(parseImageGenerationInput({ prompt: "A portrait", quality: "ultra" }).ok, false);
 });
 
-test("rejects unknown styles and styled prompts that exceed the provider limit", () => {
+test("rejects unknown styles while retaining automatic creative direction for supported styles", () => {
   assert.equal(parseImageGenerationInput({ prompt: "A portrait", style: "unknown" }).ok, false);
-  assert.equal(parseImageGenerationInput({ prompt: "x".repeat(2000), style: "cinematic" }).ok, false);
+  const styled = parseImageGenerationInput({ prompt: "A perfume bottle", style: "cinematic" });
+  assert.equal(styled.ok, true);
+  assert.match(styled.prompt, /portfolio-worthy hero image/i);
+  assert.match(styled.prompt, /cinematic visual style/i);
 });
 
 test("recognizes Lord Shiva and preserves deity-specific iconography instead of generic saint imagery", () => {
