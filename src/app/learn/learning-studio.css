@@ -849,3 +849,39 @@
 .learning-revision-steps span{display:grid;gap:5px;padding:10px;border:1px solid #403650;border-radius:10px;background:#171321;color:#bdb1ce;font-size:10px;line-height:1.5}
 .learning-revision-steps b{color:#d8c2ff;font-size:10px}
 @media(max-width:640px){.learning-revision-steps{grid-template-columns:1fr}}
+
+
+/* Student Mode keyboard focus and comfortable touch interaction. */
+.learning-mode-picker button:focus-visible,
+.learning-topic-actions button:focus-visible,
+.learning-quiz-options button:focus-visible,
+.learning-quiz-feedback button:focus-visible,
+.learning-quiz-finish button:focus-visible,
+.learning-memory-panel button:focus-visible,
+.learning-discovery-selects select:focus-visible {
+  outline: 2px solid #e2d3ff;
+  outline-offset: 3px;
+  box-shadow: 0 0 0 4px #b99be933;
+}
+.learning-mode-picker button,
+.learning-topic-actions button,
+.learning-quiz-options button,
+.learning-quiz-feedback button,
+.learning-quiz-finish button,
+.learning-memory-panel button {
+  touch-action: manipulation;
+}
+@media (hover: hover) and (pointer: fine) {
+  .learning-quiz-options button:not(:disabled):hover,
+  .learning-topic-actions button:not(:disabled):hover {
+    transform: translateY(-1px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .learning-quiz-options button,
+  .learning-topic-actions button,
+  .learning-mode-picker button {
+    transition: none !important;
+    animation: none !important;
+  }
+}
