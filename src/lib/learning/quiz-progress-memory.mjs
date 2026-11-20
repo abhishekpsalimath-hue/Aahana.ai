@@ -18,7 +18,7 @@ export function validateLearningQuizProgress(input) {
     attempts: outcomes.length,
     hintsUsed: outcomes.filter((item) => item.hintUsed).length,
   };
-  if (summary.questions < 1 || summary.questions > 10) return null;
+  if (summary.questions < 1 || summary.questions > 50) return null;
   return {
     title, subject, gradeBand, curriculum, language,
     ...summary,

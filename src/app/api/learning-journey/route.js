@@ -22,6 +22,11 @@ export async function GET() {
 
   try {
     const enabled = await memoryIsEnabled(supabase, user.id);
+    // Respect the user's private-memory setting on reads as well as writes.
+    // Do not fetch previously stored learning records while memory is disabled.
+    if (!enabled) {
+      return NextResponse.json({ enabled: false, journeys: [], quizProgress: [] });
+    }
     const [journeyResult, quizResult] = await Promise.all([
       supabase.from("user_memories").select("id, content, created_at")
         .eq("user_id", user.id).eq("source", "conversation")
