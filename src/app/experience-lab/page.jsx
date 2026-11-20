@@ -60,6 +60,16 @@ function requestsImage(value) {
     || /\b(?:image|picture|illustration|artwork)\b[\s\S]{0,80}\b(?:generate|create|draw|render)\b/i.test(text);
 }
 
+function requestsVideo(value) {
+  const text = String(value || "").normalize("NFKC").trim();
+  if (!text || text.length > 8000) return false;
+  if (/\b(?:video player|video editor|video website|video app|website|web app|mobile app|application|component|code|coding|program|html|css|javascript|react|next\.js|api|embed|stream|streaming|upload|player)\b/i.test(text)) return false;
+  if (/\b(?:explain|what is|how does|how do i|ideas for|script for|storyboard for|plan for|write a)\b/i.test(text) && !/\b(?:animate|make it move|bring to life|turn this into a video)\b/i.test(text)) return false;
+  return /\b(?:video|clip|film|animation|animated video|short film|reel)\b/i.test(text)
+    && /\b(?:generate|create|make|render|produce|animate)\b/i.test(text)
+    || /\b(?:animate|make it move|bring to life|turn this into a video)\b/i.test(text);
+}
+
 function OrbitMark() {
   return <div className="lab-orbit" aria-hidden="true">
     <span className="lab-orbit-ring ring-a" /><span className="lab-orbit-ring ring-b" />
@@ -76,6 +86,7 @@ export default function ExperienceLab() {
   const [busy, setBusy] = useState(false);
   const [requestError, setRequestError] = useState("");
   const [generatedImage, setGeneratedImage] = useState(null);
+  const [generatedVideo, setGeneratedVideo] = useState(null);
   const activeRequest = useRef(null);
   const [buildProjects, setBuildProjects] = useState([]);
   const [buildFiles, setBuildFiles] = useState([]);
@@ -386,6 +397,27 @@ export default function ExperienceLab() {
     activeRequest.current = controller;
     setBusy(true);
     try {
+      if (mode === "create" && requestsVideo(message)) {
+        const videoResponse = await fetch("/api/videos/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt: message, duration: 5, resolution: "hd", aspectRatio: "16:9", generateAudio: true }),
+          signal: controller.signal,
+        });
+        const videoResult = await videoResponse.json().catch(() => ({}));
+        if (!videoResponse.ok) throw new Error(videoResult.error || "Aahana could not generate that video.");
+        let trustedVideoUrl = false;
+        try {
+          const parsedVideoUrl = new URL(videoResult.videoUrl);
+          trustedVideoUrl = parsedVideoUrl.protocol === "https:" && (parsedVideoUrl.hostname === "aig.cloudflare.com" || parsedVideoUrl.hostname.endsWith(".aig.cloudflare.com"));
+        } catch {}
+        if (!trustedVideoUrl) throw new Error("The video service returned an invalid video URL.");
+        setGeneratedVideo({ videoUrl: videoResult.videoUrl, prompt: message, duration: videoResult.duration });
+        setThread((current) => current.map((item, index) =>
+          index === current.length - 1 ? { ...item, content: "Your video is ready. Save it promptly because the provider link is temporary." } : item
+        ));
+        return;
+      }
       if (mode === "create" && requestsImage(message)) {
         const imageResponse = await fetch("/api/images/generate", {
           method: "POST",
@@ -460,6 +492,7 @@ export default function ExperienceLab() {
     if (busy) return;
     setThread([]);
     setGeneratedImage(null);
+    setGeneratedVideo(null);
     setConversationId(null);
     setPrompt("");
     setRequestError("");
@@ -498,6 +531,7 @@ export default function ExperienceLab() {
               <div className="live-message-text">{item.content || (busy && index === thread.length - 1 ? "Thinking…" : "")}</div>
             </div>)}
             {generatedImage && <div className="lab-generated-image"><img src={generatedImage.dataUrl} alt={generatedImage.prompt} /><a href={generatedImage.dataUrl} download="aahana-generated-image.jpg">Download image ↗</a><small>Generated for this session · not saved to Library</small></div>}
+            {generatedVideo && <div className="lab-generated-video"><video controls playsInline preload="metadata" src={generatedVideo.videoUrl} aria-label={generatedVideo.prompt}>Your browser does not support video playback.</video><a href={"/api/videos/download?url=" + encodeURIComponent(generatedVideo.videoUrl)}>Download video ↗</a><small>{generatedVideo.duration || 5}s · Temporary provider link · save promptly · not saved to Library</small></div>}
             {requestError && <p className="live-error" role="alert">{requestError}</p>}
             <div className="response-actions"><button type="button" disabled={busy} onClick={() => tryPrompt("Go deeper and give me a practical example.")}>↳ Go deeper</button><button type="button" disabled={busy} onClick={() => tryPrompt("Challenge that answer and show another perspective.")}>◇ Challenge it</button><button type="button" disabled={busy} onClick={startNewSession}>＋ New thought</button></div>
           </div> : <div className="lab-empty">
