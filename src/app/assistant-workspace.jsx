@@ -1228,6 +1228,11 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                       ? "Ready. Build and test commands run in a disposable sandbox; nothing is deployed."
                       : "Secure build execution is not activated in this environment yet. Code generation and editing guidance remain available."}
               </p>
+              <p className="build-tools-note">
+                {previewEnabled
+                  ? "Live preview is available for supported Next.js and Vite projects."
+                  : "Live preview is staged but disabled in this environment until its preview runtime is explicitly enabled."}
+              </p>
               {previewError && <p className="build-tools-error" role="alert">{previewError}</p>}
               {previewUrl && (
                 <section className="live-preview-panel" aria-label="Live website preview">
