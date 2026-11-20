@@ -81,3 +81,17 @@
   color: var(--lab-muted, #756d82);
   font-size: 12px;
 }
+
+.voice-panel { display:flex; flex-direction:column; gap:12px; padding:18px 15px; color:#f4efff; }
+.voice-panel-kicker { color:#b9a4e6; font-size:9px; letter-spacing:.18em; font-weight:750; }
+.voice-panel h2 { margin:0; font-size:20px; letter-spacing:-.04em; }
+.voice-panel p { margin:0; color:#a99eb9; font-size:12px; line-height:1.65; }
+.voice-panel label { margin-top:8px; color:#c9bed9; font-size:11px; }
+.voice-panel select { width:100%; padding:10px 11px; border:1px solid #ffffff20; border-radius:10px; background:#211a2d; color:#f5efff; font:inherit; font-size:12px; }
+.voice-panel-action { display:flex; align-items:center; justify-content:center; gap:9px; min-height:42px; border:1px solid #bca2f0; border-radius:12px; background:#8b6ac8; color:white; font:inherit; font-size:12px; font-weight:700; cursor:pointer; }
+.voice-panel-action.secondary { border-color:#ffffff24; background:#ffffff0a; color:#e6dcf5; }
+.voice-panel-action:disabled { opacity:.45; cursor:not-allowed; }
+.voice-panel-action.listening { border-color:#e5a2b6; background:#a84f70; }
+.voice-panel-status { min-height:18px; color:#cbb9eb; font-size:11px; text-align:center; }
+.voice-panel-error { color:#ffb9c7 !important; font-size:11px !important; }
+.voice-panel-privacy { color:#82778f; font-size:10px; line-height:1.55; }
