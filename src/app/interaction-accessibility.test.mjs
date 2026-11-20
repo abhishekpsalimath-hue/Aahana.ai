@@ -52,7 +52,7 @@ test("assistant mode launchpad changes guidance and offers a usable starter prom
   const workspace = readFileSync(new URL("./assistant-workspace.jsx", import.meta.url), "utf8");
   assert.match(workspace, /className="mode-launchpad"/);
   assert.match(workspace, /modes\.find\(\(item\) => item\.id === mode\)\?\.description/);
-  assert.match(workspace, /setPrompt\(modes\.find\(\(item\) => item\.id === mode\)\?\.prompt/);
+  assert.match(workspace, /applyStarterPrompt\(modes\.find\(\(item\) => item\.id === mode\)\?\.prompt/);
 });
 
 test("mode launchpad motion respects reduced-motion preferences", () => {
