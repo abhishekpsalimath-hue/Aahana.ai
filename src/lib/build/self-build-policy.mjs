@@ -4,7 +4,8 @@ const MAX_TOTAL_BYTES = 2 * 1024 * 1024;
 const SHA_PATTERN = /^[a-f0-9]{40}$/i;
 const REPOSITORY_PATTERN = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
 
-// Student Mode, authentication, database, and deployment code are intentionally excluded.\nconst ALLOWED_ROOTS = [
+// Student Mode, authentication, database, and deployment code are intentionally excluded.
+const ALLOWED_ROOTS = [
   "src/app/experience-lab/",
   "src/lib/build/",
 ];
@@ -14,7 +15,12 @@ const BLOCKED_SEGMENTS = new Set([
   "supabase", "migrations", "middleware", "secrets", "credentials",
 ]);
 
-const BLOCKED_FILES = new Set([\n  "self-build-policy.mjs", "sandbox-policy.mjs", "github-app.mjs",\n  "build-engine.mjs", "source-file-policy.mjs",\n]);\n\nconst SECRET_PATTERNS = [
+const BLOCKED_FILES = new Set([
+  "self-build-policy.mjs", "sandbox-policy.mjs", "github-app.mjs",
+  "build-engine.mjs", "source-file-policy.mjs",
+]);
+
+const SECRET_PATTERNS = [
   /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/,
   /\bgithub_pat_[A-Za-z0-9_]{20,}\b/,
   /\bgh[pousr]_[A-Za-z0-9]{20,}\b/,
@@ -34,8 +40,8 @@ export function getSelfBuildConfig(env = process.env) {
     "AAHANA_SELF_BUILD_ALLOWED_EMAILS",
   ];
   const missing = required.filter((key) => !String(env[key] || "").trim());
-  if (!/^\\d+$/.test(String(env.AAHANA_GITHUB_APP_ID || "")) && !missing.includes("AAHANA_GITHUB_APP_ID")) missing.push("AAHANA_GITHUB_APP_ID");
-  if (!/^\\d+$/.test(String(env.AAHANA_GITHUB_INSTALLATION_ID || "")) && !missing.includes("AAHANA_GITHUB_INSTALLATION_ID")) missing.push("AAHANA_GITHUB_INSTALLATION_ID");
+  if (!/^\d+$/.test(String(env.AAHANA_GITHUB_APP_ID || "")) && !missing.includes("AAHANA_GITHUB_APP_ID")) missing.push("AAHANA_GITHUB_APP_ID");
+  if (!/^\d+$/.test(String(env.AAHANA_GITHUB_INSTALLATION_ID || "")) && !missing.includes("AAHANA_GITHUB_INSTALLATION_ID")) missing.push("AAHANA_GITHUB_INSTALLATION_ID");
   const validRepository = REPOSITORY_PATTERN.test(repository) &&
     repository.split("/").every((part) => part !== "." && part !== "..");
   return Object.freeze({
@@ -64,6 +70,7 @@ export function isAllowedSelfBuildPath(input) {
     /^(?:\.env|package(?:-lock)?\.json|pnpm-lock\.yaml|yarn\.lock|bun\.lockb?)$/i.test(segment)
   )) return false;
 
+  if (BLOCKED_FILES.has(segments.at(-1).toLowerCase())) return false;
   return ALLOWED_ROOTS.some((root) => input.startsWith(root)) &&
     /\.(?:js|jsx|mjs|cjs|ts|tsx|css|scss|json|md)$/i.test(input);
 }
