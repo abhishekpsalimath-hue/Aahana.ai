@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { executeBuildTask } from "@/lib/build/build-engine.mjs";
-import { validateWorkspaceFiles } from "@/lib/build/sandbox-policy.mjs";
+import { validateWorkspaceFiles, validateWorkspacePath } from "@/lib/build/sandbox-policy.mjs";
 export const runtime = "nodejs";
 export const maxDuration = 180;
 const MAX_SOURCE_FILES = 100;
@@ -23,7 +23,12 @@ export async function POST(request) {
   const projectId = typeof body?.projectId === "string" ? body.projectId : "";
   const operation = body?.operation;
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(projectId)) return NextResponse.json({ error: "Select a valid project first." }, { status: 400 });
-  if (!["build", "test"].includes(operation)) return NextResponse.json({ error: "Choose build or test." }, { status: 400 });
+  if (!["build", "test", "run"].includes(operation)) return NextResponse.json({ error: "Choose build, test or run." }, { status: 400 });
+  let entrypoint = null;
+  if (operation === "run") {
+    try { entrypoint = validateWorkspacePath(body?.entrypoint); }
+    catch { return NextResponse.json({ error: "Enter a valid project-relative JavaScript or Python file path." }, { status: 400 }); }
+  }
   const { data: project, error: projectError } = await supabase.from("projects").select("id").eq("id", projectId).eq("user_id", user.id).neq("status", "archived").maybeSingle();
   if (projectError || !project) return NextResponse.json({ error: "Project not found." }, { status: 404 });
   const { data: rows, error: filesError } = await supabase.from("user_files").select("bucket_id, object_path, original_filename, mime_type, size_bytes").eq("user_id", user.id).eq("project_id", projectId).order("created_at", { ascending: false }).limit(MAX_SOURCE_FILES);
@@ -53,9 +58,10 @@ export async function POST(request) {
     }
     const files = validateWorkspaceFiles(workspace);
     if (!files.some((file) => file.path === "package.json")) return NextResponse.json({ error: "This project needs a package.json file before Aahana can run its build or tests." }, { status: 400 });
-    const result = await executeBuildTask({ files, operation, projectId: process.env.VERCEL_PROJECT_ID || "prj_Ts4f4dcI3IPvBOw5IWPdsfmumbHK", sandboxName: "aahana-project-" + randomUUID().replace(/-/g, "").slice(0, 20) });
+    const result = await executeBuildTask({ files, operation, entrypoint, projectId: process.env.VERCEL_PROJECT_ID || "prj_Ts4f4dcI3IPvBOw5IWPdsfmumbHK", sandboxName: "aahana-project-" + randomUUID().replace(/-/g, "").slice(0, 20), signal: request.signal });
     return NextResponse.json({ ...result, sourceFileCount: files.length, sourceBytes: totalBytes }, { status: result.status === "passed" ? 200 : 422 });
   } catch (error) {
+    if (request.signal.aborted) return new Response(null, { status: 499 });
     console.error("Aahana project build failed:", error?.message || "unknown error");
     return NextResponse.json({ error: error?.message || "Aahana could not run this project safely." }, { status: 400 });
   } finally {

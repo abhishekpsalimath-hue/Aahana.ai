@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -265,6 +267,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [conversationId, setConversationId] = useState(null);
   const [busy, setBusy] = useState(false);
   const [buildBusy, setBuildBusy] = useState(false);
+  const [buildEntrypoint, setBuildEntrypoint] = useState("src/index.js");
   const [buildEnabled, setBuildEnabled] = useState(false);
   const [buildStatusLoading, setBuildStatusLoading] = useState(true);
   const [error, setError] = useState("");
@@ -622,7 +625,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       if (typeof result.imageDataUrl !== "string" || !result.imageDataUrl.startsWith("data:image/jpeg;base64,")) {
         throw new Error("The image provider returned an invalid image.");
       }
-      setGeneratedImage({ dataUrl: result.imageDataUrl, prompt: imagePrompt });
+      setGeneratedImage({ dataUrl: result.imageDataUrl, prompt: imagePrompt, refined: result.promptRefined === true });
     } catch (err) {
       setError(err.message || "Image generation failed.");
     } finally {
@@ -688,7 +691,12 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
 
   async function runProjectCheck(operation) {
     if (!selectedProjectId || buildBusy || busy || !buildEnabled) return;
-    const label = operation === "test" ? "Run isolated project tests" : "Run isolated project build";
+    const entrypoint = buildEntrypoint.trim();
+    if (operation === "run" && !entrypoint) {
+      setError("Enter a project-relative JavaScript or Python file path to run.");
+      return;
+    }
+    const label = operation === "test" ? "Run isolated project tests" : operation === "run" ? `Run ${entrypoint} in isolation` : "Run isolated project build";
     setBuildBusy(true);
     setError("");
     setMessages((current) => [...current,
@@ -698,7 +706,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     try {
       const response = await fetch("/api/build/project", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectId: selectedProjectId, operation }),
+        body: JSON.stringify({ projectId: selectedProjectId, operation, ...(operation === "run" ? { entrypoint } : {}) }),
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || "The isolated project check could not start.");
@@ -891,9 +899,9 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   return (
     <main className="shell">
       <aside className="sidebar">
-        <a className="brand" href="/" aria-label="Aahana AI home">
+        <Link className="brand" href="/" aria-label="Aahana AI home">
           <span className="brand-word">Aahana</span><span className="brand-ai">AI</span>
-        </a>
+        </Link>
         <button className="new-chat" type="button" onClick={newConversation}>
           <span aria-hidden="true">＋</span> New conversation
         </button>
@@ -1180,6 +1188,21 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                   </button>
                 </div>
               </div>
+              <div className="build-tools-run">
+                <label htmlFor="build-entrypoint">Run a source file</label>
+                <input
+                  id="build-entrypoint"
+                  type="text"
+                  value={buildEntrypoint}
+                  onChange={(event) => setBuildEntrypoint(event.target.value)}
+                  placeholder="src/index.js or scripts/check.py"
+                  spellCheck={false}
+                  autoComplete="off"
+                />
+                <button type="button" disabled={!selectedProjectId || !buildEnabled || buildBusy || busy || !buildEntrypoint.trim()} onClick={() => runProjectCheck("run")}>
+                  Run in isolation
+                </button>
+              </div>
               <p className="build-tools-note">
                 {!selectedProjectId
                   ? "Select a project, then upload package.json and its source files in Files."
@@ -1196,6 +1219,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
             {generatedImage && (
               <div className="generated-image-preview">
                 <img src={generatedImage.dataUrl} alt={generatedImage.prompt} style={{ display: "block", width: "100%", maxWidth: "640px", borderRadius: "14px" }} />
+                <small className="image-prompt-status">{generatedImage.refined ? "Aahana refined your prompt before generation." : "Generated from your original prompt."}</small>
                 <div className="message-actions">
                   <a className="copy-message" href={generatedImage.dataUrl} download="aahana-generated-image.jpg">Download image</a>
                   <button className="copy-message" type="button" onClick={() => setGeneratedImage(null)}>Remove</button>

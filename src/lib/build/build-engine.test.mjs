@@ -2,7 +2,19 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { executeBuildTask } from "./build-engine.mjs";
 
-function createFakeSandbox({ installExitCode = 0, taskExitCode = 0 } = {}) {
+function writeOutput(stream, value) {
+  if (!stream) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    stream.end(value, (error) => error ? reject(error) : resolve());
+  });
+}
+
+function createFakeSandbox({
+  installExitCode = 0,
+  taskExitCode = 0,
+  taskStdout = "task output\\n",
+  taskStderr = "",
+} = {}) {
   const calls = [];
   const sandbox = {
     async writeFiles(files) {
@@ -14,11 +26,12 @@ function createFakeSandbox({ installExitCode = 0, taskExitCode = 0 } = {}) {
     async runCommand(options) {
       calls.push({ type: "runCommand", options });
       const isInstall = options.cmd === "npm" && options.args[0] === "install";
-      return {
-        exitCode: isInstall ? installExitCode : taskExitCode,
-        async stdout() { return isInstall ? "installed\n" : "task output\n"; },
-        async stderr() { return isInstall && installExitCode ? "install failed\n" : ""; },
-      };
+      await Promise.all([
+        writeOutput(options.stdout, isInstall ? "installed\\n" : taskStdout),
+        writeOutput(options.stderr, isInstall && installExitCode ? "install failed\\n" : taskStderr),
+      ]);
+      if (options.signal?.aborted) throw options.signal.reason || new Error("sandbox command aborted");
+      return { exitCode: isInstall ? installExitCode : taskExitCode };
     },
     async stop() {
       calls.push({ type: "stop" });
@@ -29,7 +42,6 @@ function createFakeSandbox({ installExitCode = 0, taskExitCode = 0 } = {}) {
     return sandbox;
   } } };
 }
-
 test("runs a simple JavaScript entrypoint in a disposable deny-all sandbox", async () => {
   const fake = createFakeSandbox();
   const result = await executeBuildTask({
@@ -46,6 +58,7 @@ test("runs a simple JavaScript entrypoint in a disposable deny-all sandbox", asy
   assert.equal(fake.calls[0].options.networkPolicy, "deny-all");
   assert.equal(fake.calls[0].options.persistent, false);
   assert.equal(fake.calls[0].options.resources.vcpus, 1);
+  assert.equal(fake.calls[0].options.timeout, 120_000);
   assert.equal(fake.calls.at(-1).type, "stop");
   assert.equal(fake.calls.some((call) => call.type === "update"), true);
 });
@@ -212,4 +225,139 @@ test("stops the sandbox when workspace upload fails before any command can run",
 
   assert.deepEqual(calls, ["create", "writeFiles", "update", "stop"]);
   assert.equal(calls.includes("runCommand"), false);
+});
+
+
+test("aborts and stops the isolated sandbox when the caller disconnects", async () => {
+  const controller = new AbortController();
+  let signalRunStarted;
+  const runStarted = new Promise((resolve) => { signalRunStarted = resolve; });
+  let stopCount = 0;
+  const sandbox = {
+    async writeFiles() {},
+    async update() {},
+    async runCommand() {
+      signalRunStarted();
+      return new Promise((resolve, reject) => {
+        controller.signal.addEventListener("abort", () => reject(new Error("sandbox command aborted")), { once: true });
+      });
+    },
+    async stop() {
+      stopCount += 1;
+      controller.abort();
+    },
+  };
+  const SandboxClient = { async create() { return sandbox; } };
+  const task = executeBuildTask({
+    files: [{ path: "src/main.js", content: "console.log('hello')" }],
+    operation: "run",
+    entrypoint: "src/main.js",
+    projectId: "prj_12345678",
+    sandboxName: "aahana-build-cancel-123",
+    SandboxClient,
+    signal: controller.signal,
+  });
+
+  await runStarted;
+  controller.abort();
+  await assert.rejects(task, /sandbox command aborted/);
+  assert.equal(stopCount, 1);
+});
+
+test("does not create a sandbox when the caller is already disconnected", async () => {
+  const controller = new AbortController();
+  controller.abort();
+  let createCount = 0;
+  const SandboxClient = { async create() { createCount += 1; throw new Error("must not create"); } };
+
+  await assert.rejects(() => executeBuildTask({
+    files: [{ path: "src/main.js", content: "console.log('hello')" }],
+    operation: "run",
+    entrypoint: "src/main.js",
+    projectId: "prj_12345678",
+    sandboxName: "aahana-build-cancel-456",
+    SandboxClient,
+    signal: controller.signal,
+  }), /Build cancelled before sandbox creation/);
+  assert.equal(createCount, 0);
+});
+
+
+test("aborts the provider command when streamed stdout exceeds the output cap", async () => {
+  const fake = createFakeSandbox({ taskStdout: "o".repeat(50_000) });
+  await assert.rejects(() => executeBuildTask({
+    files: [{ path: "src/main.js", content: "console.log('hello')" }],
+    operation: "run",
+    entrypoint: "src/main.js",
+    projectId: "prj_12345678",
+    sandboxName: "aahana-build-output-cap",
+    SandboxClient: fake.SandboxClient,
+  }), /Build output exceeded the 12 KB limit/);
+
+  const command = fake.calls.find((call) => call.type === "runCommand");
+  assert.equal(command.options.signal instanceof AbortSignal, true);
+  assert.equal(command.options.signal.aborted, true);
+  assert.equal(fake.calls.filter((call) => call.type === "stop").length, 1);
+});
+
+test("aborts the provider command when streamed stderr exceeds the output cap", async () => {
+  const fake = createFakeSandbox({ taskStderr: "e".repeat(50_000) });
+  await assert.rejects(() => executeBuildTask({
+    files: [{ path: "src/main.js", content: "console.log('hello')" }],
+    operation: "run",
+    entrypoint: "src/main.js",
+    projectId: "prj_12345678",
+    sandboxName: "aahana-build-stderr-cap",
+    SandboxClient: fake.SandboxClient,
+  }), /Build output exceeded the 12 KB limit/);
+
+  const command = fake.calls.find((call) => call.type === "runCommand");
+  assert.equal(command.options.signal.aborted, true);
+  assert.equal(fake.calls.filter((call) => call.type === "stop").length, 1);
+});
+
+test("passes the hard wall-clock timeout to the Vercel Sandbox provider", async () => {
+  const fake = createFakeSandbox();
+  await executeBuildTask({
+    files: [{ path: "src/main.js", content: "console.log('hello')" }],
+    operation: "run",
+    entrypoint: "src/main.js",
+    projectId: "prj_12345678",
+    sandboxName: "aahana-build-timeout",
+    SandboxClient: fake.SandboxClient,
+  });
+
+  const createCall = fake.calls.find((call) => call.type === "create");
+  assert.equal(createCall.options.timeout, 120_000);
+});
+
+test("does not upload workspace files if the caller disconnects while sandbox creation is pending", async () => {
+  const controller = new AbortController();
+  const calls = [];
+  const sandbox = {
+    async writeFiles() { calls.push("writeFiles"); },
+    async update() { calls.push("update"); },
+    async runCommand() { calls.push("runCommand"); return { exitCode: 0, async stdout() { return ""; }, async stderr() { return ""; } }; },
+    async stop() { calls.push("stop"); },
+  };
+  const SandboxClient = {
+    async create() {
+      controller.abort();
+      return sandbox;
+    },
+  };
+
+  await assert.rejects(() => executeBuildTask({
+    files: [{ path: "src/main.js", content: "console.log('must not upload')" }],
+    operation: "run",
+    entrypoint: "src/main.js",
+    projectId: "prj_12345678",
+    sandboxName: "aahana-build-cancel-create",
+    SandboxClient,
+    signal: controller.signal,
+  }), /Build cancelled before workspace upload/);
+
+  assert.equal(calls.includes("writeFiles"), false);
+  assert.equal(calls.includes("runCommand"), false);
+  assert.equal(calls.filter((call) => call === "stop").length, 1);
 });

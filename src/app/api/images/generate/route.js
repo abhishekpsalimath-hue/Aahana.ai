@@ -1,11 +1,51 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { IMAGE_PROMPT_COMPILER_INSTRUCTIONS, selectCompiledImagePrompt } from "@/lib/ai/image-prompt-compiler.mjs";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
 const MODEL = "@cf/black-forest-labs/flux-1-schnell";
 const MAX_PROMPT_LENGTH = 2048;
+
+async function refineImagePrompt(originalPrompt) {
+  const provider = (process.env.AAHANA_AI_PROVIDER || "groq").toLowerCase();
+  const apiKey = process.env.GROQ_API_KEY;
+  if (provider !== "groq" || !apiKey) return { prompt: originalPrompt, refined: false };
+
+  try {
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: process.env.AAHANA_MODEL || "openai/gpt-oss-120b",
+        temperature: 0.2,
+        max_completion_tokens: 650,
+        stream: false,
+        messages: [
+          { role: "system", content: IMAGE_PROMPT_COMPILER_INSTRUCTIONS },
+          { role: "user", content: JSON.stringify({ user_image_request: originalPrompt }) },
+        ],
+      }),
+      cache: "no-store",
+      signal: AbortSignal.timeout(3500),
+    });
+    if (!response.ok) {
+      console.warn("Aahana image prompt refinement skipped:", { status: response.status });
+      return { prompt: originalPrompt, refined: false };
+    }
+    const payload = await response.json().catch(() => null);
+    const candidate = payload?.choices?.[0]?.message?.content;
+    const compiled = selectCompiledImagePrompt(candidate, originalPrompt);
+    return { prompt: compiled, refined: compiled !== originalPrompt };
+  } catch (error) {
+    console.warn("Aahana image prompt refinement skipped:", error?.name || "unknown error");
+    return { prompt: originalPrompt, refined: false };
+  }
+}
 
 export async function POST(request) {
   const supabase = await createClient();
@@ -31,6 +71,8 @@ export async function POST(request) {
     return NextResponse.json({ error: "Describe the image in 1–2,048 characters." }, { status: 400 });
   }
 
+  const { prompt: finalPrompt, refined } = await refineImagePrompt(prompt);
+
   try {
     const response = await fetch(
       `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/ai/run/${MODEL}`,
@@ -40,9 +82,9 @@ export async function POST(request) {
           Authorization: `Bearer ${apiToken}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ prompt, steps: 4 }),
+        body: JSON.stringify({ prompt: finalPrompt, steps: 8 }),
         cache: "no-store",
-        signal: AbortSignal.timeout(55000),
+        signal: AbortSignal.timeout(50000),
       }
     );
 
@@ -61,7 +103,7 @@ export async function POST(request) {
     }
 
     return NextResponse.json(
-      { imageDataUrl: `data:image/jpeg;base64,${image}`, model: MODEL },
+      { imageDataUrl: `data:image/jpeg;base64,${image}`, model: MODEL, promptRefined: refined },
       { headers: { "Cache-Control": "no-store" } }
     );
   } catch (error) {
