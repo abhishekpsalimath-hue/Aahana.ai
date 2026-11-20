@@ -12,6 +12,7 @@ on:
       - fix/phase-c-verify-diff-tree-statuses
       - fix/phase-c-reject-ambiguous-diff-entries
       - fix/phase-c-require-trusted-check-app
+      - feat/phase-c-readonly-repository-snapshot
     paths:
       - "src/lib/operations/autonomous-policy.*"
       - "src/lib/operations/autonomous-github-evidence.*"
@@ -32,6 +33,7 @@ on:
       - fix/phase-c-github-api-timeouts
       - fix/phase-c-reject-ambiguous-diff-entries
       - fix/phase-c-require-trusted-check-app
+      - feat/phase-c-readonly-repository-snapshot
   workflow_dispatch:
 
 permissions:
