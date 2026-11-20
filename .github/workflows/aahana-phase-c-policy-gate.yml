@@ -6,17 +6,12 @@ on:
       - feat/aahana-autonomous-development-phase-c-policy-gate
       - feat/aahana-phase-c-policy-hardening
       - feat/phase-c-trusted-github-evidence
-      - feat/phase-c-github-app-minimum-permissions
       - fix/phase-c-detect-renamed-protected-paths
-      - feat/phase-c-github-app-readonly-client
-      - feat/phase-c-github-app-minimum-permissions
-      - fix/phase-c-detect-renamed-protected-paths
-      - feat/phase-c-github-app-minimum-permissions
+      - fix/phase-c-evidence-invalid-criteria
     paths:
       - "src/lib/operations/autonomous-policy.*"
       - "src/lib/operations/autonomous-github-evidence.*"
       - "src/lib/operations/github-app-client.*"
-      - "src/lib/operations/autonomous-review.*"
       - "src/lib/operations/autonomous-review.*"
       - "docs/aahana-github-app-readonly-integration.md"
       - "package.json"
@@ -27,6 +22,9 @@ on:
       - feat/aahana-phase-c-policy-hardening
       - feat/phase-c-trusted-github-evidence
       - feat/phase-c-github-app-readonly-client
+      - feat/phase-c-github-app-minimum-permissions
+      - fix/phase-c-detect-renamed-protected-paths
+      - fix/phase-c-evidence-invalid-criteria
   workflow_dispatch:
 
 permissions:
