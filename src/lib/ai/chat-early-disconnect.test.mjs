@@ -37,6 +37,10 @@ test("private-memory lookup exceptions stop immediately when the client disconne
 });
 
 test("assistant reply timestamp updates are scoped to the authenticated conversation owner", () => {
-  const timestampUpdates = route.match(/\\.update\\(\\{ updated_at: new Date\\(\\)\\.toISOString\\(\\) \\}\\)[\\s\\S]{0,160}?\\.eq\\("id", conversationId\\)[\\s\\S]{0,100}?\\.eq\\("user_id", user\\.id\\)/g) || [];
-  assert.equal(timestampUpdates.length, 2);
-});
+  const timestampUpdateCalls = route.split('.update({ updated_at: new Date().toISOString() })').slice(1);
+  const ownerScopedUpdates = timestampUpdateCalls.filter((segment) => {
+    const updateChain = segment.slice(0, 240);
+    return updateChain.includes('.eq("id", conversationId)') && updateChain.includes('.eq("user_id", user.id)');
+  });
+  assert.equal(ownerScopedUpdates.length, 2);
+});;
