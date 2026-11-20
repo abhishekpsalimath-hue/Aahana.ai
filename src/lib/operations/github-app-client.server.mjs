@@ -62,13 +62,20 @@ export function createGitHubAppClient({
           Accept: "application/vnd.github+json",
           "X-GitHub-Api-Version": API_VERSION,
         },
-        body: "{}",
+        body: JSON.stringify({ permissions: { contents: "read", pull_requests: "read", checks: "read" } }),
       },
     );
     if (!response.ok) throw new Error("github_installation_token_request_failed");
     const data = await response.json();
     if (typeof data?.token !== "string" || !data.token || typeof data.expires_at !== "string") {
       throw new Error("github_installation_token_response_invalid");
+    }
+    const permissions = data.permissions || {};
+    if (permissions.contents !== "read" || permissions.pull_requests !== "read" || permissions.checks !== "read" ||
+        Object.entries(permissions).some(([name, level]) =>
+          !["contents", "pull_requests", "checks"].includes(name) || level !== "read"
+        )) {
+      throw new Error("github_installation_token_permissions_invalid");
     }
     const expiry = Date.parse(data.expires_at);
     if (!Number.isFinite(expiry) || expiry <= now()) {
