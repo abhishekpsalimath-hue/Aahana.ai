@@ -1,0 +1,87 @@
+name: SraVaani request-guard tests
+
+on:
+  pull_request:
+    paths:
+      - "services/sravaani-asr/**"
+      - ".github/workflows/sravaani-guards.yml"
+      - "src/lib/voice/sravaani-asr-provider.*"
+      - "src/lib/voice/speech-runtime.*"
+      - "src/lib/voice/maya-tts-provider.*"
+      - "src/lib/voice/README.md"
+      - "src/app/api/voice/transcribe/route.js"
+      - "src/app/api/voice/speech/route.js"
+      - "src/app/api/chat/route.js"
+      - "src/app/assistant-workspace.jsx"
+      - "src/lib/voice/audio-wav.*"
+      - "src/lib/voice/locale-detection.*"
+      - "src/lib/voice/locale-support.*"
+      - "src/lib/voice/speech-fallback-policy.*"
+      - "src/lib/voice/voice-route-cancellation.test.mjs"
+  push:
+    branches:
+      - "feat/aahana-voice-runtime-adapters"
+    paths:
+      - "services/sravaani-asr/**"
+      - ".github/workflows/sravaani-guards.yml"
+      - "src/lib/voice/sravaani-asr-provider.*"
+      - "src/lib/voice/speech-runtime.*"
+      - "src/lib/voice/maya-tts-provider.*"
+      - "src/lib/voice/README.md"
+      - "src/app/assistant-workspace.jsx"
+      - "src/app/api/voice/transcribe/route.js"
+      - "src/app/api/voice/speech/route.js"
+      - "src/app/api/voice/capabilities/route.js"
+      - "src/app/api/chat/route.js"
+      - "src/lib/voice/audio-wav.*"
+      - "src/lib/voice/locale-detection.*"
+      - "src/lib/voice/locale-support.*"
+      - "src/lib/voice/speech-fallback-policy.*"
+      - "src/lib/voice/voice-route-cancellation.test.mjs"
+
+permissions:
+  contents: read
+
+jobs:
+  request-guards:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/sravaani-asr
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run dependency-free request guard tests
+        run: python -m unittest -v test_request_validation.py
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Run SraVaani provider adapter tests
+        run: node --test ../../src/lib/voice/sravaani-asr-provider.test.mjs
+      - name: Test provider-neutral speech runtime
+        run: node --test ../../src/lib/voice/speech-runtime.test.mjs
+      - name: Test Maya speech synthesis adapter
+        run: node --test ../../src/lib/voice/maya-tts-provider.test.mjs
+      - name: Test browser WAV encoder
+        run: node --test ../../src/lib/voice/audio-wav.test.mjs
+      - name: Test multilingual locale detection and coverage
+        run: node --test ../../src/lib/voice/locale-detection.test.mjs ../../src/lib/voice/locale-support.test.mjs
+      - name: Test multilingual chat response policy
+        run: node --test ../../src/lib/voice/chat-language-policy.test.mjs
+      - name: Test device speech fallback policy
+        run: node --test ../../src/lib/voice/speech-fallback-policy.test.mjs
+      - name: Test voice route cancellation contract
+        run: node --test ../../src/lib/voice/voice-route-cancellation.test.mjs
+      - name: Syntax-check authenticated transcription route
+        run: node --check ../../src/app/api/voice/transcribe/route.js
+      - name: Syntax-check authenticated speech synthesis route
+        run: node --check ../../src/app/api/voice/speech/route.js
+      - name: Syntax-check authenticated voice capabilities route
+        run: node --check ../../src/app/api/voice/capabilities/route.js
+      - name: Syntax-check chat route
+        run: node --check ../../src/app/api/chat/route.js

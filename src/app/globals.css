@@ -438,3 +438,6 @@ button:focus-visible,a:focus-visible{outline-color:#c4a7ff}
   .welcome .cosmic-nebula,.welcome .cosmic-stars,.welcome .cosmic-core{animation:none!important}
   .welcome .cosmic-stars{opacity:.38;transform:none}
 }
+
+.voice-capability-note{align-self:center;color:#aaa4b7;font-size:10px;line-height:1.4;letter-spacing:.1px}
+@media(max-width:760px){.voice-capability-note{width:100%;padding:2px 4px}}

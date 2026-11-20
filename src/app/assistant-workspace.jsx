@@ -1,8 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { findBestSpeechVoice, getBrowserVoiceCapabilities } from "@/lib/voice/browser-capabilities.mjs";
+import { encodeMonoPcm16Wav } from "@/lib/voice/audio-wav.mjs";
+import { inferSpeechLocale } from "@/lib/voice/locale-detection.mjs";
+import { shouldFallbackToDeviceSpeech } from "@/lib/voice/speech-fallback-policy.mjs";
 
 const modes = [
   { id: "solve", label: "Solve", hint: "Work through a problem" },
@@ -71,29 +75,6 @@ function isImageGenerationRequest(value) {
   const markerCount = visualMarkers.filter((pattern) => pattern.test(text)).length;
   const hasVisualSubject = /\b(?:city|metropolis|landscape|ocean|underwater|space station|planet|portrait|character|architecture|skyscraper|forest|mountain|vehicle|spaceship|animal|interior|exterior|scene|coral|submarine|building)\b/i.test(text);
   return text.length >= 100 && markerCount >= 2 && hasVisualSubject;
-}
-
-function inferSpeechLocale(text, preferredLocale = "en-IN") {
-  const value = String(text || "");
-  const has = (pattern) => pattern.test(value);
-  if (has(/\p{Script=Kannada}/u)) return "kn-IN";
-  if (has(/\p{Script=Tamil}/u)) return "ta-IN";
-  if (has(/\p{Script=Telugu}/u)) return "te-IN";
-  if (has(/\p{Script=Malayalam}/u)) return "ml-IN";
-  if (has(/\p{Script=Bengali}/u)) return "bn-IN";
-  if (has(/\p{Script=Gujarati}/u)) return "gu-IN";
-  if (has(/\p{Script=Gurmukhi}/u)) return "pa-IN";
-  if (has(/\p{Script=Oriya}/u)) return "or-IN";
-  if (has(/\p{Script=Devanagari}/u)) return /^(mr|ne|sa|kok)-/i.test(preferredLocale) ? preferredLocale : "hi-IN";
-  if (has(/[ぁ-ゟ゠-ヿ]/u)) return "ja-JP";
-  if (has(/\p{Script=Hangul}/u)) return "ko-KR";
-  if (has(/\p{Script=Han}/u)) return /^zh/i.test(preferredLocale) ? preferredLocale : "zh-CN";
-  if (has(/\p{Script=Cyrillic}/u)) return /^(uk|ru|bg|sr)-/i.test(preferredLocale) ? preferredLocale : "ru-RU";
-  if (has(/\p{Script=Arabic}/u)) return /^(ur|fa|ar)-/i.test(preferredLocale) ? preferredLocale : "ar-SA";
-  if (has(/\p{Script=Hebrew}/u)) return "he-IL";
-  if (has(/\p{Script=Thai}/u)) return "th-TH";
-  if (has(/\p{Script=Greek}/u)) return "el-GR";
-  return preferredLocale;
 }
 
 function evaluateArithmetic(input) {
@@ -197,16 +178,57 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [memoryBusy, setMemoryBusy] = useState(false);
   const [memoryError, setMemoryError] = useState("");
   const [voiceLanguage, setVoiceLanguage] = useState("en-IN");
+  const [speechRate, setSpeechRate] = useState(1);
   const [autoSpeak, setAutoSpeak] = useState(true);
   const [listening, setListening] = useState(false);
   const [speakingMessage, setSpeakingMessage] = useState(null);
   const [voicePreferencesLoaded, setVoicePreferencesLoaded] = useState(false);
+  const [speechVoices, setSpeechVoices] = useState([]);
+  const [speechInputAvailable, setSpeechInputAvailable] = useState(false);
+  const [voiceProviderCapabilities, setVoiceProviderCapabilities] = useState(null);
+  const [voiceConsent, setVoiceConsent] = useState(false);
+  const [providerRecording, setProviderRecording] = useState(false);
+  const [providerTranscribing, setProviderTranscribing] = useState(false);
+  const [providerSeconds, setProviderSeconds] = useState(0);
+  const mediaRecorderRef = useRef(null);
+  const mediaStreamRef = useRef(null);
+  const recordingChunksRef = useRef([]);
+  const recordingTimerRef = useRef(null);
+  const recordingStartedAtRef = useRef(0);
+  const audioPlaybackRef = useRef(null);
+  const audioObjectUrlRef = useRef(null);
   // Recognition and speech use the browser/device language packs. This list covers
   // major Indian regional languages and widely used international locales.
   const voiceLanguages = [
     ["kn-IN","ಕನ್ನಡ (Kannada)"],["hi-IN","हिन्दी (Hindi)"],["ta-IN","தமிழ் (Tamil)"],["te-IN","తెలుగు (Telugu)"],["ml-IN","മലയാളം (Malayalam)"],["mr-IN","मराठी (Marathi)"],["bn-IN","বাংলা (Bengali)"],["gu-IN","ગુજરાતી (Gujarati)"],["pa-IN","ਪੰਜਾਬੀ (Punjabi)"],["ur-IN","اردو (Urdu)"],["or-IN","ଓଡ଼ିଆ (Odia)"],["as-IN","অসমীয়া (Assamese)"],["ne-NP","नेपाली (Nepali)"],["sa-IN","संस्कृत (Sanskrit)"],["ks-IN","Kashmiri"],["sd-IN","Sindhi"],["kok-IN","Konkani"],["doi-IN","Dogri"],["mni-IN","Manipuri"],["brx-IN","Bodo"],
     ["en-IN","English (India)"],["en-US","English (US)"],["en-GB","English (UK)"],["en-AU","English (Australia)"],["en-CA","English (Canada)"],["es-ES","Español (Spanish)"],["es-MX","Spanish (Mexico)"],["fr-FR","Français (French)"],["fr-CA","French (Canada)"],["de-DE","Deutsch (German)"],["pt-BR","Português (Brazil)"],["pt-PT","Portuguese (Portugal)"],["ar-SA","العربية (Arabic)"],["ar-EG","Arabic (Egypt)"],["zh-CN","中文 (Mandarin)"],["zh-TW","Chinese (Traditional)"],["yue-HK","Cantonese"],["ja-JP","日本語 (Japanese)"],["ko-KR","한국어 (Korean)"],["ru-RU","Русский (Russian)"],["it-IT","Italiano (Italian)"],["nl-NL","Nederlands (Dutch)"],["sv-SE","Swedish"],["no-NO","Norwegian"],["da-DK","Danish"],["fi-FI","Finnish"],["is-IS","Icelandic"],["pl-PL","Polish"],["cs-CZ","Czech"],["sk-SK","Slovak"],["hu-HU","Hungarian"],["ro-RO","Romanian"],["bg-BG","Bulgarian"],["el-GR","Greek"],["tr-TR","Türkçe (Turkish)"],["he-IL","עברית (Hebrew)"],["th-TH","ไทย (Thai)"],["vi-VN","Tiếng Việt (Vietnamese)"],["id-ID","Bahasa Indonesia"],["ms-MY","Bahasa Melayu"],["fil-PH","Filipino"],["sw-KE","Swahili"],["af-ZA","Afrikaans"],["uk-UA","Ukrainian"],["hr-HR","Croatian"],["sr-RS","Serbian"],["sl-SI","Slovenian"],["lt-LT","Lithuanian"],["lv-LV","Latvian"],["et-EE","Estonian"],["fa-IR","Persian"],["am-ET","Amharic"]
   ];
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/voice/capabilities", { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Voice capability status unavailable");
+        return response.json();
+      })
+      .then((result) => { if (active) setVoiceProviderCapabilities(result); })
+      .catch(() => { if (active) setVoiceProviderCapabilities(null); });
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    const refreshCapabilities = () => {
+      const recognitionAvailable = Boolean(window.SpeechRecognition || window.webkitSpeechRecognition);
+      const synthesisAvailable = Boolean(window.speechSynthesis);
+      const voices = synthesisAvailable ? window.speechSynthesis.getVoices() : [];
+      const capabilities = getBrowserVoiceCapabilities({ recognitionAvailable, synthesisAvailable, voices });
+      setSpeechInputAvailable(capabilities.inputAvailable);
+      setSpeechVoices(voices);
+    };
+    refreshCapabilities();
+    window.speechSynthesis?.addEventListener?.("voiceschanged", refreshCapabilities);
+    return () => window.speechSynthesis?.removeEventListener?.("voiceschanged", refreshCapabilities);
+  }, []);
 
   // Keep voice choices on this device. This is a convenience preference only;
   // it does not imply that the browser has a speech model for the selected locale.
@@ -218,6 +240,9 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         if (typeof preferences?.voiceLanguage === "string"
           && voiceLanguages.some(([code]) => code === preferences.voiceLanguage)) {
           setVoiceLanguage(preferences.voiceLanguage);
+        }
+        if ([0.8, 1, 1.2, 1.5].includes(preferences?.speechRate)) {
+          setSpeechRate(preferences.speechRate);
         }
         if (typeof preferences?.autoSpeak === "boolean") {
           setAutoSpeak(preferences.autoSpeak);
@@ -235,12 +260,17 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     try {
       window.localStorage.setItem("aahana:voice-preferences:v1", JSON.stringify({
         voiceLanguage,
+        speechRate,
         autoSpeak,
       }));
     } catch {
       // Voice preferences remain usable for this session if storage is unavailable.
     }
-  }, [voiceLanguage, autoSpeak, voicePreferencesLoaded]);
+  }, [voiceLanguage, speechRate, autoSpeak, voicePreferencesLoaded]);
+
+  useEffect(() => {
+    if (audioPlaybackRef.current) audioPlaybackRef.current.playbackRate = speechRate;
+  }, [speechRate]);
 
   function startVoiceInput() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -257,33 +287,205 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       const transcript = event.results?.[0]?.[0]?.transcript || "";
       if (transcript) setPrompt((current) => current ? current + " " + transcript : transcript);
     };
-    recognition.onerror = () => setError("Voice recognition could not complete. Check microphone permission and try again.");
+    recognition.onerror = (event) => {
+      const messages = {
+        "not-allowed": "Microphone access is blocked. Allow microphone permission in your browser settings.",
+        "service-not-allowed": "This browser does not allow its speech-recognition service.",
+        "language-not-supported": `This browser's speech service does not support ${voiceLanguage}. Choose another language or use text input.`,
+        "audio-capture": "No working microphone was detected. Check your microphone connection.",
+        "no-speech": "No speech was detected. Try speaking a little closer to the microphone.",
+        "network": "The browser speech service could not connect. Check your internet connection.",
+      };
+      setError(messages[event?.error] || "Voice recognition could not complete. You can still type your message.");
+    };
     recognition.onend = () => setListening(false);
     try { recognition.start(); } catch { setListening(false); setError("Voice input is already active. Please try again."); }
   }
 
-  function speakResponse(text, index) {
-    if (!("speechSynthesis" in window)) {
-      setError("Spoken responses are not supported in this browser.");
+  useEffect(() => () => {
+    if (recordingTimerRef.current) window.clearInterval(recordingTimerRef.current);
+    mediaRecorderRef.current?.stop?.();
+    mediaStreamRef.current?.getTracks?.().forEach((track) => track.stop());
+    audioPlaybackRef.current?.pause?.();
+    if (audioObjectUrlRef.current) URL.revokeObjectURL(audioObjectUrlRef.current);
+  }, []);
+
+  async function startProviderRecording() {
+    if (!voiceConsent) {
+      setError("Please confirm that you agree to send this recording to Aahana's configured private speech service.");
       return;
     }
-    window.speechSynthesis.cancel();
-    if (speakingMessage === index) { setSpeakingMessage(null); return; }
-    const utterance = new SpeechSynthesisUtterance(String(text || ""));
-    const speechLanguage = inferSpeechLocale(text, voiceLanguage);
-    utterance.lang = speechLanguage;
-    const voices = window.speechSynthesis.getVoices();
-    const languagePrefix = speechLanguage.split("-")[0].toLowerCase();
-    const matchingVoice = voices.find((voice) => voice.lang.toLowerCase() === speechLanguage.toLowerCase())
-      || voices.find((voice) => voice.lang.toLowerCase().startsWith(languagePrefix));
-    if (matchingVoice) {
-      utterance.voice = matchingVoice;
-    } else {
-      setError(`Your device has no installed speech voice for ${speechLanguage}. Text replies will still work; install that language's speech pack in device settings to hear it.`);
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
+      setError("Private multilingual recording is not supported by this browser. You can still use the browser Speak option or type.");
+      return;
     }
+    try {
+      setError("");
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true } });
+      mediaStreamRef.current = stream;
+      const preferredType = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"].find((type) => MediaRecorder.isTypeSupported?.(type));
+      const recorder = preferredType ? new MediaRecorder(stream, { mimeType: preferredType }) : new MediaRecorder(stream);
+      recordingChunksRef.current = [];
+      recorder.ondataavailable = (event) => { if (event.data?.size) recordingChunksRef.current.push(event.data); };
+      recorder.onerror = () => {
+        setError("The microphone recording failed. Check microphone permission and try again.");
+        setProviderRecording(false);
+        stream.getTracks().forEach((track) => track.stop());
+      };
+      recorder.onstop = async () => {
+        if (recordingTimerRef.current) window.clearInterval(recordingTimerRef.current);
+        setProviderRecording(false);
+        stream.getTracks().forEach((track) => track.stop());
+        mediaStreamRef.current = null;
+        const recording = new Blob(recordingChunksRef.current, { type: recorder.mimeType || "audio/webm" });
+        recordingChunksRef.current = [];
+        if (!recording.size) { setError("No audio was recorded. Please try again."); return; }
+        setProviderTranscribing(true);
+        let audioContext;
+        try {
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          if (!AudioContextClass) throw new Error("Audio conversion is not supported in this browser.");
+          audioContext = new AudioContextClass();
+          const decoded = await audioContext.decodeAudioData(await recording.arrayBuffer());
+          const mono = new Float32Array(decoded.length);
+          for (let channel = 0; channel < decoded.numberOfChannels; channel++) {
+            const samples = decoded.getChannelData(channel);
+            for (let i = 0; i < samples.length; i++) mono[i] += samples[i] / decoded.numberOfChannels;
+          }
+          const wav = encodeMonoPcm16Wav(mono, decoded.sampleRate);
+          if (wav.size > 15 * 1024 * 1024) throw new Error("This recording is larger than the 15 MB voice upload limit.");
+          const form = new FormData();
+          form.append("file", wav, "aahana-recording.wav");
+          form.append("locale", voiceLanguage);
+          form.append("consent", "true");
+          const response = await fetch("/api/voice/transcribe", { method: "POST", body: form });
+          const result = await response.json().catch(() => ({}));
+          if (!response.ok) throw new Error(result.error || "The private speech service is unavailable or not configured yet.");
+          const transcript = String(result.text || "").trim();
+          if (!transcript) throw new Error("The speech service returned an empty transcript.");
+          setPrompt((current) => current ? current + " " + transcript : transcript);
+          setError("");
+        } catch (err) {
+          setError(err.message || "Could not transcribe this recording. You can use browser Speak or type instead.");
+        } finally {
+          await audioContext?.close?.().catch(() => {});
+          setProviderTranscribing(false);
+        }
+      };
+      mediaRecorderRef.current = recorder;
+      recordingStartedAtRef.current = Date.now();
+      setProviderSeconds(0);
+      recorder.start(500);
+      setProviderRecording(true);
+      recordingTimerRef.current = window.setInterval(() => {
+        const elapsed = Math.floor((Date.now() - recordingStartedAtRef.current) / 1000);
+        setProviderSeconds(elapsed);
+        if (elapsed >= 60 && mediaRecorderRef.current?.state === "recording") mediaRecorderRef.current.stop();
+      }, 500);
+    } catch (err) {
+      mediaStreamRef.current?.getTracks?.().forEach((track) => track.stop());
+      mediaStreamRef.current = null;
+      setError(err.name === "NotAllowedError"
+        ? "Microphone permission was denied. Allow microphone access and try again."
+        : err.message || "Could not start microphone recording.");
+    }
+  }
+
+  function stopProviderRecording() {
+    if (mediaRecorderRef.current?.state === "recording") mediaRecorderRef.current.stop();
+  }
+
+  async function speakResponse(text, index) {
+    const spokenText = String(text || "").trim();
+    if (!spokenText) return;
+    if (speakingMessage === index) {
+      audioPlaybackRef.current?.pause?.();
+      audioPlaybackRef.current = null;
+      if (audioObjectUrlRef.current) URL.revokeObjectURL(audioObjectUrlRef.current);
+      audioObjectUrlRef.current = null;
+      window.speechSynthesis?.cancel?.();
+      setSpeakingMessage(null);
+      return;
+    }
+
+    window.speechSynthesis?.cancel?.();
+    audioPlaybackRef.current?.pause?.();
+    if (audioObjectUrlRef.current) URL.revokeObjectURL(audioObjectUrlRef.current);
+    audioObjectUrlRef.current = null;
+    const speechLanguage = inferSpeechLocale(spokenText, voiceLanguage);
+    setSpeakingMessage(index);
+    setError("");
+
+    try {
+      const response = await fetch("/api/voice/speech", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: spokenText.slice(0, 6000), locale: speechLanguage }),
+      });
+      if (response.ok) {
+        const audioBlob = await response.blob();
+        if (!audioBlob.size || !audioBlob.type.startsWith("audio/")) {
+          throw new Error("Aahana's speech service returned invalid audio.");
+        }
+        const objectUrl = URL.createObjectURL(audioBlob);
+        audioObjectUrlRef.current = objectUrl;
+        const audio = new Audio(objectUrl);
+        audio.playbackRate = speechRate;
+        audioPlaybackRef.current = audio;
+        audio.onended = () => {
+          if (audioObjectUrlRef.current === objectUrl) {
+            URL.revokeObjectURL(objectUrl);
+            audioObjectUrlRef.current = null;
+            audioPlaybackRef.current = null;
+          }
+          setSpeakingMessage(null);
+        };
+        audio.onerror = () => {
+          if (audioObjectUrlRef.current === objectUrl) {
+            URL.revokeObjectURL(objectUrl);
+            audioObjectUrlRef.current = null;
+            audioPlaybackRef.current = null;
+          }
+          setSpeakingMessage(null);
+          setError("The generated speech could not be played on this device.");
+        };
+        await audio.play();
+        return;
+      }
+      if (!shouldFallbackToDeviceSpeech(response.status)) {
+        const result = await response.json().catch(() => ({}));
+        throw new Error(result.error || "Aahana's speech service could not complete this request.");
+      }
+    } catch (err) {
+      if (err?.name === "NotAllowedError") {
+        setSpeakingMessage(null);
+        setError("Tap Listen again to allow audio playback.");
+        return;
+      }
+      if (err instanceof Error && !/Failed to fetch|NetworkError/i.test(err.message)) {
+        setSpeakingMessage(null);
+        setError(err.message || "Speech playback failed.");
+        return;
+      }
+    }
+
+    if (!("speechSynthesis" in window)) {
+      setSpeakingMessage(null);
+      setError("Spoken responses are not available. The text reply remains visible.");
+      return;
+    }
+    const matchingVoice = findBestSpeechVoice(speechVoices, speechLanguage);
+    if (!matchingVoice) {
+      setSpeakingMessage(null);
+      setError(`No configured speech service or installed device voice is available for ${speechLanguage}. The text reply remains visible.`);
+      return;
+    }
+    const utterance = new SpeechSynthesisUtterance(spokenText);
+    utterance.lang = speechLanguage;
+    utterance.voice = matchingVoice;
+    utterance.rate = speechRate;
     utterance.onend = () => setSpeakingMessage(null);
     utterance.onerror = () => setSpeakingMessage(null);
-    setSpeakingMessage(index);
     window.speechSynthesis.speak(utterance);
   }
 
@@ -1031,8 +1233,33 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
               </div>
             )}
             <div className="image-attach-row">
-              <select aria-label="Voice input language" value={voiceLanguage} onChange={(event) => setVoiceLanguage(event.target.value)} className="copy-message">{voiceLanguages.map(([code, label]) => <option key={code} value={code}>{label}</option>)}</select>
+              <select aria-label="Voice language" value={voiceLanguage} onChange={(event) => setVoiceLanguage(event.target.value)} className="copy-message">{voiceLanguages.map(([code, label]) => {
+                const privateRecognition = voiceProviderCapabilities?.recognition?.enabled && voiceProviderCapabilities.recognition.supportedLocales.some((locale) => locale.toLowerCase() === code.toLowerCase());
+                const privateSynthesis = voiceProviderCapabilities?.synthesis?.enabled && voiceProviderCapabilities.synthesis.supportedLocales.some((locale) => locale.toLowerCase() === code.toLowerCase());
+                const deviceVoice = findBestSpeechVoice(speechVoices, code);
+                const suffix = privateRecognition && privateSynthesis ? " · Private two-way"
+                  : privateRecognition ? " · Private input"
+                  : privateSynthesis ? " · Private speech"
+                  : deviceVoice ? " · Device speech"
+                  : "";
+                return <option key={code} value={code}>{label}{suffix}</option>;
+              })}</select>
+              <select aria-label="Voice playback speed" value={String(speechRate)} onChange={(event) => setSpeechRate(Number(event.target.value))} className="copy-message">
+                <option value="0.8">0.8× speed</option><option value="1">1× speed</option><option value="1.2">1.2× speed</option><option value="1.5">1.5× speed</option>
+              </select>
               <button className="copy-message" type="button" onClick={startVoiceInput} disabled={listening || busy}>{listening ? "Listening…" : "Speak"}</button>
+              <button className="copy-message" type="button" onClick={providerRecording ? stopProviderRecording : startProviderRecording} disabled={busy || providerTranscribing || listening}>
+                {providerRecording ? `Stop recording · ${providerSeconds}s / 60s` : providerTranscribing ? "Transcribing…" : "Private voice"}
+              </button>
+              <label className="copy-message" style={{display:"inline-flex",alignItems:"center",gap:6}}>
+                <input type="checkbox" checked={voiceConsent} onChange={(event) => setVoiceConsent(event.target.checked)} disabled={providerRecording || providerTranscribing} />
+                Allow this recording to be sent to Aahana's configured private speech service
+              </label>
+              <span className="voice-capability-note" role="status">
+                Private input: {voiceProviderCapabilities?.recognition?.enabled ? (voiceProviderCapabilities.recognition.supportedLocales.some((locale) => locale.toLowerCase() === voiceLanguage.toLowerCase()) ? "available for selected language" : "not enabled for selected language") : "not configured"} ·
+                Private speech: {voiceProviderCapabilities?.synthesis?.enabled ? (voiceProviderCapabilities.synthesis.supportedLocales.some((locale) => locale.toLowerCase() === voiceLanguage.toLowerCase()) ? "available for selected language" : "not enabled for selected language") : "not configured"} ·
+                Device speech: {findBestSpeechVoice(speechVoices, voiceLanguage) ? "voice installed" : speechInputAvailable ? "language coverage unknown" : "unavailable"}
+              </span>
               <label className="copy-message" style={{display:"inline-flex",alignItems:"center",gap:6}}>
                 <input type="checkbox" checked={autoSpeak} onChange={(event) => setAutoSpeak(event.target.checked)} />
                 Auto-read replies (text stays visible)
