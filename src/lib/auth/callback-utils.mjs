@@ -11,7 +11,12 @@ const SUPPORTED_OTP_TYPES = new Set([
 ]);
 
 export function getSafeAuthNext(value) {
-  if (typeof value !== "string" || !value.startsWith("/") || value.startsWith("//") || value.includes("\\\\")) {
+  if (
+    typeof value !== "string" ||
+    !value.startsWith("/") ||
+    value.startsWith("//") ||
+    value.includes("\\")
+  ) {
     return "/";
   }
   return value;
