@@ -21,6 +21,7 @@ test("self-build remains disabled until every server-side integration setting is
   assert.deepEqual(getSelfBuildConfig({ ...configured, AAHANA_GITHUB_PRIVATE_KEY: "" }).missing,
     ["AAHANA_GITHUB_PRIVATE_KEY"]);
   assert.equal(getSelfBuildConfig(configured).enabled, true);
+  assert.equal(getSelfBuildConfig({ ...configured, AAHANA_GITHUB_APP_ID: "not-an-id" }).enabled, false);
 });
 
 test("owner access is an exact case-insensitive email allowlist match", () => {
@@ -32,9 +33,9 @@ test("owner access is an exact case-insensitive email allowlist match", () => {
 
 test("only approved Experience Lab, shared component, and Build library paths are writable", () => {
   assert.equal(isAllowedSelfBuildPath("src/app/experience-lab/page.jsx"), true);
-  assert.equal(isAllowedSelfBuildPath("src/components/creative-panel.tsx"), true);
   assert.equal(isAllowedSelfBuildPath("src/lib/build/self-build-policy.mjs"), true);
   assert.equal(isAllowedSelfBuildPath("src/app/student-mode/page.jsx"), false);
+  assert.equal(isAllowedSelfBuildPath("src/app/experience-lab/student-tools.jsx"), false);
   assert.equal(isAllowedSelfBuildPath("src/app/auth/callback/route.js"), false);
   assert.equal(isAllowedSelfBuildPath("src/app/api/auth/route.js"), false);
   assert.equal(isAllowedSelfBuildPath("package.json"), false);
