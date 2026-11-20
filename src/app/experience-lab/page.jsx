@@ -80,6 +80,10 @@ export default function ExperienceLab() {
   const [requestError, setRequestError] = useState("");
   const [generatedImage, setGeneratedImage] = useState(null);
   const [generatedVideo, setGeneratedVideo] = useState(null);
+  const [videoDuration, setVideoDuration] = useState(5);
+  const [videoResolution, setVideoResolution] = useState("hd");
+  const [videoAspectRatio, setVideoAspectRatio] = useState("16:9");
+  const [videoAudio, setVideoAudio] = useState(true);
   const activeRequest = useRef(null);
   const [buildProjects, setBuildProjects] = useState([]);
   const [buildFiles, setBuildFiles] = useState([]);
@@ -404,7 +408,7 @@ export default function ExperienceLab() {
         const videoResponse = await fetch("/api/videos/generate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt: message, duration: 5, resolution: "hd", aspectRatio: "16:9", generateAudio: true }),
+          body: JSON.stringify({ prompt: message, duration: videoDuration, resolution: videoResolution, aspectRatio: videoAspectRatio, generateAudio: videoAudio }),
           signal: controller.signal,
         });
         const videoResult = await videoResponse.json().catch(() => ({}));
@@ -666,6 +670,16 @@ export default function ExperienceLab() {
           </div>}
 
           <form className="lab-composer" onSubmit={previewFlow}>
+            {mode === "create" && <details className="video-options">
+              <summary>Video settings <span>Duration · quality · frame</span></summary>
+              <div className="video-options-grid">
+                <label>Duration<select value={videoDuration} onChange={(event) => setVideoDuration(Number(event.target.value))}><option value={5}>5 seconds</option><option value={10}>10 seconds</option><option value={15}>15 seconds</option><option value={20}>20 seconds</option></select></label>
+                <label>Quality<select value={videoResolution} onChange={(event) => setVideoResolution(event.target.value)}><option value="hd">HD</option><option value="fhd">Full HD</option></select></label>
+                <label>Frame<select value={videoAspectRatio} onChange={(event) => setVideoAspectRatio(event.target.value)}><option value="16:9">Landscape · 16:9</option><option value="9:16">Portrait · 9:16</option><option value="1:1">Square · 1:1</option></select></label>
+                <label className="video-audio-toggle"><input type="checkbox" checked={videoAudio} onChange={(event) => setVideoAudio(event.target.checked)} /> Generate audio</label>
+              </div>
+              <p>Longer and higher-quality videos may take more time or use more provider resources. Availability depends on your connected video provider.</p>
+            </details>}
             <label className="sr-only" htmlFor="lab-composer">Write a message for the preview</label>
             <textarea id="lab-composer" value={prompt} onChange={(event) => setPrompt(event.target.value)} placeholder={mode === "build" ? "Describe the product you want to bring to life..." : mode === "create" ? "Describe the world you want to create..." : "Ask anything. Start anywhere..."} rows={3} />
             <div className="composer-controls"><div className="composer-tools"><button type="button" onClick={() => changePanel(activePanel === "attach" ? "tools" : "attach")} title="Add context">＋ <span>Attach</span></button><button type="button" onClick={() => changePanel(activePanel === "tools" ? "discover" : "tools")} title="Explore tools">◈ <span>Tools</span></button><span className="composer-divider" /><span className="composer-mode-label">{current.label} mode</span></div><div className="composer-submit"><button type="button" className="voice-button" title="Voice preview" onClick={() => changePanel("voice")}>◖</button>{busy ? <button type="button" className="lab-send lab-stop" onClick={stopGeneration}>Stop <span>■</span></button> : <button type="submit" className="lab-send" disabled={!prompt.trim()}>Send <span>↗</span></button>}</div></div>
