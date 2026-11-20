@@ -43,6 +43,7 @@ export function parseImageGenerationInput(body) {
 
 
 export const MAX_IMAGE_EDIT_BYTES = 2 * 1024 * 1024;
+export const MAX_IMAGE_EDIT_PROMPT_LENGTH = 1400;
 export const SUPPORTED_IMAGE_EDIT_TYPES = Object.freeze([
   "image/png",
   "image/jpeg",
@@ -51,8 +52,8 @@ export const SUPPORTED_IMAGE_EDIT_TYPES = Object.freeze([
 
 export function parseImageEditInput({ prompt, imageType, imageSize } = {}) {
   const normalizedPrompt = typeof prompt === "string" ? prompt.trim() : "";
-  if (!normalizedPrompt || normalizedPrompt.length > MAX_IMAGE_PROMPT_LENGTH) {
-    return { ok: false, error: "Describe the change in 1–2,048 characters." };
+  if (!normalizedPrompt || normalizedPrompt.length > MAX_IMAGE_EDIT_PROMPT_LENGTH) {
+    return { ok: false, error: "Describe the change in 1–1,400 characters." };
   }
   if (!SUPPORTED_IMAGE_EDIT_TYPES.includes(imageType)) {
     return { ok: false, error: "Attach a PNG, JPEG or WebP reference image." };
