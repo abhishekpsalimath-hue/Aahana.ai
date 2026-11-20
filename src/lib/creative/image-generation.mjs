@@ -1,3 +1,4 @@
+import { buildImagePrompt, IMAGE_QUALITY_PRESETS } from "./creative-director.mjs";
 export const MAX_IMAGE_PROMPT_LENGTH = 2048;
 export const SUPPORTED_IMAGE_STEPS = Object.freeze([4, 8]);
 
@@ -21,15 +22,21 @@ export function parseImageGenerationInput(body) {
     return { ok: false, error: "Choose standard (4 steps) or enhanced detail (8 steps)." };
   }
 
+  const quality = body?.quality === undefined ? "standard" : body.quality;
+  if (!IMAGE_QUALITY_PRESETS.includes(quality)) {
+    return { ok: false, error: "Choose standard or masterpiece image quality." };
+  }
+
   const style = body?.style === undefined ? "none" : body.style;
   if (style !== "none" && !Object.hasOwn(IMAGE_STYLE_PROMPTS, style)) {
     return { ok: false, error: "Choose a supported visual style." };
   }
 
-  const styledPrompt = style === "none" ? prompt : `${prompt}\n\nArt direction: ${IMAGE_STYLE_PROMPTS[style]}`;
+  const qualityPrompt = buildImagePrompt(prompt, quality);
+  const styledPrompt = style === "none" ? qualityPrompt : `${qualityPrompt}\n\nArt direction: ${IMAGE_STYLE_PROMPTS[style]}`;
   if (styledPrompt.length > MAX_IMAGE_PROMPT_LENGTH) {
     return { ok: false, error: "This prompt is too long for the selected style. Shorten it and try again." };
   }
 
-  return { ok: true, prompt: styledPrompt, steps, style };
+  return { ok: true, prompt: styledPrompt, steps, style, quality };
 }
