@@ -46,6 +46,18 @@ export function buildImagePrompt(prompt, quality = "masterpiece") {
   return [prompt, subject?.direction, direction].filter(Boolean).join("\n\n");
 }
 
+export function buildImageEditPrompt(referencePrompt, editPrompt) {
+  const original = typeof referencePrompt === "string" ? referencePrompt.trim().slice(0, 1200) : "";
+  const refinement = typeof editPrompt === "string" ? editPrompt.trim() : "";
+  if (!refinement) return null;
+  const brief = [
+    original ? `Original image brief: ${original}` : "",
+    `Requested refinement: ${refinement}`,
+    "Use the supplied reference image as the source of truth. Preserve the exact main subject, identity, face, anatomy, pose, clothing, sacred attributes, composition, and all existing details unless the user explicitly asks to change them. Make only the requested refinement. Do not replace, reinterpret, or redesign the subject.",
+  ].filter(Boolean).join("\n\n");
+  return buildImagePrompt(brief, "masterpiece");
+}
+
 export function buildVideoPrompt(prompt, director = "cinematic") {
   if (director === "none") return prompt;
   const direction = VIDEO_DIRECTIONS[director];
