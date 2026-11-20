@@ -1241,7 +1241,6 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                 <circle cx="143" cy="142" r="3" fill="#c7aaff" /><circle cx="38" cy="39" r="2" fill="#fff" />
               </svg>
             </div>
-          )}
           <div className="welcome-signal" aria-hidden="true">
             <span className="signal-orbit signal-orbit-one" />
             <span className="signal-orbit signal-orbit-two" />
@@ -1249,7 +1248,6 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
             <span className="signal-spark signal-spark-one" />
             <span className="signal-spark signal-spark-two" />
           </div>
-          <div className="eyebrow"><span /> YOUR THINKING SPACE</div>
               <div className="eyebrow"><span /> WELCOME TO AAHANA</div>
               <h1>Good ideas<br /><em>start somewhere.</em></h1>
               <p>Your space to think bigger, ask freely, and turn ideas into something real.</p>
