@@ -1352,7 +1352,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
             <div className="image-attach-row">
               <select aria-label="Image generation quality" value={imageQuality} onChange={(event) => setImageQuality(event.target.value)} className="copy-message">
                 <option value="standard">Standard image</option>
-                <option value="enhanced">Enhanced detail</option>
+                <option value="enhanced">Masterpiece direction · 8 steps</option>
               </select>
               <select aria-label="Visual style" value={imageStyle} onChange={(event) => setImageStyle(event.target.value)} className="copy-message">
                 <option value="none">Original style</option>
