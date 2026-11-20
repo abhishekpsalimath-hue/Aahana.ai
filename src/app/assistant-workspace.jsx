@@ -690,20 +690,20 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
 
   async function generateVideo() {
     const videoPrompt = prompt.trim();
-    if (!videoEnabled || !videoPrompt || videoGenerating || busy || imageGenerating || imageFile) return;
+    if (!videoEnabled || !videoPrompt || videoGenerating || busy || imageGenerating) return;
     setVideoGenerating(true);
     setError("");
     setGeneratedVideo(null);
     try {
+      const form = new FormData();
+      form.set("prompt", videoPrompt);
+      form.set("duration", String(videoDuration));
+      form.set("aspectRatio", videoAspectRatio);
+      form.set("resolution", videoResolution);
+      if (imageFile) form.set("image", imageFile);
       const response = await fetch("/api/videos/generate", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          prompt: videoPrompt,
-          duration: videoDuration,
-          aspectRatio: videoAspectRatio,
-          resolution: videoResolution,
-        }),
+        body: form,
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || "Could not generate the video.");
@@ -1367,7 +1367,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                 <>
                   <select aria-label="Video duration" value={videoDuration} onChange={(event) => setVideoDuration(Number(event.target.value))} className="copy-message">
                     <option value={3}>3 seconds</option>
-                    <option value={5}>5 seconds</option>
+                    <option value={5}>5 seconds</option>\n                    <option value={10}>10 seconds</option>\n                    <option value={15}>15 seconds</option>
                   </select>
                   <select aria-label="Video aspect ratio" value={videoAspectRatio} onChange={(event) => setVideoAspectRatio(event.target.value)} className="copy-message">
                     <option value="16:9">Landscape 16:9</option>
@@ -1382,8 +1382,8 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                     <option value="480p">480p</option>
                     <option value="720p">720p</option>
                   </select>
-                  <button className="copy-message" type="button" onClick={generateVideo} disabled={!prompt.trim() || videoGenerating || busy || imageGenerating || Boolean(imageFile)}>
-                    {videoGenerating ? "Generating video…" : "Generate video"}
+                  <button className="copy-message" type="button" onClick={generateVideo} disabled={!prompt.trim() || videoGenerating || busy || imageGenerating}>
+                    {videoGenerating ? "Generating video…" : imageFile ? "Animate image" : "Generate video"}
                   </button>
                 </>
               )}
