@@ -18,6 +18,16 @@ export function isImageGenerationRequest(value) {
     /(?:ರಚಿಸಿ|ಮಾಡಿ|ಬಿಡಿಸಿ|ಸೃಷ್ಟಿಸಿ|बन|रचो|चित्रित करो)/u.test(text);
   if (hasLocalizedSacredSubject && hasLocalizedImageAction) return true;
 
+  // A conservative multilingual fallback: require both a visual noun and a creation verb.
+  // This covers common user-facing languages without treating every mention of an image as a request.
+  const isHowToQuestion = /^(?:how|why|when|where|what|which|who)\b/i.test(text) ||
+    /^(?:¿?cómo|comment|wie|como|come|как|どうやって|어떻게|كيف|چگونه|எப்படி|ఎలా|कसे|कैसे|എങ്ങനെ|কীভাবে|કેવી રીતે|ਕਿਵੇਂ)/u.test(text);
+  if (isHowToQuestion) return false;
+
+  const hasMultilingualVisualNoun = /(?:ಚಿತ್ರ|ಚಿತ್ರಣ|ಫೋಟೋ|ತस्वीर|चित्र|फोटो|छवि|படம்|புகைப்படம்|ஓவியம்|చిత్రం|ఫోటో|బొమ్మ|ചിത്രം|ഫോട്ടോ|ছবি|চিত্র|ફોટો|ચિત્ર|ਤਸਵੀਰ|ਚਿੱਤਰ|تصویر|فوٹو|صورة|تصوير|imagen|foto|ilustración|image|photo|illustration|bild|abbildung|imagem|ilustração|immagine|illustrazione|изображение|картинка|фото|图片|图像|照片|画像|写真|イラスト|이미지|사진|그림)/iu.test(text);
+  const hasMultilingualCreationVerb = /(?:ರಚಿಸಿ|ಮಾಡಿ|ಬಿಡಿಸಿ|ಸೃಷ್ಟಿಸಿ|बनाओ|बनाइए|बनाएं|बनाएँ|बनाइये|रचो|ಚಿತ್ರित करो|உருவாக்கு|உருவாக்குங்கள்|வரை|வரையுங்கள்|సృష్టించు|తయారు చేయి|గీయి|రూపొందించు|സൃഷ്ടിക്കൂ|ഉണ്ടാക്കൂ|വരയ്ക്കൂ|തയ്യാറാക്കൂ|তৈরি করো|তৈরি করুন|বানাও|আঁকো|બનાવો|દોરો|તૈયાર કરો|ਬਣਾਓ|ਬਣਾਉ|ਖਿੱਚੋ|بنائیں|بناؤ|تیار کریں|کھینچیں|أنشئ|اصنع|ارسم|أنشئي|أنشئوا|اصنعي|ارسموا|crea|crear|genera|generar|dibuja|dibujar|haz|crée|créer|génère|générer|dessine|dessiner|erstelle|erstellen|generiere|generieren|zeichne|zeichnen|mache|crie|criar|gere|gerar|desenhe|desenhar|fai|genera|disegna|создай|создать|нарисуй|нарисовать|сгенерируй|生成|创建|畫|画|制作|作成して|作って|描いて|生成して|만들어|생성해|그려줘|제작해)/iu.test(text);
+  if (hasMultilingualVisualNoun && hasMultilingualCreationVerb) return true;
+
   if (/\b(?:generate|create|draw|paint|illustrate|render|make)\b[\s\S]{0,100}\b(?:shiva|mahadev|mahadeva|shankar|hanuman|anjaneya|maruti|ganesha|ganapati|vinayaka|krishna|rama|ram)\b/i.test(text)) return true;
   if (/\b(?:generate|create|draw|paint|illustrate|render|make)\b[\s\S]{0,180}\b(?:image|picture|illustration|artwork|portrait|wallpaper|logo|poster|cover|banner|icon|thumbnail|scene|landscape|cityscape|character|diagram)\b/i.test(text)) return true;
   if (/\b(?:show me|visuali[sz]e|turn this into|text[- ]to[- ]image)\b/i.test(text) && /\b(?:image|picture|art|illustration|render|visual)\b/i.test(text)) return true;
