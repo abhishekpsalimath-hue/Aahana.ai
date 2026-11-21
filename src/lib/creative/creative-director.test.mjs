@@ -88,3 +88,18 @@ test("preserves other explicitly named Shiva manifestations without forcing a se
     assert.match(prompt, /User request \(preserve exactly\):/);
   }
 });
+
+test("sacred identity guardrails recognize Kannada and Hindi deity names", () => {
+  const cases = [
+    ["ಶಿವನ ಚಿತ್ರ ರಚಿಸಿ", /Lord Shiva \(Mahadev\) unmistakably/i],
+    ["महादेव का चित्र बनाओ", /Lord Shiva \(Mahadev\) unmistakably/i],
+    ["ಆಂಜನೇಯ ಸ್ವಾಮಿಯ ಚಿತ್ರ ಬಿಡಿಸಿ", /Lord Hanuman \(Anjaneya\) unmistakably/i],
+    ["हनुमान का दिव्य चित्र बनाओ", /Lord Hanuman \(Anjaneya\) unmistakably/i],
+    ["ಗಣಪತಿಯ ಚಿತ್ರ ಮಾಡಿ", /Lord Ganesha unmistakably/i],
+    ["श्रीकृष्ण का चित्र बनाओ", /Lord Krishna unmistakably/i],
+    ["ಶ್ರೀರಾಮನ ಚಿತ್ರ ರಚಿಸಿ", /Lord Rama unmistakably/i],
+  ];
+  for (const [request, expectedIdentity] of cases) {
+    assert.match(buildImagePrompt(request, "standard"), expectedIdentity, request);
+  }
+});
