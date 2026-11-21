@@ -37,3 +37,37 @@ export function parseVideoGenerationInput(body) {
 
   return { ok: true, prompt: directedPrompt, duration, aspectRatio, resolution, director };
 }
+
+
+export const MAX_VIDEO_IMAGE_BYTES = 2 * 1024 * 1024;
+export const MAX_VIDEO_MULTIPART_BYTES = MAX_VIDEO_IMAGE_BYTES + 64 * 1024;
+
+export async function readVideoRequestWithinLimit(stream, limit = MAX_VIDEO_MULTIPART_BYTES) {
+  if (!stream || !Number.isSafeInteger(limit) || limit < 1) return null;
+  const reader = stream.getReader();
+  const chunks = [];
+  let total = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.byteLength;
+      if (total > limit) {
+        await reader.cancel();
+        return null;
+      }
+      chunks.push(value);
+    }
+  } catch {
+    try { await reader.cancel(); } catch {}
+    return null;
+  }
+  if (total < 1) return null;
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return bytes;
+}
