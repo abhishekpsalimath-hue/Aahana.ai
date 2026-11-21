@@ -54,3 +54,27 @@ test("reference image edit prompt preserves original sacred subject identity", (
 test("reference image edit prompt rejects empty instructions", () => {
   assert.equal(buildImageEditPrompt("A portrait", " "), null);
 });
+
+test("prioritizes sacred identity and honors a specifically requested Shiva manifestation", () => {
+  const prompt = buildImagePrompt("Create Lord Shiva as Nataraja, dancing within the ring of fire", "masterpiece");
+  assert.ok(prompt.indexOf("Depict Lord Shiva") < prompt.indexOf("User request (preserve exactly):"));
+  assert.match(prompt, /Nataraja/);
+  assert.match(prompt, /do not replace it with the standard seated-yogi depiction/i);
+  assert.match(prompt, /Include only attributes compatible with the specified form/i);
+  assert.match(prompt, /portfolio-worthy hero image/i);
+});
+
+test("preserves Hanuman's requested multi-faced form and unmistakable vanara identity", () => {
+  const prompt = buildImagePrompt("Create Panchamukhi Hanuman with five distinct faces", "masterpiece");
+  assert.match(prompt, /Panchamukhi Hanuman/);
+  assert.match(prompt, /clearly read as a monkey-faced vanara/i);
+  assert.match(prompt, /do not substitute a single-faced generic depiction/i);
+});
+
+test("keeps the user's exact visual request explicit for all supported sacred subjects", () => {
+  for (const name of ["Ganesha", "Krishna", "Rama"]) {
+    const prompt = buildImagePrompt("Create Lord " + name + " in the requested traditional form", "masterpiece");
+    assert.match(prompt, /User request \(preserve exactly\):/);
+    assert.ok(prompt.indexOf("User request (preserve exactly):") > prompt.indexOf("Depict Lord"));
+  }
+});
