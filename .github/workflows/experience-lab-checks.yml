@@ -11,6 +11,7 @@ on:
       - fix/build-preview-oidc-runtime-detection
       - feat/creative-director-multimodel-foundation
       - feat/aahana-autonomous-assistance
+      - feat/aahana-self-improvement-approval-gate
     paths:
       - "src/app/experience-lab/**"
       - "src/app/assistant-workspace.jsx"
@@ -29,6 +30,7 @@ on:
       - fix/experience-lab-source-edit-conflicts
       - feat/experience-lab-ai-code-proposals
       - feat/aahana-autonomous-assistance
+      - fix/aahana-signed-plan-approval
     paths:
       - "src/app/experience-lab/**"
       - "src/app/assistant-workspace.jsx"
