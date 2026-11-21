@@ -146,6 +146,12 @@ test("self-improvement requires a separate owner approval before reading source 
 
 
 test("approval is pinned to the reviewed repository snapshot and cannot widen the plan", () => {
+  assert.match(route, /createApprovalToken/);
+  assert.match(route, /verifyApprovalToken\(body\?\.approvalToken/);
+  assert.match(route, /timingSafeEqual/);
+  assert.match(route, /APPROVAL_TOKEN_TTL_MS = 10 \* 60 \* 1000/);
+  assert.match(route, /approvalToken: createApprovalToken/);
+  assert.match(workspace, /approvalToken: isExecution \? approvedPlan\.approvalToken : undefined/);
   assert.match(route, /if \(!approvedBaseSha\)/);
   assert.match(route, /repository\.baseSha !== approvedBaseSha/);
   assert.match(route, /approvedChangePlan\.affectedPaths\.some\(\(path\) => !repository\.files\.some/);
