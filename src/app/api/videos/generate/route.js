@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { parseVideoGenerationInput, readVideoRequestWithinLimit, MAX_VIDEO_IMAGE_BYTES, MAX_VIDEO_MULTIPART_BYTES, VIDEO_MODEL } from "@/lib/creative/video-generation.mjs";\nimport { detectImageMimeTypeFromBase64 } from "@/lib/creative/image-provider.mjs";
+import { parseVideoGenerationInput, readVideoRequestWithinLimit, MAX_VIDEO_IMAGE_BYTES, MAX_VIDEO_MULTIPART_BYTES, VIDEO_MODEL } from "@/lib/creative/video-generation.mjs";
+import { detectImageMimeTypeFromBase64 } from "@/lib/creative/image-provider.mjs";
 
 export const runtime = "nodejs";
 export const maxDuration = 180;
@@ -64,6 +65,17 @@ export async function POST(request) {
     return NextResponse.json({ error: "Choose a PNG, JPEG or WebP image up to 2 MB." }, { status: 400 });
   }
 
+  let imageBytes = null;
+  if (imageFile) {
+    try { imageBytes = Buffer.from(await imageFile.arrayBuffer()); } catch {
+      return NextResponse.json({ error: "The reference image could not be read." }, { status: 400 });
+    }
+    const detectedType = detectImageMimeTypeFromBase64(imageBytes.toString("base64"));
+    if (detectedType !== imageFile.type) {
+      return NextResponse.json({ error: "The reference image content does not match its declared file type." }, { status: 400 });
+    }
+  }
+
   let temporaryObjectPath = null;
   try {
     const providerInput = {
@@ -76,9 +88,8 @@ export async function POST(request) {
     if (imageFile) {
       const extension = imageFile.type === "image/png" ? "png" : imageFile.type === "image/webp" ? "webp" : "jpg";
       temporaryObjectPath = `${user.id}/personal/video-input-${crypto.randomUUID()}.${extension}`;
-      const bytes = Buffer.from(await imageFile.arrayBuffer());
       const { error: uploadError } = await supabase.storage.from("aahana-private").upload(
-        temporaryObjectPath, bytes, { contentType: imageFile.type, upsert: false }
+        temporaryObjectPath, imageBytes, { contentType: imageFile.type, upsert: false }
       );
       if (uploadError) {
         console.error("Aahana video input upload failed:", uploadError.message);
