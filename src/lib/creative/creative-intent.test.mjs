@@ -59,3 +59,55 @@ test("does not route video questions or general explanations into generation", (
     "Can you recommend video editing software?",
   ]) assert.equal(isVideoGenerationRequest(prompt), false, prompt);
 });
+
+test("routes Kannada and Hindi sacred image requests directly to generation", () => {
+  for (const prompt of [
+    "ಶಿವನ ಚಿತ್ರ ರಚಿಸಿ",
+    "ಆಂಜನೇಯ ಸ್ವಾಮಿಯ ಚಿತ್ರ ಬಿಡಿಸಿ",
+    "ಗಣಪತಿಯ ಚಿತ್ರ ಮಾಡಿ",
+    "ಶ್ರೀರಾಮನ ಚಿತ್ರ ಸೃಷ್ಟಿಸಿ",
+    "महादेव का चित्र बनाओ",
+    "हनुमान की तस्वीर बनाइए",
+    "श्रीकृष्ण का चित्र बनाओ",
+  ]) assert.equal(isImageGenerationRequest(prompt), true, prompt);
+});
+
+test("does not route localized sacred-subject questions into image generation", () => {
+  assert.equal(isImageGenerationRequest("ಶಿವನ ಕಥೆ ಹೇಳಿ"), false);
+  assert.equal(isImageGenerationRequest("हनुमान कौन हैं?"), false);
+});
+
+
+test("recognizes image creation requests across major world languages", () => {
+  for (const prompt of [
+    "தமிழில் ஒரு கோவில் படம் உருவாக்குங்கள்",
+    "ఒక అందమైన దేవాలయం చిత్రం సృష్టించు",
+    "ഒരു മനോഹരമായ ക്ഷേത്ര ചിത്രം വരയ്ക്കൂ",
+    "একটি সুন্দর মন্দিরের ছবি তৈরি করো",
+    "એક સુંદર મંદિરનું ચિત્ર બનાવો",
+    "ਇੱਕ ਸੁੰਦਰ ਮੰਦਰ ਦੀ ਤਸਵੀਰ ਬਣਾਓ",
+    "ایک خوبصورت مندر کی تصویر بنائیں",
+    "أنشئ صورة جميلة لمعبد",
+    "Crea una imagen de un templo hermoso",
+    "Crée une belle image d'un temple",
+    "Erstelle ein schönes Bild von einem Tempel",
+    "Crie uma imagem bonita de um templo",
+    "Crea un'immagine di un tempio bellissimo",
+    "Создай красивое изображение храма",
+    "请生成一张美丽寺庙的图片",
+    "美しい寺院の画像を作って",
+    "美しい寺院の画像を生成して",
+    "아름다운 사원의 이미지를 만들어",
+  ]) assert.equal(isImageGenerationRequest(prompt), true, prompt);
+});
+
+test("does not route multilingual image questions into generation", () => {
+  for (const prompt of [
+    "How do I create an image?",
+    "Comment créer une image ?",
+    "¿Cómo crear una imagen?",
+    "Wie erstelle ich ein Bild?",
+    "どうやって画像を作るの？",
+    "어떻게 이미지를 만들어?",
+  ]) assert.equal(isImageGenerationRequest(prompt), false, prompt);
+});
