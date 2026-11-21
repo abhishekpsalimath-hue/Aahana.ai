@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { buildImageEditPrompt } from "@/lib/creative/creative-director.mjs";
 import { getReferenceImageDimensions, isReferenceImageWithinProviderBounds, parseImageEditInput } from "@/lib/creative/image-generation.mjs";
+import { detectImageMimeTypeFromBase64 } from "@/lib/creative/image-provider.mjs";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -71,12 +72,13 @@ export async function POST(request) {
 
     const result = await response.json().catch(() => null);
     const imageBase64 = result?.result?.image;
-    if (!response.ok || typeof imageBase64 !== "string" || !imageBase64) {
+    const imageMimeType = detectImageMimeTypeFromBase64(imageBase64);
+    if (!response.ok || !imageMimeType) {
       const providerStatus = response.status;
       const status = providerStatus === 429 ? 429 : providerStatus >= 500 ? 503 : 502;
       console.error("Aahana reference image edit failed:", {
         status: providerStatus,
-        providerError: result?.errors?.[0]?.message || "No edited image returned",
+        providerError: result?.errors?.[0]?.message || "No valid edited image returned",
       });
       const message = providerStatus === 429
         ? "The image-editing service has reached its current usage limit. Please try again later."
@@ -85,7 +87,7 @@ export async function POST(request) {
     }
 
     return NextResponse.json(
-      { imageDataUrl: `data:image/jpeg;base64,${imageBase64}`, model: MODEL },
+      { imageDataUrl: `data:${imageMimeType};base64,${imageBase64}`, model: MODEL },
       { headers: { "Cache-Control": "no-store" } }
     );
   } catch (error) {

@@ -4,6 +4,7 @@ import {
   DEFAULT_IMAGE_MODEL,
   ENHANCED_IMAGE_MODEL,
   getImageOutputMimeType,
+  detectImageMimeTypeFromBase64,
   resolveImageModel,
   buildImageProviderRequest,
 } from "./image-provider.mjs";
@@ -46,4 +47,21 @@ test("uses the correct output media type for each Cloudflare image model", () =>
   assert.equal(getImageOutputMimeType(DEFAULT_IMAGE_MODEL), "image/jpeg");
   assert.equal(getImageOutputMimeType(ENHANCED_IMAGE_MODEL), "image/png");
   assert.equal(getImageOutputMimeType("unknown-model"), "image/jpeg");
+});
+
+test("detects actual PNG, JPEG, and WebP bytes instead of trusting a model label", () => {
+  const png = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d]);
+  const jpeg = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01]);
+  const webp = Buffer.from("RIFF0000WEBPVP8 ", "ascii");
+  assert.equal(detectImageMimeTypeFromBase64(png.toString("base64")), "image/png");
+  assert.equal(detectImageMimeTypeFromBase64(jpeg.toString("base64")), "image/jpeg");
+  assert.equal(detectImageMimeTypeFromBase64(webp.toString("base64")), "image/webp");
+});
+
+test("rejects malformed, unsupported, and oversized provider image payloads", () => {
+  assert.equal(detectImageMimeTypeFromBase64("not-an-image"), null);
+  assert.equal(detectImageMimeTypeFromBase64("!!!!"), null);
+  assert.equal(detectImageMimeTypeFromBase64(Buffer.from("GIF89a000000", "ascii").toString("base64")), null);
+  assert.equal(detectImageMimeTypeFromBase64("A".repeat(24 * 1024 * 1024 + 4)), null);
+  assert.equal(detectImageMimeTypeFromBase64(null), null);
 });
