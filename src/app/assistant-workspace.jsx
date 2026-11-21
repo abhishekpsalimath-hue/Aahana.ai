@@ -1620,9 +1620,9 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
               </div>}
               <div className="self-build-task">
                 <label htmlFor="self-build-instruction">What should Aahana work on?</label>
-                <textarea id="self-build-instruction" rows={2} value={selfBuildInstruction} onChange={(event) => setSelfBuildInstruction(event.target.value)} placeholder="Assign a focused improvement. Aahana will inspect the approved code, choose a relevant file, and prepare a change…" disabled={selfBuildBusy} />
+                <textarea id="self-build-instruction" rows={2} value={selfBuildInstruction} onChange={(event) => setSelfBuildInstruction(event.target.value)} placeholder="Assign one focused improvement. Aahana will prepare a plan for your approval before reading source code…" disabled={selfBuildBusy || Boolean(selfBuildPendingApproval)} />
                 <div className="build-tools-actions">
-                  <button type="button" onClick={proposeSelfBuildChange} disabled={selfBuildBusy || !selfBuildInstruction.trim()}>{selfBuildBusy ? "Working…" : "Let Aahana work"}</button>
+                  <button type="button" onClick={proposeSelfBuildChange} disabled={selfBuildBusy || Boolean(selfBuildPendingApproval) || !selfBuildInstruction.trim()}>{selfBuildBusy ? "Working…" : "Prepare improvement plan"}</button>
                   {selfBuildBusy && <button type="button" onClick={stopSelfBuildProposal}>Stop</button>}
                 </div>
                 {selfBuildAgentResponse && <p className="build-tools-note" role="status">{selfBuildAgentResponse}</p>}
