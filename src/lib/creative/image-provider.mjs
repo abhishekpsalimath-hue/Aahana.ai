@@ -1,6 +1,8 @@
 export const DEFAULT_IMAGE_MODEL = "@cf/black-forest-labs/flux-1-schnell";
 export const ENHANCED_IMAGE_MODEL = "@cf/black-forest-labs/flux-2-klein-4b";
-export const IMAGE_OUTPUT_MIME_TYPE = "image/png";
+export function getImageOutputMimeType(model) {
+  return model === ENHANCED_IMAGE_MODEL ? "image/png" : "image/jpeg";
+}
 
 export function resolveImageModel(value) {
   return value === "flux-2-klein-4b" ? ENHANCED_IMAGE_MODEL : DEFAULT_IMAGE_MODEL;
