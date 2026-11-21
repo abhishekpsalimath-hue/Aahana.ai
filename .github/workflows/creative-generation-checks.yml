@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - feat/creative-director-multimodel-foundation
+      - feat/aahana-natural-video-creation
     paths:
       - "src/lib/creative/**"
       - "src/app/api/images/**"
