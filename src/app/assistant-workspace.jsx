@@ -649,9 +649,9 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     }
   }
 
-  async function enhanceImageTo4K() {
+  async function enhanceImageTo4K(source = "generated") {
     if (!imageUpscaleEnabled || imageUpscaling || imageGenerating || busy) return;
-    const uploadedFile = imageFile;
+    const uploadedFile = source === "upload" ? imageFile : null;
     if (!uploadedFile && !generatedImage?.dataUrl) return;
     setImageUpscaling(true);
     setError("");
@@ -1451,7 +1451,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                 <div className="message-actions">
                   <a className="copy-message" href={generatedImage.dataUrl} download="aahana-generated-image.jpg">Download image</a>
                   <button className="copy-message" type="button" onClick={saveGeneratedImage} disabled={imageSaving}>{imageSaving ? "Saving…" : "Save to Files"}</button>
-                  {imageUpscaleEnabled && <button className="copy-message" type="button" onClick={enhanceImageTo4K} disabled={imageUpscaling || imageGenerating || busy}>{imageUpscaling ? "Enhancing to 4K…" : "Enhance to 4K"}</button>}
+                  {imageUpscaleEnabled && <button className="copy-message" type="button" onClick={() => enhanceImageTo4K("generated")} disabled={imageUpscaling || imageGenerating || busy}>{imageUpscaling ? "Enhancing to 4K…" : "Enhance to 4K"}</button>}
                   <button className="copy-message" type="button" onClick={() => setGeneratedImage(null)}>Remove</button>
                 </div>
                 {imageSaveNotice && <div className="notice" role="status">{imageSaveNotice}</div>}
@@ -1511,7 +1511,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                     setImageFile(file);
                   }} />
               </label>
-              {imageFile && <span className="image-attach-name">{imageFile.name} {imageUpscaleEnabled && <button type="button" onClick={enhanceImageTo4K} disabled={imageUpscaling || imageGenerating || busy}>{imageUpscaling ? "Enhancing…" : "Enhance to 4K"}</button>} <button type="button" onClick={() => setImageFile(null)} disabled={imageUpscaling}>Remove</button></span>}
+              {imageFile && <span className="image-attach-name">{imageFile.name} {imageUpscaleEnabled && <button type="button" onClick={() => enhanceImageTo4K("upload")} disabled={imageUpscaling || imageGenerating || busy}>{imageUpscaling ? "Enhancing…" : "Enhance to 4K"}</button>} <button type="button" onClick={() => setImageFile(null)} disabled={imageUpscaling}>Remove</button></span>}
               <button className="copy-message" type="button" onClick={generateImage}
                 disabled={!prompt.trim() || imageGenerating || busy || Boolean(imageFile)}>
                 {imageGenerating ? "Creating image…" : "Generate image"}
