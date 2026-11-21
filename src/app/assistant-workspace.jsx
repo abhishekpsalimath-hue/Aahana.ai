@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getSourceFileMimeType, isSupportedSourceFile } from "@/lib/build/source-file-policy.mjs";
-import { isImageGenerationRequest, isImageEditRequest } from "@/lib/creative/creative-intent.mjs";
+import { isImageGenerationRequest, isImageEditRequest, isVideoGenerationRequest } from "@/lib/creative/creative-intent.mjs";
 
 const modes = [
   { id: "solve", label: "Solve", hint: "Work through a problem" },
@@ -635,7 +635,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || "Could not generate the image.");
-      if (typeof result.imageDataUrl !== "string" || !result.imageDataUrl.startsWith("data:image/jpeg;base64,")) {
+      if (typeof result.imageDataUrl !== "string" || !/^data:image\/(?:jpeg|png);base64,/.test(result.imageDataUrl)) {
         throw new Error("The image provider returned an invalid image.");
       }
       setGeneratedImage({ dataUrl: result.imageDataUrl, prompt: imagePrompt });
@@ -664,7 +664,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       const response = await fetch("/api/images/edit", { method: "POST", body: form });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || "Could not edit the image.");
-      if (typeof result.imageDataUrl !== "string" || !result.imageDataUrl.startsWith("data:image/jpeg;base64,")) {
+      if (typeof result.imageDataUrl !== "string" || !/^data:image\/(?:jpeg|png);base64,/.test(result.imageDataUrl)) {
         throw new Error("The image editor returned an invalid image.");
       }
       setGeneratedImage({ dataUrl: result.imageDataUrl, prompt: generatedImage.prompt || editPrompt });
@@ -722,9 +722,8 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     }
   }
 
-  async function generateVideo() {
-    const videoPrompt = prompt.trim();
-    if (!videoEnabled || !videoPrompt || videoGenerating || busy || imageGenerating) return;
+  async function generateVideo(videoPrompt = prompt.trim()) {
+    if (!videoEnabled || !videoPrompt || videoGenerating || busy || imageGenerating) return false;
     setVideoGenerating(true);
     setError("");
     setGeneratedVideo(null);
@@ -745,8 +744,10 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         throw new Error("The video provider returned an invalid video address.");
       }
       setGeneratedVideo({ url: result.videoUrl, prompt: videoPrompt, duration: result.duration });
+      return true;
     } catch (err) {
       setError(err.message || "Video generation failed.");
+      return false;
     } finally {
       setVideoGenerating(false);
     }
@@ -900,7 +901,31 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   async function submitPrompt(event) {
     event.preventDefault();
     const text = prompt.trim();
-    if ((!text && !imageFile) || busy || buildBusy || imageGenerating) return;
+    if ((!text && !imageFile) || busy || buildBusy || imageGenerating || videoGenerating) return;
+
+    if (isVideoGenerationRequest(text)) {
+      setPrompt("");
+      setError("");
+      setGeneratedVideo(null);
+      if (!videoEnabled) {
+        setMessages((current) => [...current,
+          { role: "user", content: text },
+          { role: "assistant", content: "Video generation is not enabled in this environment yet. No generation was started." },
+        ]);
+        return;
+      }
+      setMessages((current) => [...current,
+        { role: "user", content: text },
+        { role: "assistant", content: "Creating your video…" },
+      ]);
+      const succeeded = await generateVideo(text);
+      setMessages((current) => current.map((item, index) =>
+        index === current.length - 1
+          ? { ...item, content: succeeded ? "Your video is ready. You can preview it below." : "I couldn't generate that video. Your request was not sent again automatically." }
+          : item
+      ));
+      return;
+    }
 
     if (isImageGenerationRequest(text)) {
       setPrompt("");
@@ -919,7 +944,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         });
         const result = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(result.error || "Could not generate the image.");
-        if (typeof result.imageDataUrl !== "string" || !result.imageDataUrl.startsWith("data:image/jpeg;base64,")) {
+        if (typeof result.imageDataUrl !== "string" || !/^data:image\/(?:jpeg|png);base64,/.test(result.imageDataUrl)) {
           throw new Error("The image provider returned an invalid image.");
         }
         setGeneratedImage({ dataUrl: result.imageDataUrl, prompt: text });
@@ -1400,28 +1425,31 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
             <div className="image-attach-row">
               {videoEnabled && (
                 <>
-                  <select aria-label="Video duration" value={videoDuration} onChange={(event) => setVideoDuration(Number(event.target.value))} className="copy-message">
-                    <option value={3}>3 seconds</option>
-                    <option value={5}>5 seconds</option>
-                    <option value={10}>10 seconds</option>
-                    <option value={15}>15 seconds</option>
-                  </select>
-                  <select aria-label="Video aspect ratio" value={videoAspectRatio} onChange={(event) => setVideoAspectRatio(event.target.value)} className="copy-message">
-                    <option value="16:9">Landscape 16:9</option>
-                    <option value="9:16">Portrait 9:16</option>
-                    <option value="1:1">Square 1:1</option>
-                    <option value="4:3">4:3</option>
-                    <option value="3:4">3:4</option>
-                    <option value="3:2">3:2</option>
-                    <option value="2:3">2:3</option>
-                  </select>
-                  <select aria-label="Video resolution" value={videoResolution} onChange={(event) => setVideoResolution(event.target.value)} className="copy-message">
-                    <option value="480p">480p</option>
-                    <option value="720p">720p</option>
-                  </select>
-                  <button className="copy-message" type="button" onClick={generateVideo} disabled={!prompt.trim() || videoGenerating || busy || imageGenerating}>
+                  <button className="copy-message" type="button" onClick={() => generateVideo()} disabled={!prompt.trim() || videoGenerating || busy || imageGenerating}>
                     {videoGenerating ? "Generating video…" : imageFile ? "Animate image" : "Generate video"}
                   </button>
+                  <details className="video-advanced-settings">
+                    <summary>Video settings</summary>
+                    <select aria-label="Video duration" value={videoDuration} onChange={(event) => setVideoDuration(Number(event.target.value))} className="copy-message">
+                      <option value={3}>3 seconds</option>
+                      <option value={5}>5 seconds</option>
+                      <option value={10}>10 seconds</option>
+                      <option value={15}>15 seconds</option>
+                    </select>
+                    <select aria-label="Video aspect ratio" value={videoAspectRatio} onChange={(event) => setVideoAspectRatio(event.target.value)} className="copy-message">
+                      <option value="16:9">Landscape 16:9</option>
+                      <option value="9:16">Portrait 9:16</option>
+                      <option value="1:1">Square 1:1</option>
+                      <option value="4:3">4:3</option>
+                      <option value="3:4">3:4</option>
+                      <option value="3:2">3:2</option>
+                      <option value="2:3">2:3</option>
+                    </select>
+                    <select aria-label="Video resolution" value={videoResolution} onChange={(event) => setVideoResolution(event.target.value)} className="copy-message">
+                      <option value="480p">480p</option>
+                      <option value="720p">720p</option>
+                    </select>
+                  </details>
                 </>
               )}
               <select aria-label="Voice language" value={voiceLanguage} onChange={(event) => setVoiceLanguage(event.target.value)} className="copy-message">{voiceLanguages.map(([code, label]) => <option key={code} value={code}>{label}</option>)}</select>

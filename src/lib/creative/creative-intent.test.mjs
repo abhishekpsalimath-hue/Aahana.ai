@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { isImageGenerationRequest, isImageEditRequest } from "./creative-intent.mjs";
+import { isImageGenerationRequest, isImageEditRequest, isVideoGenerationRequest } from "./creative-intent.mjs";
 
 test("recognizes concise sacred-subject image requests without the word image", () => {
   for (const prompt of [
@@ -37,4 +37,25 @@ test("recognizes image refinement instructions", () => {
 test("does not mistake unrelated conversation for image editing", () => {
   assert.equal(isImageEditRequest("Help me change my career"), false);
   assert.equal(isImageEditRequest("Explain the background of this story"), false);
+});
+
+
+test("recognizes direct natural-language video creation requests", () => {
+  for (const prompt of [
+    "Create a video of Lord Shiva meditating on Mount Kailash",
+    "Generate a cinematic video of a mountain river",
+    "Make a 10-second animation of a flower opening",
+    "Produce a short film showing a rainy Bengaluru street",
+    "Animate this image into a video",
+    "Turn this photo into a video",
+  ]) assert.equal(isVideoGenerationRequest(prompt), true, prompt);
+});
+
+test("does not route video questions or general explanations into generation", () => {
+  for (const prompt of [
+    "What is video generation?",
+    "How do I make a video?",
+    "Explain how animation works",
+    "Can you recommend video editing software?",
+  ]) assert.equal(isVideoGenerationRequest(prompt), false, prompt);
 });
