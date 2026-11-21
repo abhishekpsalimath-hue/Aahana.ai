@@ -244,6 +244,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [mode, setMode] = useState("solve");
   const [prompt, setPrompt] = useState("");
   const [imageFile, setImageFile] = useState(null);
+  const [imageUpscaleFile, setImageUpscaleFile] = useState(null);
   const [messages, setMessages] = useState([]);
   useEffect(() => {
     if (messages.length) conversationEndRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
@@ -651,7 +652,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
 
   async function enhanceImageTo4K(source = "generated") {
     if (!imageUpscaleEnabled || imageUpscaling || imageGenerating || busy) return;
-    const uploadedFile = source === "upload" ? imageFile : null;
+    const uploadedFile = source === "upload" ? imageFile : source === "upscale-upload" ? imageUpscaleFile : null;
     if (!uploadedFile && !generatedImage?.dataUrl) return;
     setImageUpscaling(true);
     setError("");
@@ -680,7 +681,8 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         dataUrl: result.imageDataUrl,
         prompt: uploadedFile ? `Enhanced image: ${uploadedFile.name}` : generatedImage.prompt,
       });
-      if (uploadedFile) setImageFile(null);
+      if (source === "upload") setImageFile(null);
+      if (source === "upscale-upload") setImageUpscaleFile(null);
       setImageSaveNotice("Your enhanced image is ready to download or save to Files.");
     } catch (err) {
       setError(err.message || "Image enhancement failed.");
@@ -1512,6 +1514,19 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                   }} />
               </label>
               {imageFile && <span className="image-attach-name">{imageFile.name} {imageUpscaleEnabled && <button type="button" onClick={() => enhanceImageTo4K("upload")} disabled={imageUpscaling || imageGenerating || busy}>{imageUpscaling ? "Enhancing…" : "Enhance to 4K"}</button>} <button type="button" onClick={() => setImageFile(null)} disabled={imageUpscaling}>Remove</button></span>}
+              {imageUpscaleEnabled && <label className="image-attach">
+                + 4K image (up to 20 MB)
+                <input type="file" accept="image/png,image/jpeg,image/webp" disabled={busy || imageUpscaling} onChange={(event) => {
+                  const file = event.target.files?.[0] || null;
+                  event.target.value = "";
+                  if (!file) return;
+                  if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) { setError("Choose a PNG, JPEG or WebP image."); return; }
+                  if (file.size > 20 * 1024 * 1024) { setError("4K enhancement supports source images up to 20 MB."); return; }
+                  setError("");
+                  setImageUpscaleFile(file);
+                }} />
+              </label>}
+              {imageUpscaleFile && <span className="image-attach-name">{imageUpscaleFile.name} <button type="button" onClick={() => enhanceImageTo4K("upscale-upload")} disabled={imageUpscaling || imageGenerating || busy}>{imageUpscaling ? "Enhancing…" : "Enhance to 4K"}</button> <button type="button" onClick={() => setImageUpscaleFile(null)} disabled={imageUpscaling}>Remove</button></span>}
               <button className="copy-message" type="button" onClick={generateImage}
                 disabled={!prompt.trim() || imageGenerating || busy || Boolean(imageFile)}>
                 {imageGenerating ? "Creating image…" : "Generate image"}
