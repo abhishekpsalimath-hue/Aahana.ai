@@ -89,7 +89,7 @@ test("isolated self-validation is Preview-only, owner-gated, bounded, and epheme
   assert.match(validationRoute, /persistent: false/);
   assert.match(validationRoute, /networkPolicy: "deny-all"/);
   assert.match(validationRoute, /--ignore-scripts/);
-  assert.match(validationRoute, /npm run build/);
+  assert.match(validationRoute, /args: \["run", "build"\]/);
   assert.match(validationRoute, /sandbox\.stop\(\)/);
   assert.doesNotMatch(validationRoute, /env:\s*process\.env/);
 });
