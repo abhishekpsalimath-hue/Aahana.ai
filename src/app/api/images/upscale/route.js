@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import {
+  MAX_IMAGE_UPSCALE_INPUT_BYTES,
   MAX_IMAGE_UPSCALE_OUTPUT_BYTES,
   getSafeImageUpscaleWorkerUrl,
   validateImageUpscaleInput,
@@ -8,6 +9,8 @@ import {
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
+
+const MAX_MULTIPART_OVERHEAD_BYTES = 1024 * 1024;
 
 export async function POST(request) {
   const supabase = await createClient();
@@ -26,6 +29,11 @@ export async function POST(request) {
     return NextResponse.json({ error: "Image enhancement is not connected in the private server settings." }, { status: 503 });
   }
 
+  const declaredRequestLength = Number(request.headers.get("Content-Length") || 0);
+  if (declaredRequestLength > MAX_IMAGE_UPSCALE_INPUT_BYTES + MAX_MULTIPART_OVERHEAD_BYTES) {
+    return NextResponse.json({ error: "Images must be 20 MB or smaller." }, { status: 413 });
+  }
+
   let form;
   try {
     form = await request.formData();
@@ -37,7 +45,7 @@ export async function POST(request) {
   if (!(image instanceof File) || image.size < 1) {
     return NextResponse.json({ error: "Attach an image to enhance." }, { status: 400 });
   }
-  if (image.size > 20 * 1024 * 1024) {
+  if (image.size > MAX_IMAGE_UPSCALE_INPUT_BYTES) {
     return NextResponse.json({ error: "Images must be 20 MB or smaller." }, { status: 413 });
   }
 
@@ -76,8 +84,9 @@ export async function POST(request) {
     }
 
     const outputType = (workerResponse.headers.get("Content-Type") || "").split(";")[0].trim().toLowerCase();
-    if (outputType !== "image/png") {
-      return NextResponse.json({ error: "The image enhancement service returned an unsupported format." }, { status: 502 });
+    const declaredOutputLength = Number(workerResponse.headers.get("Content-Length") || 0);
+    if (outputType !== "image/png" || declaredOutputLength > MAX_IMAGE_UPSCALE_OUTPUT_BYTES) {
+      return NextResponse.json({ error: "The image enhancement service returned an unsupported or oversized result." }, { status: 502 });
     }
 
     const outputBytes = new Uint8Array(await workerResponse.arrayBuffer());
