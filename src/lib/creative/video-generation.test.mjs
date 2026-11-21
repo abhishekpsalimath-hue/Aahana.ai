@@ -46,3 +46,35 @@ test("accepts intermediate durations supported by the provider", () => {
     assert.equal(parseVideoGenerationInput({ prompt: "A scene", duration }).ok, true);
   }
 });
+
+
+test("bounds multipart video request bytes before form parsing", async () => {
+  const { readVideoRequestWithinLimit, MAX_VIDEO_MULTIPART_BYTES } = await import("./video-generation.mjs");
+  const accepted = await readVideoRequestWithinLimit(new Response(new Uint8Array([1, 2, 3])).body, 3);
+  assert.deepEqual(Array.from(accepted), [1, 2, 3]);
+  const rejected = await readVideoRequestWithinLimit(new Response(new Uint8Array([1, 2, 3, 4])).body, 3);
+  assert.equal(rejected, null);
+  assert.equal(MAX_VIDEO_MULTIPART_BYTES, 2 * 1024 * 1024 + 64 * 1024);
+});
+
+test("rejects missing, empty, and invalid-limit video request streams", async () => {
+  const { readVideoRequestWithinLimit } = await import("./video-generation.mjs");
+  assert.equal(await readVideoRequestWithinLimit(null), null);
+  assert.equal(await readVideoRequestWithinLimit(new Response(new Uint8Array()).body), null);
+  assert.equal(await readVideoRequestWithinLimit(new Response(new Uint8Array([1])).body, 0), null);
+});
+
+
+test("accepts only completed provider responses with safe HTTPS video URLs", async () => {
+  const { parseVideoProviderResult } = await import("./video-generation.mjs");
+  assert.equal(
+    parseVideoProviderResult({ state: "Completed", result: { video: "https://media.example.com/video.mp4" } }),
+    "https://media.example.com/video.mp4",
+  );
+  assert.equal(parseVideoProviderResult({ state: "Running", result: { video: "https://media.example.com/video.mp4" } }), null);
+  assert.equal(parseVideoProviderResult({ state: "Failed", result: { video: "https://media.example.com/video.mp4" } }), null);
+  assert.equal(parseVideoProviderResult({ state: "Completed", result: { video: "http://media.example.com/video.mp4" } }), null);
+  assert.equal(parseVideoProviderResult({ state: "Completed", result: { video: "not-a-url" } }), null);
+  assert.equal(parseVideoProviderResult({ state: "Completed", result: { video: "https://user:pass@media.example.com/video.mp4" } }), null);
+  assert.equal(parseVideoProviderResult({ state: "Completed", result: {} }), null);
+});

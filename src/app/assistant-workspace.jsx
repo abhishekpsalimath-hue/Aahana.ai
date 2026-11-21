@@ -244,6 +244,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [mode, setMode] = useState("solve");
   const [prompt, setPrompt] = useState("");
   const [imageFile, setImageFile] = useState(null);
+  const [imageUpscaleFile, setImageUpscaleFile] = useState(null);
   const [messages, setMessages] = useState([]);
   useEffect(() => {
     if (messages.length) conversationEndRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
@@ -258,9 +259,10 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
           setPreviewEnabled(status?.previewEnabled === true);
           setVideoEnabled(status?.videoEnabled === true);
           setImageEditingEnabled(status?.imageEditingEnabled === true);
+          setImageUpscaleEnabled(status?.imageUpscaleEnabled === true);
         }
       })
-      .catch(() => { if (active) { setBuildEnabled(false); setPreviewEnabled(false); setVideoEnabled(false); setImageEditingEnabled(false); } })
+      .catch(() => { if (active) { setBuildEnabled(false); setPreviewEnabled(false); setVideoEnabled(false); setImageEditingEnabled(false); setImageUpscaleEnabled(false); } })
       .finally(() => { if (active) setBuildStatusLoading(false); });
     return () => { active = false; };
   }, []);
@@ -296,6 +298,8 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [filesError, setFilesError] = useState("");
   const [analyzingFileId, setAnalyzingFileId] = useState(null);
   const [imageGenerating, setImageGenerating] = useState(false);
+  const [imageUpscaling, setImageUpscaling] = useState(false);
+  const [imageUpscaleEnabled, setImageUpscaleEnabled] = useState(false);
   const [imageSaving, setImageSaving] = useState(false);
   const [generatedImage, setGeneratedImage] = useState(null);
   const [imageEditingEnabled, setImageEditingEnabled] = useState(false);
@@ -623,7 +627,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
 
   async function generateImage() {
     const imagePrompt = prompt.trim();
-    if (!imagePrompt || imageGenerating || busy || imageFile) return;
+    if (!imagePrompt || imageGenerating || imageUpscaling || videoGenerating || busy || imageFile) return;
     setImageGenerating(true);
     setError("");
     setGeneratedImage(null);
@@ -635,7 +639,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || "Could not generate the image.");
-      if (typeof result.imageDataUrl !== "string" || !/^data:image\/(?:jpeg|png);base64,/.test(result.imageDataUrl)) {
+      if (typeof result.imageDataUrl !== "string" || !/^data:image\/(?:jpeg|png|webp);base64,/.test(result.imageDataUrl)) {
         throw new Error("The image provider returned an invalid image.");
       }
       setGeneratedImage({ dataUrl: result.imageDataUrl, prompt: imagePrompt });
@@ -646,8 +650,49 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     }
   }
 
+  async function enhanceImageTo4K(source = "generated") {
+    if (!imageUpscaleEnabled || imageUpscaling || imageGenerating || videoGenerating || busy) return;
+    const uploadedFile = source === "upload" ? imageFile : source === "upscale-upload" ? imageUpscaleFile : null;
+    if (!uploadedFile && !generatedImage?.dataUrl) return;
+    setImageUpscaling(true);
+    setError("");
+    setImageSaveNotice("");
+    try {
+      let sourceFile = uploadedFile;
+      if (!sourceFile) {
+        const sourceResponse = await fetch(generatedImage.dataUrl);
+        if (!sourceResponse.ok) throw new Error("Could not prepare the generated image.");
+        const sourceBlob = await sourceResponse.blob();
+        if (!["image/png", "image/jpeg", "image/webp"].includes(sourceBlob.type)) {
+          throw new Error("The generated image format is not supported for enhancement.");
+        }
+        const extension = sourceBlob.type === "image/png" ? "png" : sourceBlob.type === "image/webp" ? "webp" : "jpg";
+        sourceFile = new File([sourceBlob], `aahana-generated-image.${extension}`, { type: sourceBlob.type });
+      }
+      const formData = new FormData();
+      formData.append("image", sourceFile);
+      const response = await fetch("/api/images/upscale", { method: "POST", body: formData });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Could not enhance this image.");
+      if (typeof result.imageDataUrl !== "string" || !/^data:image\/png;base64,/.test(result.imageDataUrl)) {
+        throw new Error("The enhancement service returned an invalid image.");
+      }
+      setGeneratedImage({
+        dataUrl: result.imageDataUrl,
+        prompt: uploadedFile ? `Enhanced image: ${uploadedFile.name}` : generatedImage.prompt,
+      });
+      if (source === "upload") setImageFile(null);
+      if (source === "upscale-upload") setImageUpscaleFile(null);
+      setImageSaveNotice("Your enhanced image is ready to download or save to Files.");
+    } catch (err) {
+      setError(err.message || "Image enhancement failed.");
+    } finally {
+      setImageUpscaling(false);
+    }
+  }
+
   async function editGeneratedImage(editPrompt) {
-    if (!generatedImage || !imageEditingEnabled || imageGenerating || busy) return;
+    if (!generatedImage || !imageEditingEnabled || imageGenerating || imageUpscaling || videoGenerating || busy) return;
     setImageGenerating(true);
     setError("");
     setGeneratedVideo(null);
@@ -664,7 +709,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       const response = await fetch("/api/images/edit", { method: "POST", body: form });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || "Could not edit the image.");
-      if (typeof result.imageDataUrl !== "string" || !/^data:image\/(?:jpeg|png);base64,/.test(result.imageDataUrl)) {
+      if (typeof result.imageDataUrl !== "string" || !/^data:image\/(?:jpeg|png|webp);base64,/.test(result.imageDataUrl)) {
         throw new Error("The image editor returned an invalid image.");
       }
       setGeneratedImage({ dataUrl: result.imageDataUrl, prompt: generatedImage.prompt || editPrompt });
@@ -689,21 +734,26 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     try {
       const response = await fetch(generatedImage.dataUrl);
       const blob = await response.blob();
-      const file = new File([blob], `aahana-image-${Date.now()}.jpg`, { type: "image/jpeg" });
+      const mimeType = blob.type;
+      if (!["image/png", "image/jpeg", "image/webp"].includes(mimeType)) {
+        throw new Error("The generated image format cannot be saved.");
+      }
+      const extension = mimeType === "image/png" ? "png" : mimeType === "image/webp" ? "webp" : "jpg";
+      const file = new File([blob], `aahana-image-${Date.now()}.${extension}`, { type: mimeType });
       const supabase = createClient();
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError || !user) throw new Error("Please sign in again.");
       const folder = selectedProjectId || "personal";
       const objectPath = `${user.id}/${folder}/${crypto.randomUUID()}-${file.name}`;
       const { error: storageError } = await supabase.storage.from("aahana-private").upload(objectPath, file, {
-        contentType: "image/jpeg", upsert: false,
+        contentType: mimeType, upsert: false,
       });
       if (storageError) throw new Error("Could not save the generated image. Please try again.");
       const saved = await fetch("/api/files", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          objectPath, originalFilename: file.name, mimeType: "image/jpeg",
+          objectPath, originalFilename: file.name, mimeType,
           sizeBytes: file.size, projectId: selectedProjectId,
         }),
       });
@@ -723,7 +773,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   }
 
   async function generateVideo(videoPrompt = prompt.trim()) {
-    if (!videoEnabled || !videoPrompt || videoGenerating || busy || imageGenerating) return false;
+    if (!videoEnabled || !videoPrompt || videoGenerating || busy || imageGenerating || imageUpscaling) return false;
     setVideoGenerating(true);
     setError("");
     setGeneratedVideo(null);
@@ -901,7 +951,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   async function submitPrompt(event) {
     event.preventDefault();
     const text = prompt.trim();
-    if ((!text && !imageFile) || busy || buildBusy || imageGenerating || videoGenerating) return;
+    if ((!text && !imageFile) || busy || buildBusy || imageGenerating || videoGenerating || imageUpscaling) return;
 
     if (isVideoGenerationRequest(text)) {
       setPrompt("");
@@ -944,7 +994,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         });
         const result = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(result.error || "Could not generate the image.");
-        if (typeof result.imageDataUrl !== "string" || !/^data:image\/(?:jpeg|png);base64,/.test(result.imageDataUrl)) {
+        if (typeof result.imageDataUrl !== "string" || !/^data:image\/(?:jpeg|png|webp);base64,/.test(result.imageDataUrl)) {
           throw new Error("The image provider returned an invalid image.");
         }
         setGeneratedImage({ dataUrl: result.imageDataUrl, prompt: text });
@@ -1406,8 +1456,9 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
               <div className="generated-image-preview">
                 <img src={generatedImage.dataUrl} alt={generatedImage.prompt} style={{ display: "block", width: "100%", maxWidth: "640px", borderRadius: "14px" }} />
                 <div className="message-actions">
-                  <a className="copy-message" href={generatedImage.dataUrl} download="aahana-generated-image.jpg">Download image</a>
+                  <a className="copy-message" href={generatedImage.dataUrl} download={`aahana-generated-image.${generatedImage.dataUrl.startsWith("data:image/png;") ? "png" : generatedImage.dataUrl.startsWith("data:image/webp;") ? "webp" : "jpg"}`}>Download image</a>
                   <button className="copy-message" type="button" onClick={saveGeneratedImage} disabled={imageSaving}>{imageSaving ? "Saving…" : "Save to Files"}</button>
+                  {imageUpscaleEnabled && <button className="copy-message" type="button" onClick={() => enhanceImageTo4K("generated")} disabled={imageUpscaling || imageGenerating || busy}>{imageUpscaling ? "Enhancing to 4K…" : "Enhance to 4K"}</button>}
                   <button className="copy-message" type="button" onClick={() => setGeneratedImage(null)}>Remove</button>
                 </div>
                 {imageSaveNotice && <div className="notice" role="status">{imageSaveNotice}</div>}
@@ -1425,7 +1476,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
             <div className="image-attach-row">
               {videoEnabled && (
                 <>
-                  <button className="copy-message" type="button" onClick={() => generateVideo()} disabled={!prompt.trim() || videoGenerating || busy || imageGenerating}>
+                  <button className="copy-message" type="button" onClick={() => generateVideo()} disabled={!prompt.trim() || videoGenerating || busy || imageGenerating || imageUpscaling}>
                     {videoGenerating ? "Generating video…" : imageFile ? "Animate image" : "Generate video"}
                   </button>
                   <details className="video-advanced-settings">
@@ -1456,7 +1507,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
               <button className="copy-message" type="button" onClick={startVoiceInput} disabled={listening || busy}>{listening ? "Listening…" : "Speak"}</button>
               <label className="image-attach">
                 + Add image
-                <input id="image-upload" type="file" accept="image/png,image/jpeg,image/webp" disabled={busy}
+                <input id="image-upload" type="file" accept="image/png,image/jpeg,image/webp" disabled={busy || imageUpscaling}
                   onChange={(event) => {
                     const file = event.target.files?.[0] || null;
                     event.target.value = "";
@@ -1467,19 +1518,32 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                     setImageFile(file);
                   }} />
               </label>
-              {imageFile && <span className="image-attach-name">{imageFile.name} <button type="button" onClick={() => setImageFile(null)}>Remove</button></span>}
+              {imageFile && <span className="image-attach-name">{imageFile.name} {imageUpscaleEnabled && <button type="button" onClick={() => enhanceImageTo4K("upload")} disabled={imageUpscaling || imageGenerating || busy}>{imageUpscaling ? "Enhancing…" : "Enhance to 4K"}</button>} <button type="button" onClick={() => setImageFile(null)} disabled={imageUpscaling}>Remove</button></span>}
+              {imageUpscaleEnabled && <label className="image-attach">
+                + 4K image (up to 20 MB)
+                <input type="file" accept="image/png,image/jpeg,image/webp" disabled={busy || imageUpscaling} onChange={(event) => {
+                  const file = event.target.files?.[0] || null;
+                  event.target.value = "";
+                  if (!file) return;
+                  if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) { setError("Choose a PNG, JPEG or WebP image."); return; }
+                  if (file.size > 20 * 1024 * 1024) { setError("4K enhancement supports source images up to 20 MB."); return; }
+                  setError("");
+                  setImageUpscaleFile(file);
+                }} />
+              </label>}
+              {imageUpscaleFile && <span className="image-attach-name">{imageUpscaleFile.name} <button type="button" onClick={() => enhanceImageTo4K("upscale-upload")} disabled={imageUpscaling || imageGenerating || busy}>{imageUpscaling ? "Enhancing…" : "Enhance to 4K"}</button> <button type="button" onClick={() => setImageUpscaleFile(null)} disabled={imageUpscaling}>Remove</button></span>}
               <button className="copy-message" type="button" onClick={generateImage}
-                disabled={!prompt.trim() || imageGenerating || busy || Boolean(imageFile)}>
+                disabled={!prompt.trim() || imageGenerating || busy || imageUpscaling || videoGenerating || Boolean(imageFile)}>
                 {imageGenerating ? "Creating image…" : "Generate image"}
               </button>
             </div>
             <label className="sr-only" htmlFor="prompt">What would you like to work on?</label>
             <textarea id="prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); } }}
-              placeholder={aiEnabled ? "What would you like to work on today?" : "Try a calculation, e.g. 2 + 2 (offline)"} rows={3} disabled={busy} />
+              placeholder={aiEnabled ? "What would you like to work on today?" : "Try a calculation, e.g. 2 + 2 (offline)"} rows={3} disabled={busy || imageUpscaling} />
             <div className="composer-footer">
               <span className="composer-mode">{modes.find((item) => item.id === mode)?.hint} · Enter to send · Shift + Enter for a new line</span>
-              <button className={`send send-orb${busy || imageGenerating ? " is-thinking" : ""}`} type="submit" disabled={(!prompt.trim() && !imageFile) || busy || imageGenerating || (!aiEnabled && !imageFile && !isImageGenerationRequest(prompt.trim()) && evaluateArithmetic(prompt.trim()) === null)} aria-label={busy || imageGenerating ? "Aahana is working" : "Launch your message"} title={busy || imageGenerating ? "Aahana is working" : "Launch your message"}><span className="send-orb-halo" aria-hidden="true" /><svg className="send-rocket" viewBox="0 0 32 32" aria-hidden="true"><path className="rocket-flame" d="M12 21.5c-2.1 1.2-3.3 3.2-3.4 5.1 2-.1 4-1.3 5.1-3.4" /><path className="rocket-body" d="M12.2 19.8c-1.3-4.9 1.1-11.1 8.8-15.6 1.3 8.8-1.8 14-6.6 16.5l-2.2-.9Z" /><path className="rocket-window" d="M18.7 10.1a2.1 2.1 0 1 0 0 4.2 2.1 2.1 0 0 0 0-4.2Z" /><path className="rocket-fin" d="m12.4 15.8-4.1 1.4 1.1 4.1 4.1-2.2m5.2-6.9 2.2-4.1 4.1 1.1-1.4 4.1" /></svg><span className="send-orb-thinking" aria-hidden="true"><i /><i /><i /></span></button>
+              <button className={`send send-orb${busy || imageGenerating || imageUpscaling ? " is-thinking" : ""}`} type="submit" disabled={(!prompt.trim() && !imageFile) || busy || imageGenerating || imageUpscaling || (!aiEnabled && !imageFile && !isImageGenerationRequest(prompt.trim()) && !isVideoGenerationRequest(prompt.trim()) && evaluateArithmetic(prompt.trim()) === null)} aria-label={busy || imageGenerating || imageUpscaling ? "Aahana is working" : "Launch your message"} title={busy || imageGenerating || imageUpscaling ? "Aahana is working" : "Launch your message"}><span className="send-orb-halo" aria-hidden="true" /><svg className="send-rocket" viewBox="0 0 32 32" aria-hidden="true"><path className="rocket-flame" d="M12 21.5c-2.1 1.2-3.3 3.2-3.4 5.1 2-.1 4-1.3 5.1-3.4" /><path className="rocket-body" d="M12.2 19.8c-1.3-4.9 1.1-11.1 8.8-15.6 1.3 8.8-1.8 14-6.6 16.5l-2.2-.9Z" /><path className="rocket-window" d="M18.7 10.1a2.1 2.1 0 1 0 0 4.2 2.1 2.1 0 0 0 0-4.2Z" /><path className="rocket-fin" d="m12.4 15.8-4.1 1.4 1.1 4.1 4.1-2.2m5.2-6.9 2.2-4.1 4.1 1.1-1.4 4.1" /></svg><span className="send-orb-thinking" aria-hidden="true"><i /><i /><i /></span></button>
             </div>
           </form>
           {error && <div className="notice error-notice" role="alert">{error}</div>}
