@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { parseVideoGenerationInput, VIDEO_MODEL } from "@/lib/creative/video-generation.mjs";
+import { parseVideoGenerationInput, readVideoRequestWithinLimit, MAX_VIDEO_IMAGE_BYTES, MAX_VIDEO_MULTIPART_BYTES, VIDEO_MODEL } from "@/lib/creative/video-generation.mjs";
 
 export const runtime = "nodejs";
 export const maxDuration = 180;
 
 const ALLOWED_IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
-const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
 
 export async function POST(request) {
   const supabase = await createClient();
@@ -26,10 +25,28 @@ export async function POST(request) {
     return NextResponse.json({ error: "The video provider is not configured in private server settings." }, { status: 503 });
   }
 
+  const contentType = request.headers.get("Content-Type") || "";
+  if (!/^multipart\/form-data;\\s*boundary=/i.test(contentType)) {
+    return NextResponse.json({ error: "Attach an image using the supported video request form." }, { status: 400 });
+  }
+  const declaredLength = Number(request.headers.get("Content-Length") || 0);
+  if (declaredLength > MAX_VIDEO_MULTIPART_BYTES) {
+    return NextResponse.json({ error: "Video requests must be 2 MB or smaller." }, { status: 413 });
+  }
+  const requestBytes = await readVideoRequestWithinLimit(request.body);
+  if (!requestBytes) {
+    return NextResponse.json({ error: "Video request exceeds the 2 MB upload limit or could not be read." }, { status: 413 });
+  }
+
   let input;
   let imageFile = null;
   try {
-    const form = await request.formData();
+    const boundedRequest = new Request("https://aahana.internal/video-generation", {
+      method: "POST",
+      headers: { "Content-Type": contentType },
+      body: requestBytes,
+    });
+    const form = await boundedRequest.formData();
     input = parseVideoGenerationInput({
       prompt: form.get("prompt"),
       duration: Number(form.get("duration")),
@@ -43,7 +60,7 @@ export async function POST(request) {
   if (!input.ok) return NextResponse.json({ error: input.error }, { status: 400 });
 
   if (imageFile && (typeof imageFile.arrayBuffer !== "function" ||
-      !ALLOWED_IMAGE_TYPES.has(imageFile.type) || imageFile.size < 1 || imageFile.size > MAX_IMAGE_BYTES)) {
+      !ALLOWED_IMAGE_TYPES.has(imageFile.type) || imageFile.size < 1 || imageFile.size > MAX_VIDEO_IMAGE_BYTES)) {
     return NextResponse.json({ error: "Choose a PNG, JPEG or WebP image up to 2 MB." }, { status: 400 });
   }
 
