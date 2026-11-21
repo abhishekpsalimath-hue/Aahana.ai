@@ -99,6 +99,9 @@ test("does not route multilingual how-to questions about video creation into gen
     "वीडियो कैसे बनाएं?",
     "வீடியோ எப்படி உருவாக்குவது?",
     "ವೀಡಿಯೊ ಹೇಗೆ ಮಾಡುವುದು?",
+    "Un video creativo de un templo hermoso",
+    "El reproductor reproduce un video del templo",
+    "A video creator explains the process",
   ]) assert.equal(isVideoGenerationRequest(prompt), false, prompt);
 });
 
