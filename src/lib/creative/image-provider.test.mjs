@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {
   DEFAULT_IMAGE_MODEL,
   ENHANCED_IMAGE_MODEL,
-  IMAGE_OUTPUT_MIME_TYPE,
+  getImageOutputMimeType,
   resolveImageModel,
   buildImageProviderRequest,
 } from "./image-provider.mjs";
@@ -42,6 +42,8 @@ test("preserves the existing JSON request contract for FLUX.1 Schnell", async ()
   assert.deepEqual(JSON.parse(request.body), { prompt: "A moonlit forest", steps: 8 });
 });
 
-test("uses Cloudflare Workers AI's documented PNG output media type", () => {
-  assert.equal(IMAGE_OUTPUT_MIME_TYPE, "image/png");
+test("uses the correct output media type for each Cloudflare image model", () => {
+  assert.equal(getImageOutputMimeType(DEFAULT_IMAGE_MODEL), "image/jpeg");
+  assert.equal(getImageOutputMimeType(ENHANCED_IMAGE_MODEL), "image/png");
+  assert.equal(getImageOutputMimeType("unknown-model"), "image/jpeg");
 });
