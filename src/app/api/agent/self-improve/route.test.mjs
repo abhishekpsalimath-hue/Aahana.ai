@@ -135,7 +135,7 @@ test("self-improvement requires a separate owner approval before reading source 
   assert.match(route, /approvedBaseSha/);
   assert.match(route, /repository or approved file inventory changed after this plan was prepared/);
   assert.match(route, /tools: phase === "plan"/);
-  assert.match(route, /tools\\.filter\\(\\(tool\\) => tool\\.function\\.name !== "submit_change_plan"\\)/);
+  assert.match(route, /tools\.filter\(\(tool\) => tool\.function\.name !== "submit_change_plan"\)/);
   assert.match(workspace, /selfBuildPendingApproval/);
   assert.match(workspace, /Approve plan & inspect code/);
   assert.match(workspace, /Reject plan/);
