@@ -329,6 +329,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [selfBuildValidation, setSelfBuildValidation] = useState(null);
   const [selfBuildRepairCycles, setSelfBuildRepairCycles] = useState(0);
   const [selfBuildPlan, setSelfBuildPlan] = useState(null);
+  const [selfBuildPendingApproval, setSelfBuildPendingApproval] = useState(null);
   const [selfBuildAgentResponse, setSelfBuildAgentResponse] = useState("");
   const [selfBuildBusy, setSelfBuildBusy] = useState(false);
   const [selfBuildError, setSelfBuildError] = useState("");
@@ -539,8 +540,9 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     }
   }
 
-  async function proposeSelfBuildChange(isRepair = false, taskOverride = null) {
+  async function proposeSelfBuildChange(isRepair = false, taskOverride = null, approvedPlan = null) {
     const task = (taskOverride ?? selfBuildInstruction).trim();
+    const isExecution = Boolean(approvedPlan);
     if (!task || selfBuildBusy) return;
     if (!isRepair) setSelfBuildRepairCycles(0);
     const pathHint = selfBuildFile?.path || null;
@@ -549,7 +551,10 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     setSelfBuildBusy(true);
     setSelfBuildError("");
     setSelfBuildAgentResponse("");
-    setSelfBuildPlan(null);
+    if (!isExecution) {
+      setSelfBuildPlan(null);
+      setSelfBuildPendingApproval(null);
+    }
     setSelfBuildFile(null);
     setSelfBuildDraft("");
     setSelfBuildProposal(null);
@@ -559,13 +564,29 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       const response = await fetch("/api/agent/self-improve", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ task, pathHint }),
+        body: JSON.stringify({
+          task,
+          pathHint: isExecution ? approvedPlan.pathHint : pathHint,
+          phase: isExecution ? "execute" : "plan",
+          approvedPlan: isExecution ? approvedPlan.plan : undefined,
+          approvedBaseSha: isExecution ? approvedPlan.baseSha : undefined,
+        }),
         signal: controller.signal,
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || "Aahana could not work on this task.");
       setSelfBuildAgentResponse(result.finalResponse || "Aahana completed the inspection.");
       setSelfBuildPlan(result.changePlan || null);
+      if (!isExecution && result.status === "plan_ready" && result.changePlan && result.repository?.baseSha) {
+        setSelfBuildPendingApproval({
+          task,
+          pathHint,
+          plan: result.changePlan,
+          baseSha: result.repository.baseSha,
+        });
+        return;
+      }
+      if (isExecution) setSelfBuildPendingApproval(null);
       if (result.repository?.baseSha) {
         setSelfBuildRepository((current) => current ? { ...current, branch: result.repository.branch, baseSha: result.repository.baseSha } : current);
       }
@@ -597,6 +618,19 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       if (selfBuildAbortRef.current === controller) selfBuildAbortRef.current = null;
       setSelfBuildBusy(false);
     }
+  }
+
+  function approveSelfBuildPlan() {
+    if (!selfBuildPendingApproval || selfBuildBusy) return;
+    proposeSelfBuildChange(false, selfBuildPendingApproval.task, selfBuildPendingApproval);
+  }
+
+  function rejectSelfBuildPlan() {
+    if (selfBuildBusy) return;
+    setSelfBuildPendingApproval(null);
+    setSelfBuildPlan(null);
+    setSelfBuildAgentResponse("Plan rejected. Aahana has not read the planned source files or proposed changes.");
+    setSelfBuildError("");
   }
 
   function acceptSelfBuildProposal() {
@@ -1586,9 +1620,9 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
               </div>}
               <div className="self-build-task">
                 <label htmlFor="self-build-instruction">What should Aahana work on?</label>
-                <textarea id="self-build-instruction" rows={2} value={selfBuildInstruction} onChange={(event) => setSelfBuildInstruction(event.target.value)} placeholder="Assign a focused improvement. Aahana will inspect the approved code, choose a relevant file, and prepare a change…" disabled={selfBuildBusy} />
+                <textarea id="self-build-instruction" rows={2} value={selfBuildInstruction} onChange={(event) => setSelfBuildInstruction(event.target.value)} placeholder="Assign one focused improvement. Aahana will prepare a plan for your approval before reading source code…" disabled={selfBuildBusy || Boolean(selfBuildPendingApproval)} />
                 <div className="build-tools-actions">
-                  <button type="button" onClick={proposeSelfBuildChange} disabled={selfBuildBusy || !selfBuildInstruction.trim()}>{selfBuildBusy ? "Working…" : "Let Aahana work"}</button>
+                  <button type="button" onClick={proposeSelfBuildChange} disabled={selfBuildBusy || Boolean(selfBuildPendingApproval) || !selfBuildInstruction.trim()}>{selfBuildBusy ? "Working…" : "Prepare improvement plan"}</button>
                   {selfBuildBusy && <button type="button" onClick={stopSelfBuildProposal}>Stop</button>}
                 </div>
                 {selfBuildAgentResponse && <p className="build-tools-note" role="status">{selfBuildAgentResponse}</p>}
@@ -1603,6 +1637,10 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                 {selfBuildPlan.risks?.length > 0 && <><p><strong>Risks</strong></p><ul>{selfBuildPlan.risks.map((risk, index) => <li key={index}>{risk}</li>)}</ul></>}
                 <p><strong>Acceptance checks</strong></p>
                 <ul>{selfBuildPlan.acceptanceChecks.map((check, index) => <li key={index}>{check}</li>)}</ul>
+                {selfBuildPendingApproval && <div className="build-tools-actions">
+                  <button type="button" onClick={approveSelfBuildPlan} disabled={selfBuildBusy}>Approve plan & inspect code</button>
+                  <button type="button" onClick={rejectSelfBuildPlan} disabled={selfBuildBusy}>Reject plan</button>
+                </div>}
               </section>}
               {selfBuildReviews.length > 0 && <div className="self-build-editor">
                 <strong>Review coordinated changes ({selfBuildReviews.length}/3 files)</strong>
