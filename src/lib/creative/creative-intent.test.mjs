@@ -59,3 +59,20 @@ test("does not route video questions or general explanations into generation", (
     "Can you recommend video editing software?",
   ]) assert.equal(isVideoGenerationRequest(prompt), false, prompt);
 });
+
+test("routes Kannada and Hindi sacred image requests directly to generation", () => {
+  for (const prompt of [
+    "ಶಿವನ ಚಿತ್ರ ರಚಿಸಿ",
+    "ಆಂಜನೇಯ ಸ್ವಾಮಿಯ ಚಿತ್ರ ಬಿಡಿಸಿ",
+    "ಗಣಪತಿಯ ಚಿತ್ರ ಮಾಡಿ",
+    "ಶ್ರೀರಾಮನ ಚಿತ್ರ ಸೃಷ್ಟಿಸಿ",
+    "महादेव का चित्र बनाओ",
+    "हनुमान की तस्वीर बनाइए",
+    "श्रीकृष्ण का चित्र बनाओ",
+  ]) assert.equal(isImageGenerationRequest(prompt), true, prompt);
+});
+
+test("does not route localized sacred-subject questions into image generation", () => {
+  assert.equal(isImageGenerationRequest("ಶಿವನ ಕಥೆ ಹೇಳಿ"), false);
+  assert.equal(isImageGenerationRequest("हनुमान कौन हैं?"), false);
+});
