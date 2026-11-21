@@ -9,6 +9,8 @@ on:
       - "workers/image-upscale/**"
       - "src/app/api/images/upscale/**"
       - "src/lib/creative/image-upscale.*"
+      - "src/lib/creative/video-generation.*"
+      - "src/app/api/videos/generate/route.js"
       - "src/app/assistant-workspace.jsx"
       - "src/app/api/build/status/route.js"
       - ".github/workflows/private-image-upscale-checks.yml"
@@ -43,6 +45,8 @@ jobs:
           node-version: 22
       - name: Run isolated image-upscale tests
         run: node --test workers/image-upscale/index.test.mjs src/lib/creative/image-upscale.test.mjs
+      - name: Run video-generation unit tests
+        run: node --test src/lib/creative/video-generation.test.mjs
       - name: Install application dependencies
         run: npm install --no-audit --no-fund
       - name: Run application tests and production build
