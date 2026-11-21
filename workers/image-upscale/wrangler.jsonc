@@ -1,0 +1,10 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "aahana-private-image-upscale",
+  "main": "index.mjs",
+  "compatibility_date": "2026-11-21",
+  "workers_dev": true,
+  "images": {
+    "binding": "IMAGES"
+  }
+}
