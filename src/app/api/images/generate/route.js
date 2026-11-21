@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { parseImageGenerationInput } from "@/lib/creative/image-generation.mjs";
-import { resolveImageModel, buildImageProviderRequest, IMAGE_OUTPUT_MIME_TYPE } from "@/lib/creative/image-provider.mjs";
+import { resolveImageModel, buildImageProviderRequest, getImageOutputMimeType } from "@/lib/creative/image-provider.mjs";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -62,7 +62,7 @@ export async function POST(request) {
     }
 
     return NextResponse.json(
-      { imageDataUrl: `data:${IMAGE_OUTPUT_MIME_TYPE};base64,${image}`, model, steps: model === resolveImageModel("flux-2-klein-4b") ? 4 : steps },
+      { imageDataUrl: `data:${getImageOutputMimeType(model)};base64,${image}`, model, steps: model === resolveImageModel("flux-2-klein-4b") ? 4 : steps },
       { headers: { "Cache-Control": "no-store" } }
     );
   } catch (error) {
