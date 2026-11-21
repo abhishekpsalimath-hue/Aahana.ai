@@ -2,15 +2,15 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import {
   MAX_IMAGE_UPSCALE_INPUT_BYTES,
+  MAX_IMAGE_UPSCALE_MULTIPART_BYTES,
   MAX_IMAGE_UPSCALE_OUTPUT_BYTES,
   getSafeImageUpscaleWorkerUrl,
+  readStreamWithinLimit,
   validateImageUpscaleInput,
 } from "@/lib/creative/image-upscale.mjs";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
-
-const MAX_MULTIPART_OVERHEAD_BYTES = 1024 * 1024;
 
 export async function POST(request) {
   const supabase = await createClient();
@@ -29,14 +29,28 @@ export async function POST(request) {
     return NextResponse.json({ error: "Image enhancement is not connected in the private server settings." }, { status: 503 });
   }
 
+  const contentType = request.headers.get("Content-Type") || "";
+  if (!/^multipart\/form-data;\s*boundary=/i.test(contentType)) {
+    return NextResponse.json({ error: "Attach an image using the supported upload form." }, { status: 400 });
+  }
   const declaredRequestLength = Number(request.headers.get("Content-Length") || 0);
-  if (declaredRequestLength > MAX_IMAGE_UPSCALE_INPUT_BYTES + MAX_MULTIPART_OVERHEAD_BYTES) {
+  if (declaredRequestLength > MAX_IMAGE_UPSCALE_MULTIPART_BYTES) {
     return NextResponse.json({ error: "Images must be 20 MB or smaller." }, { status: 413 });
+  }
+
+  const multipartBytes = await readStreamWithinLimit(request.body, MAX_IMAGE_UPSCALE_MULTIPART_BYTES);
+  if (!multipartBytes) {
+    return NextResponse.json({ error: "Image upload exceeds the 20 MB limit or could not be read." }, { status: 413 });
   }
 
   let form;
   try {
-    form = await request.formData();
+    const boundedRequest = new Request("https://aahana.internal/image-upscale", {
+      method: "POST",
+      headers: { "Content-Type": contentType },
+      body: multipartBytes,
+    });
+    form = await boundedRequest.formData();
   } catch {
     return NextResponse.json({ error: "Invalid image-enhancement request." }, { status: 400 });
   }
