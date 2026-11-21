@@ -3,10 +3,10 @@ export const MAX_PROPOSAL_SOURCE_BYTES = 5000;
 const MAX_SOURCE_BYTES = 1024 * 1024;
 const SECRET_PATTERNS = [
   /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/,
-  /\bgithub_pat_[A-Za-z0-9_]{20,}\\b/,
-  /\bgh[pousr]_[A-Za-z0-9]{20,}\\b/,
-  /\bsk_(?:live|test)_[A-Za-z0-9]{16,}\\b/,
-  /\bAKIA[0-9A-Z]{16}\\b/,
+  /\bgithub_pat_[A-Za-z0-9_]{20,}\b/,
+  /\bgh[pousr]_[A-Za-z0-9]{20,}\b/,
+  /\bsk_(?:live|test)_[A-Za-z0-9]{16,}\b/,
+  /\bAKIA[0-9A-Z]{16}\b/,
 ];
 
 export function validateSourceProposal(raw, { fileName, version }) {
