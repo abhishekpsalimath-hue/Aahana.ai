@@ -27,6 +27,37 @@ test("video director presets are validated and none preserves the original promp
   assert.match(buildVideoPrompt("A bottle", "commercial"), /premium/i);
 });
 
+test("video prompts preserve a specifically requested Shiva manifestation across frames", () => {
+  const prompt = buildVideoPrompt("Create Lord Shiva as Nataraja dancing within the ring of fire");
+  assert.ok(prompt.indexOf("Depict Lord Shiva") < prompt.indexOf("User request (preserve exactly):"));
+  assert.match(prompt, /Nataraja/);
+  assert.match(prompt, /same deity identity, requested manifestation, face, anatomy/i);
+  assert.match(prompt, /Keep the named form stable throughout all motion/i);
+  assert.match(prompt, /never morph into another deity/i);
+  assert.match(prompt, /motivated camera movement/i);
+});
+
+test("video prompts preserve Hanuman's vanara identity and requested Panchamukhi form", () => {
+  const prompt = buildVideoPrompt("Create Panchamukhi Hanuman with five distinct faces, standing on a mountain");
+  assert.match(prompt, /five distinct faces/i);
+  assert.match(prompt, /monkey-faced vanara/i);
+  assert.match(prompt, /do not substitute a single-faced generic depiction/i);
+  assert.match(prompt, /Sacred-subject continuity/i);
+});
+
+test("video prompts recognize Kannada and Hindi sacred subjects", () => {
+  const cases = [
+    ["ಶಿವನ ನಟರಾಜ ರೂಪದ ವೀಡಿಯೊ ರಚಿಸಿ", /Lord Shiva \(Mahadev\) unmistakably/i],
+    ["पंचमुखी हनुमान का वीडियो बनाओ", /Lord Hanuman \(Anjaneya\) unmistakably/i],
+    ["ಗಣಪತಿಯ ವೀಡಿಯೊ ಮಾಡಿ", /Lord Ganesha unmistakably/i],
+    ["श्रीकृष्ण का वीडियो बनाओ", /Lord Krishna unmistakably/i],
+    ["ಶ್ರೀರಾಮನ ವೀಡಿಯೊ ರಚಿಸಿ", /Lord Rama unmistakably/i],
+  ];
+  for (const [request, expectedIdentity] of cases) {
+    assert.match(buildVideoPrompt(request), expectedIdentity, request);
+  }
+});
+
 test("provider registry reports configuration without exposing credentials", () => {
   const status = getCreativeProviderStatus({
     CLOUDFLARE_ACCOUNT_ID: "account",
