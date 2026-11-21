@@ -31,7 +31,7 @@ test("owner access is an exact case-insensitive email allowlist match", () => {
   assert.equal(isSelfBuildOwner("founder@example.com", getSelfBuildConfig({})), false);
 });
 
-test("only approved Experience Lab and non-security Build source paths are writable", () => {
+test("only approved Experience Lab, Build, and exact creative source paths are writable", () => {
   assert.equal(isAllowedSelfBuildPath("src/app/experience-lab/page.jsx"), true);
   assert.equal(isAllowedSelfBuildPath("src/app/assistant-workspace.jsx"), true);
   assert.equal(isAllowedSelfBuildPath("src/app/assistant-workspace.jsx/child.jsx"), false);
@@ -50,6 +50,23 @@ test("only approved Experience Lab and non-security Build source paths are writa
   assert.equal(isAllowedSelfBuildPath("src/app/api/auth/route.js"), false);
   assert.equal(isAllowedSelfBuildPath("package.json"), false);
   assert.equal(isAllowedSelfBuildPath(".github/workflows/deploy.yml"), false);
+
+  for (const path of [
+    "src/lib/creative/creative-intent.mjs",
+    "src/lib/creative/creative-intent.test.mjs",
+    "src/lib/creative/creative-director.mjs",
+    "src/lib/creative/image-generation.mjs",
+    "src/lib/creative/image-generation.test.mjs",
+  ]) assert.equal(isAllowedSelfBuildPath(path), true, path);
+
+  for (const path of [
+    "src/lib/creative/image-provider.mjs",
+    "src/lib/creative/image-provider.test.mjs",
+    "src/lib/creative/video-provider.mjs",
+    "src/app/api/images/generate/route.js",
+    "src/app/api/video/generate/route.js",
+    "src/lib/creative/creative-director/credentials.mjs",
+  ]) assert.equal(isAllowedSelfBuildPath(path), false, path);
 });
 
 test("rejects traversal, encoded paths, absolute paths, and unusual separators", () => {
@@ -58,7 +75,7 @@ test("rejects traversal, encoded paths, absolute paths, and unusual separators",
     "src/app/experience-lab/../../student/page.jsx",
     "src/app/experience-lab/%2e%2e/page.jsx",
     "/src/app/experience-lab/page.jsx",
-    "src\\app\\experience-lab\\page.jsx",
+    "src\\\\app\\\\experience-lab\\\\page.jsx",
     "src/app/experience-lab/./page.jsx",
   ]) assert.equal(isAllowedSelfBuildPath(path), false, path);
 });
