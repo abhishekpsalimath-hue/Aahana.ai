@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { createApprovalToken, verifyApprovalToken, APPROVAL_TOKEN_TTL_MS } from "./approval-token.mjs";
 import { readFileSync } from "node:fs";
+import { getAgentRequestTimeoutMs, MAX_AGENT_RUNTIME_MS } from "../../../../lib/build/runtime-budget.mjs";
 
 const route = readFileSync(new URL("./route.js", import.meta.url), "utf8");
 const approvalTokenModule = readFileSync(new URL("./approval-token.mjs", import.meta.url), "utf8");
@@ -100,7 +101,9 @@ test("agent treats repository content as untrusted and never commits, merges, or
 test("agent execution is bounded and uses the existing Groq provider only", () => {
   assert.match(route, /MAX_TOOL_ROUNDS = 8/);
   assert.match(route, /MAX_TOOL_CALLS = 8/);
-  assert.match(route, /AbortSignal\.timeout\(12000\)/);
+  assert.match(route, /getAgentRequestTimeoutMs\(agentStartedAt\)/);
+  assert.match(route, /AbortSignal\.timeout\(remainingRuntimeMs\)/);
+  assert.match(route, /No repository changes were committed/);
   assert.match(route, /GROQ_API_KEY/);
   assert.ok(route.includes('process.env.AAHANA_AGENT_MODEL || "openai/gpt-oss-120b"'));
   assert.match(route, /inventoryListed/);
@@ -223,4 +226,15 @@ test("approval is pinned to the reviewed repository snapshot and cannot widen th
   assert.match(route, /sourceFilesRead: 0/);
   assert.match(workspace, /Approve plan & inspect code/);
   assert.match(workspace, /Reject plan/);
+});
+
+
+test("self-improvement model calls share a strict runtime budget", () => {
+  const startedAt = 1000;
+  assert.equal(MAX_AGENT_RUNTIME_MS, 42000);
+  assert.equal(getAgentRequestTimeoutMs(startedAt, 1000), 12000);
+  assert.equal(getAgentRequestTimeoutMs(startedAt, 31000), 12000);
+  assert.equal(getAgentRequestTimeoutMs(startedAt, 35000), 8000);
+  assert.equal(getAgentRequestTimeoutMs(startedAt, 43000), 0);
+  assert.match(route, /remainingRuntimeMs <= 0/);
 });

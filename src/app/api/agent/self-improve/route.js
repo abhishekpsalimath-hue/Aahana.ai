@@ -3,6 +3,7 @@ import { createApprovalToken, verifyApprovalToken } from "./approval-token.mjs";
 import { createClient } from "@/lib/supabase/server";
 import { getSelfBuildConfig, isSelfBuildOwner, isAllowedSelfBuildPath, validateSelfBuildChangeSet } from "@/lib/build/self-build-policy.mjs";
 import { getSelfBuildRepository, getSelfBuildFile } from "@/lib/build/github-app.mjs";
+import { getAgentRequestTimeoutMs, MAX_AGENT_RUNTIME_MS } from "@/lib/build/runtime-budget.mjs";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -105,6 +106,7 @@ function jsonToolResult(value) {
 }
 
 export async function POST(request) {
+  const agentStartedAt = Date.now();
   const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) return NextResponse.json({ error: "Please sign in to assign Aahana a self-improvement task." }, { status: 401 });
@@ -232,6 +234,10 @@ export async function POST(request) {
 
   try {
     for (; rounds < MAX_TOOL_ROUNDS; rounds++) {
+      const remainingRuntimeMs = getAgentRequestTimeoutMs(agentStartedAt);
+      if (remainingRuntimeMs <= 0) {
+        return NextResponse.json({ error: `Aahana reached its ${MAX_AGENT_RUNTIME_MS / 1000}-second safety budget. No repository changes were committed.` }, { status: 504 });
+      }
       const upstream = await fetch("https://api.groq.com/openai/v1/chat/completions", {
         method: "POST",
         headers: { Authorization: "Bearer " + apiKey, "Content-Type": "application/json" },
@@ -253,7 +259,7 @@ export async function POST(request) {
           max_completion_tokens: 4096,
           stream: false,
         }),
-        signal: AbortSignal.any([request.signal, AbortSignal.timeout(12000)]),
+        signal: AbortSignal.any([request.signal, AbortSignal.timeout(remainingRuntimeMs)]),
       });
       const payload = await upstream.json().catch(() => ({}));
       if (!upstream.ok) {
@@ -277,6 +283,9 @@ export async function POST(request) {
       });
 
       for (const call of requestedCalls) {
+        if (getAgentRequestTimeoutMs(agentStartedAt) <= 0) {
+          throw new Error("Aahana reached its runtime safety budget. No repository changes were committed.");
+        }
         toolCallsExecuted += 1;
         if (toolCallsExecuted > MAX_TOOL_CALLS) {
           return NextResponse.json({ error: "Aahana reached the safe tool-call limit for this task. Narrow the request and try again." }, { status: 422 });

@@ -1,0 +1,33 @@
+name: Aahana self-improvement runtime budget checks
+
+on:
+  push:
+    branches:
+      - fix/self-improve-runtime-budget-guard
+    paths:
+      - "src/app/api/agent/self-improve/**"
+      - "src/lib/build/runtime-budget.mjs"
+      - ".github/workflows/self-improve-runtime-budget.yml"
+      - "package.json"
+      - "package-lock.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aahana-self-improve-runtime-budget-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Run tests and production build
+        run: npm run build
