@@ -92,7 +92,7 @@ export async function POST(request) {
       resources: { vcpus: 1 },
       timeout: 170_000,
       persistent: false,
-      networkPolicy: { mode: "custom", allowedDomains: ["github.com", "codeload.github.com"] },
+      networkPolicy: { allow: ["github.com", "codeload.github.com"] },
     });
 
     // Remove GitHub access before overlaying agent-authored code or running it.
@@ -106,7 +106,7 @@ export async function POST(request) {
     await sandbox.runCommand({ cmd: "find", args: [".", "-type", "f", "(", "-name", ".env*", "-o", "-name", ".npmrc", ")", "-delete"], cwd: REPOSITORY_DIR, timeout: 5000 });
 
     // Dependencies may come only from the public npm registry. Lifecycle scripts are disabled.
-    await sandbox.update({ networkPolicy: { mode: "custom", allowedDomains: ["registry.npmjs.org"] } });
+    await sandbox.update({ networkPolicy: { allow: ["registry.npmjs.org"] } });
     const install = await sandbox.runCommand({
       cmd: "npm",
       args: ["install", "--ignore-scripts", "--package-lock=false", "--no-audit", "--no-fund", "--registry=https://registry.npmjs.org/"],
