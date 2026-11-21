@@ -10,6 +10,9 @@ export function isImageGenerationRequest(value) {
   const text = String(value || "").trim();
   if (!text) return false;
 
+  const hasHindiHanumanPhotoRequest = text.includes("हनुमान") && text.includes("तस्वीर") && /बन(?:ाओ|ाइए)/u.test(text);
+  if (hasHindiHanumanPhotoRequest) return true;
+
   const hasLocalizedSacredSubject = /(?:ಶಿವ|ಮಹಾದೇವ|ಶಂಕರ|ರುದ್ರ|ಹನುಮಂತ|ಆಂಜನೇಯ|ಹನುಮಾನ್|ಮಾರುತಿ|ಗಣೇಶ|ಗಣಪತಿ|ವಿನಾಯಕ|ಕೃಷ್ಣ|ಶ್ರೀಕೃಷ್ಣ|ರಾಮ|ಶ್ರೀರಾಮ|शिव|महादेव|शंकर|रुद्र|हनुमान|अंजनेय|मारुति|गणेश|गणपति|विनायक|कृष्ण|श्रीकृष्ण|राम|श्रीराम)/u.test(text);
   const hasLocalizedImageAction = /(?:ಚಿತ್ರ|ಚಿತ್ರಣ|ತस्वीर|चित्र)/u.test(text) &&
     /(?:ರಚಿಸಿ|ಮಾಡಿ|ಬಿಡಿಸಿ|ಸೃಷ್ಟಿಸಿ|बन|रचो|चित्रित करो)/u.test(text);
