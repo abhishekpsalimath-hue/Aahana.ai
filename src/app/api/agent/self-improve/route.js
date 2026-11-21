@@ -136,6 +136,9 @@ export async function POST(request) {
 
   const task = typeof body?.task === "string" ? body.task.trim() : "";
   const pathHint = body?.pathHint == null ? null : String(body.pathHint);
+  const phase = body?.phase === "execute" ? "execute" : "plan";
+  const approvedPlanInput = body?.approvedPlan;
+  const approvedBaseSha = typeof body?.approvedBaseSha === "string" ? body.approvedBaseSha : "";
   if (!task || task.length > 3000) return NextResponse.json({ error: "Describe one focused task in 1–3,000 characters." }, { status: 400 });
   if (pathHint && !isAllowedSelfBuildPath(pathHint)) return NextResponse.json({ error: "The selected source path is outside the approved self-improvement scope." }, { status: 400 });
 
@@ -150,7 +153,32 @@ export async function POST(request) {
   if (pathHint && !repository.files.some((file) => file.path === pathHint)) {
     return NextResponse.json({ error: "The selected file is not present in the current approved repository snapshot. Refresh and try again." }, { status: 409 });
   }
+  if (phase === "execute" && (repository.baseSha !== approvedBaseSha ||
+      changePlan.affectedPaths.some((path) => !repository.files.some((file) => file.path === path)))) {
+    return NextResponse.json({ error: "The repository or approved file inventory changed after this plan was prepared. Please request a fresh plan." }, { status: 409 });
+  }
 
+  if (phase === "execute") {
+    const { title, problem, approach, affectedPaths, risks, acceptanceChecks } = approvedPlanInput || {};
+    if (typeof title !== "string" || !title.trim() || title.length > 120 ||
+        typeof problem !== "string" || !problem.trim() || problem.length > 600 ||
+        typeof approach !== "string" || !approach.trim() || approach.length > 900 ||
+        !Array.isArray(affectedPaths) || affectedPaths.length < 1 || affectedPaths.length > MAX_PROPOSED_FILES ||
+        !Array.isArray(risks) || risks.length > 4 ||
+        !Array.isArray(acceptanceChecks) || acceptanceChecks.length < 1 || acceptanceChecks.length > 5 ||
+        risks.some((item) => typeof item !== "string" || item.length > 240) ||
+        acceptanceChecks.some((item) => typeof item !== "string" || !item.trim() || item.length > 240)) {
+      return NextResponse.json({ error: "The approved plan is invalid or incomplete. Request a new plan." }, { status: 400 });
+    }
+    const uniquePaths = [...new Set(affectedPaths)];
+    if (uniquePaths.length !== affectedPaths.length || uniquePaths.some((path) =>
+      typeof path !== "string" || !isAllowedSelfBuildPath(path)
+    )) return NextResponse.json({ error: "The approved plan contains paths outside Aahana's allowed self-improvement scope." }, { status: 400 });
+    changePlan = { title: title.trim(), problem: problem.trim(), approach: approach.trim(),
+      affectedPaths: uniquePaths, risks: risks.map((item) => item.trim()).filter(Boolean),
+      acceptanceChecks: acceptanceChecks.map((item) => item.trim()) };
+    if (!approvedBaseSha) return NextResponse.json({ error: "The approved plan is missing its repository version. Request a new plan." }, { status: 400 });
+  }
   const readFiles = new Map();
   const proposals = new Map();
   let totalSourceBytes = 0;
@@ -158,8 +186,14 @@ export async function POST(request) {
     {
       role: "system",
       content: [
-        "You are Aahana's self-improvement agent. Complete the user's task by inspecting the approved source inventory, reading the smallest relevant source file, and preparing one high-quality, minimal source change when a change is justified.",
-        "You have exactly four tools: list approved files, submit a change plan, read approved source files, and propose a coordinated source change. Use them deliberately. You must list files first, submit a structured plan grounded in that inventory, read only the paths named in the plan, and only then propose. Read at most three distinct files; do not read unrelated files.",
+        phase === "plan"
+          ? "You are Aahana's self-improvement planning agent. Inspect only the approved source inventory and submit a clear, minimal change plan. Do not read source files or propose changes in this phase."
+          : "You are Aahana's self-improvement implementation agent. The owner has explicitly approved the supplied plan. Inspect only its exact approved paths, read the smallest relevant source files, and prepare a minimal coordinated proposal.",
+
+        phase === "plan"
+          ? "In this planning phase, use only list_approved_source_files followed by submit_change_plan. Never call read_approved_source_file or propose_source_changes. The owner must review and approve the plan in a separate action before any source file can be read."
+          : "In this approved execution phase, use list_approved_source_files, read_approved_source_file, and propose_source_changes. The approved plan is supplied by the owner. Do not request or alter its scope. Read at most three distinct files and only paths named in that plan.",
+
         "The plan must identify the user goal, the concrete problem found or suspected, a minimal approach, exact affected paths, realistic risks, and observable acceptance checks. Do not claim a problem is confirmed until source inspection supports it. If inspection shows the plan is wrong, explain why and stop rather than silently expanding scope.",
         "Your final response must briefly report the plan, what source evidence you found, what changed (if anything), and the acceptance checks still requiring isolated validation. Never present proposed checks as tests already run.",
         "For a change set, call propose_source_changes once with one to three files. Each file contains 1–20 exact search/replace patches instead of a full rewrite. Every search string must match exactly once in that file. Keep patches narrow and preserve surrounding code.",
@@ -172,13 +206,16 @@ export async function POST(request) {
         pathHint ? "The user selected this preferred focus file: " + pathHint + ". Inspect it first if it is relevant; you may choose another approved file only if the task clearly requires it." : "Choose the most relevant approved source file yourself after inspecting the inventory.",
       ].join("\n"),
     },
-    { role: "user", content: task },
+    { role: "user", content: phase === "execute"
+      ? task + "\n\nOWNER-APPROVED PLAN (scope is fixed):\n" + JSON.stringify(approvedPlanInput)
+      : task },
   ];
 
   let toolCallsExecuted = 0;
   let inventoryListed = false;
-  let changePlan = null;
+  let changePlan = phase === "execute" ? approvedPlanInput : null;
   let finalResponse = "";
+  let planReady = false;
   let rounds = 0;
 
   try {
@@ -189,10 +226,10 @@ export async function POST(request) {
         body: JSON.stringify({
           model,
           messages,
-          tools,
+          tools: phase === "execute" ? tools.filter((tool) => tool.function.name !== "submit_change_plan") : tools,
           tool_choice: !inventoryListed
             ? { type: "function", function: { name: "list_approved_source_files" } }
-            : !changePlan
+            : phase === "plan"
               ? { type: "function", function: { name: "submit_change_plan" } }
               : readFiles.size === 0
                 ? { type: "function", function: { name: "read_approved_source_file" } }
@@ -349,11 +386,35 @@ export async function POST(request) {
           name: String(name || "unknown"),
           content: jsonToolResult(result),
         });
+        if (phase === "plan" && name === "submit_change_plan" && changePlan) {
+          planReady = true;
+          break;
+        }
       }
+      if (planReady) break;
     }
   } catch (error) {
     console.error("Aahana self-improvement agent failed:", error?.message || "unknown error");
     return NextResponse.json({ error: "Aahana's self-improvement agent was interrupted. No repository changes were committed." }, { status: 502 });
+  }
+
+  if (phase === "plan" && planReady && changePlan) {
+    return NextResponse.json({
+      status: "plan_ready",
+      repository: { name: repository.repository, branch: repository.branch, baseSha: repository.baseSha },
+      finalResponse: "Plan ready for your review. No source files were read and no changes were proposed.",
+      changePlan,
+      proposals: [],
+      toolCallsExecuted,
+      roundsUsed: Math.min(rounds + 1, MAX_TOOL_ROUNDS),
+      sourceFilesRead: 0,
+      commitCreated: false,
+      pullRequestCreated: false,
+    }, { headers: { "Cache-Control": "private, no-store" } });
+  }
+
+  if (phase === "execute" && repository.baseSha !== approvedBaseSha) {
+    return NextResponse.json({ error: "The repository changed after this plan was prepared. Please ask Aahana to create a fresh plan." }, { status: 409 });
   }
 
   if (!finalResponse && rounds >= MAX_TOOL_ROUNDS) {
