@@ -11,7 +11,7 @@ export function isVideoGenerationRequest(value) {
 
   const hasMultilingualVideoNoun = /(?:ವೀಡಿಯೊ|ವಿಡಿಯೋ|ಚಲನಚಿತ್ರ|वीडियो|चलचित्र|காணொளி|வீடியோ|திரைப்படம்|వీడియో|చలనచిత్రం|సినిమా|വീഡിയോ|ചലച്ചിത്രം|സിനിമ|ভিডিও|চলচ্চিত্র|વિડિયો|ચલચિત્ર|ਵੀਡੀਓ|ਚਲਚਿੱਤਰ|ویڈیو|فلم|فيديو|مقطع|video|vídeo|clip|animation|animación|film|película|vidéo|animazione|видео|ролик|анимация|影片|视频|動畫|动画|動画|ビデオ|映像|동영상|비디오|영상)/iu.test(text);
   const hasLocalizedCreationVerb = /(?:ರಚಿಸಿ|ಮಾಡಿ|ಸೃಷ್ಟಿಸಿ|ತಯಾರಿಸಿ|ನಿರ್ಮಿಸಿ|बनाओ|बनाइए|बनाएं|बनाएँ|तैयार करो|निर्माण करो|உருவாக்கு|உருவாக்குங்கள்|செய்யுங்கள்|సృష్టించు|తయారు చేయి|రూపొందించు|సృష్టించండి|സൃഷ്ടിക്കൂ|ഉണ്ടാക്കൂ|തയ്യാറാക്കൂ|তৈরি করো|তৈরি করুন|বানাও|બનાવો|તૈયાર કરો|બનાવી આપો|ਬਣਾਓ|ਬਣਾਉ|ਤਿਆਰ ਕਰੋ|بنائیں|بناؤ|تیار کریں|أنشئ|اصنع|أنشئي|اصنعي|создай|создать|сгенерируй|сгенерировать|生成|制作|作って|作成して|生成して|作成|만들어|생성해|제작해)/u.test(text);
-  const hasLatinCreationVerb = /\b(?:create|make|produce|animate|render|crea|crear|genera|generar|producir|crée|créer|génère|générer|erstelle|erstellen|produziere|produzieren|crie|criar|gere|gerar|produza|produzir|creare|generare|создай|создать|сгенерируй|сгенерировать)\b/iu.test(text);
+  const hasLatinCreationVerb = /\b(?:create|make|produce|animate|render|crea|crear|genera|generar|producir|crée|créer|génère|générer|erstelle|erstellen|produziere|produzieren|crie|criar|gere|gerar|produza|produzir|creare|generare)\b/iu.test(text);
   const hasMultilingualCreationVerb = hasLocalizedCreationVerb || hasLatinCreationVerb;
   if (hasMultilingualVideoNoun && hasMultilingualCreationVerb) return true;
 
