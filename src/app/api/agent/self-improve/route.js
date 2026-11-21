@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { createClient } from "@/lib/supabase/server";
 import { getSelfBuildConfig, isSelfBuildOwner, isAllowedSelfBuildPath, validateSelfBuildChangeSet } from "@/lib/build/self-build-policy.mjs";
 import { getSelfBuildRepository, getSelfBuildFile } from "@/lib/build/github-app.mjs";
@@ -11,6 +12,40 @@ const MAX_TOOL_ROUNDS = 8;
 const MAX_TOOL_CALLS = 8;
 const MAX_PROPOSED_FILES = 3;
 const MAX_TOTAL_SOURCE_BYTES = 180 * 1024;
+
+const APPROVAL_TOKEN_TTL_MS = 10 * 60 * 1000;
+
+function approvalSigningKey(env = process.env) {
+  const privateKey = String(env.AAHANA_GITHUB_PRIVATE_KEY || "").replace(/\\n/g, "\n");
+  if (!privateKey.trim()) throw new Error("The self-build approval signing key is unavailable.");
+  return createHmac("sha256", privateKey).update("aahana-self-build-plan-approval:v1").digest();
+}
+
+function createApprovalToken({ userId, task, pathHint, plan, baseSha }, env = process.env) {
+  const payload = Buffer.from(JSON.stringify({
+    userId, task, pathHint, plan, baseSha, expiresAt: Date.now() + APPROVAL_TOKEN_TTL_MS,
+  })).toString("base64url");
+  const signature = createHmac("sha256", approvalSigningKey(env)).update(payload).digest("base64url");
+  return payload + "." + signature;
+}
+
+function verifyApprovalToken(token, expected, env = process.env) {
+  if (typeof token !== "string" || token.length > 12000) return false;
+  const parts = token.split(".");
+  if (parts.length !== 2) return false;
+  let supplied;
+  try { supplied = Buffer.from(parts[1], "base64url"); } catch { return false; }
+  const expectedSignature = createHmac("sha256", approvalSigningKey(env)).update(parts[0]).digest();
+  if (supplied.length !== expectedSignature.length || !timingSafeEqual(supplied, expectedSignature)) return false;
+  let payload;
+  try { payload = JSON.parse(Buffer.from(parts[0], "base64url").toString("utf8")); } catch { return false; }
+  return payload?.expiresAt > Date.now() &&
+    payload.userId === expected.userId &&
+    payload.task === expected.task &&
+    payload.pathHint === expected.pathHint &&
+    payload.baseSha === expected.baseSha &&
+    JSON.stringify(payload.plan) === JSON.stringify(expected.plan);
+}
 
 const tools = [
   {
@@ -175,6 +210,15 @@ export async function POST(request) {
       affectedPaths: uniquePaths, risks: risks.map((item) => item.trim()).filter(Boolean),
       acceptanceChecks: acceptanceChecks.map((item) => item.trim()) };
     if (!approvedBaseSha) return NextResponse.json({ error: "The approved plan is missing its repository version. Request a new plan." }, { status: 400 });
+    if (!verifyApprovalToken(body?.approvalToken, {
+      userId: user.id,
+      task,
+      pathHint,
+      baseSha: approvedBaseSha,
+      plan: approvedChangePlan,
+    })) {
+      return NextResponse.json({ error: "This plan approval is missing, expired, or does not match the reviewed plan. Request and approve a fresh plan." }, { status: 403 });
+    }
   }
 
   if (phase === "execute" && (repository.baseSha !== approvedBaseSha ||
@@ -408,6 +452,7 @@ export async function POST(request) {
       repository: { name: repository.repository, branch: repository.branch, baseSha: repository.baseSha },
       finalResponse: "Plan ready for your review. No source files were read and no changes were proposed.",
       changePlan,
+      approvalToken: createApprovalToken({ userId: user.id, task, pathHint, plan: changePlan, baseSha: repository.baseSha }),
       proposals: [],
       toolCallsExecuted,
       roundsUsed: Math.min(rounds + 1, MAX_TOOL_ROUNDS),
