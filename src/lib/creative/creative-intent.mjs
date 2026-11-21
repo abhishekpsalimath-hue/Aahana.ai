@@ -1,7 +1,17 @@
 export function isVideoGenerationRequest(value) {
   const text = String(value || "").trim();
-  if (!text || /^(?:how|why|when|where|what|which|who)\b/i.test(text)) return false;
+  if (!text) return false;
+
+  const isHowToQuestion = /^(?:how|why|when|where|what|which|who)\b/i.test(text) ||
+    /^(?:¿?cómo|comment|wie|como|come|как|どうやって|어떻게|كيف|چگونه|कैसे|कसे|எப்படி|ఎలా|എങ്ങനെ|ಹೇಗೆ|কীভাবে|કેવી રીતે|ਕਿਵੇਂ)/iu.test(text);
+  if (isHowToQuestion) return false;
+
   if (/\b(?:animate|turn|convert)\b[\s\S]{0,70}\b(?:this|the attached|my)\b[\s\S]{0,45}\b(?:image|photo|picture)\b/i.test(text)) return true;
+
+  const hasMultilingualVideoNoun = /(?:ವೀಡಿಯೊ|ವಿಡಿಯೋ|ಚಲನಚಿತ್ರ|वीडियो|चलचित्र|காணொளி|வீடியோ|திரைப்படம்|వీడియో|చలనచిత్రం|సినిమా|വീഡിയോ|ചലച്ചിത്രം|സിനിമ|ভিডিও|চলচ্চিত্র|વિડિયો|ચલચિત્ર|ਵੀਡੀਓ|ਚਲਚਿੱਤਰ|ویڈیو|فلم|فيديو|مقطع|video|clip|animation|animación|film|película|vidéo|animazione|видео|ролик|анимация|影片|视频|動畫|动画|動画|ビデオ|映像|동영상|비디오|영상)/iu.test(text);
+  const hasMultilingualCreationVerb = /(?:ರಚಿಸಿ|ಮಾಡಿ|ಸೃಷ್ಟಿಸಿ|ತಯಾರಿಸಿ|ನಿರ್ಮಿಸಿ|बनाओ|बनाइए|बनाएं|बनाएँ|तैयार करो|निर्माण करो|உருவாக்கு|உருவாக்குங்கள்|செய்யுங்கள்|సృష్టించు|తయారు చేయి|రూపొందించు|సృష్టించండి|സൃഷ്ടിക്കൂ|ഉണ്ടാക്കൂ|തയ്യാറാക്കൂ|তৈরি করো|তৈরি করুন|বানাও|બનાવો|તૈયાર કરો|બનાવી આપો|ਬਣਾਓ|ਬਣਾਉ|ਤਿਆਰ ਕਰੋ|بنائیں|بناؤ|تیار کریں|أنشئ|اصنع|أنشئي|اصنعي|crea|crear|genera|generar|produce|producir|crée|créer|génère|générer|erstelle|erstellen|produziere|produzieren|crie|criar|gere|gerar|produza|produzir|creare|generare|создай|создать|сгенерируй|сгенерировать|生成|制作|作って|作成して|生成して|作成|만들어|생성해|제작해)/iu.test(text);
+  if (hasMultilingualVideoNoun && hasMultilingualCreationVerb) return true;
+
   return /\b(?:generate|create|make|produce|animate|render)\b[\s\S]{0,100}\b(?:video|clip|animation|film)\b/i.test(text) ||
     /\b(?:video|clip|animation)\b[\s\S]{0,80}\b(?:of|showing|where)\b/i.test(text);
 }
