@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createApprovalToken, verifyApprovalToken } from "./approval-token.mjs";
 import { createClient } from "@/lib/supabase/server";
 import { getSelfBuildConfig, isSelfBuildOwner, isAllowedSelfBuildPath, validateSelfBuildChangeSet } from "@/lib/build/self-build-policy.mjs";
 import { getSelfBuildRepository, getSelfBuildFile } from "@/lib/build/github-app.mjs";
@@ -12,40 +12,6 @@ const MAX_TOOL_ROUNDS = 8;
 const MAX_TOOL_CALLS = 8;
 const MAX_PROPOSED_FILES = 3;
 const MAX_TOTAL_SOURCE_BYTES = 180 * 1024;
-
-const APPROVAL_TOKEN_TTL_MS = 10 * 60 * 1000;
-
-function approvalSigningKey(env = process.env) {
-  const privateKey = String(env.AAHANA_GITHUB_PRIVATE_KEY || "").replace(/\\n/g, "\n");
-  if (!privateKey.trim()) throw new Error("The self-build approval signing key is unavailable.");
-  return createHmac("sha256", privateKey).update("aahana-self-build-plan-approval:v1").digest();
-}
-
-function createApprovalToken({ userId, task, pathHint, plan, baseSha }, env = process.env) {
-  const payload = Buffer.from(JSON.stringify({
-    userId, task, pathHint, plan, baseSha, expiresAt: Date.now() + APPROVAL_TOKEN_TTL_MS,
-  })).toString("base64url");
-  const signature = createHmac("sha256", approvalSigningKey(env)).update(payload).digest("base64url");
-  return payload + "." + signature;
-}
-
-function verifyApprovalToken(token, expected, env = process.env) {
-  if (typeof token !== "string" || token.length > 12000) return false;
-  const parts = token.split(".");
-  if (parts.length !== 2) return false;
-  let supplied;
-  try { supplied = Buffer.from(parts[1], "base64url"); } catch { return false; }
-  const expectedSignature = createHmac("sha256", approvalSigningKey(env)).update(parts[0]).digest();
-  if (supplied.length !== expectedSignature.length || !timingSafeEqual(supplied, expectedSignature)) return false;
-  let payload;
-  try { payload = JSON.parse(Buffer.from(parts[0], "base64url").toString("utf8")); } catch { return false; }
-  return payload?.expiresAt > Date.now() &&
-    payload.userId === expected.userId &&
-    payload.task === expected.task &&
-    payload.pathHint === expected.pathHint &&
-    payload.baseSha === expected.baseSha &&
-    JSON.stringify(payload.plan) === JSON.stringify(expected.plan);
-}
 
 const tools = [
   {
