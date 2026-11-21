@@ -36,6 +36,21 @@ test("rejects empty, oversized, binary and malformed proposals", () => {
   assert.throws(() => validateSourceProposal("x".repeat(2 * 1024 * 1024 + 1), context), /oversized/);
 });
 
+test("rejects proposals containing common private-key and API-token patterns before review", () => {
+  for (const secret of [
+    "-----BEGIN PRIVATE KEY-----",
+    "ghp_abcdefghijklmnopqrstuvwxyz123456",
+    "github_pat_abcdefghijklmnopqrstuvwxyz123456",
+    "sk_live_abcdefghijklmnop",
+    "AKIA1234567890ABCDEF",
+  ]) {
+    assert.throws(
+      () => validateSourceProposal(JSON.stringify({ ...valid, updatedContent: "const credential = " + JSON.stringify(secret) + ";" }), context),
+      /possible credential/
+    );
+  }
+});
+
 test("renders a readable line-oriented change preview", () => {
   const diff = createSourceDiff("const a = 1;\nconst b = 2;\n", "const a = 1;\nconst b = 3;\n");
   assert.match(diff, /^--- current source/m);

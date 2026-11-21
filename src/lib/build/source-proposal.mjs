@@ -1,6 +1,13 @@
 export const MAX_PROPOSAL_SOURCE_BYTES = 5000;
 
 const MAX_SOURCE_BYTES = 1024 * 1024;
+const SECRET_PATTERNS = [
+  /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/,
+  /\bgithub_pat_[A-Za-z0-9_]{20,}\b/,
+  /\bgh[pousr]_[A-Za-z0-9]{20,}\b/,
+  /\bsk_(?:live|test)_[A-Za-z0-9]{16,}\b/,
+  /\bAKIA[0-9A-Z]{16}\b/,
+];
 
 export function validateSourceProposal(raw, { fileName, version }) {
   if (typeof raw !== "string" || raw.length > MAX_SOURCE_BYTES * 2) {
@@ -21,6 +28,9 @@ export function validateSourceProposal(raw, { fileName, version }) {
   const bytes = new TextEncoder().encode(proposal.updatedContent).byteLength;
   if (bytes < 1 || bytes > MAX_SOURCE_BYTES || proposal.updatedContent.includes("\u0000")) {
     throw new Error("The proposed source must contain 1 byte to 1 MB of valid text.");
+  }
+  if (SECRET_PATTERNS.some((pattern) => pattern.test(proposal.updatedContent))) {
+    throw new Error("A possible credential was detected in the proposal. Remove it before reviewing this change.");
   }
   return {
     fileName,
