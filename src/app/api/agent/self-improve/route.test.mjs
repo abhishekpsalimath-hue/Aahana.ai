@@ -15,6 +15,10 @@ test("self-improvement agent is authenticated and owner-gated", () => {
 
 test("agent exposes only inventory, approved source reading, and reviewed proposal tools", () => {
   assert.match(route, /list_approved_source_files/);
+  assert.match(route, /submit_change_plan/);
+  assert.match(route, /if \(!changePlan\)/);
+  assert.match(route, /changePlan\.affectedPaths\.includes\(args\.path\)/);
+  assert.match(route, /proposal contains a path outside the approved change plan/);
   assert.match(route, /read_approved_source_file/);
   assert.match(route, /propose_source_changes/);
   assert.match(route, /isAllowedSelfBuildPath/);
@@ -67,6 +71,9 @@ test("agent supports coordinated proposals for up to three inspected files with 
 });
 
 test("Assistance reviews each proposed file and submits one consolidated draft PR", () => {
+  assert.match(workspace, /selfBuildPlan/);
+  assert.match(workspace, /result\.changePlan/);
+  assert.match(workspace, /Plan before code changes/);
   assert.match(workspace, /selfBuildReviews/);
   assert.match(workspace, /Review coordinated changes/);
   assert.match(workspace, /updateSelfBuildReview/);
