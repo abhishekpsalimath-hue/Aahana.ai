@@ -101,7 +101,9 @@ test("agent treats repository content as untrusted and never commits, merges, or
 test("agent execution is bounded and uses the existing Groq provider only", () => {
   assert.match(route, /MAX_TOOL_ROUNDS = 8/);
   assert.match(route, /MAX_TOOL_CALLS = 8/);
-  assert.match(route, /AbortSignal\.timeout\(12000\)/);
+  assert.match(route, /getAgentRequestTimeoutMs\(agentStartedAt\)/);
+  assert.match(route, /AbortSignal\.timeout\(remainingRuntimeMs\)/);
+  assert.match(route, /No repository changes were committed/);
   assert.match(route, /GROQ_API_KEY/);
   assert.ok(route.includes('process.env.AAHANA_AGENT_MODEL || "openai/gpt-oss-120b"'));
   assert.match(route, /inventoryListed/);
