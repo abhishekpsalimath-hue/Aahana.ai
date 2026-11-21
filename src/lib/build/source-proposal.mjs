@@ -3,17 +3,17 @@ export const MAX_PROPOSAL_SOURCE_BYTES = 5000;
 const MAX_SOURCE_BYTES = 1024 * 1024;
 const SECRET_PATTERNS = [
   /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/,
-  /\bgithub_pat_[A-Za-z0-9_]{20,}\b/,
-  /\bgh[pousr]_[A-Za-z0-9]{20,}\b/,
-  /\bsk_(?:live|test)_[A-Za-z0-9]{16,}\b/,
-  /\bAKIA[0-9A-Z]{16}\b/,
+  /\\bgithub_pat_[A-Za-z0-9_]{20,}\\b/,
+  /\\bgh[pousr]_[A-Za-z0-9]{20,}\\b/,
+  /\\bsk_(?:live|test)_[A-Za-z0-9]{16,}\\b/,
+  /\\bAKIA[0-9A-Z]{16}\\b/,
 ];
 
 export function validateSourceProposal(raw, { fileName, version }) {
   if (typeof raw !== "string" || raw.length > MAX_SOURCE_BYTES * 2) {
     throw new Error("Aahana returned an invalid or oversized code proposal.");
   }
-  const normalized = raw.trim().replace(/^\x60{3}(?:json)?\s*/i, "").replace(/\s*\x60{3}$/, "");
+  const normalized = raw.trim().replace(/^\\x60{3}(?:json)?\\s*/i, "").replace(/\\s*\\x60{3}$/, "");
   let proposal;
   try { proposal = JSON.parse(normalized); }
   catch { throw new Error("Aahana's proposal was not valid JSON. Ask again or edit the source manually."); }
@@ -26,8 +26,11 @@ export function validateSourceProposal(raw, { fileName, version }) {
     throw new Error("Aahana's proposal did not match the open source file and version.");
   }
   const bytes = new TextEncoder().encode(proposal.updatedContent).byteLength;
-  if (bytes < 1 || bytes > MAX_SOURCE_BYTES || proposal.updatedContent.includes("\u0000")) {
+  if (bytes < 1 || bytes > MAX_SOURCE_BYTES || proposal.updatedContent.includes("\\u0000")) {
     throw new Error("The proposed source must contain 1 byte to 1 MB of valid text.");
+  }
+  if (SECRET_PATTERNS.some((pattern) => pattern.test(proposal.updatedContent))) {
+    throw new Error("A possible credential was detected in the proposal. Remove it before reviewing this change.");
   }
   return {
     fileName,
@@ -41,8 +44,8 @@ export function validateSourceProposal(raw, { fileName, version }) {
 export function createSourceDiff(before, after) {
   if (typeof before !== "string" || typeof after !== "string") return "";
   if (before === after) return "No source changes proposed.";
-  const oldLines = before.split("\n");
-  const newLines = after.split("\n");
+  const oldLines = before.split("\\n");
+  const newLines = after.split("\\n");
   let prefix = 0;
   while (prefix < oldLines.length && prefix < newLines.length && oldLines[prefix] === newLines[prefix]) prefix++;
   let suffix = 0;
@@ -63,6 +66,6 @@ export function createSourceDiff(before, after) {
   if (removed.length > maxChangedLines || added.length > maxChangedLines) {
     output.push("… diff truncated (" + removed.length + " removed lines, " + added.length + " added lines)");
   }
-  const rendered = output.join("\n");
-  return rendered.length > 40_000 ? rendered.slice(0, 40_000) + "\n… diff preview truncated for performance" : rendered;
+  const rendered = output.join("\\n");
+  return rendered.length > 40_000 ? rendered.slice(0, 40_000) + "\\n… diff preview truncated for performance" : rendered;
 }
