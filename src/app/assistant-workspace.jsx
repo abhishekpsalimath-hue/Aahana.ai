@@ -901,7 +901,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   async function submitPrompt(event) {
     event.preventDefault();
     const text = prompt.trim();
-    if ((!text && !imageFile) || busy || buildBusy || imageGenerating) return;
+    if ((!text && !imageFile) || busy || buildBusy || imageGenerating || videoGenerating) return;
 
     if (isVideoGenerationRequest(text)) {
       setPrompt("");
