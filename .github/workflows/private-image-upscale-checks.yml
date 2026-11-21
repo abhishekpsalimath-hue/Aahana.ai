@@ -4,10 +4,13 @@ on:
   pull_request:
     branches:
       - fix/image-provider-output-validation
+      - feat/private-image-upscale-worker
     paths:
       - "workers/image-upscale/**"
       - "src/app/api/images/upscale/**"
       - "src/lib/creative/image-upscale.*"
+      - "src/app/assistant-workspace.jsx"
+      - "src/app/api/build/status/route.js"
       - ".github/workflows/private-image-upscale-checks.yml"
       - "package.json"
       - "package-lock.json"
