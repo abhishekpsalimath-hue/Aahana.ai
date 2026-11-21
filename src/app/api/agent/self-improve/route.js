@@ -11,6 +11,7 @@ const MAX_TOOL_ROUNDS = 8;
 const MAX_TOOL_CALLS = 8;
 const MAX_PROPOSED_FILES = 3;
 const MAX_TOTAL_SOURCE_BYTES = 180 * 1024;
+const MAX_AGENT_RUNTIME_MS = 42_000;
 
 const tools = [
   {
@@ -157,9 +158,15 @@ export async function POST(request) {
   let inventoryListed = false;
   let finalResponse = "";
   let rounds = 0;
+  const agentStartedAt = Date.now();
 
   try {
     for (; rounds < MAX_TOOL_ROUNDS; rounds++) {
+      const remainingMs = MAX_AGENT_RUNTIME_MS - (Date.now() - agentStartedAt);
+      if (remainingMs <= 0) {
+        finalResponse = "I reached the safe runtime limit before completing this task. No repository changes were committed.";
+        break;
+      }
       const upstream = await fetch("https://api.groq.com/openai/v1/chat/completions", {
         method: "POST",
         headers: { Authorization: "Bearer " + apiKey, "Content-Type": "application/json" },
@@ -177,7 +184,7 @@ export async function POST(request) {
           max_completion_tokens: 4096,
           stream: false,
         }),
-        signal: AbortSignal.any([request.signal, AbortSignal.timeout(12000)]),
+        signal: AbortSignal.any([request.signal, AbortSignal.timeout(Math.min(12000, remainingMs))]),
       });
       const payload = await upstream.json().catch(() => ({}));
       if (!upstream.ok) {
