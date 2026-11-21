@@ -142,6 +142,8 @@ export async function POST(request) {
   if (!task || task.length > 3000) return NextResponse.json({ error: "Describe one focused task in 1–3,000 characters." }, { status: 400 });
   if (pathHint && !isAllowedSelfBuildPath(pathHint)) return NextResponse.json({ error: "The selected source path is outside the approved self-improvement scope." }, { status: 400 });
 
+  let approvedChangePlan = null;
+
   let repository;
   try {
     repository = await getSelfBuildRepository();
@@ -153,11 +155,6 @@ export async function POST(request) {
   if (pathHint && !repository.files.some((file) => file.path === pathHint)) {
     return NextResponse.json({ error: "The selected file is not present in the current approved repository snapshot. Refresh and try again." }, { status: 409 });
   }
-  if (phase === "execute" && (repository.baseSha !== approvedBaseSha ||
-      changePlan.affectedPaths.some((path) => !repository.files.some((file) => file.path === path)))) {
-    return NextResponse.json({ error: "The repository or approved file inventory changed after this plan was prepared. Please request a fresh plan." }, { status: 409 });
-  }
-
   if (phase === "execute") {
     const { title, problem, approach, affectedPaths, risks, acceptanceChecks } = approvedPlanInput || {};
     if (typeof title !== "string" || !title.trim() || title.length > 120 ||
@@ -174,10 +171,15 @@ export async function POST(request) {
     if (uniquePaths.length !== affectedPaths.length || uniquePaths.some((path) =>
       typeof path !== "string" || !isAllowedSelfBuildPath(path)
     )) return NextResponse.json({ error: "The approved plan contains paths outside Aahana's allowed self-improvement scope." }, { status: 400 });
-    changePlan = { title: title.trim(), problem: problem.trim(), approach: approach.trim(),
+    approvedChangePlan = { title: title.trim(), problem: problem.trim(), approach: approach.trim(),
       affectedPaths: uniquePaths, risks: risks.map((item) => item.trim()).filter(Boolean),
       acceptanceChecks: acceptanceChecks.map((item) => item.trim()) };
     if (!approvedBaseSha) return NextResponse.json({ error: "The approved plan is missing its repository version. Request a new plan." }, { status: 400 });
+  }
+
+  if (phase === "execute" && (repository.baseSha !== approvedBaseSha ||
+      approvedChangePlan.affectedPaths.some((path) => !repository.files.some((file) => file.path === path)))) {
+    return NextResponse.json({ error: "The repository or approved file inventory changed after this plan was prepared. Please request a fresh plan." }, { status: 409 });
   }
   const readFiles = new Map();
   const proposals = new Map();
@@ -207,13 +209,13 @@ export async function POST(request) {
       ].join("\n"),
     },
     { role: "user", content: phase === "execute"
-      ? task + "\n\nOWNER-APPROVED PLAN (scope is fixed):\n" + JSON.stringify(approvedPlanInput)
+      ? task + "\n\nOWNER-APPROVED PLAN (scope is fixed):\n" + JSON.stringify(approvedChangePlan)
       : task },
   ];
 
   let toolCallsExecuted = 0;
   let inventoryListed = false;
-  let changePlan = phase === "execute" ? approvedPlanInput : null;
+  let changePlan = phase === "execute" ? approvedChangePlan : null;
   let finalResponse = "";
   let planReady = false;
   let rounds = 0;
