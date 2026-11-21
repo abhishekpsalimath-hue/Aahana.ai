@@ -36,7 +36,7 @@ test("approval token rejects a modified signature or payload", () => {
   const now = 1_800_000_000_000;
   const token = createApprovalToken(approvedPayload, signingEnv, now);
   const [payload, signature] = token.split(".");
-  const tamperedSignature = signature.slice(0, -1) + (signature.endsWith("A") ? "B" : "A");
+  const tamperedSignature = (signature.startsWith("A") ? "B" : "A") + signature.slice(1);
   assert.equal(verifyApprovalToken(payload + "." + tamperedSignature, approvedPayload, signingEnv, now + 1), false);
   const changedPayload = { ...approvedPayload, task: "Different task" };
   assert.equal(verifyApprovalToken(token, changedPayload, signingEnv, now + 1), false);
