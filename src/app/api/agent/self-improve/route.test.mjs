@@ -86,6 +86,8 @@ test("isolated self-validation is Preview-only, owner-gated, bounded, and epheme
   assert.match(validationRoute, /original\.sha !== item\.baseVersion/);
   assert.match(validationRoute, /validateSelfBuildChangeSet/);
   assert.match(validationRoute, /source: \{ type: "git", url: REPOSITORY_URL, depth: 1, revision: baseSha \}/);
+  assert.match(validationRoute, /networkPolicy: \{ allow: \["github.com", "codeload.github.com"\] \}/);
+  assert.match(validationRoute, /networkPolicy: \{ allow: \["registry.npmjs.org"\] \}/);
   assert.match(validationRoute, /persistent: false/);
   assert.match(validationRoute, /networkPolicy: "deny-all"/);
   assert.match(validationRoute, /--ignore-scripts/);
