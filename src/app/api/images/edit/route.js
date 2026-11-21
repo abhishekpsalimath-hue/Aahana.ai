@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { buildImageEditPrompt } from "@/lib/creative/creative-director.mjs";
-import { getReferenceImageDimensions, isReferenceImageWithinProviderBounds, parseImageEditInput } from "@/lib/creative/image-generation.mjs";
+import { getReferenceImageDimensions, isReferenceImageWithinProviderBounds, parseImageEditInput, MAX_IMAGE_EDIT_MULTIPART_BYTES } from "@/lib/creative/image-generation.mjs";
 import { detectImageMimeTypeFromBase64 } from "@/lib/creative/image-provider.mjs";
+import { readStreamWithinLimit } from "@/lib/creative/image-upscale.mjs";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -26,8 +27,28 @@ export async function POST(request) {
     return NextResponse.json({ error: "Image editing is not connected in the private server settings." }, { status: 503 });
   }
 
+  const contentType = request.headers.get("Content-Type") || "";
+  if (!/^multipart\\/form-data;\\s*boundary=/i.test(contentType)) {
+    return NextResponse.json({ error: "Attach an image using the supported edit form." }, { status: 400 });
+  }
+  const declaredLength = Number(request.headers.get("Content-Length") || 0);
+  if (declaredLength > MAX_IMAGE_EDIT_MULTIPART_BYTES) {
+    return NextResponse.json({ error: "Image-edit requests must be 2 MB or smaller." }, { status: 413 });
+  }
+  const requestBytes = await readStreamWithinLimit(request.body, MAX_IMAGE_EDIT_MULTIPART_BYTES);
+  if (!requestBytes) {
+    return NextResponse.json({ error: "Image-edit request exceeds the 2 MB limit or could not be read." }, { status: 413 });
+  }
+
   let form;
-  try { form = await request.formData(); } catch {
+  try {
+    const boundedRequest = new Request("https://aahana.internal/image-edit", {
+      method: "POST",
+      headers: { "Content-Type": contentType },
+      body: requestBytes,
+    });
+    form = await boundedRequest.formData();
+  } catch {
     return NextResponse.json({ error: "Invalid image-edit request." }, { status: 400 });
   }
 
