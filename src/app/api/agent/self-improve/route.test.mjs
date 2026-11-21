@@ -125,3 +125,20 @@ test("Assistance only offers isolated validation when Preview validation is enab
   assert.match(workspace, /validateSelfBuildChanges/);
   assert.match(workspace, /\/api\/agent\/self-improve\/validate/);
 });
+
+test("self-improvement requires a separate owner approval before reading source files", () => {
+  assert.match(route, /phase === "plan"/);
+  assert.match(route, /phase === "execute"/);
+  assert.match(route, /status: "plan_ready"/);
+  assert.match(route, /sourceFilesRead: 0/);
+  assert.match(route, /OWNER-APPROVED PLAN/);
+  assert.match(route, /approvedBaseSha/);
+  assert.match(route, /repository or approved file inventory changed after this plan was prepared/);
+  assert.match(route, /tools: phase === "execute" \? tools\.filter/);
+  assert.match(workspace, /selfBuildPendingApproval/);
+  assert.match(workspace, /Approve plan & inspect code/);
+  assert.match(workspace, /Reject plan/);
+  assert.match(workspace, /function approveSelfBuildPlan\(\)/);
+  assert.match(workspace, /phase: isExecution \? "execute" : "plan"/);
+  assert.match(workspace, /approvedPlan: isExecution \? approvedPlan\.plan : undefined/);
+});
