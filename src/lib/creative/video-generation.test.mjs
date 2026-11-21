@@ -63,3 +63,18 @@ test("rejects missing, empty, and invalid-limit video request streams", async ()
   assert.equal(await readVideoRequestWithinLimit(new Response(new Uint8Array()).body), null);
   assert.equal(await readVideoRequestWithinLimit(new Response(new Uint8Array([1])).body, 0), null);
 });
+
+
+test("accepts only completed provider responses with safe HTTPS video URLs", async () => {
+  const { parseVideoProviderResult } = await import("./video-generation.mjs");
+  assert.equal(
+    parseVideoProviderResult({ state: "Completed", result: { video: "https://media.example.com/video.mp4" } }),
+    "https://media.example.com/video.mp4",
+  );
+  assert.equal(parseVideoProviderResult({ state: "Running", result: { video: "https://media.example.com/video.mp4" } }), null);
+  assert.equal(parseVideoProviderResult({ state: "Failed", result: { video: "https://media.example.com/video.mp4" } }), null);
+  assert.equal(parseVideoProviderResult({ state: "Completed", result: { video: "http://media.example.com/video.mp4" } }), null);
+  assert.equal(parseVideoProviderResult({ state: "Completed", result: { video: "not-a-url" } }), null);
+  assert.equal(parseVideoProviderResult({ state: "Completed", result: { video: "https://user:pass@media.example.com/video.mp4" } }), null);
+  assert.equal(parseVideoProviderResult({ state: "Completed", result: {} }), null);
+});
