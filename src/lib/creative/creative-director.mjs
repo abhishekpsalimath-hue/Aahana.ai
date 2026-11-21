@@ -63,15 +63,14 @@ export function buildVideoPrompt(prompt, director = "cinematic") {
   const direction = VIDEO_DIRECTIONS[director];
   if (!direction) return null;
   const subject = SACRED_SUBJECT_DIRECTIONS.find(({ pattern }) => pattern.test(prompt));
-  const continuity = subject
-    ? "Sacred-subject continuity: preserve the same deity identity, requested manifestation, face, anatomy, costume, ornaments, and defining attributes in every frame. Keep the named form stable throughout all motion. Never morph into another deity, a generic human, or a different manifestation. Avoid facial drift, extra limbs, duplicated attributes, flicker, and shape changes."
-    : "";
+  if (!subject) return `${prompt}\\n\\n${direction}`;
+  const continuity = "Sacred-subject continuity: preserve the same deity identity, requested manifestation, face, anatomy, costume, ornaments, and defining attributes in every frame. Keep the named form stable throughout all motion. Never morph into another deity, a generic human, or a different manifestation. Avoid facial drift, extra limbs, duplicated attributes, flicker, and shape changes.";
   return [
-    subject?.direction,
+    subject.direction,
     "User request (preserve exactly): " + prompt,
     direction,
     continuity,
-  ].filter(Boolean).join("\n\n");
+  ].join("\\n\\n");
 }
 
 const PROVIDERS = Object.freeze([
