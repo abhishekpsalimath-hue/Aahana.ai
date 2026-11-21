@@ -71,3 +71,12 @@ export async function readVideoRequestWithinLimit(stream, limit = MAX_VIDEO_MULT
   }
   return bytes;
 }
+
+
+export function parseVideoProviderResult(result) {
+  if (!result || result.state !== "Completed" || typeof result.result?.video !== "string") return null;
+  let url;
+  try { url = new URL(result.result.video); } catch { return null; }
+  if (url.protocol !== "https:" || !url.hostname || url.username || url.password) return null;
+  return url.toString();
+}
