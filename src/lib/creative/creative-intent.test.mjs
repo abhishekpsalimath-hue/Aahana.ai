@@ -60,6 +60,51 @@ test("does not route video questions or general explanations into generation", (
   ]) assert.equal(isVideoGenerationRequest(prompt), false, prompt);
 });
 
+test("recognizes natural-language video creation across major world languages", () => {
+  for (const prompt of [
+    "ಶಿವನ ಒಂದು ವೀಡಿಯೊ ರಚಿಸಿ",
+    "ಈ ಫೋಟೋವನ್ನು ವಿಡಿಯೋ ಆಗಿ ಮಾಡಿ",
+    "महादेव का एक वीडियो बनाओ",
+    "एक सुंदर मंदिर का वीडियो बनाइए",
+    "ஒரு அழகான கோவில் வீடியோ உருவாக்குங்கள்",
+    "ఒక అందమైన దేవాలయం వీడియో సృష్టించు",
+    "ഒരു മനോഹരമായ ക്ഷേത്രത്തിന്റെ വീഡിയോ ഉണ്ടാക്കൂ",
+    "একটি সুন্দর মন্দিরের ভিডিও তৈরি করো",
+    "એક સુંદર મંદિરનો વિડિયો બનાવો",
+    "ਇੱਕ ਸੁੰਦਰ ਮੰਦਰ ਦੀ ਵੀਡੀਓ ਬਣਾਓ",
+    "ایک خوبصورت مندر کی ویڈیو بنائیں",
+    "أنشئ فيديو جميلاً لمعبد",
+    "Crea un video de un templo hermoso",
+    "Crée une vidéo d'un beau temple",
+    "Erstelle ein schönes Tempelvideo",
+    "Crie um vídeo de um templo bonito",
+    "Crea un video di un tempio bellissimo",
+    "Создай красивое видео храма",
+    "请生成一段美丽寺庙的视频",
+    "美しい寺院の動画を作って",
+    "美しい寺院の映像を生成して",
+    "아름다운 사원의 영상을 만들어",
+  ]) assert.equal(isVideoGenerationRequest(prompt), true, prompt);
+});
+
+test("does not route multilingual how-to questions about video creation into generation", () => {
+  for (const prompt of [
+    "How do I make a video?",
+    "¿Cómo crear un video?",
+    "Comment créer une vidéo ?",
+    "Wie erstelle ich ein Video?",
+    "Как создать видео?",
+    "どうやって動画を作るの？",
+    "어떻게 동영상을 만들어?",
+    "वीडियो कैसे बनाएं?",
+    "வீடியோ எப்படி உருவாக்குவது?",
+    "ವೀಡಿಯೊ ಹೇಗೆ ಮಾಡುವುದು?",
+    "Un video creativo de un templo hermoso",
+    "El reproductor reproduce un video del templo",
+    "A video creator explains the process",
+  ]) assert.equal(isVideoGenerationRequest(prompt), false, prompt);
+});
+
 test("routes Kannada and Hindi sacred image requests directly to generation", () => {
   for (const prompt of [
     "ಶಿವನ ಚಿತ್ರ ರಚಿಸಿ",
