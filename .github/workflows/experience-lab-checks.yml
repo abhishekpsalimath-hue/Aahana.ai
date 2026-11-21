@@ -9,9 +9,13 @@ on:
       - feat/experience-lab-ai-code-proposals
       - fix/build-workspace-size-preflight
       - fix/build-preview-oidc-runtime-detection
+      - feat/creative-director-multimodel-foundation
+      - feat/aahana-autonomous-assistance
     paths:
       - "src/app/experience-lab/**"
+      - "src/app/assistant-workspace.jsx"
       - "src/app/api/build/**"
+      - "src/app/api/agent/**"
       - "src/app/api/files/**"
       - "src/lib/build/**"
       - ".github/workflows/experience-lab-checks.yml"
@@ -24,9 +28,12 @@ on:
       - feat/experience-lab-build-workspace
       - fix/experience-lab-source-edit-conflicts
       - feat/experience-lab-ai-code-proposals
+      - feat/aahana-autonomous-assistance
     paths:
       - "src/app/experience-lab/**"
+      - "src/app/assistant-workspace.jsx"
       - "src/app/api/build/**"
+      - "src/app/api/agent/**"
       - "src/app/api/files/**"
       - "src/lib/build/**"
       - ".github/workflows/experience-lab-checks.yml"
