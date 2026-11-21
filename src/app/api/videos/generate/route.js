@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { parseVideoGenerationInput, readVideoRequestWithinLimit, MAX_VIDEO_IMAGE_BYTES, MAX_VIDEO_MULTIPART_BYTES, VIDEO_MODEL } from "@/lib/creative/video-generation.mjs";
+import { parseVideoGenerationInput, parseVideoProviderResult, readVideoRequestWithinLimit, MAX_VIDEO_IMAGE_BYTES, MAX_VIDEO_MULTIPART_BYTES, VIDEO_MODEL } from "@/lib/creative/video-generation.mjs";
 import { detectImageMimeTypeFromBase64 } from "@/lib/creative/image-provider.mjs";
 
 export const runtime = "nodejs";
@@ -118,8 +118,8 @@ export async function POST(request) {
     );
 
     const result = await response.json().catch(() => null);
-    const videoUrl = result?.result?.video;
-    if (!response.ok || result?.state === "Failed" || typeof videoUrl !== "string") {
+    const videoUrl = parseVideoProviderResult(result);
+    if (!response.ok || !videoUrl) {
       const providerStatus = response.status;
       const status = providerStatus === 429 ? 429 : providerStatus >= 500 ? 503 : 502;
       console.error("Aahana video provider request failed:", {
