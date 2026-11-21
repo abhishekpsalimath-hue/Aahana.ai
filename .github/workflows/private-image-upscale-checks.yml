@@ -8,6 +8,8 @@ on:
     paths:
       - "workers/image-upscale/**"
       - "src/app/api/images/upscale/**"
+      - "src/app/api/images/edit/**"
+      - "src/lib/creative/image-generation.*"
       - "src/lib/creative/image-upscale.*"
       - "src/lib/creative/video-generation.*"
       - "src/app/api/videos/generate/route.js"
