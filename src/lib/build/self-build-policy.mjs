@@ -4,8 +4,15 @@ const MAX_TOTAL_BYTES = 2 * 1024 * 1024;
 const SHA_PATTERN = /^[a-f0-9]{40}$/i;
 const REPOSITORY_PATTERN = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
 
-// Student Mode, authentication, database, and deployment code are intentionally excluded.
-const ALLOWED_FILES = new Set(["src/app/assistant-workspace.jsx"]);
+// Student Mode, authentication, database, deployment, and provider execution code are excluded.
+const ALLOWED_FILES = new Set([
+  "src/app/assistant-workspace.jsx",
+  "src/lib/creative/creative-intent.mjs",
+  "src/lib/creative/creative-intent.test.mjs",
+  "src/lib/creative/creative-director.mjs",
+  "src/lib/creative/image-generation.mjs",
+  "src/lib/creative/image-generation.test.mjs",
+]);
 const ALLOWED_ROOTS = [
   "src/app/experience-lab/",
   "src/lib/build/",
