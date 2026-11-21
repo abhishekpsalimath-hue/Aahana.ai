@@ -78,3 +78,13 @@ test("keeps the user's exact visual request explicit for all supported sacred su
     assert.ok(prompt.indexOf("User request (preserve exactly):") > prompt.indexOf("Depict Lord"));
   }
 });
+
+test("preserves other explicitly named Shiva manifestations without forcing a seated-yogi form", () => {
+  for (const form of ["Ardhanarishvara", "Dakshinamurthy"]) {
+    const prompt = buildImagePrompt("Create Lord Shiva as " + form + " in the traditional form", "standard");
+    assert.match(prompt, new RegExp(form));
+    assert.match(prompt, /preserve the requested form and scene exactly/i);
+    assert.match(prompt, /do not replace it with the standard seated-yogi depiction/i);
+    assert.match(prompt, /User request \(preserve exactly\):/);
+  }
+});
