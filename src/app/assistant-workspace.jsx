@@ -635,7 +635,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || "Could not generate the image.");
-      if (typeof result.imageDataUrl !== "string" || !/^data:image\\/(?:jpeg|png);base64,/.test(result.imageDataUrl)) {
+      if (typeof result.imageDataUrl !== "string" || !/^data:image\/(?:jpeg|png);base64,/.test(result.imageDataUrl)) {
         throw new Error("The image provider returned an invalid image.");
       }
       setGeneratedImage({ dataUrl: result.imageDataUrl, prompt: imagePrompt });
@@ -664,7 +664,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       const response = await fetch("/api/images/edit", { method: "POST", body: form });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || "Could not edit the image.");
-      if (typeof result.imageDataUrl !== "string" || !/^data:image\\/(?:jpeg|png);base64,/.test(result.imageDataUrl)) {
+      if (typeof result.imageDataUrl !== "string" || !/^data:image\/(?:jpeg|png);base64,/.test(result.imageDataUrl)) {
         throw new Error("The image editor returned an invalid image.");
       }
       setGeneratedImage({ dataUrl: result.imageDataUrl, prompt: generatedImage.prompt || editPrompt });
@@ -944,7 +944,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         });
         const result = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(result.error || "Could not generate the image.");
-        if (typeof result.imageDataUrl !== "string" || !/^data:image\\/(?:jpeg|png);base64,/.test(result.imageDataUrl)) {
+        if (typeof result.imageDataUrl !== "string" || !/^data:image\/(?:jpeg|png);base64,/.test(result.imageDataUrl)) {
           throw new Error("The image provider returned an invalid image.");
         }
         setGeneratedImage({ dataUrl: result.imageDataUrl, prompt: text });
