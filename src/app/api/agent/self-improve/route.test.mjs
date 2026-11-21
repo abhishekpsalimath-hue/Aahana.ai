@@ -143,3 +143,17 @@ test("self-improvement requires a separate owner approval before reading source 
   assert.match(workspace, /phase: isExecution \? "execute" : "plan"/);
   assert.match(workspace, /approvedPlan: isExecution \? approvedPlan\.plan : undefined/);
 });
+
+
+test("approval is pinned to the reviewed repository snapshot and cannot widen the plan", () => {
+  assert.match(route, /if \(!approvedBaseSha\)/);
+  assert.match(route, /repository\.baseSha !== approvedBaseSha/);
+  assert.match(route, /approvedChangePlan\.affectedPaths\.some\(\(path\) => !repository\.files\.some/);
+  assert.match(route, /tools: phase === "plan"\s*\?\s*tools\.filter\(\(tool\) => \["list_approved_source_files", "submit_change_plan"\]\.includes/);
+  assert.match(route, /tools\.filter\(\(tool\) => tool\.function\.name !== "submit_change_plan"\)/);
+  assert.match(route, /if \(!changePlan\) throw new Error\("Submit a change plan before reading source files\."/);
+  assert.match(route, /if \(!changePlan\.affectedPaths\.includes\(args\.path\)\)/);
+  assert.match(route, /sourceFilesRead: 0/);
+  assert.match(workspace, /Approve plan & inspect code/);
+  assert.match(workspace, /Reject plan/);
+});
