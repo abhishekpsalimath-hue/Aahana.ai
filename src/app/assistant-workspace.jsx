@@ -538,11 +538,11 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     }
   }
 
-  async function proposeSelfBuildChange(isRepair = false) {
-    if (!selfBuildInstruction.trim() || selfBuildBusy) return;
+  async function proposeSelfBuildChange(isRepair = false, taskOverride = null) {
+    const task = (taskOverride ?? selfBuildInstruction).trim();
+    if (!task || selfBuildBusy) return;
     if (!isRepair) setSelfBuildRepairCycles(0);
     const pathHint = selfBuildFile?.path || null;
-    const task = selfBuildInstruction.trim();
     const controller = new AbortController();
     selfBuildAbortRef.current = controller;
     setSelfBuildBusy(true);
@@ -711,7 +711,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     setSelfBuildInstruction(task);
     setSelfBuildValidation(null);
     setSelfBuildAgentResponse("Aahana is diagnosing the failed validation. Any repair will return as an editable proposal for your review.");
-    proposeSelfBuildChange(true);
+    proposeSelfBuildChange(true, task);
   }
 
   function stopSelfBuildProposal() {
