@@ -4,7 +4,7 @@ import { parseImageGenerationInput, parseImageEditInput, MAX_IMAGE_EDIT_BYTES, M
 
 test("defaults to automatic masterpiece image direction without asking the user to choose settings", () => {
   assert.deepEqual(parseImageGenerationInput({ prompt: "A moonlit forest" }), {
-    ok: true, prompt: "A moonlit forest\n\nCreative direction: produce a premium, portfolio-worthy hero image. Establish one unmistakable focal subject and a deliberate visual hierarchy. Use intentional composition, believable perspective, rich but controlled color, nuanced lighting, dimensional depth, tactile material detail, and crisp subject separation. Make fine details coherent and purposeful; avoid visual clutter, accidental text, malformed anatomy, duplicate objects, plastic-looking textures, and oversharpening. Preserve the subject and specific details requested by the user. Do not add logos, words, or extra objects unless requested.", steps: 8, style: "none", quality: "masterpiece",
+    ok: true, prompt: "User request (preserve exactly): A moonlit forest\n\nCreative direction: produce a premium, portfolio-worthy hero image. Establish one unmistakable focal subject and a deliberate visual hierarchy. Use intentional composition, believable perspective, rich but controlled color, nuanced lighting, dimensional depth, tactile material detail, and crisp subject separation. Make fine details coherent and purposeful; avoid visual clutter, accidental text, malformed anatomy, duplicate objects, plastic-looking textures, and oversharpening. Preserve the subject and specific details requested by the user. Do not add logos, words, or extra objects unless requested.", steps: 8, style: "none", quality: "masterpiece",
   });
 });
 
@@ -23,7 +23,7 @@ test("trims prompts and rejects empty or overlong prompts", () => {
   assert.equal(parseImageGenerationInput({ prompt: "x".repeat(2049) }).ok, false);
   const trimmed = parseImageGenerationInput({ prompt: "  a portrait  " });
   assert.equal(trimmed.ok, true);
-  assert.match(trimmed.prompt, /^a portrait\n\nCreative direction:/);
+  assert.match(trimmed.prompt, /^User request \(preserve exactly\): a portrait\n\nCreative direction:/);
 });
 
 test("rejects unsupported step values instead of forwarding them to the provider", () => {
@@ -58,7 +58,7 @@ test("rejects unknown styles while retaining automatic creative direction for su
 test("recognizes Lord Shiva and preserves deity-specific iconography instead of generic saint imagery", () => {
   const result = parseImageGenerationInput({ prompt: "Generate a beautiful image of Lord Shiva" });
   assert.equal(result.ok, true);
-  assert.match(result.prompt, /not a generic saint, monk, guru/i);
+  assert.match(result.prompt, /never as a generic saint, monk, guru/i);
   assert.match(result.prompt, /crescent moon/i);
   assert.match(result.prompt, /trident/i);
   assert.match(result.prompt, /third eye/i);
@@ -67,9 +67,9 @@ test("recognizes Lord Shiva and preserves deity-specific iconography instead of 
 test("recognizes Hanuman and explicitly preserves the vanara face", () => {
   const result = parseImageGenerationInput({ prompt: "Create an image of Hanuman" });
   assert.equal(result.ok, true);
-  assert.match(result.prompt, /monkey-faced deity/i);
+  assert.match(result.prompt, /monkey-faced vanara/i);
   assert.match(result.prompt, /vanara face/i);
-  assert.match(result.prompt, /Do not replace the monkey-faced divine form/i);
+  assert.match(result.prompt, /Never humanize away the vanara face/i);
 });
 
 test("recognizes Ganesha, Krishna, and Rama with their defining visual attributes", () => {
