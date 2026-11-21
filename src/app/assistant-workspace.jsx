@@ -570,6 +570,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
           phase: isExecution ? "execute" : "plan",
           approvedPlan: isExecution ? approvedPlan.plan : undefined,
           approvedBaseSha: isExecution ? approvedPlan.baseSha : undefined,
+          approvalToken: isExecution ? approvedPlan.approvalToken : undefined,
         }),
         signal: controller.signal,
       });
@@ -583,6 +584,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
           pathHint,
           plan: result.changePlan,
           baseSha: result.repository.baseSha,
+          approvalToken: result.approvalToken,
         });
         return;
       }

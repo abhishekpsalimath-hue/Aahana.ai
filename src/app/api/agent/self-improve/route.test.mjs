@@ -1,11 +1,72 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { createApprovalToken, verifyApprovalToken, APPROVAL_TOKEN_TTL_MS } from "./approval-token.mjs";
 import { readFileSync } from "node:fs";
 
 const route = readFileSync(new URL("./route.js", import.meta.url), "utf8");
+const approvalTokenModule = readFileSync(new URL("./approval-token.mjs", import.meta.url), "utf8");
 const workspace = readFileSync(new URL("../../../assistant-workspace.jsx", import.meta.url), "utf8");
 const pullRequestRoute = readFileSync(new URL("../../build/self/pull-request/route.js", import.meta.url), "utf8");
 const validationRoute = readFileSync(new URL("./validate/route.js", import.meta.url), "utf8");
+
+
+const signingEnv = { AAHANA_GITHUB_PRIVATE_KEY: "test-only-private-key-material" };
+const approvedPayload = {
+  userId: "owner-user-123",
+  task: "Improve creative prompt routing",
+  pathHint: null,
+  plan: {
+    title: "Improve prompt routing",
+    problem: "Current routing misses a case.",
+    approach: "Add a narrow matcher and tests.",
+    affectedPaths: ["src/lib/creative/creative-intent.mjs"],
+    risks: ["False positives"],
+    acceptanceChecks: ["Intent tests pass"],
+  },
+  baseSha: "a".repeat(40),
+};
+
+test("approval token accepts the exact owner-approved plan before expiry", () => {
+  const now = 1_800_000_000_000;
+  const token = createApprovalToken(approvedPayload, signingEnv, now);
+  assert.equal(verifyApprovalToken(token, approvedPayload, signingEnv, now + 1), true);
+});
+
+test("approval token rejects a modified signature or payload", () => {
+  const now = 1_800_000_000_000;
+  const token = createApprovalToken(approvedPayload, signingEnv, now);
+  const [payload, signature] = token.split(".");
+  const tamperedSignature = (signature.startsWith("A") ? "B" : "A") + signature.slice(1);
+  assert.equal(verifyApprovalToken(payload + "." + tamperedSignature, approvedPayload, signingEnv, now + 1), false);
+  const changedPayload = { ...approvedPayload, task: "Different task" };
+  assert.equal(verifyApprovalToken(token, changedPayload, signingEnv, now + 1), false);
+});
+
+test("approval token rejects expired, malformed, and oversized tokens", () => {
+  const now = 1_800_000_000_000;
+  const token = createApprovalToken(approvedPayload, signingEnv, now);
+  assert.equal(verifyApprovalToken(token, approvedPayload, signingEnv, now + APPROVAL_TOKEN_TTL_MS), false);
+  assert.equal(verifyApprovalToken("not-a-token", approvedPayload, signingEnv, now), false);
+  assert.equal(verifyApprovalToken("x".repeat(12001), approvedPayload, signingEnv, now), false);
+});
+
+test("approval token is bound to owner, task, path hint, plan, and repository snapshot", () => {
+  const now = 1_800_000_000_000;
+  const token = createApprovalToken(approvedPayload, signingEnv, now);
+  for (const changed of [
+    { ...approvedPayload, userId: "another-user" },
+    { ...approvedPayload, task: "Another task" },
+    { ...approvedPayload, pathHint: "src/app/assistant-workspace.jsx" },
+    { ...approvedPayload, baseSha: "b".repeat(40) },
+    { ...approvedPayload, plan: { ...approvedPayload.plan, title: "Changed title" } },
+  ]) assert.equal(verifyApprovalToken(token, changed, signingEnv, now + 1), false);
+});
+
+test("approval token verification fails closed without a signing key", () => {
+  const now = 1_800_000_000_000;
+  const token = createApprovalToken(approvedPayload, signingEnv, now);
+  assert.equal(verifyApprovalToken(token, approvedPayload, {}, now + 1), false);
+});
 
 test("self-improvement agent is authenticated and owner-gated", () => {
   assert.match(route, /supabase\.auth\.getUser\(\)/);
@@ -146,6 +207,12 @@ test("self-improvement requires a separate owner approval before reading source 
 
 
 test("approval is pinned to the reviewed repository snapshot and cannot widen the plan", () => {
+  assert.match(route, /createApprovalToken/);
+  assert.match(route, /verifyApprovalToken\(body\?\.approvalToken/);
+  assert.match(approvalTokenModule, /timingSafeEqual/);
+  assert.match(approvalTokenModule, /APPROVAL_TOKEN_TTL_MS = 10 \* 60 \* 1000/);
+  assert.match(route, /approvalToken: createApprovalToken/);
+  assert.match(workspace, /approvalToken: isExecution \? approvedPlan\.approvalToken : undefined/);
   assert.match(route, /if \(!approvedBaseSha\)/);
   assert.match(route, /repository\.baseSha !== approvedBaseSha/);
   assert.match(route, /approvedChangePlan\.affectedPaths\.some\(\(path\) => !repository\.files\.some/);

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { createApprovalToken, verifyApprovalToken } from "./approval-token.mjs";
 import { createClient } from "@/lib/supabase/server";
 import { getSelfBuildConfig, isSelfBuildOwner, isAllowedSelfBuildPath, validateSelfBuildChangeSet } from "@/lib/build/self-build-policy.mjs";
 import { getSelfBuildRepository, getSelfBuildFile } from "@/lib/build/github-app.mjs";
@@ -175,6 +176,15 @@ export async function POST(request) {
       affectedPaths: uniquePaths, risks: risks.map((item) => item.trim()).filter(Boolean),
       acceptanceChecks: acceptanceChecks.map((item) => item.trim()) };
     if (!approvedBaseSha) return NextResponse.json({ error: "The approved plan is missing its repository version. Request a new plan." }, { status: 400 });
+    if (!verifyApprovalToken(body?.approvalToken, {
+      userId: user.id,
+      task,
+      pathHint,
+      baseSha: approvedBaseSha,
+      plan: approvedChangePlan,
+    })) {
+      return NextResponse.json({ error: "This plan approval is missing, expired, or does not match the reviewed plan. Request and approve a fresh plan." }, { status: 403 });
+    }
   }
 
   if (phase === "execute" && (repository.baseSha !== approvedBaseSha ||
@@ -408,6 +418,7 @@ export async function POST(request) {
       repository: { name: repository.repository, branch: repository.branch, baseSha: repository.baseSha },
       finalResponse: "Plan ready for your review. No source files were read and no changes were proposed.",
       changePlan,
+      approvalToken: createApprovalToken({ userId: user.id, task, pathHint, plan: changePlan, baseSha: repository.baseSha }),
       proposals: [],
       toolCallsExecuted,
       roundsUsed: Math.min(rounds + 1, MAX_TOOL_ROUNDS),
