@@ -639,7 +639,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || "Could not generate the image.");
-      if (typeof result.imageDataUrl !== "string" || !/^data:image\/(?:jpeg|png);base64,/.test(result.imageDataUrl)) {
+      if (typeof result.imageDataUrl !== "string" || !/^data:image\/(?:jpeg|png|webp);base64,/.test(result.imageDataUrl)) {
         throw new Error("The image provider returned an invalid image.");
       }
       setGeneratedImage({ dataUrl: result.imageDataUrl, prompt: imagePrompt });
@@ -709,7 +709,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       const response = await fetch("/api/images/edit", { method: "POST", body: form });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || "Could not edit the image.");
-      if (typeof result.imageDataUrl !== "string" || !/^data:image\/(?:jpeg|png);base64,/.test(result.imageDataUrl)) {
+      if (typeof result.imageDataUrl !== "string" || !/^data:image\/(?:jpeg|png|webp);base64,/.test(result.imageDataUrl)) {
         throw new Error("The image editor returned an invalid image.");
       }
       setGeneratedImage({ dataUrl: result.imageDataUrl, prompt: generatedImage.prompt || editPrompt });
@@ -734,21 +734,26 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     try {
       const response = await fetch(generatedImage.dataUrl);
       const blob = await response.blob();
-      const file = new File([blob], `aahana-image-${Date.now()}.jpg`, { type: "image/jpeg" });
+      const mimeType = blob.type;
+      if (!["image/png", "image/jpeg", "image/webp"].includes(mimeType)) {
+        throw new Error("The generated image format cannot be saved.");
+      }
+      const extension = mimeType === "image/png" ? "png" : mimeType === "image/webp" ? "webp" : "jpg";
+      const file = new File([blob], `aahana-image-${Date.now()}.${extension}`, { type: mimeType });
       const supabase = createClient();
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError || !user) throw new Error("Please sign in again.");
       const folder = selectedProjectId || "personal";
       const objectPath = `${user.id}/${folder}/${crypto.randomUUID()}-${file.name}`;
       const { error: storageError } = await supabase.storage.from("aahana-private").upload(objectPath, file, {
-        contentType: "image/jpeg", upsert: false,
+        contentType: mimeType, upsert: false,
       });
       if (storageError) throw new Error("Could not save the generated image. Please try again.");
       const saved = await fetch("/api/files", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          objectPath, originalFilename: file.name, mimeType: "image/jpeg",
+          objectPath, originalFilename: file.name, mimeType,
           sizeBytes: file.size, projectId: selectedProjectId,
         }),
       });
@@ -989,7 +994,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         });
         const result = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(result.error || "Could not generate the image.");
-        if (typeof result.imageDataUrl !== "string" || !/^data:image\/(?:jpeg|png);base64,/.test(result.imageDataUrl)) {
+        if (typeof result.imageDataUrl !== "string" || !/^data:image\/(?:jpeg|png|webp);base64,/.test(result.imageDataUrl)) {
           throw new Error("The image provider returned an invalid image.");
         }
         setGeneratedImage({ dataUrl: result.imageDataUrl, prompt: text });
@@ -1451,7 +1456,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
               <div className="generated-image-preview">
                 <img src={generatedImage.dataUrl} alt={generatedImage.prompt} style={{ display: "block", width: "100%", maxWidth: "640px", borderRadius: "14px" }} />
                 <div className="message-actions">
-                  <a className="copy-message" href={generatedImage.dataUrl} download="aahana-generated-image.jpg">Download image</a>
+                  <a className="copy-message" href={generatedImage.dataUrl} download={`aahana-generated-image.${generatedImage.dataUrl.startsWith("data:image/png;") ? "png" : generatedImage.dataUrl.startsWith("data:image/webp;") ? "webp" : "jpg"}`}>Download image</a>
                   <button className="copy-message" type="button" onClick={saveGeneratedImage} disabled={imageSaving}>{imageSaving ? "Saving…" : "Save to Files"}</button>
                   {imageUpscaleEnabled && <button className="copy-message" type="button" onClick={() => enhanceImageTo4K("generated")} disabled={imageUpscaling || imageGenerating || busy}>{imageUpscaling ? "Enhancing to 4K…" : "Enhance to 4K"}</button>}
                   <button className="copy-message" type="button" onClick={() => setGeneratedImage(null)}>Remove</button>
