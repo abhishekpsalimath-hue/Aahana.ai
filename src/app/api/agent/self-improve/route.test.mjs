@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { createApprovalToken, verifyApprovalToken, APPROVAL_TOKEN_TTL_MS } from "./approval-token.mjs";
 import { readFileSync } from "node:fs";
-import { getAgentRequestTimeoutMs, MAX_AGENT_RUNTIME_MS } from "@/lib/build/runtime-budget.mjs";
+import { getAgentRequestTimeoutMs, MAX_AGENT_RUNTIME_MS } from "../../../../lib/build/runtime-budget.mjs";
 
 const route = readFileSync(new URL("./route.js", import.meta.url), "utf8");
 const approvalTokenModule = readFileSync(new URL("./approval-token.mjs", import.meta.url), "utf8");
