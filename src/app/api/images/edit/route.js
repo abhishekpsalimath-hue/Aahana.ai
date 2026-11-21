@@ -28,7 +28,7 @@ export async function POST(request) {
   }
 
   const contentType = request.headers.get("Content-Type") || "";
-  if (!/^multipart\\/form-data;\\s*boundary=/i.test(contentType)) {
+  if (!/^multipart\/form-data;\s*boundary=/i.test(contentType)) {
     return NextResponse.json({ error: "Attach an image using the supported edit form." }, { status: 400 });
   }
   const declaredLength = Number(request.headers.get("Content-Length") || 0);
