@@ -12,7 +12,7 @@ const MAX_INSTALL_MS = 75_000;
 const MAX_BUILD_MS = 90_000;
 const MAX_OUTPUT_CHARS = 5000;
 const REPOSITORY_URL = "https://github.com/abhishekpsalimath-hue/Aahana.ai.git";
-const REPOSITORY_DIR = "/vercel/sandbox/Aahana.ai";
+const REPOSITORY_DIR = "Aahana.ai";
 
 function tail(value) {
   return String(value || "").slice(-MAX_OUTPUT_CHARS);
