@@ -3,7 +3,8 @@ export function isVideoGenerationRequest(value) {
   if (!text) return false;
 
   const isHowToQuestion = /^(?:how|why|when|where|what|which|who)\b/i.test(text) ||
-    /^(?:¿?cómo|comment|wie|como|come|как|どうやって|어떻게|كيف|چگونه|कैसे|कसे|எப்படி|ఎలా|എങ്ങനെ|ಹೇಗೆ|কীভাবে|કેવી રીતે|ਕਿਵੇਂ)/iu.test(text);
+    /^(?:¿?cómo|comment|wie|como|come|как|どうやって|어떻게|كيف|چگونه|कैसे|कसे|எப்படி|ఎలా|എങ്ങനെ|ಹೇಗೆ|কীভাবে|કેવી રીતે|ਕਿਵੇਂ)/iu.test(text) ||
+    /(?:कैसे|कसे|எப்படி|எவ்வாறு|ಹೇಗೆ|ఎలా|എങ്ങനെ|কীভাবে|કેવી રીતે|ਕਿਵੇਂ)/u.test(text);
   if (isHowToQuestion) return false;
 
   if (/\b(?:animate|turn|convert)\b[\s\S]{0,70}\b(?:this|the attached|my)\b[\s\S]{0,45}\b(?:image|photo|picture)\b/i.test(text)) return true;
