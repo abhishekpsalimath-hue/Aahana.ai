@@ -228,7 +228,9 @@ export async function POST(request) {
         body: JSON.stringify({
           model,
           messages,
-          tools: phase === "execute" ? tools.filter((tool) => tool.function.name !== "submit_change_plan") : tools,
+          tools: phase === "plan"
+            ? tools.filter((tool) => ["list_approved_source_files", "submit_change_plan"].includes(tool.function.name))
+            : tools.filter((tool) => tool.function.name !== "submit_change_plan"),
           tool_choice: !inventoryListed
             ? { type: "function", function: { name: "list_approved_source_files" } }
             : phase === "plan"
