@@ -21,7 +21,7 @@ export function isImageGenerationRequest(value) {
   // A conservative multilingual fallback: require both a visual noun and a creation verb.
   // This covers common user-facing languages without treating every mention of an image as a request.
   const isHowToQuestion = /^(?:how|why|when|where|what|which|who)\b/i.test(text) ||
-    /^(?:¿?cómo|comment|wie|como|come|как|どうやって|어떻게|كيف|چگونه|எப்படி|ఎలా|कसे|कैसे|എങ്ങനെ|কীভাবে|કેવી રીતે|ਕਿਵੇਂ)/u.test(text);
+    /^(?:¿?cómo|comment|wie|como|come|как|どうやって|어떻게|كيف|چگونه|எப்படி|ఎలా|कसे|कैसे|എങ്ങനെ|কীভাবে|કેવી રીતે|ਕਿਵੇਂ)/iu.test(text);
   if (isHowToQuestion) return false;
 
   const hasMultilingualVisualNoun = /(?:ಚಿತ್ರ|ಚಿತ್ರಣ|ಫೋಟೋ|ತस्वीर|चित्र|फोटो|छवि|படம்|புகைப்படம்|ஓவியம்|చిత్రం|ఫోటో|బొమ్మ|ചിത്രം|ഫോട്ടോ|ছবি|চিত্র|ફોટો|ચિત્ર|ਤਸਵੀਰ|ਚਿੱਤਰ|تصویر|فوٹو|صورة|تصوير|imagen|foto|ilustración|image|photo|illustration|bild|abbildung|imagem|ilustração|immagine|illustrazione|изображение|картинка|фото|图片|图像|照片|画像|写真|イラスト|이미지|사진|그림)/iu.test(text);
