@@ -328,6 +328,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [selfBuildValidationBusy, setSelfBuildValidationBusy] = useState(false);
   const [selfBuildValidation, setSelfBuildValidation] = useState(null);
   const [selfBuildRepairCycles, setSelfBuildRepairCycles] = useState(0);
+  const [selfBuildPlan, setSelfBuildPlan] = useState(null);
   const [selfBuildAgentResponse, setSelfBuildAgentResponse] = useState("");
   const [selfBuildBusy, setSelfBuildBusy] = useState(false);
   const [selfBuildError, setSelfBuildError] = useState("");
@@ -548,6 +549,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     setSelfBuildBusy(true);
     setSelfBuildError("");
     setSelfBuildAgentResponse("");
+    setSelfBuildPlan(null);
     setSelfBuildFile(null);
     setSelfBuildDraft("");
     setSelfBuildProposal(null);
@@ -563,6 +565,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || "Aahana could not work on this task.");
       setSelfBuildAgentResponse(result.finalResponse || "Aahana completed the inspection.");
+      setSelfBuildPlan(result.changePlan || null);
       if (result.repository?.baseSha) {
         setSelfBuildRepository((current) => current ? { ...current, branch: result.repository.branch, baseSha: result.repository.baseSha } : current);
       }
@@ -1590,6 +1593,17 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                 </div>
                 {selfBuildAgentResponse && <p className="build-tools-note" role="status">{selfBuildAgentResponse}</p>}
               </div>
+              {selfBuildPlan && <section className="self-build-plan" aria-label="Aahana's proposed change plan">
+                <strong>Plan before code changes</strong>
+                <h3>{selfBuildPlan.title}</h3>
+                <p><strong>Problem</strong><br />{selfBuildPlan.problem}</p>
+                <p><strong>Approach</strong><br />{selfBuildPlan.approach}</p>
+                <p><strong>Files to inspect</strong></p>
+                <ul>{selfBuildPlan.affectedPaths.map((path) => <li key={path}><code>{path}</code></li>)}</ul>
+                {selfBuildPlan.risks?.length > 0 && <><p><strong>Risks</strong></p><ul>{selfBuildPlan.risks.map((risk, index) => <li key={index}>{risk}</li>)}</ul></>}
+                <p><strong>Acceptance checks</strong></p>
+                <ul>{selfBuildPlan.acceptanceChecks.map((check, index) => <li key={index}>{check}</li>)}</ul>
+              </section>}
               {selfBuildReviews.length > 0 && <div className="self-build-editor">
                 <strong>Review coordinated changes ({selfBuildReviews.length}/3 files)</strong>
                 <p className="build-tools-note">Review each complete file and its diff. You can edit any proposal before creating one draft pull request.</p>
