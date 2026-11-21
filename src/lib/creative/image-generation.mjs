@@ -43,6 +43,7 @@ export function parseImageGenerationInput(body) {
 
 
 export const MAX_IMAGE_EDIT_BYTES = 2 * 1024 * 1024;
+export const MAX_IMAGE_EDIT_MULTIPART_BYTES = MAX_IMAGE_EDIT_BYTES + 64 * 1024;
 export const MAX_IMAGE_EDIT_PROMPT_LENGTH = 1400;
 export const SUPPORTED_IMAGE_EDIT_TYPES = Object.freeze([
   "image/png",
