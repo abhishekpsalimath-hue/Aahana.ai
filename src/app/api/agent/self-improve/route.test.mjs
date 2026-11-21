@@ -4,6 +4,7 @@ import { createApprovalToken, verifyApprovalToken, APPROVAL_TOKEN_TTL_MS } from 
 import { readFileSync } from "node:fs";
 
 const route = readFileSync(new URL("./route.js", import.meta.url), "utf8");
+const approvalTokenModule = readFileSync(new URL("./approval-token.mjs", import.meta.url), "utf8");
 const workspace = readFileSync(new URL("../../../assistant-workspace.jsx", import.meta.url), "utf8");
 const pullRequestRoute = readFileSync(new URL("../../build/self/pull-request/route.js", import.meta.url), "utf8");
 const validationRoute = readFileSync(new URL("./validate/route.js", import.meta.url), "utf8");
@@ -208,8 +209,8 @@ test("self-improvement requires a separate owner approval before reading source 
 test("approval is pinned to the reviewed repository snapshot and cannot widen the plan", () => {
   assert.match(route, /createApprovalToken/);
   assert.match(route, /verifyApprovalToken\(body\?\.approvalToken/);
-  assert.match(route, /timingSafeEqual/);
-  assert.match(route, /APPROVAL_TOKEN_TTL_MS = 10 \* 60 \* 1000/);
+  assert.match(approvalTokenModule, /timingSafeEqual/);
+  assert.match(approvalTokenModule, /APPROVAL_TOKEN_TTL_MS = 10 \* 60 \* 1000/);
   assert.match(route, /approvalToken: createApprovalToken/);
   assert.match(workspace, /approvalToken: isExecution \? approvedPlan\.approvalToken : undefined/);
   assert.match(route, /if \(!approvedBaseSha\)/);
