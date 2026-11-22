@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import * as THREE from "three";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getSourceFileMimeType, isSupportedSourceFile } from "@/lib/build/source-file-policy.mjs";
@@ -20,6 +21,364 @@ const starters = [
   "Write something thoughtful and concise",
   "Help me design an app or website",
 ];
+
+function UniverseScene() {
+  const canvasRef = useRef(null);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return undefined;
+    let renderer, raf = 0, active = true, inView = true, observer, contextAvailable = true;
+    const motionQuery = window.matchMedia?.("(prefers-reduced-motion: reduce)");
+    let reduced = motionQuery?.matches === true;
+    const compact = window.matchMedia?.("(max-width: 760px)").matches === true;
+    const pointerEnabled = window.matchMedia?.("(pointer: fine)").matches === true;
+    try {
+      renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: false, powerPreference: "low-power", stencil: false });
+    } catch {
+      canvas.dataset.webglFallback = "true";
+      return undefined;
+    }
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(48, 1, 0.1, 120);
+    camera.position.set(0, 0, 15.5);
+    camera.lookAt(0, 0, -2.6);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, compact ? 1 : 1.35));
+    renderer.setClearColor(0x05040a, 0);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.18;
+
+    // A distant, animated volumetric-style nebula gives the scene real depth
+    // instead of relying entirely on flat CSS gradients and glowing particle dots.
+    const nebulaMaterial = new THREE.ShaderMaterial({
+      transparent: true,
+      depthWrite: false,
+      uniforms: { uTime: { value: 0 } },
+      vertexShader: `varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
+      fragmentShader: `
+        varying vec2 vUv;
+        uniform float uTime;
+        float hash(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }
+        float noise(vec2 p){
+          vec2 i=floor(p), f=fract(p);
+          f=f*f*(3.0-2.0*f);
+          return mix(mix(hash(i),hash(i+vec2(1.0,0.0)),f.x),mix(hash(i+vec2(0.0,1.0)),hash(i+vec2(1.0,1.0)),f.x),f.y);
+        }
+        float fbm(vec2 p){
+          float value=0.0, amplitude=0.5;
+          for(int i=0;i<5;i++){ value+=noise(p)*amplitude; p=p*2.03+vec2(17.2,9.4); amplitude*=0.5; }
+          return value;
+        }
+        void main(){
+          vec2 p=(vUv-0.5)*vec2(1.75,1.0);
+          float t=uTime*0.00012;
+          float warp=fbm(p*2.2+vec2(t,-t*0.7));
+          vec2 q=p+vec2(warp-0.5,fbm(p*1.7+4.0)-0.5)*0.48;
+          float clouds=fbm(q*4.4+vec2(-t*0.45,t*0.22));
+          float filaments=fbm(q*9.0+clouds*1.8);
+          float mask=smoothstep(0.47,0.79,clouds*0.72+filaments*0.38);
+          float wisps=smoothstep(0.54,0.82,filaments)*mask;
+          vec3 violet=vec3(0.23,0.14,0.42);
+          vec3 lilac=vec3(0.48,0.34,0.72);
+          vec3 blue=vec3(0.20,0.29,0.53);
+          vec3 color=mix(violet,lilac,smoothstep(0.38,0.72,clouds));
+          color=mix(color,blue,smoothstep(0.48,0.82,fbm(q*2.1+8.0))*0.62);
+          color+=vec3(0.25,0.18,0.38)*wisps*0.5;
+          float edge=1.0-smoothstep(0.38,0.88,length(p*vec2(0.82,1.12)));
+          float alpha=mask*edge*0.34+wisps*edge*0.12;
+          gl_FragColor=vec4(color,alpha);
+        }`,
+    });
+    const nebula = new THREE.Mesh(new THREE.PlaneGeometry(100, 66), nebulaMaterial);
+    nebula.position.set(0, 0, -34);
+    nebula.renderOrder = -2;
+    scene.add(nebula);
+
+    const world = new THREE.Group();
+    world.position.z = -2.5;
+    scene.add(world);
+    scene.add(new THREE.AmbientLight(0x9c8bbf, 0.72));
+    const keyLight = new THREE.PointLight(0xd8c4ff, 42, 38, 1.8);
+    keyLight.position.set(-4, 5, 7);
+    scene.add(keyLight);
+    const rimLight = new THREE.PointLight(0x7e8fe9, 24, 34, 1.7);
+    rimLight.position.set(7, -2, -3);
+    scene.add(rimLight);
+
+    const starCount = compact ? 1150 : 2300;
+    const starPositions = new Float32Array(starCount * 3);
+    const starColors = new Float32Array(starCount * 3);
+    const palette = [new THREE.Color(0xffffff), new THREE.Color(0xcbb8ff), new THREE.Color(0x9eafea)];
+    for (let i = 0; i < starCount; i++) {
+      const r = 18 + Math.random() * 48, theta = Math.random() * Math.PI * 2, phi = Math.acos(2 * Math.random() - 1);
+      starPositions.set([r * Math.sin(phi) * Math.cos(theta), r * Math.sin(phi) * Math.sin(theta), r * Math.cos(phi) - 8], i * 3);
+      const c = palette[Math.floor(Math.random() * palette.length)];
+      starColors.set([c.r, c.g, c.b], i * 3);
+    }
+    const starGeometry = new THREE.BufferGeometry();
+    starGeometry.setAttribute("position", new THREE.Float32BufferAttribute(starPositions, 3));
+    starGeometry.setAttribute("color", new THREE.Float32BufferAttribute(starColors, 3));
+    const stars = new THREE.Points(starGeometry, new THREE.PointsMaterial({ size: compact ? 0.045 : 0.052, vertexColors: true, transparent: true, opacity: 0.78, sizeAttenuation: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+    scene.add(stars);
+
+    const galaxy = new THREE.Group();
+    galaxy.position.set(0, 0, -2.4);
+    galaxy.rotation.x = -0.24;
+    world.add(galaxy);
+    const dustCount = compact ? 4200 : 8200;
+    const dustPositions = new Float32Array(dustCount * 3), dustColors = new Float32Array(dustCount * 3);
+    const hot = new THREE.Color(0xf0e6ff), cool = new THREE.Color(0x8066bd);
+    for (let i = 0; i < dustCount; i++) {
+      const arm = i % 4, radius = Math.pow(Math.random(), 0.72) * 5.8;
+      const angle = arm * Math.PI / 2 + radius * 0.78 + (Math.random() - 0.5) * 0.72;
+      const spread = (Math.random() - 0.5) * (0.12 + radius * 0.055);
+      dustPositions.set([Math.cos(angle) * radius + spread, Math.sin(angle) * radius * 0.42 + spread * 0.55, (Math.random() - 0.5) * (0.42 + radius * 0.055)], i * 3);
+      const c = hot.clone().lerp(cool, Math.min(1, radius / 6.2) * (0.62 + Math.random() * 0.34));
+      dustColors.set([c.r, c.g, c.b], i * 3);
+    }
+    const dustGeometry = new THREE.BufferGeometry();
+    dustGeometry.setAttribute("position", new THREE.Float32BufferAttribute(dustPositions, 3));
+    dustGeometry.setAttribute("color", new THREE.Float32BufferAttribute(dustColors, 3));
+    galaxy.add(new THREE.Points(dustGeometry, new THREE.PointsMaterial({ size: compact ? 0.036 : 0.042, vertexColors: true, transparent: true, opacity: 0.82, sizeAttenuation: true, depthWrite: false, blending: THREE.AdditiveBlending })));
+    const core = new THREE.Mesh(new THREE.SphereGeometry(0.25, 32, 24), new THREE.MeshBasicMaterial({ color: 0xe6d7ff }));
+    galaxy.add(core);
+    const corona = new THREE.Mesh(new THREE.SphereGeometry(0.58, 32, 24), new THREE.MeshBasicMaterial({ color: 0x9d78d8, transparent: true, opacity: 0.13, blending: THREE.AdditiveBlending, depthWrite: false }));
+    galaxy.add(corona);
+
+
+    const planets = [];
+    const makePlanetMaps = (seed, colors) => {
+      // Keep procedural texture work bounded on phones while retaining enough
+      // texel detail for the planets at their on-screen size.
+      const width = compact ? 256 : 384, height = compact ? 128 : 192;
+      const surface = document.createElement("canvas");
+      surface.width = width;
+      surface.height = height;
+      const context = surface.getContext("2d", { willReadFrequently: true });
+      if (!context) return { map: null, bumpMap: null };
+      const image = context.createImageData(width, height);
+      const bump = document.createImageData(width, height);
+      const c0 = new THREE.Color(colors[0]);
+      const c1 = new THREE.Color(colors[1]);
+      const c2 = new THREE.Color(colors[2]);
+      const p0 = c0, p1 = c1, p2 = c2;
+      const toSRGBByte = (linear) => {
+        const value = Math.max(0, Math.min(1, linear));
+        return Math.round((value <= 0.0031308 ? value * 12.92 : 1.055 * Math.pow(value, 1 / 2.4) - 0.055) * 255);
+      };
+      for (let y = 0; y < height; y++) {
+        const v = y / height;
+        for (let x = 0; x < width; x++) {
+          const u = x / width;
+          const n1 = Math.sin((u * 9.1 + seed) * Math.PI * 2) * Math.cos((v * 5.7 + seed * 0.31) * Math.PI * 2);
+          const n2 = Math.sin((u * 23.7 - seed * 0.7) * Math.PI * 2 + Math.cos(v * 17.3 * Math.PI * 2));
+          const n3 = Math.cos((u * 51.3 + v * 37.1 + seed) * Math.PI * 2);
+          const noise = n1 * 0.48 + n2 * 0.31 + n3 * 0.13;
+          const latitude = Math.abs(v - 0.5) * 2;
+          const bands = Math.sin(v * 76 + noise * 7 + seed * 5) * 0.08;
+          const land = noise + Math.sin(u * 13 + seed) * 0.12 > 0.08;
+          const mix = land ? Math.min(1, Math.max(0, 0.45 + noise * 0.62)) : Math.min(1, Math.max(0, 0.25 + bands + (1 - latitude) * 0.18));
+          const base = land ? p1 : p0;
+          const blend = mix * (land ? 0.38 : 0.18);
+          const shade = Math.max(0.52, Math.min(1.08, 0.78 + (noise + bands) * 0.18 - latitude * 0.08));
+          const index = (y * width + x) * 4;
+          image.data[index] = toSRGBByte((base.r + (p2.r - base.r) * blend) * shade);
+          image.data[index + 1] = toSRGBByte((base.g + (p2.g - base.g) * blend) * shade);
+          image.data[index + 2] = toSRGBByte((base.b + (p2.b - base.b) * blend) * shade);
+          image.data[index + 3] = 255;
+          const relief = Math.max(0, Math.min(255, 118 + noise * 90 + bands * 90));
+          bump.data[index] = relief;
+          bump.data[index + 1] = relief;
+          bump.data[index + 2] = relief;
+          bump.data[index + 3] = 255;
+        }
+      }
+      context.putImageData(image, 0, 0);
+      const bumpCanvas = document.createElement("canvas");
+      bumpCanvas.width = width;
+      bumpCanvas.height = height;
+      const bumpContext = bumpCanvas.getContext("2d");
+      bumpContext?.putImageData(bump, 0, 0);
+      const map = new THREE.CanvasTexture(surface);
+      map.colorSpace = THREE.SRGBColorSpace;
+      map.wrapS = THREE.RepeatWrapping;
+      map.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
+      const bumpMap = bumpContext ? new THREE.CanvasTexture(bumpCanvas) : null;
+      if (bumpMap) {
+        bumpMap.wrapS = THREE.RepeatWrapping;
+        bumpMap.anisotropy = map.anisotropy;
+      }
+      return { map, bumpMap };
+    };
+    const addPlanet = (x, y, z, radius, color, palette, ring = false, seed = 1) => {
+      const group = new THREE.Group();
+      group.position.set(x, y, z);
+      const maps = makePlanetMaps(seed, palette);
+      const body = new THREE.Mesh(
+        new THREE.SphereGeometry(radius, 64, 48),
+        new THREE.MeshStandardMaterial({
+          color: 0xffffff,
+          map: maps.map || null,
+          bumpMap: maps.bumpMap || null,
+          bumpScale: radius * 0.035,
+          roughness: 0.84,
+          metalness: 0.015,
+          emissive: new THREE.Color(color).multiplyScalar(0.045),
+        })
+      );
+      group.add(body);
+      const atmosphereMaterial = new THREE.ShaderMaterial({
+        transparent: true,
+        side: THREE.BackSide,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+        vertexShader: `varying vec3 vNormal; varying vec3 vViewPosition; void main(){ vec4 mvPosition=modelViewMatrix*vec4(position,1.0); vNormal=normalize(normalMatrix*normal); vViewPosition=-mvPosition.xyz; gl_Position=projectionMatrix*mvPosition; }`,
+        fragmentShader: `varying vec3 vNormal; varying vec3 vViewPosition; void main(){ float rim=pow(1.0-max(dot(normalize(vNormal),normalize(vViewPosition)),0.0),2.35); gl_FragColor=vec4(0.66,0.52,1.0,rim*0.24); }`,
+      });
+      const atmosphere = new THREE.Mesh(new THREE.SphereGeometry(radius * 1.11, 48, 32), atmosphereMaterial);
+      group.add(atmosphere);
+      if (ring) {
+        const rings = new THREE.Mesh(
+          new THREE.RingGeometry(radius * 1.35, radius * 2.05, 128),
+          new THREE.MeshStandardMaterial({ color: 0xc8b4ee, roughness: 0.88, metalness: 0.12, transparent: true, opacity: 0.52, side: THREE.DoubleSide, depthWrite: false })
+        );
+        rings.rotation.x = Math.PI / 2.35;
+        rings.rotation.y = 0.18;
+        group.add(rings);
+      }
+      world.add(group);
+      planets.push(group);
+    };
+    addPlanet(-5.6, 1.7, -2.4, 0.92, 0x8d73bc, [0x2e294e, 0x8170a6, 0xd0b8e8], false, 2.7);
+    addPlanet(5.2, 1.1, -5.1, 0.64, 0x7782bd, [0x4c527b, 0x858bb7, 0xc6b8df], true, 5.3);
+    addPlanet(2.6, -3.1, 0.1, 0.34, 0xb57d9f, [0x583c65, 0xa76f91, 0xe4b7ca], false, 8.1);
+
+
+    const orbitMaterial = new THREE.LineBasicMaterial({ color: 0xcbb7ff, transparent: true, opacity: 0.2 });
+    const addOrbit = (rx, ry, z, tilt) => {
+      const points = [];
+      for (let i = 0; i <= 180; i++) {
+        const a = i / 180 * Math.PI * 2;
+        points.push(new THREE.Vector3(Math.cos(a) * rx, Math.sin(a) * ry, z));
+      }
+      const line = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(points), orbitMaterial);
+      line.rotation.z = tilt;
+      world.add(line);
+    };
+    addOrbit(7.1, 2.25, -3.6, -0.18);
+    addOrbit(8.8, 3.25, -5.8, 0.48);
+
+    const pointer = { x: 0, y: 0 };
+    const frameInterval = compact ? 1000 / 30 : 1000 / 45;
+    let lastFrameTime = 0;
+    const onPointer = (event) => {
+      pointer.x = (event.clientX / Math.max(1, window.innerWidth) - 0.5) * 2;
+      pointer.y = (event.clientY / Math.max(1, window.innerHeight) - 0.5) * 2;
+    };
+    let pointerListening = pointerEnabled && !reduced;
+    if (pointerListening) window.addEventListener("pointermove", onPointer, { passive: true });
+    const resize = () => {
+      // A lost WebGL context must not receive renderer sizing calls. The
+      // restored-context handler flips this guard before applying the new size.
+      if (!contextAvailable || !active) return;
+      const w = Math.max(1, canvas.clientWidth), h = Math.max(1, canvas.clientHeight);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h, false);
+    };
+    const onContextLost = (event) => {
+      event.preventDefault();
+      contextAvailable = false;
+      canvas.dataset.webglFallback = "true";
+      stop();
+    };
+    const onContextRestored = () => {
+      contextAvailable = true;
+      delete canvas.dataset.webglFallback;
+      resize();
+      start();
+    };
+    canvas.addEventListener("webglcontextlost", onContextLost, false);
+    canvas.addEventListener("webglcontextrestored", onContextRestored, false);
+    resize();
+    const resizeObserver = typeof ResizeObserver !== "undefined" ? new ResizeObserver(resize) : null;
+    resizeObserver?.observe(canvas);
+    // Keep the canvas correctly sized in browsers without ResizeObserver too.
+    window.addEventListener("resize", resize, { passive: true });
+
+    const draw = (time) => {
+      if (!active || !inView || document.hidden || !contextAvailable) return;
+      raf = window.requestAnimationFrame(draw);
+      if (time - lastFrameTime < frameInterval) return;
+      const delta = lastFrameTime ? Math.min(50, time - lastFrameTime) / 16.667 : 1;
+      lastFrameTime = time;
+      if (!reduced) {
+        nebulaMaterial.uniforms.uTime.value = time;
+        galaxy.rotation.z += 0.00032 * delta;
+        stars.rotation.y += 0.000035 * delta;
+        stars.rotation.x += 0.000012 * delta;
+        planets.forEach((planet, i) => { planet.rotation.y += (i === 0 ? 0.00055 : 0.0008) * delta; planet.rotation.x += 0.00008 * delta; });
+        const easing = 1 - Math.pow(1 - 0.012, delta);
+        camera.position.x += (pointer.x * 0.28 - camera.position.x) * easing;
+        camera.position.y += (-pointer.y * 0.18 - camera.position.y) * easing;
+        camera.lookAt(0, 0, -2.6);
+      }
+      renderer.render(scene, camera);
+    };
+    const start = () => {
+      if (!active || !inView || document.hidden || !contextAvailable) return;
+      if (reduced) renderer.render(scene, camera);
+      else if (!raf) {
+        lastFrameTime = 0;
+        raf = window.requestAnimationFrame(draw);
+      }
+    };
+    const stop = () => { if (raf) window.cancelAnimationFrame(raf); raf = 0; };
+    const onMotionPreferenceChange = (event) => {
+      reduced = event.matches;
+      if (pointerEnabled && reduced && pointerListening) {
+        window.removeEventListener("pointermove", onPointer);
+        pointerListening = false;
+      } else if (pointerEnabled && !reduced && !pointerListening) {
+        window.addEventListener("pointermove", onPointer, { passive: true });
+        pointerListening = true;
+      }
+      stop();
+      start();
+    };
+    motionQuery?.addEventListener?.("change", onMotionPreferenceChange);
+    const onVisibility = () => { if (document.hidden) stop(); else start(); };
+    document.addEventListener("visibilitychange", onVisibility);
+    if (typeof IntersectionObserver !== "undefined") {
+      observer = new IntersectionObserver(([entry]) => { inView = entry.isIntersecting; if (inView) start(); else stop(); }, { threshold: 0.01 });
+      observer.observe(canvas);
+    }
+    start();
+    return () => {
+      active = false; stop();
+      document.removeEventListener("visibilitychange", onVisibility);
+      motionQuery?.removeEventListener?.("change", onMotionPreferenceChange);
+      canvas.removeEventListener("webglcontextlost", onContextLost, false);
+      canvas.removeEventListener("webglcontextrestored", onContextRestored, false);
+      if (pointerListening) window.removeEventListener("pointermove", onPointer);
+      resizeObserver?.disconnect(); observer?.disconnect();
+      window.removeEventListener("resize", resize);
+      scene.traverse((obj) => {
+        obj.geometry?.dispose?.();
+        const materials = Array.isArray(obj.material) ? obj.material : obj.material ? [obj.material] : [];
+        materials.forEach((material) => {
+          material.map?.dispose?.();
+          material.bumpMap?.dispose?.();
+          material.roughnessMap?.dispose?.();
+          material.dispose?.();
+        });
+      });
+      renderer.dispose();
+    };
+  }, []);
+  return <canvas ref={canvasRef} className="universe-webgl" aria-hidden="true" />;
+}
+
 
 
 
@@ -1181,10 +1540,17 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
 
       <section className="main-panel">
         <div className="space-background" aria-hidden="true">
+          <UniverseScene />
           <div className="universe-flight" data-speed="65 km/h">
             <div className="universe-nebula universe-nebula-one" />
             <div className="universe-nebula universe-nebula-two" />
-            <div className="universe-galaxy">
+            <div className="universe-depth-stars" aria-hidden="true">
+            <i className="depth-stars-far" />
+            <i className="depth-stars-mid" />
+            <i className="depth-stars-near" />
+          </div>
+          <div className="universe-lens-flare" />
+          <div className="universe-galaxy">
               <span className="galaxy-core" />
               <span className="galaxy-arm galaxy-arm-one" />
               <span className="galaxy-arm galaxy-arm-two" />
@@ -1204,6 +1570,20 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                     "--particle-y": `${(index * 61 + 7) % 100}%`,
                     "--particle-delay": `${-((index * 7) % 19)}s`,
                     "--particle-size": `${1 + (index % 3)}px`,
+                  }}
+                />
+              ))}
+            </div>
+            <div className="universe-comets">
+              {Array.from({ length: 6 }, (_, index) => (
+                <i
+                  key={index}
+                  style={{
+                    "--comet-x": `${(index * 23 + 9) % 92}%`,
+                    "--comet-y": `${(index * 31 + 13) % 84}%`,
+                    "--comet-delay": `${-((index * 5) % 17)}s`,
+                    "--comet-duration": `${12 + (index % 3) * 3}s`,
+                    "--comet-angle": `${-24 + (index % 4) * 16}deg`,
                   }}
                 />
               ))}
