@@ -299,8 +299,7 @@ function UniverseScene() {
       });
       const atmosphere = new THREE.Mesh(new THREE.SphereGeometry(radius * 1.11, 48, 32), atmosphereMaterial);
       group.add(atmosphere);
-      const planetLightMaterials = [atmosphereMaterial];
-      planetLightBindings.push({ group, materials: planetLightMaterials });
+      planetLightBindings.push({ object: atmosphere, material: atmosphereMaterial });
 
       // A slow, translucent cloud deck adds a second physical layer to the
       // hero planet. The field is evaluated in 3D sphere space, so it has no
@@ -311,7 +310,7 @@ function UniverseScene() {
           depthWrite: false,
           blending: THREE.NormalBlending,
           uniforms: {
-            // The point light direction is sampled in the planet group's local space.
+            // The local-space light direction is refreshed as each layer rotates.
             uLightDirection: { value: new THREE.Vector3(1, 0, 0) },
           },
           vertexShader: `
@@ -385,7 +384,7 @@ function UniverseScene() {
         const cloudDeck = new THREE.Mesh(new THREE.SphereGeometry(radius * 1.018, 64, 48), cloudMaterial);
         group.add(cloudDeck);
         cloudLayers.push(cloudDeck);
-        planetLightMaterials.push(cloudMaterial);
+        planetLightBindings.push({ object: cloudDeck, material: cloudMaterial });
       }
       if (ring) {
         const rings = new THREE.Mesh(
@@ -470,11 +469,11 @@ function UniverseScene() {
         planets.forEach((planet, i) => { planet.rotation.y += (i === 0 ? 0.00055 : 0.0008) * delta; planet.rotation.x += 0.00008 * delta; });
         cloudLayers.forEach((cloud) => { cloud.rotation.y += 0.00068 * delta; cloud.rotation.x += 0.000035 * delta; });
         const keyLightWorld = keyLight.getWorldPosition(new THREE.Vector3());
-        planetLightBindings.forEach(({ group, materials }) => {
-          const groupWorld = group.getWorldPosition(new THREE.Vector3());
-          const inverseWorldRotation = group.getWorldQuaternion(new THREE.Quaternion()).invert();
-          const localLightDirection = keyLightWorld.clone().sub(groupWorld).applyQuaternion(inverseWorldRotation).normalize();
-          materials.forEach((material) => material.uniforms.uLightDirection.value.copy(localLightDirection));
+        planetLightBindings.forEach(({ object, material }) => {
+          const objectWorld = object.getWorldPosition(new THREE.Vector3());
+          const inverseWorldRotation = object.getWorldQuaternion(new THREE.Quaternion()).invert();
+          const localLightDirection = keyLightWorld.clone().sub(objectWorld).applyQuaternion(inverseWorldRotation).normalize();
+          material.uniforms.uLightDirection.value.copy(localLightDirection);
         });
         const easing = 1 - Math.pow(1 - 0.012, delta);
         camera.position.x += (pointer.x * 0.28 - camera.position.x) * easing;
