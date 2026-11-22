@@ -47,6 +47,37 @@ export default function LoginPage() {
     }
   }
 
+  async function sendSignInLink() {
+    if (busy || mode !== "signin") return;
+    if (!email.trim()) {
+      setMessage("Enter your email address first.");
+      return;
+    }
+    setBusy(true);
+    setMessage("");
+    try {
+      const supabase = createClient();
+      const result = await supabase.auth.signInWithOtp({
+        email: email.trim(),
+        options: {
+          shouldCreateUser: false,
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+      if (result.error) {
+        setMessage(result.error.status === 429
+          ? "Too many sign-in link requests. Please wait a little and try again."
+          : "We couldn't send a sign-in link right now. You can still sign in with your password.");
+      } else {
+        setMessage("If this email is registered, a secure sign-in link will arrive shortly. Check your inbox and spam folder.");
+      }
+    } catch {
+      setMessage("We couldn't send a sign-in link right now. You can still sign in with your password.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <main className="auth-shell">
       <section className="auth-card">
@@ -65,6 +96,7 @@ export default function LoginPage() {
           {message && <p className="auth-message" role="status">{message}</p>}
           <button className="auth-submit" type="submit" disabled={busy}>{busy ? "Please wait…" : mode === "signin" ? "Sign in" : "Create account"}</button>
         </form>
+        {mode === "signin" && <p className="auth-link-option"><button type="button" onClick={sendSignInLink} disabled={busy}>Email me a sign-in link</button></p>}
         <p className="auth-switch">{mode === "signin" ? "New to Aahana?" : "Already have an account?"} <button type="button" onClick={() => { setMode(mode === "signin" ? "signup" : "signin"); setMessage(""); setShowPassword(false); }}>{mode === "signin" ? "Create account" : "Sign in"}</button></p>
         <p className="auth-legal">Your account and workspace are protected by Supabase authentication.</p>
       </section>
