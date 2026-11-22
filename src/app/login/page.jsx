@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
@@ -13,6 +13,14 @@ export default function LoginPage() {
   const [mode, setMode] = useState("signin");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("error") === "auth_callback") {
+      setMode("signin");
+      setMessage("We couldn't verify that link. It may have expired or already been used. Request a fresh confirmation email, then open the newest link.");
+    }
+  }, []);
 
   async function submit(event) {
     event.preventDefault();
@@ -35,7 +43,7 @@ export default function LoginPage() {
           ? `We couldn't complete signup: ${detail}. If you see an email delivery error, wait before retrying.`
           : detail);
       } else if (mode === "signup" && !result.data.session) {
-        setMessage("Signup request accepted. Check your inbox and spam folder for the confirmation email. If it doesn't arrive, don't repeatedly submit; email delivery needs attention.");
+        setMessage("You're almost in! Open the confirmation email. After you confirm, we'll bring you straight back to Aahana and sign you in automatically.");
       } else {
         router.replace("/");
         router.refresh();
