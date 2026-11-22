@@ -351,6 +351,11 @@ button:focus-visible,a:focus-visible{outline-color:#c4a7ff}
 .code-block code{font:inherit}
 .chat-message{max-width:96%}
 @media(max-width:760px){
+  /* Keep the CSS atmosphere lush without overworking compact-device compositors. */
+  .universe-nebula{filter:blur(28px);opacity:.19}
+  .universe-galaxy{min-width:240px;min-height:240px;width:min(72vw,440px);height:min(72vw,440px)}
+  .universe-particles i:nth-child(n+37){display:none}
+  .universe-comets i:nth-child(n+4){display:none}
   .astronaut-float{top:0;right:0;width:104px;height:104px;opacity:.92}
   .welcome h1{max-width:calc(100% - 72px);font-size:clamp(38px,10vw,54px)}
   .chat-message{max-width:100%;padding:13px}
