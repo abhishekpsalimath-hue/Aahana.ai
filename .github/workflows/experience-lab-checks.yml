@@ -5,6 +5,9 @@ on:
     branches:
       - main
       - feat/assistance-integrated-tools
+      - feat/assistance-live-preview
+      - feat/creative-image-video-foundation
+      - feat/creative-director-multimodel-foundation
       - feat/experience-lab-live-assistant
       - fix/experience-lab-source-edit-conflicts
       - feat/experience-lab-ai-code-proposals
@@ -30,6 +33,9 @@ on:
       - fix/experience-lab-source-edit-conflicts
       - feat/experience-lab-ai-code-proposals
       - feat/assistance-integrated-tools
+      - feat/assistance-live-preview
+      - feat/creative-image-video-foundation
+      - feat/creative-director-multimodel-foundation
     paths:
       - "src/app/experience-lab/**"
       - "src/app/api/build/**"
