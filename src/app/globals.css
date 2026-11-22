@@ -407,3 +407,36 @@ button:focus-visible,a:focus-visible{outline-color:#c4a7ff}
 @media(max-width:760px){.discover-hero{min-height:550px;padding:75px 22px}.discover-hero h1{letter-spacing:-3px}.discover-lead{font-size:14px}.discover-modes,.discover-detail,.discover-final{width:calc(100% - 40px);padding:60px 0}.discover-mode-grid{grid-template-columns:1fr 1fr}.discover-mode-card{min-height:150px}.discover-detail{grid-template-columns:1fr;gap:18px}.discover-footer{padding:20px}}
 @media(max-width:420px){.discover-mode-grid{grid-template-columns:1fr}.discover-mode-card{min-height:125px}.discover-mode-card h3{margin-top:18px}}
 @media(prefers-reduced-motion:reduce){.discover-primary{transition:none}}
+
+
+/* Immersive universe pass: layered star depth, atmospheric bodies and restrained light */
+.universe-depth-stars{position:absolute;inset:-8%;transform-style:preserve-3d;pointer-events:none}
+.universe-depth-stars i{position:absolute;inset:0;display:block;background-repeat:repeat;will-change:transform,opacity}
+.depth-stars-far{opacity:.34;transform:translateZ(-720px) scale(1.24);background-image:radial-gradient(1px 1px at 7% 13%,#fff 70%,transparent 100%),radial-gradient(1px 1px at 24% 71%,#d8c9ff 70%,transparent 100%),radial-gradient(1px 1px at 58% 31%,#fff 70%,transparent 100%),radial-gradient(1px 1px at 82% 82%,#c6b2ff 70%,transparent 100%);background-size:233px 197px,281px 239px,317px 271px,359px 307px;animation:starfield-drift-far 110s linear infinite}
+.depth-stars-mid{opacity:.48;transform:translateZ(-340px) scale(1.12);background-image:radial-gradient(1.4px 1.4px at 15% 25%,#fff 70%,transparent 100%),radial-gradient(1.2px 1.2px at 67% 18%,#e0d4ff 70%,transparent 100%),radial-gradient(1.5px 1.5px at 43% 79%,#fff 70%,transparent 100%);background-size:193px 181px,257px 229px,311px 283px;animation:starfield-drift-mid 76s linear infinite}
+.depth-stars-near{opacity:.26;transform:translateZ(90px) scale(.92);background-image:radial-gradient(2px 2px at 21% 42%,#fff 65%,transparent 100%),radial-gradient(1.5px 1.5px at 73% 68%,#d8c5ff 65%,transparent 100%);background-size:389px 337px,443px 379px;animation:starfield-drift-near 54s linear infinite}
+.universe-lens-flare{position:absolute;left:50%;top:46%;width:min(56vw,560px);height:min(56vw,560px);border-radius:50%;transform:translate3d(-50%,-50%,-180px);background:radial-gradient(ellipse at center,transparent 38%,#c9a8ff08 49%,#c9a8ff12 50%,transparent 53%);filter:blur(1px);opacity:.75;animation:lens-breathe 12s ease-in-out infinite}
+.universe-galaxy{filter:drop-shadow(0 0 18px #9d78e922)}
+.universe-galaxy::before{content:"";position:absolute;inset:7%;border-radius:50%;background:repeating-conic-gradient(from 8deg,#e5d6ff00 0deg,#d9c7ff18 7deg,#fff0 15deg,#a88bdb12 23deg,#fff0 34deg);mask-image:radial-gradient(ellipse at center,transparent 0%,#000 26%,#000 56%,transparent 76%);filter:blur(7px);opacity:.9;animation:galaxy-dust-turn 92s linear infinite}
+.galaxy-core{z-index:2}
+.galaxy-core::after{content:"";position:absolute;inset:-95%;border-radius:50%;background:radial-gradient(circle,transparent 25%,#d7c4ff18 42%,#b08bfa0b 55%,transparent 72%);filter:blur(8px);animation:core-corona 8s ease-in-out infinite}
+.galaxy-arm{z-index:1;filter:drop-shadow(0 0 9px #c3a6ff88) blur(.35px)}
+.universe-planet{overflow:visible;isolation:isolate}
+.universe-planet::before{content:"";position:absolute;inset:0;border-radius:inherit;background:radial-gradient(circle at 28% 22%,#fff8 0%,#fff2 7%,transparent 27%),linear-gradient(115deg,transparent 35%,#09071166 72%,#05040b99 100%);box-shadow:inset 2px 2px 5px #fff5,inset -9px -8px 17px #080611aa;z-index:2}
+.universe-planet::after{content:"";position:absolute;inset:-13%;border-radius:50%;background:radial-gradient(circle,transparent 58%,#d5baff20 67%,transparent 73%);filter:blur(3px);z-index:-1}
+.universe-planet-one{box-shadow:inset -18px -14px 30px #09081299,0 0 34px #a98af044,0 0 70px #a98af022}
+.universe-planet-two{box-shadow:inset -12px -10px 20px #090812aa,0 0 28px #a98af055}
+.universe-planet-three{box-shadow:inset -8px -7px 13px #090812aa,0 0 20px #d49db755}
+.universe-orbit{border-color:#d8c5ff24;box-shadow:0 0 16px #a98af018,inset 0 0 12px #a98af00a}
+.universe-orbit-one{border-top-color:#f1e8ff66;border-bottom-color:#b99af522}
+.universe-orbit-two{border-left-color:#d8c5ff38;border-right-color:#d8c5ff12}
+.universe-particles i{box-shadow:0 0 5px #e7d9ff,0 0 13px #b99af588,0 0 24px #9d7bd933}
+.universe-comets i{filter:drop-shadow(0 0 5px #d9c6ff)}
+@keyframes starfield-drift-far{from{translate:0 0}to{translate:3% -2%}}
+@keyframes starfield-drift-mid{from{translate:0 0}to{translate:-4% 3%}}
+@keyframes starfield-drift-near{0%,100%{translate:0 0;opacity:.2}50%{translate:2% -2%;opacity:.38}}
+@keyframes galaxy-dust-turn{from{rotate:0deg}to{rotate:-360deg}}
+@keyframes core-corona{0%,100%{opacity:.48;transform:scale(.94)}50%{opacity:.9;transform:scale(1.08)}}
+@keyframes lens-breathe{0%,100%{opacity:.42;scale:.96}50%{opacity:.88;scale:1.04}}
+@media(max-width:760px){.universe-lens-flare{width:82vw;height:82vw;opacity:.52}.universe-depth-stars{inset:-3%}.depth-stars-near{opacity:.15}}
+@media(prefers-reduced-motion:reduce){.universe-depth-stars i,.universe-galaxy::before,.galaxy-core::after,.universe-lens-flare{animation:none!important}.universe-depth-stars i{transform:none;opacity:.3}}
