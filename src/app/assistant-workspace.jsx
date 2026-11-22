@@ -70,7 +70,7 @@ function UniverseScene() {
         }
         void main(){
           vec2 p=(vUv-0.5)*vec2(1.75,1.0);
-          float t=uTime*0.006;
+          float t=uTime*0.00012;
           float warp=fbm(p*2.2+vec2(t,-t*0.7));
           vec2 q=p+vec2(warp-0.5,fbm(p*1.7+4.0)-0.5)*0.48;
           float clouds=fbm(q*4.4+vec2(-t*0.45,t*0.22));
