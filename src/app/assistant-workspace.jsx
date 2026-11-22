@@ -101,7 +101,9 @@ function UniverseScene() {
 
     const planets = [];
     const makePlanetMaps = (seed, colors) => {
-      const width = 512, height = 256;
+      // Keep procedural texture work bounded on phones while retaining enough
+      // texel detail for the planets at their on-screen size.
+      const width = compact ? 256 : 384, height = compact ? 128 : 192;
       const surface = document.createElement("canvas");
       surface.width = width;
       surface.height = height;
