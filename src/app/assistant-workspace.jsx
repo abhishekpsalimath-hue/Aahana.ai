@@ -228,6 +228,18 @@ function UniverseScene() {
       camera.updateProjectionMatrix();
       renderer.setSize(w, h, false);
     };
+    const onContextLost = (event) => {
+      event.preventDefault();
+      canvas.dataset.webglFallback = "true";
+      stop();
+    };
+    const onContextRestored = () => {
+      delete canvas.dataset.webglFallback;
+      resize();
+      start();
+    };
+    canvas.addEventListener("webglcontextlost", onContextLost, false);
+    canvas.addEventListener("webglcontextrestored", onContextRestored, false);
     resize();
     const resizeObserver = typeof ResizeObserver !== "undefined" ? new ResizeObserver(resize) : null;
     resizeObserver?.observe(canvas);
@@ -262,6 +274,8 @@ function UniverseScene() {
     return () => {
       active = false; stop();
       document.removeEventListener("visibilitychange", onVisibility);
+      canvas.removeEventListener("webglcontextlost", onContextLost, false);
+      canvas.removeEventListener("webglcontextrestored", onContextRestored, false);
       if (pointerEnabled && !reduced) window.removeEventListener("pointermove", onPointer);
       resizeObserver?.disconnect(); observer?.disconnect();
       scene.traverse((obj) => {
