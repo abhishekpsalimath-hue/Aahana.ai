@@ -47,6 +47,52 @@ function UniverseScene() {
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.18;
 
+    // A distant, animated volumetric-style nebula gives the scene real depth
+    // instead of relying entirely on flat CSS gradients and glowing particle dots.
+    const nebulaMaterial = new THREE.ShaderMaterial({
+      transparent: true,
+      depthWrite: false,
+      uniforms: { uTime: { value: 0 } },
+      vertexShader: `varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
+      fragmentShader: `
+        varying vec2 vUv;
+        uniform float uTime;
+        float hash(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }
+        float noise(vec2 p){
+          vec2 i=floor(p), f=fract(p);
+          f=f*f*(3.0-2.0*f);
+          return mix(mix(hash(i),hash(i+vec2(1.0,0.0)),f.x),mix(hash(i+vec2(0.0,1.0)),hash(i+vec2(1.0,1.0)),f.x),f.y);
+        }
+        float fbm(vec2 p){
+          float value=0.0, amplitude=0.5;
+          for(int i=0;i<5;i++){ value+=noise(p)*amplitude; p=p*2.03+vec2(17.2,9.4); amplitude*=0.5; }
+          return value;
+        }
+        void main(){
+          vec2 p=(vUv-0.5)*vec2(1.75,1.0);
+          float t=uTime*0.006;
+          float warp=fbm(p*2.2+vec2(t,-t*0.7));
+          vec2 q=p+vec2(warp-0.5,fbm(p*1.7+4.0)-0.5)*0.48;
+          float clouds=fbm(q*4.4+vec2(-t*0.45,t*0.22));
+          float filaments=fbm(q*9.0+clouds*1.8);
+          float mask=smoothstep(0.47,0.79,clouds*0.72+filaments*0.38);
+          float wisps=smoothstep(0.54,0.82,filaments)*mask;
+          vec3 violet=vec3(0.23,0.14,0.42);
+          vec3 lilac=vec3(0.48,0.34,0.72);
+          vec3 blue=vec3(0.20,0.29,0.53);
+          vec3 color=mix(violet,lilac,smoothstep(0.38,0.72,clouds));
+          color=mix(color,blue,smoothstep(0.48,0.82,fbm(q*2.1+8.0))*0.62);
+          color+=vec3(0.25,0.18,0.38)*wisps*0.5;
+          float edge=1.0-smoothstep(0.38,0.88,length(p*vec2(0.82,1.12)));
+          float alpha=mask*edge*0.34+wisps*edge*0.12;
+          gl_FragColor=vec4(color,alpha);
+        }`,
+    });
+    const nebula = new THREE.Mesh(new THREE.PlaneGeometry(100, 66), nebulaMaterial);
+    nebula.position.set(0, 0, -34);
+    nebula.renderOrder = -2;
+    scene.add(nebula);
+
     const world = new THREE.Group();
     world.position.z = -2.5;
     scene.add(world);
@@ -258,6 +304,7 @@ function UniverseScene() {
       const delta = lastFrameTime ? Math.min(50, time - lastFrameTime) / 16.667 : 1;
       lastFrameTime = time;
       if (!reduced) {
+        nebulaMaterial.uniforms.uTime.value = time;
         galaxy.rotation.z += 0.00032 * delta;
         stars.rotation.y += 0.000035 * delta;
         stars.rotation.x += 0.000012 * delta;
