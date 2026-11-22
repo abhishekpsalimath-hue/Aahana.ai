@@ -166,27 +166,52 @@ function UniverseScene() {
         const value = Math.max(0, Math.min(1, linear));
         return Math.round((value <= 0.0031308 ? value * 12.92 : 1.055 * Math.pow(value, 1 / 2.4) - 0.055) * 255);
       };
+      // Periodic value-noise keeps the equirectangular texture seamless at its
+      // longitude seam while producing broad continents and finer terrain.
+      const hash = (x, y) => {
+        const n = Math.sin((x + seed * 19.17) * 127.1 + (y + seed * 7.31) * 311.7) * 43758.5453;
+        return (n - Math.floor(n)) * 2 - 1;
+      };
+      const smooth = (t) => t * t * (3 - 2 * t);
+      const valueNoise = (u, v, scaleX, scaleY) => {
+        const px = u * scaleX, py = v * scaleY;
+        const ix = Math.floor(px), iy = Math.floor(py);
+        const fx = smooth(px - ix), fy = smooth(py - iy);
+        const x0 = ((ix % scaleX) + scaleX) % scaleX, x1 = (x0 + 1) % scaleX;
+        const a = hash(x0, iy), b = hash(x1, iy), c = hash(x0, iy + 1), d = hash(x1, iy + 1);
+        const top = a + (b - a) * fx, bottom = c + (d - c) * fx;
+        return top + (bottom - top) * fy;
+      };
+      const smoothRange = (a, b, value) => {
+        const t = Math.max(0, Math.min(1, (value - a) / (b - a)));
+        return t * t * (3 - 2 * t);
+      };
       for (let y = 0; y < height; y++) {
         const v = y / height;
+        const latitude = Math.abs(v - 0.5) * 2;
         for (let x = 0; x < width; x++) {
           const u = x / width;
-          const n1 = Math.sin((u * 9.1 + seed) * Math.PI * 2) * Math.cos((v * 5.7 + seed * 0.31) * Math.PI * 2);
-          const n2 = Math.sin((u * 23.7 - seed * 0.7) * Math.PI * 2 + Math.cos(v * 17.3 * Math.PI * 2));
-          const n3 = Math.cos((u * 51.3 + v * 37.1 + seed) * Math.PI * 2);
-          const noise = n1 * 0.48 + n2 * 0.31 + n3 * 0.13;
-          const latitude = Math.abs(v - 0.5) * 2;
-          const bands = Math.sin(v * 76 + noise * 7 + seed * 5) * 0.08;
-          const land = noise + Math.sin(u * 13 + seed) * 0.12 > 0.08;
-          const mix = land ? Math.min(1, Math.max(0, 0.45 + noise * 0.62)) : Math.min(1, Math.max(0, 0.25 + bands + (1 - latitude) * 0.18));
-          const base = land ? p1 : p0;
-          const blend = mix * (land ? 0.38 : 0.18);
-          const shade = Math.max(0.52, Math.min(1.08, 0.78 + (noise + bands) * 0.18 - latitude * 0.08));
+          const broad = valueNoise(u, v, 6, 4);
+          const medium = valueNoise(u, v, 18, 10);
+          const fine = valueNoise(u, v, 54, 28);
+          const warp = valueNoise(u, v, 12, 7) * 0.075;
+          const continental = broad * 0.68 + medium * 0.25 + fine * 0.07 + warp;
+          const land = smoothRange(-0.12, 0.16, continental);
+          const ridges = 1 - Math.abs(valueNoise(u, v, 42, 22) * 0.72 + valueNoise(u, v, 96, 48) * 0.28);
+          const terrain = Math.pow(Math.max(0, ridges), 2.1);
+          const oceanDepth = Math.max(0, -continental);
+          const polar = smoothRange(0.78, 0.98, latitude);
+          const terrainTone = Math.min(1, Math.max(0, land * (0.42 + terrain * 0.58) + polar * 0.16));
+          const oceanTone = Math.min(1, Math.max(0, 0.16 + oceanDepth * 0.28 + medium * 0.08));
+          const base = p0.clone().lerp(p1, land);
+          const color = base.lerp(p2, terrainTone * 0.42 + (1 - land) * oceanTone * 0.12);
+          const shade = Math.max(0.48, Math.min(1.12, 0.82 + fine * 0.12 + terrain * 0.12 - latitude * 0.07));
           const index = (y * width + x) * 4;
-          image.data[index] = toSRGBByte((base.r + (p2.r - base.r) * blend) * shade);
-          image.data[index + 1] = toSRGBByte((base.g + (p2.g - base.g) * blend) * shade);
-          image.data[index + 2] = toSRGBByte((base.b + (p2.b - base.b) * blend) * shade);
+          image.data[index] = toSRGBByte(color.r * shade);
+          image.data[index + 1] = toSRGBByte(color.g * shade);
+          image.data[index + 2] = toSRGBByte(color.b * shade);
           image.data[index + 3] = 255;
-          const relief = Math.max(0, Math.min(255, 118 + noise * 90 + bands * 90));
+          const relief = Math.max(0, Math.min(255, 112 + (land * terrain - oceanDepth * 0.18 + fine * 0.12) * 92));
           bump.data[index] = relief;
           bump.data[index + 1] = relief;
           bump.data[index + 2] = relief;
