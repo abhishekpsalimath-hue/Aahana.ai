@@ -296,9 +296,37 @@ button:focus-visible,a:focus-visible{outline-color:#c4a7ff}
 /* Core Assistant space welcome and readable engineering responses */
 .main-panel{position:relative;isolation:isolate}
 .main-panel > :not(.space-background){position:relative;z-index:1}
-.space-background{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;perspective:650px;mask-image:linear-gradient(to bottom,transparent 0%,#000 14%,#000 88%,transparent 100%)}
-.space-star{position:absolute;left:50%;top:48%;width:var(--size,2px);height:var(--size,2px);border-radius:50%;background:#f5edff;box-shadow:0 0 8px #d9c5ff,0 0 18px #a98af077;opacity:0;animation:star-approach 12s linear var(--delay,0s) infinite;will-change:transform,opacity}
-@keyframes star-approach{0%{transform:translate3d(var(--start-x),var(--start-y),-600px) scale(.12);opacity:0}12%{opacity:.55}82%{opacity:.8}100%{transform:translate3d(var(--end-x),var(--end-y),180px) scale(2.1);opacity:0}}
+.space-background{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;perspective:1050px;perspective-origin:50% 46%;isolation:isolate;mask-image:linear-gradient(to bottom,transparent 0%,#000 9%,#000 91%,transparent 100%)}
+.universe-flight{position:absolute;inset:-12%;transform-style:preserve-3d;animation:universe-approach 18s cubic-bezier(.36,0,.64,1) infinite;will-change:transform}
+.universe-nebula{position:absolute;inset:8% 12%;border-radius:50%;filter:blur(46px);mix-blend-mode:screen;opacity:.24;transform-style:preserve-3d}
+.universe-nebula-one{background:radial-gradient(ellipse at 34% 48%,#8760c9aa 0%,#4c367e66 26%,transparent 66%);transform:translate3d(-7%,4%,-220px) rotate(-18deg) scale(1.2);animation:nebula-drift-one 29s ease-in-out infinite}
+.universe-nebula-two{background:radial-gradient(ellipse at 62% 42%,#6f7fd477 0%,#7950a955 32%,transparent 68%);transform:translate3d(8%,-4%,-360px) rotate(22deg) scale(1.4);animation:nebula-drift-two 37s ease-in-out infinite}
+.universe-galaxy{position:absolute;left:50%;top:46%;width:min(62vw,620px);height:min(62vw,620px);min-width:300px;min-height:300px;transform:translate3d(-50%,-50%,-260px) rotateX(68deg) rotateZ(-18deg);transform-style:preserve-3d;animation:galaxy-turn 78s linear infinite}
+.galaxy-core{position:absolute;inset:39%;border-radius:50%;background:radial-gradient(circle,#fff 0%,#eadcff 8%,#b99af5 20%,#7555b9 43%,#3b2b62 65%,transparent 76%);box-shadow:0 0 34px #c5a5ff88,0 0 110px #9d78e966}
+.galaxy-arm{position:absolute;left:50%;top:50%;width:48%;height:23%;border-radius:50%;border:2px solid transparent;border-top-color:#d8c5ff88;border-left-color:#b99af544;filter:drop-shadow(0 0 13px #b18dfb);transform-origin:left center}
+.galaxy-arm-one{transform:rotate(12deg) scaleY(.72)}
+.galaxy-arm-two{transform:rotate(142deg) scaleY(.82);opacity:.65}
+.galaxy-arm-three{transform:rotate(258deg) scaleY(.6);opacity:.48}
+.universe-orbit{position:absolute;left:50%;top:46%;border:1px solid #d8c5ff35;border-radius:50%;transform-style:preserve-3d;box-shadow:0 0 24px #a98af022}
+.universe-orbit-one{width:min(72vw,760px);height:min(25vw,250px);min-height:130px;transform:translate3d(-50%,-50%,-140px) rotateX(66deg);animation:orbit-spin 32s linear infinite}
+.universe-orbit-two{width:min(88vw,940px);height:min(34vw,340px);min-height:170px;transform:translate3d(-50%,-50%,-430px) rotateX(72deg) rotateZ(42deg);animation:orbit-spin-reverse 48s linear infinite}
+.orbit-world{position:absolute;display:block;border-radius:50%;box-shadow:inset -10px -7px 18px #100d1d99,0 0 24px #c3a3ff66}
+.orbit-world-one{width:18px;height:18px;left:14%;top:18%;background:radial-gradient(circle at 32% 28%,#fff1d9,#b99af5 28%,#4f367f 72%)}
+.orbit-world-two{width:11px;height:11px;right:11%;bottom:17%;background:radial-gradient(circle at 30% 28%,#e9e3ff,#8196e6 35%,#30345f 76%)}
+.universe-planet{position:absolute;border-radius:50%;transform-style:preserve-3d;box-shadow:inset -18px -14px 30px #09081299,0 0 34px #a98af044}
+.universe-planet-one{width:clamp(48px,8vw,104px);height:clamp(48px,8vw,104px);left:13%;top:24%;transform:translateZ(100px);background:radial-gradient(circle at 32% 27%,#f0e8ff 0%,#ad91dc 22%,#65518f 55%,#28213c 82%)}
+.universe-planet-two{width:clamp(26px,4vw,54px);height:clamp(26px,4vw,54px);right:15%;top:18%;transform:translateZ(-80px);background:radial-gradient(circle at 30% 25%,#f3eaff 0%,#a9a5df 24%,#51527e 65%,#25233c 88%)}
+.universe-planet-three{width:clamp(18px,2.6vw,34px);height:clamp(18px,2.6vw,34px);right:26%;bottom:16%;transform:translateZ(180px);background:radial-gradient(circle at 32% 26%,#fff1df 0%,#d49db7 30%,#714d7c 76%)}
+.universe-particles{position:absolute;inset:0;transform-style:preserve-3d}
+.universe-particles i{position:absolute;left:var(--particle-x);top:var(--particle-y);width:var(--particle-size);height:var(--particle-size);border-radius:50%;background:#eee4ff;box-shadow:0 0 8px #c8aaff,0 0 18px #9d7bd966;opacity:0;transform:translateZ(-900px) scale(.18);animation:universe-particle-arrival 14s linear var(--particle-delay) infinite;will-change:transform,opacity}
+@keyframes universe-approach{0%,100%{transform:translateZ(-360px) scale(.78)}50%{transform:translateZ(100px) scale(1.16)}}
+@keyframes universe-particle-arrival{0%{transform:translateZ(-900px) scale(.18);opacity:0}12%{opacity:.55}78%{opacity:.72}100%{transform:translateZ(360px) scale(2.2);opacity:0}}
+@keyframes galaxy-turn{from{rotate:0deg}to{rotate:360deg}}
+@keyframes orbit-spin{from{rotate:0deg}to{rotate:360deg}}
+@keyframes orbit-spin-reverse{from{rotate:360deg}to{rotate:0deg}}
+@keyframes nebula-drift-one{0%,100%{translate:-2% 0;scale:1}50%{translate:3% -4%;scale:1.12}}
+@keyframes nebula-drift-two{0%,100%{translate:2% 2%;scale:1.08}50%{translate:-3% -2%;scale:.94}}
+@media(prefers-reduced-motion:reduce){.universe-flight,.universe-nebula,.universe-galaxy,.universe-orbit,.universe-particles i{animation:none!important}.universe-particles i{opacity:.42;transform:translateZ(0) scale(1)}}
 .astronaut-float{position:absolute;z-index:2;top:4px;right:18px;width:148px;height:148px;pointer-events:none;animation:astronaut-drift 7s ease-in-out infinite;filter:drop-shadow(0 12px 28px #9d7bd944)}
 .astronaut-float svg{display:block;width:100%;height:100%;overflow:visible}
 @keyframes astronaut-drift{0%,100%{transform:translate3d(0,0,0) rotate(-3deg)}50%{transform:translate3d(5px,-13px,0) rotate(5deg)}}
