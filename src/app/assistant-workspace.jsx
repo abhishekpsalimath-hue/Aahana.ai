@@ -27,10 +27,16 @@ function UniverseScene() {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return undefined;
+    const compact = window.matchMedia?.("(max-width: 760px)").matches === true;
+    // Keep the workspace usable on phones with constrained WebGL/GPU memory.
+    // The CSS space scene remains visible as a lightweight fallback.
+    if (compact) {
+      canvas.dataset.webglFallback = "true";
+      return undefined;
+    }
     let renderer, raf = 0, active = true, inView = true, observer, contextAvailable = true;
     const motionQuery = window.matchMedia?.("(prefers-reduced-motion: reduce)");
     let reduced = motionQuery?.matches === true;
-    const compact = window.matchMedia?.("(max-width: 760px)").matches === true;
     const pointerEnabled = window.matchMedia?.("(pointer: fine)").matches === true;
     try {
       renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: false, powerPreference: "low-power", stencil: false });
