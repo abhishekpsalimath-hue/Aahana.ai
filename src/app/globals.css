@@ -440,3 +440,11 @@ button:focus-visible,a:focus-visible{outline-color:#c4a7ff}
 @keyframes lens-breathe{0%,100%{opacity:.42;scale:.96}50%{opacity:.88;scale:1.04}}
 @media(max-width:760px){.universe-lens-flare{width:82vw;height:82vw;opacity:.52}.universe-depth-stars{inset:-3%}.depth-stars-near{opacity:.15}}
 @media(prefers-reduced-motion:reduce){.universe-depth-stars i,.universe-galaxy::before,.galaxy-core::after,.universe-lens-flare{animation:none!important}.universe-depth-stars i{transform:none;opacity:.3}}
+
+
+/* WebGL scene sits behind the atmospheric CSS layers; CSS remains the fallback. */
+.space-background .universe-webgl{position:absolute;inset:0;z-index:0;display:block;width:100%;height:100%;opacity:.68;pointer-events:none}
+.space-background .universe-flight{z-index:1}
+.space-background .universe-webgl[data-webgl-fallback="true"]{display:none}
+@media(max-width:760px){.space-background .universe-webgl{opacity:.48}}
+@media(prefers-reduced-motion:reduce){.space-background .universe-webgl{opacity:.4}}
