@@ -28,7 +28,8 @@ function UniverseScene() {
     const canvas = canvasRef.current;
     if (!canvas) return undefined;
     let renderer, raf = 0, active = true, inView = true, observer;
-    const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true;
+    const motionQuery = window.matchMedia?.("(prefers-reduced-motion: reduce)");
+    let reduced = motionQuery?.matches === true;
     const compact = window.matchMedia?.("(max-width: 760px)").matches === true;
     const pointerEnabled = window.matchMedia?.("(pointer: fine)").matches === true;
     try {
@@ -274,7 +275,8 @@ function UniverseScene() {
       pointer.x = (event.clientX / Math.max(1, window.innerWidth) - 0.5) * 2;
       pointer.y = (event.clientY / Math.max(1, window.innerHeight) - 0.5) * 2;
     };
-    if (pointerEnabled && !reduced) window.addEventListener("pointermove", onPointer, { passive: true });
+    let pointerListening = pointerEnabled && !reduced;
+    if (pointerListening) window.addEventListener("pointermove", onPointer, { passive: true });
     const resize = () => {
       const w = Math.max(1, canvas.clientWidth), h = Math.max(1, canvas.clientHeight);
       camera.aspect = w / h;
@@ -325,6 +327,19 @@ function UniverseScene() {
       }
     };
     const stop = () => { if (raf) window.cancelAnimationFrame(raf); raf = 0; };
+    const onMotionPreferenceChange = (event) => {
+      reduced = event.matches;
+      if (pointerEnabled && reduced && pointerListening) {
+        window.removeEventListener("pointermove", onPointer);
+        pointerListening = false;
+      } else if (pointerEnabled && !reduced && !pointerListening) {
+        window.addEventListener("pointermove", onPointer, { passive: true });
+        pointerListening = true;
+      }
+      stop();
+      start();
+    };
+    motionQuery?.addEventListener?.("change", onMotionPreferenceChange);
     const onVisibility = () => { if (document.hidden) stop(); else start(); };
     document.addEventListener("visibilitychange", onVisibility);
     if (typeof IntersectionObserver !== "undefined") {
@@ -335,9 +350,10 @@ function UniverseScene() {
     return () => {
       active = false; stop();
       document.removeEventListener("visibilitychange", onVisibility);
+      motionQuery?.removeEventListener?.("change", onMotionPreferenceChange);
       canvas.removeEventListener("webglcontextlost", onContextLost, false);
       canvas.removeEventListener("webglcontextrestored", onContextRestored, false);
-      if (pointerEnabled && !reduced) window.removeEventListener("pointermove", onPointer);
+      if (pointerListening) window.removeEventListener("pointermove", onPointer);
       resizeObserver?.disconnect(); observer?.disconnect();
       scene.traverse((obj) => {
         obj.geometry?.dispose?.();
