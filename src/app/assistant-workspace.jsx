@@ -148,7 +148,7 @@ function UniverseScene() {
 
     const planets = [];
     const cloudLayers = [];
-    const cloudLightBindings = [];
+    const planetLightBindings = [];
     const makePlanetMaps = (seed, colors) => {
       // Keep procedural texture work bounded on phones while retaining enough
       // texel detail for the planets at their on-screen size.
@@ -299,6 +299,8 @@ function UniverseScene() {
       });
       const atmosphere = new THREE.Mesh(new THREE.SphereGeometry(radius * 1.11, 48, 32), atmosphereMaterial);
       group.add(atmosphere);
+      const planetLightMaterials = [atmosphereMaterial];
+      planetLightBindings.push({ group, materials: planetLightMaterials });
 
       // A slow, translucent cloud deck adds a second physical layer to the
       // hero planet. The field is evaluated in 3D sphere space, so it has no
@@ -383,7 +385,7 @@ function UniverseScene() {
         const cloudDeck = new THREE.Mesh(new THREE.SphereGeometry(radius * 1.018, 64, 48), cloudMaterial);
         group.add(cloudDeck);
         cloudLayers.push(cloudDeck);
-        cloudLightBindings.push({ group, materials: [cloudMaterial, atmosphereMaterial] });
+        planetLightMaterials.push(cloudMaterial);
       }
       if (ring) {
         const rings = new THREE.Mesh(
@@ -468,7 +470,7 @@ function UniverseScene() {
         planets.forEach((planet, i) => { planet.rotation.y += (i === 0 ? 0.00055 : 0.0008) * delta; planet.rotation.x += 0.00008 * delta; });
         cloudLayers.forEach((cloud) => { cloud.rotation.y += 0.00068 * delta; cloud.rotation.x += 0.000035 * delta; });
         const keyLightWorld = keyLight.getWorldPosition(new THREE.Vector3());
-        cloudLightBindings.forEach(({ group, materials }) => {
+        planetLightBindings.forEach(({ group, materials }) => {
           const groupWorld = group.getWorldPosition(new THREE.Vector3());
           const inverseWorldRotation = group.getWorldQuaternion(new THREE.Quaternion()).invert();
           const localLightDirection = keyLightWorld.clone().sub(groupWorld).applyQuaternion(inverseWorldRotation).normalize();
