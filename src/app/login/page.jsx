@@ -59,9 +59,17 @@ export default function LoginPage() {
       } else if (mode === "signup" && !result.data.session) {
         setSignupCooldown(60);
         setMessage("Your signup request was received. Check your inbox and spam folder for the confirmation email before signing in.");
+      } else if (mode === "signin") {
+        // Verify the browser has persisted the Supabase session before leaving login.
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError || !sessionData.session) {
+          setMessage("Your sign-in was accepted, but the session could not be confirmed in this browser. Please try again.");
+        } else {
+          // Use a full document navigation so the server receives the latest auth cookies.
+          window.location.assign("/");
+        }
       } else {
-        router.replace("/");
-        router.refresh();
+        window.location.assign("/");
       }
     } catch {
       setMessage("Connection problem. Check your internet connection and try again.");
