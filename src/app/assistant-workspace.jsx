@@ -98,14 +98,98 @@ function UniverseScene() {
     const corona = new THREE.Mesh(new THREE.SphereGeometry(0.58, 32, 24), new THREE.MeshBasicMaterial({ color: 0x9d78d8, transparent: true, opacity: 0.13, blending: THREE.AdditiveBlending, depthWrite: false }));
     galaxy.add(corona);
 
+
     const planets = [];
-    const addPlanet = (x, y, z, radius, color, ring = false) => {
+    const makePlanetMaps = (seed, colors) => {
+      const width = 512, height = 256;
+      const surface = document.createElement("canvas");
+      surface.width = width;
+      surface.height = height;
+      const context = surface.getContext("2d", { willReadFrequently: true });
+      if (!context) return { map: null, bumpMap: null };
+      const image = context.createImageData(width, height);
+      const bump = document.createImageData(width, height);
+      const c0 = new THREE.Color(colors[0]);
+      const c1 = new THREE.Color(colors[1]);
+      const c2 = new THREE.Color(colors[2]);
+      const toByte = (color) => color.clone().convertLinearToSRGB();
+      const p0 = toByte(c0), p1 = toByte(c1), p2 = toByte(c2);
+      for (let y = 0; y < height; y++) {
+        const v = y / height;
+        for (let x = 0; x < width; x++) {
+          const u = x / width;
+          const n1 = Math.sin((u * 9.1 + seed) * Math.PI * 2) * Math.cos((v * 5.7 + seed * 0.31) * Math.PI * 2);
+          const n2 = Math.sin((u * 23.7 - seed * 0.7) * Math.PI * 2 + Math.cos(v * 17.3 * Math.PI * 2));
+          const n3 = Math.cos((u * 51.3 + v * 37.1 + seed) * Math.PI * 2);
+          const noise = n1 * 0.48 + n2 * 0.31 + n3 * 0.13;
+          const latitude = Math.abs(v - 0.5) * 2;
+          const bands = Math.sin(v * 76 + noise * 7 + seed * 5) * 0.08;
+          const land = noise + Math.sin(u * 13 + seed) * 0.12 > 0.08;
+          const mix = land ? Math.min(1, Math.max(0, 0.45 + noise * 0.62)) : Math.min(1, Math.max(0, 0.25 + bands + (1 - latitude) * 0.18));
+          const base = (land ? c1 : c0).clone().lerp(c2, mix * (land ? 0.38 : 0.18));
+          const shade = 0.78 + (noise + bands) * 0.18 - latitude * 0.08;
+          const color = toByte(base.multiplyScalar(Math.max(0.52, Math.min(1.08, shade))));
+          const index = (y * width + x) * 4;
+          image.data[index] = Math.round(color.r * 255);
+          image.data[index + 1] = Math.round(color.g * 255);
+          image.data[index + 2] = Math.round(color.b * 255);
+          image.data[index + 3] = 255;
+          const relief = Math.max(0, Math.min(255, 118 + noise * 90 + bands * 90));
+          bump.data[index] = relief;
+          bump.data[index + 1] = relief;
+          bump.data[index + 2] = relief;
+          bump.data[index + 3] = 255;
+        }
+      }
+      context.putImageData(image, 0, 0);
+      const bumpCanvas = document.createElement("canvas");
+      bumpCanvas.width = width;
+      bumpCanvas.height = height;
+      const bumpContext = bumpCanvas.getContext("2d");
+      bumpContext?.putImageData(bump, 0, 0);
+      const map = new THREE.CanvasTexture(surface);
+      map.colorSpace = THREE.SRGBColorSpace;
+      map.wrapS = THREE.RepeatWrapping;
+      map.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
+      const bumpMap = bumpContext ? new THREE.CanvasTexture(bumpCanvas) : null;
+      if (bumpMap) {
+        bumpMap.wrapS = THREE.RepeatWrapping;
+        bumpMap.anisotropy = map.anisotropy;
+      }
+      return { map, bumpMap };
+    };
+    const addPlanet = (x, y, z, radius, color, palette, ring = false, seed = 1) => {
       const group = new THREE.Group();
       group.position.set(x, y, z);
-      group.add(new THREE.Mesh(new THREE.SphereGeometry(radius, 48, 32), new THREE.MeshStandardMaterial({ color, roughness: 0.78, metalness: 0.06, emissive: new THREE.Color(color).multiplyScalar(0.12) })));
-      group.add(new THREE.Mesh(new THREE.SphereGeometry(radius * 1.075, 40, 28), new THREE.MeshBasicMaterial({ color: 0xc3a5ff, transparent: true, opacity: 0.105, side: THREE.BackSide, blending: THREE.AdditiveBlending, depthWrite: false })));
+      const maps = makePlanetMaps(seed, palette);
+      const body = new THREE.Mesh(
+        new THREE.SphereGeometry(radius, 64, 48),
+        new THREE.MeshStandardMaterial({
+          color: 0xffffff,
+          map: maps.map || null,
+          bumpMap: maps.bumpMap || null,
+          bumpScale: radius * 0.035,
+          roughness: 0.84,
+          metalness: 0.015,
+          emissive: new THREE.Color(color).multiplyScalar(0.045),
+        })
+      );
+      group.add(body);
+      const atmosphereMaterial = new THREE.ShaderMaterial({
+        transparent: true,
+        side: THREE.BackSide,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+        vertexShader: `varying vec3 vNormal; varying vec3 vViewPosition; void main(){ vec4 mvPosition=modelViewMatrix*vec4(position,1.0); vNormal=normalize(normalMatrix*normal); vViewPosition=-mvPosition.xyz; gl_Position=projectionMatrix*mvPosition; }`,
+        fragmentShader: `varying vec3 vNormal; varying vec3 vViewPosition; void main(){ float rim=pow(1.0-max(dot(normalize(vNormal),normalize(vViewPosition)),0.0),2.35); gl_FragColor=vec4(0.66,0.52,1.0,rim*0.24); }`,
+      });
+      const atmosphere = new THREE.Mesh(new THREE.SphereGeometry(radius * 1.11, 48, 32), atmosphereMaterial);
+      group.add(atmosphere);
       if (ring) {
-        const rings = new THREE.Mesh(new THREE.RingGeometry(radius * 1.35, radius * 2.05, 96), new THREE.MeshBasicMaterial({ color: 0xc8b4ee, transparent: true, opacity: 0.48, side: THREE.DoubleSide, depthWrite: false }));
+        const rings = new THREE.Mesh(
+          new THREE.RingGeometry(radius * 1.35, radius * 2.05, 128),
+          new THREE.MeshStandardMaterial({ color: 0xc8b4ee, roughness: 0.88, metalness: 0.12, transparent: true, opacity: 0.52, side: THREE.DoubleSide, depthWrite: false })
+        );
         rings.rotation.x = Math.PI / 2.35;
         rings.rotation.y = 0.18;
         group.add(rings);
@@ -113,9 +197,10 @@ function UniverseScene() {
       world.add(group);
       planets.push(group);
     };
-    addPlanet(-5.6, 1.7, -2.4, 0.92, 0x8d73bc);
-    addPlanet(5.2, 1.1, -5.1, 0.64, 0x7782bd, true);
-    addPlanet(2.6, -3.1, 0.1, 0.34, 0xb57d9f);
+    addPlanet(-5.6, 1.7, -2.4, 0.92, 0x8d73bc, [0x2e294e, 0x8170a6, 0xd0b8e8], false, 2.7);
+    addPlanet(5.2, 1.1, -5.1, 0.64, 0x7782bd, [0x4c527b, 0x858bb7, 0xc6b8df], true, 5.3);
+    addPlanet(2.6, -3.1, 0.1, 0.34, 0xb57d9f, [0x583c65, 0xa76f91, 0xe4b7ca], false, 8.1);
+
 
     const orbitMaterial = new THREE.LineBasicMaterial({ color: 0xcbb7ff, transparent: true, opacity: 0.2 });
     const addOrbit = (rx, ry, z, tilt) => {
@@ -181,8 +266,13 @@ function UniverseScene() {
       resizeObserver?.disconnect(); observer?.disconnect();
       scene.traverse((obj) => {
         obj.geometry?.dispose?.();
-        if (Array.isArray(obj.material)) obj.material.forEach((m) => m.dispose());
-        else obj.material?.dispose?.();
+        const materials = Array.isArray(obj.material) ? obj.material : obj.material ? [obj.material] : [];
+        materials.forEach((material) => {
+          material.map?.dispose?.();
+          material.bumpMap?.dispose?.();
+          material.roughnessMap?.dispose?.();
+          material.dispose?.();
+        });
       });
       renderer.dispose();
     };
