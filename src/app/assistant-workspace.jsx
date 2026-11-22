@@ -147,6 +147,8 @@ function UniverseScene() {
 
 
     const planets = [];
+    const cloudLayers = [];
+    const planetLightBindings = [];
     const makePlanetMaps = (seed, colors) => {
       // Keep procedural texture work bounded on phones while retaining enough
       // texel detail for the planets at their on-screen size.
@@ -166,27 +168,57 @@ function UniverseScene() {
         const value = Math.max(0, Math.min(1, linear));
         return Math.round((value <= 0.0031308 ? value * 12.92 : 1.055 * Math.pow(value, 1 / 2.4) - 0.055) * 255);
       };
+      // Periodic value-noise keeps the equirectangular texture seamless at its
+      // longitude seam while producing broad continents and finer terrain.
+      const hash = (x, y) => {
+        const n = Math.sin((x + seed * 19.17) * 127.1 + (y + seed * 7.31) * 311.7) * 43758.5453;
+        return (n - Math.floor(n)) * 2 - 1;
+      };
+      const smooth = (t) => t * t * (3 - 2 * t);
+      const valueNoise = (u, v, scaleX, scaleY) => {
+        const px = u * scaleX, py = v * scaleY;
+        const ix = Math.floor(px), iy = Math.floor(py);
+        const fx = smooth(px - ix), fy = smooth(py - iy);
+        const x0 = ((ix % scaleX) + scaleX) % scaleX, x1 = (x0 + 1) % scaleX;
+        const a = hash(x0, iy), b = hash(x1, iy), c = hash(x0, iy + 1), d = hash(x1, iy + 1);
+        const top = a + (b - a) * fx, bottom = c + (d - c) * fx;
+        return top + (bottom - top) * fy;
+      };
+      const smoothRange = (a, b, value) => {
+        const t = Math.max(0, Math.min(1, (value - a) / (b - a)));
+        return t * t * (3 - 2 * t);
+      };
       for (let y = 0; y < height; y++) {
         const v = y / height;
+        const latitude = Math.abs(v - 0.5) * 2;
         for (let x = 0; x < width; x++) {
           const u = x / width;
-          const n1 = Math.sin((u * 9.1 + seed) * Math.PI * 2) * Math.cos((v * 5.7 + seed * 0.31) * Math.PI * 2);
-          const n2 = Math.sin((u * 23.7 - seed * 0.7) * Math.PI * 2 + Math.cos(v * 17.3 * Math.PI * 2));
-          const n3 = Math.cos((u * 51.3 + v * 37.1 + seed) * Math.PI * 2);
-          const noise = n1 * 0.48 + n2 * 0.31 + n3 * 0.13;
-          const latitude = Math.abs(v - 0.5) * 2;
-          const bands = Math.sin(v * 76 + noise * 7 + seed * 5) * 0.08;
-          const land = noise + Math.sin(u * 13 + seed) * 0.12 > 0.08;
-          const mix = land ? Math.min(1, Math.max(0, 0.45 + noise * 0.62)) : Math.min(1, Math.max(0, 0.25 + bands + (1 - latitude) * 0.18));
-          const base = land ? p1 : p0;
-          const blend = mix * (land ? 0.38 : 0.18);
-          const shade = Math.max(0.52, Math.min(1.08, 0.78 + (noise + bands) * 0.18 - latitude * 0.08));
+          const broad = valueNoise(u, v, 6, 4);
+          const medium = valueNoise(u, v, 18, 10);
+          const fine = valueNoise(u, v, 54, 28);
+          const warp = valueNoise(u, v, 12, 7) * 0.075;
+          const continental = broad * 0.68 + medium * 0.25 + fine * 0.07 + warp;
+          const land = smoothRange(-0.12, 0.16, continental);
+          const ridges = 1 - Math.abs(valueNoise(u, v, 42, 22) * 0.72 + valueNoise(u, v, 96, 48) * 0.28);
+          const terrain = Math.pow(Math.max(0, ridges), 2.1);
+          const oceanDepth = Math.max(0, -continental);
+          const polar = smoothRange(0.78, 0.98, latitude);
+          const terrainTone = Math.min(1, Math.max(0, land * (0.42 + terrain * 0.58) + polar * 0.16));
+          const oceanTone = Math.min(1, Math.max(0, 0.16 + oceanDepth * 0.28 + medium * 0.08));
+          const baseR = p0.r + (p1.r - p0.r) * land;
+          const baseG = p0.g + (p1.g - p0.g) * land;
+          const baseB = p0.b + (p1.b - p0.b) * land;
+          const colorMix = terrainTone * 0.42 + (1 - land) * oceanTone * 0.12;
+          const colorR = baseR + (p2.r - baseR) * colorMix;
+          const colorG = baseG + (p2.g - baseG) * colorMix;
+          const colorB = baseB + (p2.b - baseB) * colorMix;
+          const shade = Math.max(0.48, Math.min(1.12, 0.82 + fine * 0.12 + terrain * 0.12 - latitude * 0.07));
           const index = (y * width + x) * 4;
-          image.data[index] = toSRGBByte((base.r + (p2.r - base.r) * blend) * shade);
-          image.data[index + 1] = toSRGBByte((base.g + (p2.g - base.g) * blend) * shade);
-          image.data[index + 2] = toSRGBByte((base.b + (p2.b - base.b) * blend) * shade);
+          image.data[index] = toSRGBByte(colorR * shade);
+          image.data[index + 1] = toSRGBByte(colorG * shade);
+          image.data[index + 2] = toSRGBByte(colorB * shade);
           image.data[index + 3] = 255;
-          const relief = Math.max(0, Math.min(255, 118 + noise * 90 + bands * 90));
+          const relief = Math.max(0, Math.min(255, 112 + (land * terrain - oceanDepth * 0.18 + fine * 0.12) * 92));
           bump.data[index] = relief;
           bump.data[index + 1] = relief;
           bump.data[index + 2] = relief;
@@ -232,11 +264,129 @@ function UniverseScene() {
         side: THREE.BackSide,
         depthWrite: false,
         blending: THREE.AdditiveBlending,
-        vertexShader: `varying vec3 vNormal; varying vec3 vViewPosition; void main(){ vec4 mvPosition=modelViewMatrix*vec4(position,1.0); vNormal=normalize(normalMatrix*normal); vViewPosition=-mvPosition.xyz; gl_Position=projectionMatrix*mvPosition; }`,
-        fragmentShader: `varying vec3 vNormal; varying vec3 vViewPosition; void main(){ float rim=pow(1.0-max(dot(normalize(vNormal),normalize(vViewPosition)),0.0),2.35); gl_FragColor=vec4(0.66,0.52,1.0,rim*0.24); }`,
+        uniforms: { uLightDirection: { value: new THREE.Vector3(1, 0, 0) } },
+        vertexShader: `
+          varying vec3 vAtmosphereNormal;
+          varying vec3 vAtmosphereView;
+          varying vec3 vAtmospherePosition;
+          void main() {
+            vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+            vAtmosphereNormal = normalize(normalMatrix * normal);
+            vAtmosphereView = -mvPosition.xyz;
+            vAtmospherePosition = normalize(position);
+            gl_Position = projectionMatrix * mvPosition;
+          }
+        `,
+        fragmentShader: `
+          varying vec3 vAtmosphereNormal;
+          varying vec3 vAtmosphereView;
+          varying vec3 vAtmospherePosition;
+          uniform vec3 uLightDirection;
+          void main() {
+            float viewFacing = max(dot(normalize(vAtmosphereNormal), normalize(vAtmosphereView)), 0.0);
+            float rim = pow(1.0 - viewFacing, 2.1);
+            float sunFacing = dot(normalize(vAtmospherePosition), normalize(uLightDirection));
+            float daylight = smoothstep(-0.38, 0.48, sunFacing);
+            float twilight = exp(-abs(sunFacing + 0.04) * 5.0);
+            vec3 dayColor = vec3(0.34, 0.48, 0.92);
+            vec3 nightColor = vec3(0.20, 0.13, 0.42);
+            vec3 atmosphereColor = mix(nightColor, dayColor, daylight);
+            atmosphereColor += vec3(0.34, 0.20, 0.52) * twilight * 0.42;
+            float alpha = rim * (0.075 + daylight * 0.12);
+            gl_FragColor = vec4(atmosphereColor, alpha);
+          }
+        `,
       });
       const atmosphere = new THREE.Mesh(new THREE.SphereGeometry(radius * 1.11, 48, 32), atmosphereMaterial);
       group.add(atmosphere);
+      planetLightBindings.push({ object: atmosphere, material: atmosphereMaterial });
+
+      // A slow, translucent cloud deck adds a second physical layer to the
+      // hero planet. The field is evaluated in 3D sphere space, so it has no
+      // longitude seam and does not depend on downloaded texture assets.
+      if (radius > 0.8) {
+        const cloudMaterial = new THREE.ShaderMaterial({
+          transparent: true,
+          depthWrite: false,
+          blending: THREE.NormalBlending,
+          uniforms: {
+            // The local-space light direction is refreshed as each layer rotates.
+            uLightDirection: { value: new THREE.Vector3(1, 0, 0) },
+          },
+          vertexShader: `
+            varying vec3 vCloudPosition;
+            varying vec3 vCloudNormal;
+            varying vec3 vCloudViewPosition;
+            void main() {
+              vCloudPosition = normalize(position);
+              vec4 viewPosition = modelViewMatrix * vec4(position, 1.0);
+              vCloudNormal = normalize(normalMatrix * normal);
+              vCloudViewPosition = -viewPosition.xyz;
+              gl_Position = projectionMatrix * viewPosition;
+            }
+          `,
+          fragmentShader: `
+            varying vec3 vCloudPosition;
+            varying vec3 vCloudNormal;
+            varying vec3 vCloudViewPosition;
+            uniform vec3 uLightDirection;
+            float hash(vec3 p) {
+              return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453);
+            }
+            float noise(vec3 p) {
+              vec3 i = floor(p), f = fract(p);
+              f = f * f * (3.0 - 2.0 * f);
+              float n000 = hash(i);
+              float n100 = hash(i + vec3(1.0, 0.0, 0.0));
+              float n010 = hash(i + vec3(0.0, 1.0, 0.0));
+              float n110 = hash(i + vec3(1.0, 1.0, 0.0));
+              float n001 = hash(i + vec3(0.0, 0.0, 1.0));
+              float n101 = hash(i + vec3(1.0, 0.0, 1.0));
+              float n011 = hash(i + vec3(0.0, 1.0, 1.0));
+              float n111 = hash(i + vec3(1.0, 1.0, 1.0));
+              float z0 = mix(mix(n000, n100, f.x), mix(n010, n110, f.x), f.y);
+              float z1 = mix(mix(n001, n101, f.x), mix(n011, n111, f.x), f.y);
+              return mix(z0, z1, f.z);
+            }
+            float fbm(vec3 p) {
+              float value = 0.0, amplitude = 0.5;
+              for (int i = 0; i < 3; i++) {
+                value += noise(p) * amplitude;
+                p = p * 2.03 + vec3(13.1, 7.7, 19.3);
+                amplitude *= 0.5;
+              }
+              return value;
+            }
+            void main() {
+              vec3 base = vCloudPosition * 5.4;
+              // Single-octave warp samples retain broken-up cloud silhouettes
+              // without running two additional full fractal-noise stacks per pixel.
+              float warpA = noise(base * 0.42 + vec3(4.2, 1.7, 8.1));
+              float warpB = noise(base * 0.42 + vec3(9.4, 6.3, 2.8));
+              vec3 warped = base + vec3(warpA - 0.5, warpB - 0.5, warpA - warpB) * 1.65;
+              float broad = fbm(warped);
+              float detail = fbm(warped * 2.15 + vec3(3.7, 8.2, 1.4));
+              float field = broad * 0.76 + detail * 0.24;
+              float cloud = smoothstep(0.49, 0.67, field) * (1.0 - smoothstep(0.81, 0.94, field));
+              float facing = max(dot(normalize(vCloudNormal), normalize(vCloudViewPosition)), 0.0);
+              float limb = pow(1.0 - facing, 0.72);
+              float sunFacing = dot(normalize(vCloudPosition), normalize(uLightDirection));
+              float daylight = smoothstep(-0.24, 0.52, sunFacing);
+              float terminator = exp(-abs(sunFacing - 0.02) * 8.0);
+              vec3 shadowCloud = vec3(0.20, 0.19, 0.31);
+              vec3 sunlitCloud = vec3(0.88, 0.85, 1.0);
+              vec3 cloudColor = mix(shadowCloud, sunlitCloud, daylight);
+              cloudColor += vec3(0.19, 0.16, 0.31) * terminator * 0.24;
+              float alpha = cloud * (0.045 + daylight * 0.105 + limb * 0.075);
+              gl_FragColor = vec4(cloudColor, alpha);
+            }
+          `,
+        });
+        const cloudDeck = new THREE.Mesh(new THREE.SphereGeometry(radius * 1.018, 64, 48), cloudMaterial);
+        group.add(cloudDeck);
+        cloudLayers.push(cloudDeck);
+        planetLightBindings.push({ object: cloudDeck, material: cloudMaterial });
+      }
       if (ring) {
         const rings = new THREE.Mesh(
           new THREE.RingGeometry(radius * 1.35, radius * 2.05, 128),
@@ -253,6 +403,22 @@ function UniverseScene() {
     addPlanet(5.2, 1.1, -5.1, 0.64, 0x7782bd, [0x4c527b, 0x858bb7, 0xc6b8df], true, 5.3);
     addPlanet(2.6, -3.1, 0.1, 0.34, 0xb57d9f, [0x583c65, 0xa76f91, 0xe4b7ca], false, 8.1);
 
+    // Reuse scratch objects and initialize shader lighting before the first
+    // render, including the reduced-motion path where the animation loop is idle.
+    const keyLightWorldPosition = new THREE.Vector3();
+    const objectWorldPosition = new THREE.Vector3();
+    const inverseObjectWorldRotation = new THREE.Quaternion();
+    const localLightDirection = new THREE.Vector3();
+    const updatePlanetLightDirections = () => {
+      keyLight.getWorldPosition(keyLightWorldPosition);
+      planetLightBindings.forEach(({ object, material }) => {
+        object.getWorldPosition(objectWorldPosition);
+        object.getWorldQuaternion(inverseObjectWorldRotation).invert();
+        localLightDirection.copy(keyLightWorldPosition).sub(objectWorldPosition).applyQuaternion(inverseObjectWorldRotation).normalize();
+        material.uniforms.uLightDirection.value.copy(localLightDirection);
+      });
+    };
+    updatePlanetLightDirections();
 
     const orbitMaterial = new THREE.LineBasicMaterial({ color: 0xcbb7ff, transparent: true, opacity: 0.2 });
     const addOrbit = (rx, ry, z, tilt) => {
@@ -318,6 +484,8 @@ function UniverseScene() {
         stars.rotation.y += 0.000035 * delta;
         stars.rotation.x += 0.000012 * delta;
         planets.forEach((planet, i) => { planet.rotation.y += (i === 0 ? 0.00055 : 0.0008) * delta; planet.rotation.x += 0.00008 * delta; });
+        cloudLayers.forEach((cloud) => { cloud.rotation.y += 0.00068 * delta; cloud.rotation.x += 0.000035 * delta; });
+        updatePlanetLightDirections();
         const easing = 1 - Math.pow(1 - 0.012, delta);
         camera.position.x += (pointer.x * 0.28 - camera.position.x) * easing;
         camera.position.y += (-pointer.y * 0.18 - camera.position.y) * easing;
