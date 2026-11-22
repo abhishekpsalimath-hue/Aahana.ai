@@ -20,6 +20,7 @@ on:
       - "src/app/api/images/**"
       - "src/app/api/videos/**"
       - "src/app/assistant-workspace.jsx"
+      - "src/app/globals.css"
       - "src/lib/build/**"
       - "src/lib/creative/**"
       - ".github/workflows/experience-lab-checks.yml"
