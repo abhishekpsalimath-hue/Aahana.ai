@@ -83,6 +83,7 @@ h1 em{font-style:normal;color:var(--lilac)}
 .auth-submit:disabled{opacity:.55;cursor:wait}
 .auth-message{font-size:12px;line-height:1.6;color:#d6c3ff;background:#211b2d;border:1px solid #45365b;border-radius:8px;padding:11px;margin:4px 0}
 .auth-switch{font-size:12px;text-align:center;color:#a7a0b0;margin:22px 0}
+.auth-link-option{font-size:12px;text-align:center;margin:12px 0 0}.auth-link-option button{border:0;background:none;color:#cfbaff;font:inherit;font-weight:600;padding:4px;cursor:pointer}.auth-link-option button:disabled{opacity:.55;cursor:wait}
 .auth-switch button{border:0;background:none;color:#cfbaff;font-weight:600;padding:0 0 0 4px}
 .auth-legal{font-size:10px;color:#777183;text-align:center;line-height:1.6;margin:25px 0 0}
 @media(max-width:480px){.auth-card{padding:25px 21px}.auth-brand{margin-bottom:38px}}
