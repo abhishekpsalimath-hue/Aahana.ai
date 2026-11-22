@@ -279,13 +279,20 @@ function UniverseScene() {
           blending: THREE.NormalBlending,
           vertexShader: `
             varying vec3 vCloudPosition;
+            varying vec3 vCloudNormal;
+            varying vec3 vCloudViewPosition;
             void main() {
               vCloudPosition = normalize(position);
-              gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+              vec4 viewPosition = modelViewMatrix * vec4(position, 1.0);
+              vCloudNormal = normalize(normalMatrix * normal);
+              vCloudViewPosition = -viewPosition.xyz;
+              gl_Position = projectionMatrix * viewPosition;
             }
           `,
           fragmentShader: `
             varying vec3 vCloudPosition;
+            varying vec3 vCloudNormal;
+            varying vec3 vCloudViewPosition;
             float hash(vec3 p) {
               return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453);
             }
@@ -316,8 +323,9 @@ function UniverseScene() {
             void main() {
               float field = fbm(vCloudPosition * 5.4);
               float cloud = smoothstep(0.53, 0.69, field) * (1.0 - smoothstep(0.82, 0.94, field));
-              float limb = pow(1.0 - abs(vCloudPosition.z), 0.45);
-              float alpha = cloud * (0.10 + limb * 0.12);
+              float facing = max(dot(normalize(vCloudNormal), normalize(vCloudViewPosition)), 0.0);
+              float limb = pow(1.0 - facing, 0.65);
+              float alpha = cloud * (0.075 + limb * 0.19);
               gl_FragColor = vec4(0.78, 0.76, 0.91, alpha);
             }
           `,
