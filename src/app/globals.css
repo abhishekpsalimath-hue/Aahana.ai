@@ -375,3 +375,34 @@ button:focus-visible,a:focus-visible{outline-color:#c4a7ff}
 @media(max-width:760px){.discover-hero{min-height:550px;padding:75px 22px}.discover-hero h1{letter-spacing:-3px}.discover-lead{font-size:14px}.discover-modes,.discover-detail,.discover-final{width:calc(100% - 40px);padding:60px 0}.discover-mode-grid{grid-template-columns:1fr 1fr}.discover-mode-card{min-height:150px}.discover-detail{grid-template-columns:1fr;gap:18px}.discover-footer{padding:20px}}
 @media(max-width:420px){.discover-mode-grid{grid-template-columns:1fr}.discover-mode-card{min-height:125px}.discover-mode-card h3{margin-top:18px}}
 @media(prefers-reduced-motion:reduce){.discover-primary{transition:none}}
+
+
+/* Passwordless sign-in action */
+.auth-secondary {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 11px;
+  border: 1px solid #59476f;
+  border-radius: 9px;
+  background: #191521;
+  color: #ddceff;
+  font-size: 12px;
+  font-weight: 600;
+  transition: border-color .18s ease, background .18s ease, transform .18s ease;
+}
+.auth-secondary:hover:not(:disabled) {
+  border-color: #a98af0;
+  background: #211b2d;
+  transform: translateY(-1px);
+}
+.auth-secondary:focus-visible {
+  outline: 2px solid #c4a7ff;
+  outline-offset: 3px;
+}
+.auth-secondary:disabled {
+  opacity: .55;
+  cursor: wait;
+}
+@media(prefers-reduced-motion:reduce) {
+  .auth-secondary { transition: none; }
+}
