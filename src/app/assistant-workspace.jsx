@@ -21,20 +21,7 @@ const starters = [
   "Help me design an app or website",
 ];
 
-const spaceStars = [
-  { startX: "-26px", startY: "-18px", endX: "-48vw", endY: "-35vh", delay: "-1s", size: "2px" },
-  { startX: "34px", startY: "-42px", endX: "52vw", endY: "-38vh", delay: "-5s", size: "2px" },
-  { startX: "-18px", startY: "36px", endX: "-55vw", endY: "42vh", delay: "-8s", size: "3px" },
-  { startX: "22px", startY: "18px", endX: "54vw", endY: "44vh", delay: "-3s", size: "2px" },
-  { startX: "-64px", startY: "-12px", endX: "-58vw", endY: "-8vh", delay: "-10s", size: "2px" },
-  { startX: "58px", startY: "8px", endX: "59vw", endY: "12vh", delay: "-6s", size: "3px" },
-  { startX: "-12px", startY: "-62px", endX: "-12vw", endY: "-48vh", delay: "-4s", size: "2px" },
-  { startX: "14px", startY: "60px", endX: "15vw", endY: "49vh", delay: "-9s", size: "2px" },
-  { startX: "-44px", startY: "54px", endX: "-42vw", endY: "50vh", delay: "-7s", size: "2px" },
-  { startX: "48px", startY: "-56px", endX: "43vw", endY: "-50vh", delay: "-2s", size: "2px" },
-  { startX: "-76px", startY: "22px", endX: "-61vw", endY: "23vh", delay: "-11s", size: "2px" },
-  { startX: "74px", startY: "-24px", endX: "62vw", endY: "-20vh", delay: "-12s", size: "3px" },
-];
+
 
 function renderInlineMarkdown(value, prefix) {
   const nodes = [];
@@ -1194,20 +1181,34 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
 
       <section className="main-panel">
         <div className="space-background" aria-hidden="true">
-          {spaceStars.map((star, index) => (
-            <span
-              className="space-star"
-              key={index}
-              style={{
-                "--start-x": star.startX,
-                "--start-y": star.startY,
-                "--end-x": star.endX,
-                "--end-y": star.endY,
-                "--delay": star.delay,
-                "--size": star.size,
-              }}
-            />
-          ))}
+          <div className="universe-flight">
+            <div className="universe-nebula universe-nebula-one" />
+            <div className="universe-nebula universe-nebula-two" />
+            <div className="universe-galaxy">
+              <span className="galaxy-core" />
+              <span className="galaxy-arm galaxy-arm-one" />
+              <span className="galaxy-arm galaxy-arm-two" />
+              <span className="galaxy-arm galaxy-arm-three" />
+            </div>
+            <div className="universe-orbit universe-orbit-one"><i className="orbit-world orbit-world-one" /></div>
+            <div className="universe-orbit universe-orbit-two"><i className="orbit-world orbit-world-two" /></div>
+            <div className="universe-planet universe-planet-one" />
+            <div className="universe-planet universe-planet-two" />
+            <div className="universe-planet universe-planet-three" />
+            <div className="universe-particles">
+              {Array.from({ length: 64 }, (_, index) => (
+                <i
+                  key={index}
+                  style={{
+                    "--particle-x": `${(index * 37 + 11) % 100}%`,
+                    "--particle-y": `${(index * 61 + 7) % 100}%`,
+                    "--particle-delay": `${-((index * 7) % 19)}s`,
+                    "--particle-size": `${1 + (index % 3)}px`,
+                  }}
+                />
+              ))}
+            </div>
+          </div>
         </div>
         <header className="topbar">
           <div className="breadcrumb">Workspace <span>/</span> {selectedProjectId ? (projects.find((item) => item.id === selectedProjectId)?.name || "Project") : "Assistant"}</div>
