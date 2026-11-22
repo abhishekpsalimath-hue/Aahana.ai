@@ -220,6 +220,8 @@ function UniverseScene() {
     addOrbit(8.8, 3.25, -5.8, 0.48);
 
     const pointer = { x: 0, y: 0 };
+    const frameInterval = compact ? 1000 / 30 : 1000 / 45;
+    let lastFrameTime = 0;
     const onPointer = (event) => {
       pointer.x = (event.clientX / Math.max(1, window.innerWidth) - 0.5) * 2;
       pointer.y = (event.clientY / Math.max(1, window.innerHeight) - 0.5) * 2;
@@ -247,16 +249,20 @@ function UniverseScene() {
     const resizeObserver = typeof ResizeObserver !== "undefined" ? new ResizeObserver(resize) : null;
     resizeObserver?.observe(canvas);
 
-    const draw = () => {
+    const draw = (time) => {
       if (!active || !inView || document.hidden) return;
       raf = window.requestAnimationFrame(draw);
+      if (time - lastFrameTime < frameInterval) return;
+      const delta = lastFrameTime ? Math.min(50, time - lastFrameTime) / 16.667 : 1;
+      lastFrameTime = time;
       if (!reduced) {
-        galaxy.rotation.z += 0.00032;
-        stars.rotation.y += 0.000035;
-        stars.rotation.x += 0.000012;
-        planets.forEach((planet, i) => { planet.rotation.y += i === 0 ? 0.00055 : 0.0008; planet.rotation.x += 0.00008; });
-        camera.position.x += (pointer.x * 0.28 - camera.position.x) * 0.012;
-        camera.position.y += (-pointer.y * 0.18 - camera.position.y) * 0.012;
+        galaxy.rotation.z += 0.00032 * delta;
+        stars.rotation.y += 0.000035 * delta;
+        stars.rotation.x += 0.000012 * delta;
+        planets.forEach((planet, i) => { planet.rotation.y += (i === 0 ? 0.00055 : 0.0008) * delta; planet.rotation.x += 0.00008 * delta; });
+        const easing = 1 - Math.pow(1 - 0.012, delta);
+        camera.position.x += (pointer.x * 0.28 - camera.position.x) * easing;
+        camera.position.y += (-pointer.y * 0.18 - camera.position.y) * easing;
         camera.lookAt(0, 0, -2.6);
       }
       renderer.render(scene, camera);
@@ -264,7 +270,10 @@ function UniverseScene() {
     const start = () => {
       if (!active || !inView || document.hidden) return;
       if (reduced) renderer.render(scene, camera);
-      else if (!raf) raf = window.requestAnimationFrame(draw);
+      else if (!raf) {
+        lastFrameTime = 0;
+        raf = window.requestAnimationFrame(draw);
+      }
     };
     const stop = () => { if (raf) window.cancelAnimationFrame(raf); raf = 0; };
     const onVisibility = () => { if (document.hidden) stop(); else start(); };
