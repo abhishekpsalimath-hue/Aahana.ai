@@ -27,7 +27,7 @@ function UniverseScene() {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return undefined;
-    let renderer, raf = 0, active = true, inView = true, observer;
+    let renderer, raf = 0, active = true, inView = true, observer, contextAvailable = true;
     const motionQuery = window.matchMedia?.("(prefers-reduced-motion: reduce)");
     let reduced = motionQuery?.matches === true;
     const compact = window.matchMedia?.("(max-width: 760px)").matches === true;
@@ -285,10 +285,12 @@ function UniverseScene() {
     };
     const onContextLost = (event) => {
       event.preventDefault();
+      contextAvailable = false;
       canvas.dataset.webglFallback = "true";
       stop();
     };
     const onContextRestored = () => {
+      contextAvailable = true;
       delete canvas.dataset.webglFallback;
       resize();
       start();
@@ -300,7 +302,7 @@ function UniverseScene() {
     resizeObserver?.observe(canvas);
 
     const draw = (time) => {
-      if (!active || !inView || document.hidden) return;
+      if (!active || !inView || document.hidden || !contextAvailable) return;
       raf = window.requestAnimationFrame(draw);
       if (time - lastFrameTime < frameInterval) return;
       const delta = lastFrameTime ? Math.min(50, time - lastFrameTime) / 16.667 : 1;
@@ -319,7 +321,7 @@ function UniverseScene() {
       renderer.render(scene, camera);
     };
     const start = () => {
-      if (!active || !inView || document.hidden) return;
+      if (!active || !inView || document.hidden || !contextAvailable) return;
       if (reduced) renderer.render(scene, camera);
       else if (!raf) {
         lastFrameTime = 0;
