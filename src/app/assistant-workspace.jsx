@@ -148,6 +148,7 @@ function UniverseScene() {
 
     const planets = [];
     const cloudLayers = [];
+    const cloudLightBindings = [];
     const makePlanetMaps = (seed, colors) => {
       // Keep procedural texture work bounded on phones while retaining enough
       // texel detail for the planets at their on-screen size.
@@ -263,8 +264,38 @@ function UniverseScene() {
         side: THREE.BackSide,
         depthWrite: false,
         blending: THREE.AdditiveBlending,
-        vertexShader: `varying vec3 vNormal; varying vec3 vViewPosition; void main(){ vec4 mvPosition=modelViewMatrix*vec4(position,1.0); vNormal=normalize(normalMatrix*normal); vViewPosition=-mvPosition.xyz; gl_Position=projectionMatrix*mvPosition; }`,
-        fragmentShader: `varying vec3 vNormal; varying vec3 vViewPosition; void main(){ float rim=pow(1.0-max(dot(normalize(vNormal),normalize(vViewPosition)),0.0),2.35); gl_FragColor=vec4(0.66,0.52,1.0,rim*0.24); }`,
+        uniforms: { uLightDirection: { value: new THREE.Vector3(1, 0, 0) } },
+        vertexShader: `
+          varying vec3 vAtmosphereNormal;
+          varying vec3 vAtmosphereView;
+          varying vec3 vAtmospherePosition;
+          void main() {
+            vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+            vAtmosphereNormal = normalize(normalMatrix * normal);
+            vAtmosphereView = -mvPosition.xyz;
+            vAtmospherePosition = normalize(position);
+            gl_Position = projectionMatrix * mvPosition;
+          }
+        `,
+        fragmentShader: `
+          varying vec3 vAtmosphereNormal;
+          varying vec3 vAtmosphereView;
+          varying vec3 vAtmospherePosition;
+          uniform vec3 uLightDirection;
+          void main() {
+            float viewFacing = max(dot(normalize(vAtmosphereNormal), normalize(vAtmosphereView)), 0.0);
+            float rim = pow(1.0 - viewFacing, 2.1);
+            float sunFacing = dot(normalize(vAtmospherePosition), normalize(uLightDirection));
+            float daylight = smoothstep(-0.38, 0.48, sunFacing);
+            float twilight = exp(-abs(sunFacing + 0.04) * 5.0);
+            vec3 dayColor = vec3(0.34, 0.48, 0.92);
+            vec3 nightColor = vec3(0.20, 0.13, 0.42);
+            vec3 atmosphereColor = mix(nightColor, dayColor, daylight);
+            atmosphereColor += vec3(0.34, 0.20, 0.52) * twilight * 0.42;
+            float alpha = rim * (0.075 + daylight * 0.12);
+            gl_FragColor = vec4(atmosphereColor, alpha);
+          }
+        `,
       });
       const atmosphere = new THREE.Mesh(new THREE.SphereGeometry(radius * 1.11, 48, 32), atmosphereMaterial);
       group.add(atmosphere);
@@ -279,7 +310,7 @@ function UniverseScene() {
           blending: THREE.NormalBlending,
           uniforms: {
             // The point light direction is sampled in the planet group's local space.
-            uLightDirection: { value: keyLight.position.clone().sub(group.position).normalize() },
+            uLightDirection: { value: new THREE.Vector3(1, 0, 0) },
           },
           vertexShader: `
             varying vec3 vCloudPosition;
@@ -352,6 +383,7 @@ function UniverseScene() {
         const cloudDeck = new THREE.Mesh(new THREE.SphereGeometry(radius * 1.018, 64, 48), cloudMaterial);
         group.add(cloudDeck);
         cloudLayers.push(cloudDeck);
+        cloudLightBindings.push({ group, materials: [cloudMaterial, atmosphereMaterial] });
       }
       if (ring) {
         const rings = new THREE.Mesh(
@@ -435,6 +467,13 @@ function UniverseScene() {
         stars.rotation.x += 0.000012 * delta;
         planets.forEach((planet, i) => { planet.rotation.y += (i === 0 ? 0.00055 : 0.0008) * delta; planet.rotation.x += 0.00008 * delta; });
         cloudLayers.forEach((cloud) => { cloud.rotation.y += 0.00068 * delta; cloud.rotation.x += 0.000035 * delta; });
+        const keyLightWorld = keyLight.getWorldPosition(new THREE.Vector3());
+        cloudLightBindings.forEach(({ group, materials }) => {
+          const groupWorld = group.getWorldPosition(new THREE.Vector3());
+          const inverseWorldRotation = group.getWorldQuaternion(new THREE.Quaternion()).invert();
+          const localLightDirection = keyLightWorld.clone().sub(groupWorld).applyQuaternion(inverseWorldRotation).normalize();
+          materials.forEach((material) => material.uniforms.uLightDirection.value.copy(localLightDirection));
+        });
         const easing = 1 - Math.pow(1 - 0.012, delta);
         camera.position.x += (pointer.x * 0.28 - camera.position.x) * easing;
         camera.position.y += (-pointer.y * 0.18 - camera.position.y) * easing;
