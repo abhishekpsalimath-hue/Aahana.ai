@@ -1184,7 +1184,13 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
           <div className="universe-flight" data-speed="65 km/h">
             <div className="universe-nebula universe-nebula-one" />
             <div className="universe-nebula universe-nebula-two" />
-            <div className="universe-galaxy">
+            <div className="universe-depth-stars" aria-hidden="true">
+            <i className="depth-stars-far" />
+            <i className="depth-stars-mid" />
+            <i className="depth-stars-near" />
+          </div>
+          <div className="universe-lens-flare" />
+          <div className="universe-galaxy">
               <span className="galaxy-core" />
               <span className="galaxy-arm galaxy-arm-one" />
               <span className="galaxy-arm galaxy-arm-two" />
