@@ -17,9 +17,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (signupCooldown <= 0) return undefined;
-    const timer = setTimeout(() => {
-      setSignupCooldown(seconds => Math.max(0, seconds - 1));
-    }, 1000);
+    const timer = setTimeout(() => setSignupCooldown(seconds => Math.max(0, seconds - 1)), 1000);
     return () => clearTimeout(timer);
   }, [signupCooldown]);
 
@@ -30,34 +28,41 @@ export default function LoginPage() {
     setMessage("");
     try {
       const supabase = createClient();
+      const normalizedEmail = email.trim().toLowerCase();
       const result = mode === "signin"
-        ? await supabase.auth.signInWithPassword({ email: email.trim(), password })
+        ? await supabase.auth.signInWithPassword({ email: normalizedEmail, password })
         : await supabase.auth.signUp({
-            email: email.trim(),
+            email: normalizedEmail,
             password,
             options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
           });
 
       if (result.error) {
-        const detail = result.error.message || "Please try again.";
         const rateLimited = result.error.status === 429 || result.error.code === "over_email_send_rate_limit";
         if (mode === "signup" && rateLimited) {
           setSignupCooldown(60);
-          setMessage("Too many confirmation email requests. Wait for the 60-second timer before trying again. Check your inbox and spam folder for an earlier email.");
+          setMessage("A confirmation email was requested recently. Please wait for the countdown, then try again. Check your inbox and spam folder first.");
+        } else if (mode === "signin") {
+          const text = (result.error.message || "").toLowerCase();
+          if (text.includes("invalid login credentials")) {
+            setMessage("Email or password is incorrect. Check both and try again.");
+          } else if (text.includes("email not confirmed")) {
+            setMessage("Please confirm your email address using the confirmation email before signing in.");
+          } else {
+            setMessage("We couldn't sign you in. Check your connection and try again.");
+          }
         } else {
-          setMessage(mode === "signup"
-            ? `We couldn't complete signup: ${detail}. If this is an email delivery issue, wait before retrying.`
-            : detail);
+          setMessage(result.error.message || "We couldn't create your account. Please try again.");
         }
       } else if (mode === "signup" && !result.data.session) {
         setSignupCooldown(60);
-        setMessage("Signup request accepted. Check your inbox and spam folder. For your account's safety, wait for the 60-second timer before requesting another confirmation email.");
+        setMessage("Your signup request was received. Check your inbox and spam folder for the confirmation email before signing in.");
       } else {
         router.replace("/");
         router.refresh();
       }
-    } catch (error) {
-      setMessage(error?.message || "Connection problem. Please check your internet and try again.");
+    } catch {
+      setMessage("Connection problem. Check your internet connection and try again.");
     } finally {
       setBusy(false);
     }
@@ -72,12 +77,13 @@ export default function LoginPage() {
         <p className="auth-copy">{mode === "signin" ? "Sign in to return to your workspace." : "Create your account to set up your workspace."}</p>
         <form className="auth-form" onSubmit={submit}>
           <label htmlFor="email">Email address</label>
-          <input id="email" type="email" autoComplete="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" />
+          <input id="email" type="email" autoComplete="email" autoCapitalize="none" spellCheck="false" required value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" />
           <label htmlFor="password">Password</label>
           <div className="password-field">
-            <input id="password" type={showPassword ? "text" : "password"} autoComplete={mode === "signin" ? "current-password" : "new-password"} minLength={8} required value={password} onChange={e => setPassword(e.target.value)} placeholder="At least 8 characters" />
+            <input id="password" type={showPassword ? "text" : "password"} autoComplete={mode === "signin" ? "current-password" : "new-password"} minLength={mode === "signup" ? 8 : undefined} required value={password} onChange={e => setPassword(e.target.value)} placeholder={mode === "signup" ? "At least 8 characters" : "Enter your password"} />
             <button className="password-toggle" type="button" onClick={() => setShowPassword(value => !value)} aria-label={showPassword ? "Hide password" : "Show password"} aria-pressed={showPassword}>{showPassword ? "Hide" : "Show"}</button>
           </div>
+          {mode === "signup" && <p className="auth-copy">Use at least 8 characters for your password.</p>}
           {message && <p className="auth-message" role="status" aria-live="polite">{message}</p>}
           <button className="auth-submit" type="submit" disabled={busy || (mode === "signup" && signupCooldown > 0)}>
             {busy ? "Please wait…" : mode === "signin" ? "Sign in" : signupCooldown > 0 ? `Try again in ${signupCooldown}s` : "Create account"}
