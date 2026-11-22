@@ -1,0 +1,71 @@
+name: Aahana interactive experience lab checks
+
+on:
+  pull_request:
+    branches:
+      - main
+      - feat/assistance-integrated-tools
+      - feat/assistance-live-preview
+      - feat/creative-image-video-foundation
+      - feat/creative-director-multimodel-foundation
+      - feat/experience-lab-live-assistant
+      - fix/experience-lab-source-edit-conflicts
+      - feat/experience-lab-ai-code-proposals
+      - fix/build-workspace-size-preflight
+      - fix/build-preview-oidc-runtime-detection
+    paths:
+      - "src/app/experience-lab/**"
+      - "src/app/api/build/**"
+      - "src/app/api/files/**"
+      - "src/app/api/images/**"
+      - "src/app/api/videos/**"
+      - "src/app/assistant-workspace.jsx"
+      - "src/lib/build/**"
+      - "src/lib/creative/**"
+      - ".github/workflows/experience-lab-checks.yml"
+      - "package.json"
+  push:
+    branches:
+      - feat/interactive-experience-lab
+      - feat/aahana-contextual-interaction-cards
+      - feat/experience-lab-live-assistant
+      - feat/experience-lab-build-workspace
+      - fix/experience-lab-source-edit-conflicts
+      - feat/experience-lab-ai-code-proposals
+      - feat/assistance-integrated-tools
+      - feat/assistance-live-preview
+      - feat/creative-image-video-foundation
+      - feat/creative-director-multimodel-foundation
+      - release/assistance-creative-mainline
+    paths:
+      - "src/app/experience-lab/**"
+      - "src/app/api/build/**"
+      - "src/app/api/files/**"
+      - "src/app/api/images/**"
+      - "src/app/api/videos/**"
+      - "src/app/assistant-workspace.jsx"
+      - "src/lib/build/**"
+      - "src/lib/creative/**"
+      - ".github/workflows/experience-lab-checks.yml"
+      - "package.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aahana-experience-lab-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Run tests and production build
+        run: npm run build

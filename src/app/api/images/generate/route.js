@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { parseImageGenerationInput } from "@/lib/creative/image-generation.mjs";
+import { resolveImageModel, buildImageProviderRequest, detectImageMimeTypeFromBase64 } from "@/lib/creative/image-provider.mjs";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
-
-const MODEL = "@cf/black-forest-labs/flux-1-schnell";
-const MAX_PROMPT_LENGTH = 2048;
 
 export async function POST(request) {
   const supabase = await createClient();
@@ -26,32 +25,33 @@ export async function POST(request) {
   try { body = await request.json(); } catch {
     return NextResponse.json({ error: "Invalid request." }, { status: 400 });
   }
-  const prompt = typeof body?.prompt === "string" ? body.prompt.trim() : "";
-  if (!prompt || prompt.length > MAX_PROMPT_LENGTH) {
-    return NextResponse.json({ error: "Describe the image in 1–2,048 characters." }, { status: 400 });
+  const input = parseImageGenerationInput(body);
+  if (!input.ok) {
+    return NextResponse.json({ error: input.error }, { status: 400 });
   }
+  const { prompt, steps } = input;
 
   try {
+    const model = resolveImageModel(process.env.AAHANA_IMAGE_MODEL);
+    const providerRequest = buildImageProviderRequest({ model, prompt, steps });
     const response = await fetch(
-      `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/ai/run/${MODEL}`,
+      `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/ai/run/${model}`,
       {
-        method: "POST",
+        ...providerRequest,
         headers: {
+          ...providerRequest.headers,
           Authorization: `Bearer ${apiToken}`,
-          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ prompt, steps: 4 }),
-        cache: "no-store",
-        signal: AbortSignal.timeout(55000),
       }
     );
 
     const result = await response.json().catch(() => null);
     const image = result?.result?.image;
-    if (!response.ok || !image) {
+    const imageMimeType = detectImageMimeTypeFromBase64(image);
+    if (!response.ok || !imageMimeType) {
       const providerStatus = response.status;
       const status = providerStatus === 429 ? 429 : providerStatus >= 500 ? 503 : 502;
-      console.error("Aahana image provider request failed:", { status: providerStatus, providerError: result?.errors?.[0]?.message || "No image returned" });
+      console.error("Aahana image provider request failed:", { status: providerStatus, providerError: result?.errors?.[0]?.message || "No valid image returned" });
       let message = "Aahana could not generate that image. Please try again.";
       if (providerStatus === 401) message = "Cloudflare rejected the image-generation API token. Check the CLOUDFLARE_API_TOKEN setting in Vercel.";
       else if (providerStatus === 403) message = "The Cloudflare token does not have permission to use Workers AI. Update its Workers AI permissions.";
@@ -61,7 +61,7 @@ export async function POST(request) {
     }
 
     return NextResponse.json(
-      { imageDataUrl: `data:image/jpeg;base64,${image}`, model: MODEL },
+      { imageDataUrl: `data:${imageMimeType};base64,${image}`, model, steps: model === resolveImageModel("flux-2-klein-4b") ? 4 : steps },
       { headers: { "Cache-Control": "no-store" } }
     );
   } catch (error) {
