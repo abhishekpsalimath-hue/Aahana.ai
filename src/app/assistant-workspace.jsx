@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getSourceFileMimeType, isSupportedSourceFile } from "@/lib/build/source-file-policy.mjs";
+import { isImageGenerationRequest, isImageEditRequest, isVideoGenerationRequest } from "@/lib/creative/creative-intent.mjs";
 
 const modes = [
   { id: "solve", label: "Solve", hint: "Work through a problem" },
@@ -157,28 +158,23 @@ function renderAssistantContent(content, onCopyCode) {
   return nodes;
 }
 
-function isImageGenerationRequest(value) {
-  const text = String(value || "").trim();
-  if (!text) return false;
-
-  // Explicit image-generation instructions.
-  if (/\b(?:generate|create|draw|paint|illustrate|render|make)\b[\s\S]{0,180}\b(?:image|picture|illustration|artwork|portrait|wallpaper|logo|poster|cover|banner|icon|thumbnail|scene|landscape|cityscape|character|diagram)\b/i.test(text)) return true;
-  if (/\b(?:show me|visuali[sz]e|turn this into|text[- ]to[- ]image)\b/i.test(text) && /\b(?:image|picture|art|illustration|render|visual)\b/i.test(text)) return true;
-  if (/\b(?:please|can you|could you|i want|i need)\b[\s\S]{0,120}\b(?:generate|create|draw|paint|illustrate|render|make)\b/i.test(text) && /\b(?:image|picture|art|visual|logo|poster|wallpaper)\b/i.test(text)) return true;
-
-  // Finished prompts pasted without an instruction. Require several visual
-  // generation cues and a recognizable visual subject to avoid false positives.
-  const visualMarkers = [
-    /\b(?:photorealistic|ultra[- ]realistic)\b/i,
-    /\b(?:cinematic|wide[- ]shot|close[- ]up|wide[- ]angle)\b/i,
-    /\b(?:volumetric lighting|depth of field|anamorphic|ray tracing)\b/i,
-    /\b(?:8k|4k|high[- ]detail|ultra[- ]detailed)\b/i,
-    /\b(?:negative prompt|aspect ratio|text[- ]to[- ]image)\b/i,
-    /\b(?:bioluminescent|neon lighting|dramatic lighting|realistic reflections)\b/i,
-  ];
-  const markerCount = visualMarkers.filter((pattern) => pattern.test(text)).length;
-  const hasVisualSubject = /\b(?:city|metropolis|landscape|ocean|underwater|space station|planet|portrait|character|architecture|skyscraper|forest|mountain|vehicle|spaceship|animal|interior|exterior|scene|coral|submarine|building)\b/i.test(text);
-  return text.length >= 100 && markerCount >= 2 && hasVisualSubject;
+async function createReferenceImageFile(dataUrl) {
+  const image = new Image();
+  image.src = dataUrl;
+  await image.decode();
+  const scale = Math.min(1, 511 / Math.max(image.naturalWidth, image.naturalHeight));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+  canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("Could not prepare the reference image.");
+  context.drawImage(image, 0, 0, canvas.width, canvas.height);
+  const blob = await new Promise((resolve, reject) => canvas.toBlob(
+    (value) => value ? resolve(value) : reject(new Error("Could not prepare the reference image.")),
+    "image/jpeg",
+    0.88
+  ));
+  return new File([blob], "aahana-reference.jpg", { type: "image/jpeg" });
 }
 
 function evaluateArithmetic(input) {
@@ -242,154 +238,6 @@ function evaluateArithmetic(input) {
   }
 }
 
-function Starfield() {
-  const canvasRef = useRef(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const context = canvas?.getContext("2d", { alpha: true });
-    const layer = canvas?.parentElement;
-    const surface = layer?.parentElement;
-    if (!canvas || !context || !layer || !surface) return undefined;
-
-    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const STAR_COUNT = 20000;
-    let width = 0;
-    let height = 0;
-    let pixelRatio = 1;
-    let stars = [];
-    let frame = 0;
-    let previousTime = 0;
-    let pointerX = 0;
-    let pointerY = 0;
-    let targetX = 0;
-    let targetY = 0;
-    let isVisible = !document.hidden;
-    let disposed = false;
-    let seed = 20261120;
-    const random = () => {
-      seed = (seed * 16807) % 2147483647;
-      return (seed - 1) / 2147483646;
-    };
-
-    const draw = (time, delta = 0, animate = false) => {
-      if (disposed || !width || !height) return;
-      context.clearRect(0, 0, width, height);
-      pointerX += (targetX - pointerX) * 0.045;
-      pointerY += (targetY - pointerY) * 0.045;
-      const centerX = width / 2;
-      const centerY = height / 2;
-      const focalLength = Math.max(width, height) * 0.72;
-
-      for (let index = 0; index < stars.length; index += 1) {
-        const star = stars[index];
-        if (animate) {
-          star.z += star.speed * delta;
-          if (star.z >= 1) {
-            star.z = 0.015;
-            star.x = random();
-            star.y = random();
-          }
-          star.phase += delta * 0.0012 * star.twinkleSpeed;
-        }
-        const depth = 0.12 + star.z * 2.15;
-        const perspective = focalLength / (focalLength + (1 - star.z) * focalLength * 1.6);
-        const drift = star.z * star.z;
-        const x = centerX + (star.x * width - centerX) * depth + pointerX * star.parallax * 16 * drift;
-        const y = centerY + (star.y * height - centerY) * depth + pointerY * star.parallax * 16 * drift;
-        const size = star.radius * (0.45 + star.z * 1.75);
-        const twinkle = reducedMotion.matches ? 1 : 0.72 + Math.sin(star.phase + time * 0.00015) * 0.28;
-        const alpha = Math.min(1, star.alpha * twinkle * (0.35 + star.z * 0.8));
-        if (x < -8 || x > width + 8 || y < -8 || y > height + 8) continue;
-        context.globalAlpha = alpha;
-        context.fillStyle = star.bright ? "#fffaff" : "#d9c9ff";
-        context.fillRect(x, y, size * perspective, size * perspective);
-        if (star.bright) {
-          context.globalAlpha = alpha * 0.28;
-          const glint = size * (1.8 + star.z);
-          context.fillRect(x - glint, y + size / 2, glint * 2 + size, 0.55 + star.z * 0.5);
-          context.fillRect(x + size / 2, y - glint, 0.55 + star.z * 0.5, glint * 2 + size);
-        }
-      }
-      context.globalAlpha = 1;
-    };
-
-    const resize = () => {
-      const bounds = layer.getBoundingClientRect();
-      width = Math.max(1, bounds.width);
-      height = Math.max(1, bounds.height);
-      pixelRatio = Math.min(window.devicePixelRatio || 1, 1.5);
-      canvas.width = Math.round(width * pixelRatio);
-      canvas.height = Math.round(height * pixelRatio);
-      context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
-      stars = Array.from({ length: STAR_COUNT }, (_, index) => ({
-        x: random(),
-        y: random(),
-        z: random(),
-        radius: 0.35 + random() * (index % 97 === 0 ? 1.4 : 0.72),
-        alpha: 0.2 + random() * 0.68,
-        phase: random() * Math.PI * 2,
-        speed: 0.000025 + random() * 0.000065,
-        twinkleSpeed: 0.5 + random() * 1.5,
-        parallax: 0.2 + random() * 0.8,
-        bright: index % 97 === 0,
-      }));
-      draw(0, 0, false);
-    };
-
-    const animate = (time) => {
-      if (disposed || !isVisible || reducedMotion.matches) return;
-      const delta = previousTime ? Math.min(48, time - previousTime) : 16;
-      previousTime = time;
-      draw(time, delta, true);
-      frame = window.requestAnimationFrame(animate);
-    };
-    const handlePointer = (event) => {
-      const bounds = surface.getBoundingClientRect();
-      targetX = ((event.clientX - bounds.left) / Math.max(1, bounds.width) - 0.5) * 2;
-      targetY = ((event.clientY - bounds.top) / Math.max(1, bounds.height) - 0.5) * 2;
-    };
-    const handlePointerOut = (event) => {
-      if (!surface.contains(event.relatedTarget)) { targetX = 0; targetY = 0; }
-    };
-    const stopAnimation = () => {
-      window.cancelAnimationFrame(frame);
-      previousTime = 0;
-    };
-    const handleVisibility = () => {
-      isVisible = !document.hidden;
-      stopAnimation();
-      if (isVisible && !reducedMotion.matches) frame = window.requestAnimationFrame(animate);
-    };
-    const handleMotionPreference = () => {
-      stopAnimation();
-      if (reducedMotion.matches) draw(0, 0, false);
-      else if (isVisible) frame = window.requestAnimationFrame(animate);
-    };
-
-    const observer = new ResizeObserver(resize);
-    observer.observe(layer);
-    surface.addEventListener("pointermove", handlePointer, { passive: true });
-    surface.addEventListener("pointerout", handlePointerOut);
-    document.addEventListener("visibilitychange", handleVisibility);
-    reducedMotion.addEventListener?.("change", handleMotionPreference);
-    resize();
-    if (!reducedMotion.matches && isVisible) frame = window.requestAnimationFrame(animate);
-
-    return () => {
-      disposed = true;
-      observer.disconnect();
-      surface.removeEventListener("pointermove", handlePointer);
-      surface.removeEventListener("pointerout", handlePointerOut);
-      document.removeEventListener("visibilitychange", handleVisibility);
-      reducedMotion.removeEventListener?.("change", handleMotionPreference);
-      stopAnimation();
-    };
-  }, []);
-
-  return <div className="space-background" aria-hidden="true"><canvas ref={canvasRef} className="cosmic-star-canvas" /><span className="cosmic-nebula cosmic-nebula-one" /><span className="cosmic-nebula cosmic-nebula-two" /></div>;
-}
-
 export default function Home({ userEmail = "", aiEnabled = false }) {
   const router = useRouter();
   const conversationEndRef = useRef(null);
@@ -404,8 +252,15 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     let active = true;
     fetch("/api/build/status")
       .then((response) => response.ok ? response.json() : null)
-      .then((status) => { if (active) setBuildEnabled(status?.enabled === true && status?.sandboxIdentityAvailable === true); })
-      .catch(() => { if (active) setBuildEnabled(false); })
+      .then((status) => {
+        if (active) {
+          setBuildEnabled(status?.enabled === true && status?.sandboxIdentityAvailable === true);
+          setPreviewEnabled(status?.previewEnabled === true);
+          setVideoEnabled(status?.videoEnabled === true);
+          setImageEditingEnabled(status?.imageEditingEnabled === true);
+        }
+      })
+      .catch(() => { if (active) { setBuildEnabled(false); setPreviewEnabled(false); setVideoEnabled(false); setImageEditingEnabled(false); } })
       .finally(() => { if (active) setBuildStatusLoading(false); });
     return () => { active = false; };
   }, []);
@@ -414,8 +269,13 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [busy, setBusy] = useState(false);
   const [buildBusy, setBuildBusy] = useState(false);
   const [buildEnabled, setBuildEnabled] = useState(false);
+  const [previewEnabled, setPreviewEnabled] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState("");
+  const [previewBusy, setPreviewBusy] = useState(false);
+  const [previewError, setPreviewError] = useState("");
   const [buildStatusLoading, setBuildStatusLoading] = useState(true);
   const [error, setError] = useState("");
+  const [imageSaveNotice, setImageSaveNotice] = useState("");
   const [history, setHistory] = useState([]);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -436,7 +296,15 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [filesError, setFilesError] = useState("");
   const [analyzingFileId, setAnalyzingFileId] = useState(null);
   const [imageGenerating, setImageGenerating] = useState(false);
+  const [imageSaving, setImageSaving] = useState(false);
   const [generatedImage, setGeneratedImage] = useState(null);
+  const [imageEditingEnabled, setImageEditingEnabled] = useState(false);
+  const [videoEnabled, setVideoEnabled] = useState(false);
+  const [videoGenerating, setVideoGenerating] = useState(false);
+  const [videoDuration, setVideoDuration] = useState(5);
+  const [videoAspectRatio, setVideoAspectRatio] = useState("16:9");
+  const [videoResolution, setVideoResolution] = useState("480p");
+  const [generatedVideo, setGeneratedVideo] = useState(null);
   const [memoryOpen, setMemoryOpen] = useState(false);
   const [memoryEnabled, setMemoryEnabled] = useState(false);
   const [memories, setMemories] = useState([]);
@@ -763,11 +631,11 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       const response = await fetch("/api/images/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: imagePrompt }),
+        body: JSON.stringify({ prompt: imagePrompt, steps: 8, quality: "masterpiece" }),
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || "Could not generate the image.");
-      if (typeof result.imageDataUrl !== "string" || !result.imageDataUrl.startsWith("data:image/jpeg;base64,")) {
+      if (typeof result.imageDataUrl !== "string" || !/^data:image\/(?:jpeg|png);base64,/.test(result.imageDataUrl)) {
         throw new Error("The image provider returned an invalid image.");
       }
       setGeneratedImage({ dataUrl: result.imageDataUrl, prompt: imagePrompt });
@@ -775,6 +643,113 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       setError(err.message || "Image generation failed.");
     } finally {
       setImageGenerating(false);
+    }
+  }
+
+  async function editGeneratedImage(editPrompt) {
+    if (!generatedImage || !imageEditingEnabled || imageGenerating || busy) return;
+    setImageGenerating(true);
+    setError("");
+    setGeneratedVideo(null);
+    setMessages((current) => [...current,
+      { role: "user", content: editPrompt },
+      { role: "assistant", content: "Applying your changes while preserving the reference image…" },
+    ]);
+    try {
+      const referenceFile = await createReferenceImageFile(generatedImage.dataUrl);
+      const form = new FormData();
+      form.set("prompt", editPrompt);
+      form.set("referencePrompt", String(generatedImage.prompt || "").slice(0, 1200));
+      form.set("image", referenceFile);
+      const response = await fetch("/api/images/edit", { method: "POST", body: form });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Could not edit the image.");
+      if (typeof result.imageDataUrl !== "string" || !/^data:image\/(?:jpeg|png);base64,/.test(result.imageDataUrl)) {
+        throw new Error("The image editor returned an invalid image.");
+      }
+      setGeneratedImage({ dataUrl: result.imageDataUrl, prompt: generatedImage.prompt || editPrompt });
+      setMessages((current) => current.map((item, index) =>
+        index === current.length - 1 ? { ...item, content: "Updated your image. You can keep refining it with another instruction." } : item
+      ));
+    } catch (err) {
+      setMessages((current) => current.map((item, index) =>
+        index === current.length - 1 ? { ...item, content: "I couldn't apply that image change." } : item
+      ));
+      setError(err.message || "Image editing failed.");
+    } finally {
+      setImageGenerating(false);
+    }
+  }
+
+  async function saveGeneratedImage() {
+    if (!generatedImage || imageSaving) return;
+    setImageSaving(true);
+    setError("");
+    setImageSaveNotice("");
+    try {
+      const response = await fetch(generatedImage.dataUrl);
+      const blob = await response.blob();
+      const file = new File([blob], `aahana-image-${Date.now()}.jpg`, { type: "image/jpeg" });
+      const supabase = createClient();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) throw new Error("Please sign in again.");
+      const folder = selectedProjectId || "personal";
+      const objectPath = `${user.id}/${folder}/${crypto.randomUUID()}-${file.name}`;
+      const { error: storageError } = await supabase.storage.from("aahana-private").upload(objectPath, file, {
+        contentType: "image/jpeg", upsert: false,
+      });
+      if (storageError) throw new Error("Could not save the generated image. Please try again.");
+      const saved = await fetch("/api/files", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          objectPath, originalFilename: file.name, mimeType: "image/jpeg",
+          sizeBytes: file.size, projectId: selectedProjectId,
+        }),
+      });
+      const result = await saved.json().catch(() => ({}));
+      if (!saved.ok) {
+        await supabase.storage.from("aahana-private").remove([objectPath]);
+        throw new Error(result.error || "Could not save the image details.");
+      }
+      setFiles((items) => [result.file, ...items]);
+      setImageSaveNotice("Image saved to your Aahana Files.");
+    } catch (err) {
+      setImageSaveNotice("");
+      setError(err.message || "Could not save the generated image.");
+    } finally {
+      setImageSaving(false);
+    }
+  }
+
+  async function generateVideo(videoPrompt = prompt.trim()) {
+    if (!videoEnabled || !videoPrompt || videoGenerating || busy || imageGenerating) return false;
+    setVideoGenerating(true);
+    setError("");
+    setGeneratedVideo(null);
+    try {
+      const form = new FormData();
+      form.set("prompt", videoPrompt);
+      form.set("duration", String(videoDuration));
+      form.set("aspectRatio", videoAspectRatio);
+      form.set("resolution", videoResolution);
+      if (imageFile) form.set("image", imageFile);
+      const response = await fetch("/api/videos/generate", {
+        method: "POST",
+        body: form,
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Could not generate the video.");
+      if (typeof result.videoUrl !== "string" || !result.videoUrl.startsWith("https://")) {
+        throw new Error("The video provider returned an invalid video address.");
+      }
+      setGeneratedVideo({ url: result.videoUrl, prompt: videoPrompt, duration: result.duration });
+      return true;
+    } catch (err) {
+      setError(err.message || "Video generation failed.");
+      return false;
+    } finally {
+      setVideoGenerating(false);
     }
   }
 
@@ -866,6 +841,30 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       setBuildBusy(false);
     }
   }
+  async function runProjectPreview() {
+    if (!selectedProjectId || !previewEnabled || previewBusy || busy || buildBusy) return;
+    setPreviewBusy(true);
+    setPreviewError("");
+    setPreviewUrl("");
+    try {
+      const response = await fetch("/api/build/preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ projectId: selectedProjectId }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "The live preview could not start.");
+      if (typeof result.previewUrl !== "string" || !/^https:\/\//.test(result.previewUrl)) {
+        throw new Error("The preview service returned an invalid address.");
+      }
+      setPreviewUrl(result.previewUrl);
+    } catch (err) {
+      setPreviewError(err.message || "The live preview could not start.");
+    } finally {
+      setPreviewBusy(false);
+    }
+  }
+
   async function copyCodeBlock(code) {
     try {
       await navigator.clipboard.writeText(code);
@@ -902,7 +901,31 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   async function submitPrompt(event) {
     event.preventDefault();
     const text = prompt.trim();
-    if ((!text && !imageFile) || busy || buildBusy || imageGenerating) return;
+    if ((!text && !imageFile) || busy || buildBusy || imageGenerating || videoGenerating) return;
+
+    if (isVideoGenerationRequest(text)) {
+      setPrompt("");
+      setError("");
+      setGeneratedVideo(null);
+      if (!videoEnabled) {
+        setMessages((current) => [...current,
+          { role: "user", content: text },
+          { role: "assistant", content: "Video generation is not enabled in this environment yet. No generation was started." },
+        ]);
+        return;
+      }
+      setMessages((current) => [...current,
+        { role: "user", content: text },
+        { role: "assistant", content: "Creating your video…" },
+      ]);
+      const succeeded = await generateVideo(text);
+      setMessages((current) => current.map((item, index) =>
+        index === current.length - 1
+          ? { ...item, content: succeeded ? "Your video is ready. You can preview it below." : "I couldn't generate that video. Your request was not sent again automatically." }
+          : item
+      ));
+      return;
+    }
 
     if (isImageGenerationRequest(text)) {
       setPrompt("");
@@ -917,11 +940,11 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         const response = await fetch("/api/images/generate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt: text }),
+          body: JSON.stringify({ prompt: text, steps: 8, quality: "masterpiece" }),
         });
         const result = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(result.error || "Could not generate the image.");
-        if (typeof result.imageDataUrl !== "string" || !result.imageDataUrl.startsWith("data:image/jpeg;base64,")) {
+        if (typeof result.imageDataUrl !== "string" || !/^data:image\/(?:jpeg|png);base64,/.test(result.imageDataUrl)) {
           throw new Error("The image provider returned an invalid image.");
         }
         setGeneratedImage({ dataUrl: result.imageDataUrl, prompt: text });
@@ -936,6 +959,19 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       } finally {
         setImageGenerating(false);
       }
+      return;
+    }
+
+    if (generatedImage && isImageEditRequest(text)) {
+      setPrompt("");
+      if (!imageEditingEnabled) {
+        setMessages((current) => [...current,
+          { role: "user", content: text },
+          { role: "assistant", content: "Reference-based image editing is prepared but not enabled yet. Your current image is preserved." },
+        ]);
+        return;
+      }
+      await editGeneratedImage(text);
       return;
     }
 
@@ -1157,7 +1193,22 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       </aside>
 
       <section className="main-panel">
-        <Starfield />
+        <div className="space-background" aria-hidden="true">
+          {spaceStars.map((star, index) => (
+            <span
+              className="space-star"
+              key={index}
+              style={{
+                "--start-x": star.startX,
+                "--start-y": star.startY,
+                "--end-x": star.endX,
+                "--end-y": star.endY,
+                "--delay": star.delay,
+                "--size": star.size,
+              }}
+            />
+          ))}
+        </div>
         <header className="topbar">
           <div className="breadcrumb">Workspace <span>/</span> {selectedProjectId ? (projects.find((item) => item.id === selectedProjectId)?.name || "Project") : "Assistant"}</div>
           <div className="top-actions"><button className="mobile-history-toggle" type="button" onClick={toggleProjects}>Projects</button><button className="mobile-history-toggle" type="button" onClick={toggleHistory}>History</button><button className="mobile-history-toggle" type="button" onClick={toggleFiles}>Files</button><button className="mobile-history-toggle" type="button" onClick={toggleMemoryPanel}>Memory</button><span>Private workspace</span></div>
@@ -1218,8 +1269,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
 
         <div className="welcome">
           {!messages.length && (
-            <section className="welcome-intro" aria-label="Welcome to Aahana AI">
-              <div className="astronaut-float" aria-hidden="true">
+            <div className="astronaut-float" aria-hidden="true">
               <svg viewBox="0 0 180 180" role="presentation">
                 <defs>
                   <linearGradient id="astronautSuit" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#fffaff" /><stop offset="1" stopColor="#b9a6d8" /></linearGradient>
@@ -1246,6 +1296,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                 <circle cx="143" cy="142" r="3" fill="#c7aaff" /><circle cx="38" cy="39" r="2" fill="#fff" />
               </svg>
             </div>
+          )}
           <div className="welcome-signal" aria-hidden="true">
             <span className="signal-orbit signal-orbit-one" />
             <span className="signal-orbit signal-orbit-two" />
@@ -1253,20 +1304,21 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
             <span className="signal-spark signal-spark-one" />
             <span className="signal-spark signal-spark-two" />
           </div>
-              <div className="eyebrow"><span /> WELCOME TO AAHANA</div>
-              <h1>Good ideas<br /><em>start somewhere.</em></h1>
-              <p>Your space to think bigger, ask freely, and turn ideas into something real.</p>
-            </section>
-          )}
+          <div className="eyebrow"><span /> YOUR THINKING SPACE</div>
+          {!messages.length && <>
+            <h1>Good ideas<br /><em>start somewhere.</em></h1>
+            <p>Think freely. Explore ideas. Build something real.</p>
+          </>}
 
-          <div className="mode-row" role="tablist" aria-label="Choose a mode">
-            {modes.map((item) => (
-              <button key={item.id} type="button" role="tab" aria-selected={mode === item.id}
-                className={mode === item.id ? "mode active-mode" : "mode"}
-                onClick={() => setMode(item.id)}>
-                {item.label}
-              </button>
-            ))}
+          <div className="mode-row assistance-context" aria-label="Current workspace">
+            <span className="active-mode">Assistance</span>
+            <span className="assistance-context-note">Ask naturally — create, write, research, build and improve in one conversation.</span>
+          </div>
+          <div className="assistance-tool-launchers" role="group" aria-label="Assistance tools">
+            <button type="button" onClick={() => { setMode("build"); setError(""); }}>Build workspace <span aria-hidden="true">↗</span></button>
+            <button type="button" onClick={() => { setMode("create"); setError(""); }}>Creative tools <span aria-hidden="true">✧</span></button>
+            <button type="button" onClick={() => { setPrompt("Research this topic thoroughly, compare reliable sources and summarize the evidence: "); setError(""); }}>Research <span aria-hidden="true">⌕</span></button>
+            <button type="button" onClick={startVoiceInput} disabled={listening || busy}>{listening ? "Listening…" : "Voice"} <span aria-hidden="true">◖</span></button>
           </div>
 
           {messages.length > 0 && (
@@ -1311,6 +1363,9 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                   <button type="button" disabled={!selectedProjectId || !buildEnabled || buildBusy || busy} onClick={() => runProjectCheck("test")}>
                     Run tests
                   </button>
+                  <button type="button" disabled={!selectedProjectId || !previewEnabled || previewBusy || buildBusy || busy} onClick={runProjectPreview}>
+                    {previewBusy ? "Starting preview…" : "Live preview"}
+                  </button>
                 </div>
               </div>
               <p className="build-tools-note">
@@ -1322,6 +1377,27 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                       ? "Ready. Build and test commands run in a disposable sandbox; nothing is deployed."
                       : "Secure build execution is not activated in this environment yet. Code generation and editing guidance remain available."}
               </p>
+              <p className="build-tools-note">
+                {previewEnabled
+                  ? "Live preview is available for supported Next.js and Vite projects."
+                  : "Live preview is staged but disabled in this environment until its preview runtime is explicitly enabled."}
+              </p>
+              {previewError && <p className="build-tools-error" role="alert">{previewError}</p>}
+              {previewUrl && (
+                <section className="live-preview-panel" aria-label="Live website preview">
+                  <div className="live-preview-toolbar">
+                    <div><strong>Live preview</strong><small>Temporary isolated session · expires after 10 minutes</small></div>
+                    <a href={previewUrl} target="_blank" rel="noopener noreferrer">Open in new tab ↗</a>
+                  </div>
+                  <iframe
+                    className="live-preview-frame"
+                    title="Your website live preview"
+                    src={previewUrl}
+                    sandbox="allow-scripts allow-forms allow-popups allow-modals"
+                    referrerPolicy="no-referrer"
+                  />
+                </section>
+              )}
             </section>
           )}
           <form className="composer" onSubmit={submitPrompt}>
@@ -1331,11 +1407,51 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                 <img src={generatedImage.dataUrl} alt={generatedImage.prompt} style={{ display: "block", width: "100%", maxWidth: "640px", borderRadius: "14px" }} />
                 <div className="message-actions">
                   <a className="copy-message" href={generatedImage.dataUrl} download="aahana-generated-image.jpg">Download image</a>
+                  <button className="copy-message" type="button" onClick={saveGeneratedImage} disabled={imageSaving}>{imageSaving ? "Saving…" : "Save to Files"}</button>
                   <button className="copy-message" type="button" onClick={() => setGeneratedImage(null)}>Remove</button>
+                </div>
+                {imageSaveNotice && <div className="notice" role="status">{imageSaveNotice}</div>}
+              </div>
+            )}
+            {generatedVideo && (
+              <div className="generated-image-preview">
+                <video controls playsInline preload="metadata" src={generatedVideo.url} style={{ display: "block", width: "100%", maxWidth: "720px", borderRadius: "14px" }} />
+                <div className="message-actions">
+                  <a className="copy-message" href={generatedVideo.url} target="_blank" rel="noopener noreferrer">Open video</a>
+                  <button className="copy-message" type="button" onClick={() => setGeneratedVideo(null)}>Remove</button>
                 </div>
               </div>
             )}
             <div className="image-attach-row">
+              {videoEnabled && (
+                <>
+                  <button className="copy-message" type="button" onClick={() => generateVideo()} disabled={!prompt.trim() || videoGenerating || busy || imageGenerating}>
+                    {videoGenerating ? "Generating video…" : imageFile ? "Animate image" : "Generate video"}
+                  </button>
+                  <details className="video-advanced-settings">
+                    <summary>Video settings</summary>
+                    <select aria-label="Video duration" value={videoDuration} onChange={(event) => setVideoDuration(Number(event.target.value))} className="copy-message">
+                      <option value={3}>3 seconds</option>
+                      <option value={5}>5 seconds</option>
+                      <option value={10}>10 seconds</option>
+                      <option value={15}>15 seconds</option>
+                    </select>
+                    <select aria-label="Video aspect ratio" value={videoAspectRatio} onChange={(event) => setVideoAspectRatio(event.target.value)} className="copy-message">
+                      <option value="16:9">Landscape 16:9</option>
+                      <option value="9:16">Portrait 9:16</option>
+                      <option value="1:1">Square 1:1</option>
+                      <option value="4:3">4:3</option>
+                      <option value="3:4">3:4</option>
+                      <option value="3:2">3:2</option>
+                      <option value="2:3">2:3</option>
+                    </select>
+                    <select aria-label="Video resolution" value={videoResolution} onChange={(event) => setVideoResolution(event.target.value)} className="copy-message">
+                      <option value="480p">480p</option>
+                      <option value="720p">720p</option>
+                    </select>
+                  </details>
+                </>
+              )}
               <select aria-label="Voice language" value={voiceLanguage} onChange={(event) => setVoiceLanguage(event.target.value)} className="copy-message">{voiceLanguages.map(([code, label]) => <option key={code} value={code}>{label}</option>)}</select>
               <button className="copy-message" type="button" onClick={startVoiceInput} disabled={listening || busy}>{listening ? "Listening…" : "Speak"}</button>
               <label className="image-attach">
@@ -1382,7 +1498,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
             </>
           )}
         </div>
-        <footer className="footer"><span className="footer-brand">Aahana</span><span className="founder-signature">Abhishekayya Salimath</span><span className="footer-note">Thoughtfully made for what’s next.</span></footer>
+        <footer className="footer"><span>Aahana</span><span>Thoughtfully made for what’s next.</span></footer>
       </section>
     </main>
   );
