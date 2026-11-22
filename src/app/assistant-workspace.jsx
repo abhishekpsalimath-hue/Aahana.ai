@@ -350,7 +350,7 @@ function UniverseScene() {
             }
             float fbm(vec3 p) {
               float value = 0.0, amplitude = 0.5;
-              for (int i = 0; i < 4; i++) {
+              for (int i = 0; i < 3; i++) {
                 value += noise(p) * amplitude;
                 p = p * 2.03 + vec3(13.1, 7.7, 19.3);
                 amplitude *= 0.5;
@@ -359,9 +359,10 @@ function UniverseScene() {
             }
             void main() {
               vec3 base = vCloudPosition * 5.4;
-              // Two offset warp fields break up the smooth, repetitive noise blobs.
-              float warpA = fbm(base * 0.42 + vec3(4.2, 1.7, 8.1));
-              float warpB = fbm(base * 0.42 + vec3(9.4, 6.3, 2.8));
+              // Single-octave warp samples retain broken-up cloud silhouettes
+              // without running two additional full fractal-noise stacks per pixel.
+              float warpA = noise(base * 0.42 + vec3(4.2, 1.7, 8.1));
+              float warpB = noise(base * 0.42 + vec3(9.4, 6.3, 2.8));
               vec3 warped = base + vec3(warpA - 0.5, warpB - 0.5, warpA - warpB) * 1.65;
               float broad = fbm(warped);
               float detail = fbm(warped * 2.15 + vec3(3.7, 8.2, 1.4));
