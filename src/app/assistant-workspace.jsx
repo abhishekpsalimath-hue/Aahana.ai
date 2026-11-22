@@ -277,6 +277,10 @@ function UniverseScene() {
           transparent: true,
           depthWrite: false,
           blending: THREE.NormalBlending,
+          uniforms: {
+            // The point light direction is sampled in the planet group's local space.
+            uLightDirection: { value: keyLight.position.clone().sub(group.position).normalize() },
+          },
           vertexShader: `
             varying vec3 vCloudPosition;
             varying vec3 vCloudNormal;
@@ -293,6 +297,7 @@ function UniverseScene() {
             varying vec3 vCloudPosition;
             varying vec3 vCloudNormal;
             varying vec3 vCloudViewPosition;
+            uniform vec3 uLightDirection;
             float hash(vec3 p) {
               return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453);
             }
@@ -321,12 +326,26 @@ function UniverseScene() {
               return value;
             }
             void main() {
-              float field = fbm(vCloudPosition * 5.4);
-              float cloud = smoothstep(0.53, 0.69, field) * (1.0 - smoothstep(0.82, 0.94, field));
+              vec3 base = vCloudPosition * 5.4;
+              // Two offset warp fields break up the smooth, repetitive noise blobs.
+              float warpA = fbm(base * 0.42 + vec3(4.2, 1.7, 8.1));
+              float warpB = fbm(base * 0.42 + vec3(9.4, 6.3, 2.8));
+              vec3 warped = base + vec3(warpA - 0.5, warpB - 0.5, warpA - warpB) * 1.65;
+              float broad = fbm(warped);
+              float detail = fbm(warped * 2.15 + vec3(3.7, 8.2, 1.4));
+              float field = broad * 0.76 + detail * 0.24;
+              float cloud = smoothstep(0.49, 0.67, field) * (1.0 - smoothstep(0.81, 0.94, field));
               float facing = max(dot(normalize(vCloudNormal), normalize(vCloudViewPosition)), 0.0);
-              float limb = pow(1.0 - facing, 0.65);
-              float alpha = cloud * (0.075 + limb * 0.19);
-              gl_FragColor = vec4(0.78, 0.76, 0.91, alpha);
+              float limb = pow(1.0 - facing, 0.72);
+              float sunFacing = dot(normalize(vCloudPosition), normalize(uLightDirection));
+              float daylight = smoothstep(-0.24, 0.52, sunFacing);
+              float terminator = exp(-abs(sunFacing - 0.02) * 8.0);
+              vec3 shadowCloud = vec3(0.20, 0.19, 0.31);
+              vec3 sunlitCloud = vec3(0.88, 0.85, 1.0);
+              vec3 cloudColor = mix(shadowCloud, sunlitCloud, daylight);
+              cloudColor += vec3(0.19, 0.16, 0.31) * terminator * 0.24;
+              float alpha = cloud * (0.045 + daylight * 0.105 + limb * 0.075);
+              gl_FragColor = vec4(cloudColor, alpha);
             }
           `,
         });
