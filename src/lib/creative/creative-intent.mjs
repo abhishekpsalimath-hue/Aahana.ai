@@ -1,3 +1,11 @@
+export function isVideoGenerationRequest(value) {
+  const text = String(value || "").trim();
+  if (!text || /^(?:how|why|when|where|what|which|who)\b/i.test(text)) return false;
+  if (/\b(?:animate|turn|convert)\b[\s\S]{0,70}\b(?:this|the attached|my)\b[\s\S]{0,45}\b(?:image|photo|picture)\b/i.test(text)) return true;
+  return /\b(?:generate|create|make|produce|animate|render)\b[\s\S]{0,100}\b(?:video|clip|animation|film)\b/i.test(text) ||
+    /\b(?:video|clip|animation)\b[\s\S]{0,80}\b(?:of|showing|where)\b/i.test(text);
+}
+
 export function isImageGenerationRequest(value) {
   const text = String(value || "").trim();
   if (!text) return false;

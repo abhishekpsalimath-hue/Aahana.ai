@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { parseImageGenerationInput } from "@/lib/creative/image-generation.mjs";
+import { resolveImageModel, buildImageProviderRequest, getImageOutputMimeType } from "@/lib/creative/image-provider.mjs";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-const MODEL = "@cf/black-forest-labs/flux-1-schnell";
+
 
 export async function POST(request) {
   const supabase = await createClient();
@@ -33,17 +34,16 @@ export async function POST(request) {
   const { prompt, steps } = input;
 
   try {
+    const model = resolveImageModel(process.env.AAHANA_IMAGE_MODEL);
+    const providerRequest = buildImageProviderRequest({ model, prompt, steps });
     const response = await fetch(
-      `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/ai/run/${MODEL}`,
+      `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/ai/run/${model}`,
       {
-        method: "POST",
+        ...providerRequest,
         headers: {
+          ...providerRequest.headers,
           Authorization: `Bearer ${apiToken}`,
-          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ prompt, steps }),
-        cache: "no-store",
-        signal: AbortSignal.timeout(55000),
       }
     );
 
@@ -62,7 +62,7 @@ export async function POST(request) {
     }
 
     return NextResponse.json(
-      { imageDataUrl: `data:image/jpeg;base64,${image}`, model: MODEL, steps },
+      { imageDataUrl: `data:${getImageOutputMimeType(model)};base64,${image}`, model, steps: model === resolveImageModel("flux-2-klein-4b") ? 4 : steps },
       { headers: { "Cache-Control": "no-store" } }
     );
   } catch (error) {

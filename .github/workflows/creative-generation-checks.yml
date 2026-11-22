@@ -1,0 +1,35 @@
+name: Aahana creative generation checks
+
+on:
+  pull_request:
+    branches:
+      - feat/creative-director-multimodel-foundation
+      - feat/aahana-natural-video-creation
+    paths:
+      - "src/lib/creative/**"
+      - "src/app/api/images/**"
+      - "src/app/assistant-workspace.jsx"
+      - ".github/workflows/creative-generation-checks.yml"
+      - "package.json"
+      - "package-lock.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aahana-creative-generation-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Run full test suite and production build
+        run: npm run build
