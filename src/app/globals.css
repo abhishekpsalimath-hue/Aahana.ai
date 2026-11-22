@@ -297,7 +297,7 @@ button:focus-visible,a:focus-visible{outline-color:#c4a7ff}
 .main-panel{position:relative;isolation:isolate}
 .main-panel > :not(.space-background){position:relative;z-index:1}
 .space-background{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;perspective:1050px;perspective-origin:50% 46%;isolation:isolate;mask-image:linear-gradient(to bottom,transparent 0%,#000 9%,#000 91%,transparent 100%)}
-.universe-flight{position:absolute;inset:-12%;transform-style:preserve-3d;animation:universe-approach 22s linear infinite;will-change:transform}
+.universe-flight{position:absolute;inset:-12%;transform-style:preserve-3d;transform:translateZ(0) scale(1)}
 .universe-nebula{position:absolute;inset:8% 12%;border-radius:50%;filter:blur(46px);mix-blend-mode:screen;opacity:.24;transform-style:preserve-3d}
 .universe-nebula-one{background:radial-gradient(ellipse at 34% 48%,#8760c9aa 0%,#4c367e66 26%,transparent 66%);transform:translate3d(-7%,4%,-220px) rotate(-18deg) scale(1.2);animation:nebula-drift-one 29s ease-in-out infinite}
 .universe-nebula-two{background:radial-gradient(ellipse at 62% 42%,#6f7fd477 0%,#7950a955 32%,transparent 68%);transform:translate3d(8%,-4%,-360px) rotate(22deg) scale(1.4);animation:nebula-drift-two 37s ease-in-out infinite}
@@ -320,7 +320,7 @@ button:focus-visible,a:focus-visible{outline-color:#c4a7ff}
 .universe-particles{position:absolute;inset:0;transform-style:preserve-3d}
 .universe-particles i{position:absolute;left:var(--particle-x);top:var(--particle-y);width:var(--particle-size);height:var(--particle-size);border-radius:50%;background:#eee4ff;box-shadow:0 0 8px #c8aaff,0 0 18px #9d7bd966;opacity:0;transform:translateZ(-900px) scale(.18);animation:universe-particle-arrival 14s linear var(--particle-delay) infinite;will-change:transform,opacity}
 .universe-flight{transform-origin:50% 46%}
-@keyframes universe-approach{0%{transform:translateZ(-760px) scale(.52);opacity:.82}88%{transform:translateZ(260px) scale(1.42);opacity:.96}100%{transform:translateZ(340px) scale(1.55);opacity:.82}}
+
 .universe-comets{position:absolute;inset:0;transform-style:preserve-3d;overflow:visible}
 .universe-comets i{position:absolute;left:var(--comet-x);top:var(--comet-y);display:block;width:clamp(34px,5vw,72px);height:2px;border-radius:50%;background:linear-gradient(90deg,transparent,#e8dcff 48%,#fff 78%,transparent);box-shadow:0 0 10px #c6a6ff,0 0 22px #a98af088;opacity:0;transform:translate3d(-10vw,8vh,-850px) rotate(var(--comet-angle)) scale(.25);animation:comet-cross var(--comet-duration) linear var(--comet-delay) infinite;will-change:transform,opacity}
 @keyframes comet-cross{0%{transform:translate3d(-10vw,8vh,-850px) rotate(var(--comet-angle)) scale(.25);opacity:0}9%{opacity:.82}82%{opacity:.75}100%{transform:translate3d(24vw,-18vh,420px) rotate(var(--comet-angle)) scale(2.1);opacity:0}}
