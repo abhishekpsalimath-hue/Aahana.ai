@@ -2,7 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import AmbientStarfield from "./ambient-starfield";
 import { getSourceFileMimeType, isSupportedSourceFile } from "@/lib/build/source-file-policy.mjs";
 import { isImageGenerationRequest, isImageEditRequest, isVideoGenerationRequest } from "@/lib/creative/creative-intent.mjs";
 
@@ -19,21 +21,6 @@ const starters = [
   "Turn this idea into a clear action plan",
   "Write something thoughtful and concise",
   "Help me design an app or website",
-];
-
-const spaceStars = [
-  { startX: "-26px", startY: "-18px", endX: "-48vw", endY: "-35vh", delay: "-1s", size: "2px" },
-  { startX: "34px", startY: "-42px", endX: "52vw", endY: "-38vh", delay: "-5s", size: "2px" },
-  { startX: "-18px", startY: "36px", endX: "-55vw", endY: "42vh", delay: "-8s", size: "3px" },
-  { startX: "22px", startY: "18px", endX: "54vw", endY: "44vh", delay: "-3s", size: "2px" },
-  { startX: "-64px", startY: "-12px", endX: "-58vw", endY: "-8vh", delay: "-10s", size: "2px" },
-  { startX: "58px", startY: "8px", endX: "59vw", endY: "12vh", delay: "-6s", size: "3px" },
-  { startX: "-12px", startY: "-62px", endX: "-12vw", endY: "-48vh", delay: "-4s", size: "2px" },
-  { startX: "14px", startY: "60px", endX: "15vw", endY: "49vh", delay: "-9s", size: "2px" },
-  { startX: "-44px", startY: "54px", endX: "-42vw", endY: "50vh", delay: "-7s", size: "2px" },
-  { startX: "48px", startY: "-56px", endX: "43vw", endY: "-50vh", delay: "-2s", size: "2px" },
-  { startX: "-76px", startY: "22px", endX: "-61vw", endY: "23vh", delay: "-11s", size: "2px" },
-  { startX: "74px", startY: "-24px", endX: "62vw", endY: "-20vh", delay: "-12s", size: "3px" },
 ];
 
 function renderInlineMarkdown(value, prefix) {
@@ -241,6 +228,20 @@ function evaluateArithmetic(input) {
 export default function Home({ userEmail = "", aiEnabled = false }) {
   const router = useRouter();
   const conversationEndRef = useRef(null);
+  const [founderWelcomeVisible, setFounderWelcomeVisible] = useState(false);
+  useEffect(() => {
+    let timer;
+    try {
+      if (window.sessionStorage.getItem("aahana-founder-welcome") === "show") {
+        window.sessionStorage.removeItem("aahana-founder-welcome");
+        setFounderWelcomeVisible(true);
+        timer = window.setTimeout(() => setFounderWelcomeVisible(false), 3400);
+      }
+    } catch {
+      // The workspace remains usable when browser session storage is unavailable.
+    }
+    return () => window.clearTimeout(timer);
+  }, []);
   const [mode, setMode] = useState("solve");
   const [prompt, setPrompt] = useState("");
   const [imageFile, setImageFile] = useState(null);
@@ -1074,10 +1075,22 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
 
   return (
     <main className="shell">
+      {founderWelcomeVisible && (
+        <div className="founder-welcome" role="status" aria-live="polite">
+          <div className="founder-welcome-stars" aria-hidden="true"><i /><i /><i /><i /><i /><i /></div>
+          <div className="founder-welcome-card">
+            <span className="founder-welcome-kicker">A PERSONAL NOTE FROM THE FOUNDER</span>
+            <span className="founder-welcome-moon" aria-hidden="true">☾</span>
+            <h2>Welcome to <em>Aahana AI.</em></h2>
+            <p>A space to think freely, explore deeply, and turn your ideas into something real. I’m glad you’re here.</p>
+            <span className="founder-welcome-signature">Abhishekayya P. Salimath <small>Founder</small></span>
+          </div>
+        </div>
+      )}
       <aside className="sidebar">
-        <a className="brand" href="/" aria-label="Aahana AI home">
+        <Link className="brand" href="/" aria-label="Aahana AI home">
           <span className="brand-word">Aahana</span><span className="brand-ai">AI</span>
-        </a>
+        </Link>
         <button className="new-chat" type="button" onClick={newConversation}>
           <span aria-hidden="true">＋</span> New conversation
         </button>
@@ -1194,20 +1207,12 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
 
       <section className="main-panel">
         <div className="space-background" aria-hidden="true">
-          {spaceStars.map((star, index) => (
-            <span
-              className="space-star"
-              key={index}
-              style={{
-                "--start-x": star.startX,
-                "--start-y": star.startY,
-                "--end-x": star.endX,
-                "--end-y": star.endY,
-                "--delay": star.delay,
-                "--size": star.size,
-              }}
-            />
-          ))}
+          <div className="space-nebula space-nebula-one" />
+          <div className="space-nebula space-nebula-two" />
+          <div className="space-nebula space-nebula-three" />
+          <div className="space-constellation space-constellation-one" />
+          <div className="space-constellation space-constellation-two" />
+          <AmbientStarfield />
         </div>
         <header className="topbar">
           <div className="breadcrumb">Workspace <span>/</span> {selectedProjectId ? (projects.find((item) => item.id === selectedProjectId)?.name || "Project") : "Assistant"}</div>

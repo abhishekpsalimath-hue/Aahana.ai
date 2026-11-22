@@ -1,0 +1,60 @@
+name: Aahana assistant visual validation
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "src/app/assistant-workspace.jsx"
+      - "src/app/ambient-starfield.jsx"
+      - "src/app/login/page.jsx"
+      - "src/app/globals.css"
+      - "src/app/assistant-visual-contract.test.mjs"
+      - ".github/workflows/aahana-assistant-visual-validation.yml"
+  push:
+    branches:
+      - feat/aahana-founder-welcome-cosmic-assistant-ui
+    paths:
+      - "src/app/assistant-workspace.jsx"
+      - "src/app/ambient-starfield.jsx"
+      - "src/app/login/page.jsx"
+      - "src/app/globals.css"
+      - "src/app/assistant-visual-contract.test.mjs"
+      - ".github/workflows/aahana-assistant-visual-validation.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aahana-assistant-visual-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Run visual experience regression contracts
+        run: node --test src/app/assistant-visual-contract.test.mjs
+      - name: Run full repository tests
+        run: npm test
+      - name: Prepare temporary ESLint flat config
+        run: |
+          cat > eslint.config.mjs <<'EOF'
+          import { defineConfig, globalIgnores } from "eslint/config";
+          import nextVitals from "eslint-config-next/core-web-vitals";
+          export default defineConfig([
+            ...nextVitals,
+            globalIgnores([".next/**", "out/**", "build/**", "next-env.d.ts", "src/app/learn/**"]),
+          ]);
+          EOF
+      - name: Run repository lint
+        run: npm run lint
+      - name: Run production build
+        run: npm run build
