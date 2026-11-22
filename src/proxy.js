@@ -21,6 +21,10 @@ export async function proxy(request) {
   );
 
   await supabase.auth.getClaims();
+
+  // Responses that depend on a user's auth cookie must not be shared by the CDN.
+  response.headers.set("Cache-Control", "private, no-store, max-age=0");
+  response.headers.set("Vercel-CDN-Cache-Control", "no-store");
   return response;
 }
 
