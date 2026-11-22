@@ -1208,6 +1208,20 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                 />
               ))}
             </div>
+            <div className="universe-comets">
+              {Array.from({ length: 6 }, (_, index) => (
+                <i
+                  key={index}
+                  style={{
+                    "--comet-x": `${(index * 23 + 9) % 92}%`,
+                    "--comet-y": `${(index * 31 + 13) % 84}%`,
+                    "--comet-delay": `${-((index * 5) % 17)}s`,
+                    "--comet-duration": `${12 + (index % 3) * 3}s`,
+                    "--comet-angle": `${-24 + (index % 4) * 16}deg`,
+                  }}
+                />
+              ))}
+            </div>
           </div>
         </div>
         <header className="topbar">
