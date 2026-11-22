@@ -402,6 +402,22 @@ function UniverseScene() {
     addPlanet(5.2, 1.1, -5.1, 0.64, 0x7782bd, [0x4c527b, 0x858bb7, 0xc6b8df], true, 5.3);
     addPlanet(2.6, -3.1, 0.1, 0.34, 0xb57d9f, [0x583c65, 0xa76f91, 0xe4b7ca], false, 8.1);
 
+    // Reuse scratch objects and initialize shader lighting before the first
+    // render, including the reduced-motion path where the animation loop is idle.
+    const keyLightWorldPosition = new THREE.Vector3();
+    const objectWorldPosition = new THREE.Vector3();
+    const inverseObjectWorldRotation = new THREE.Quaternion();
+    const localLightDirection = new THREE.Vector3();
+    const updatePlanetLightDirections = () => {
+      keyLight.getWorldPosition(keyLightWorldPosition);
+      planetLightBindings.forEach(({ object, material }) => {
+        object.getWorldPosition(objectWorldPosition);
+        object.getWorldQuaternion(inverseObjectWorldRotation).invert();
+        localLightDirection.copy(keyLightWorldPosition).sub(objectWorldPosition).applyQuaternion(inverseObjectWorldRotation).normalize();
+        material.uniforms.uLightDirection.value.copy(localLightDirection);
+      });
+    };
+    updatePlanetLightDirections();
 
     const orbitMaterial = new THREE.LineBasicMaterial({ color: 0xcbb7ff, transparent: true, opacity: 0.2 });
     const addOrbit = (rx, ry, z, tilt) => {
@@ -468,13 +484,7 @@ function UniverseScene() {
         stars.rotation.x += 0.000012 * delta;
         planets.forEach((planet, i) => { planet.rotation.y += (i === 0 ? 0.00055 : 0.0008) * delta; planet.rotation.x += 0.00008 * delta; });
         cloudLayers.forEach((cloud) => { cloud.rotation.y += 0.00068 * delta; cloud.rotation.x += 0.000035 * delta; });
-        const keyLightWorld = keyLight.getWorldPosition(new THREE.Vector3());
-        planetLightBindings.forEach(({ object, material }) => {
-          const objectWorld = object.getWorldPosition(new THREE.Vector3());
-          const inverseWorldRotation = object.getWorldQuaternion(new THREE.Quaternion()).invert();
-          const localLightDirection = keyLightWorld.clone().sub(objectWorld).applyQuaternion(inverseWorldRotation).normalize();
-          material.uniforms.uLightDirection.value.copy(localLightDirection);
-        });
+        updatePlanetLightDirections();
         const easing = 1 - Math.pow(1 - 0.012, delta);
         camera.position.x += (pointer.x * 0.28 - camera.position.x) * easing;
         camera.position.y += (-pointer.y * 0.18 - camera.position.y) * easing;
