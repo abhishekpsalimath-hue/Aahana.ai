@@ -297,7 +297,7 @@ button:focus-visible,a:focus-visible{outline-color:#c4a7ff}
 .main-panel{position:relative;isolation:isolate}
 .main-panel > :not(.space-background){position:relative;z-index:1}
 .space-background{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;perspective:1050px;perspective-origin:50% 46%;isolation:isolate;mask-image:linear-gradient(to bottom,transparent 0%,#000 9%,#000 91%,transparent 100%)}
-.universe-flight{position:absolute;inset:-12%;transform-style:preserve-3d;animation:universe-approach 18s cubic-bezier(.36,0,.64,1) infinite;will-change:transform}
+.universe-flight{position:absolute;inset:-12%;transform-style:preserve-3d;animation:universe-approach 18s linear infinite;will-change:transform,opacity}
 .universe-nebula{position:absolute;inset:8% 12%;border-radius:50%;filter:blur(46px);mix-blend-mode:screen;opacity:.24;transform-style:preserve-3d}
 .universe-nebula-one{background:radial-gradient(ellipse at 34% 48%,#8760c9aa 0%,#4c367e66 26%,transparent 66%);transform:translate3d(-7%,4%,-220px) rotate(-18deg) scale(1.2);animation:nebula-drift-one 29s ease-in-out infinite}
 .universe-nebula-two{background:radial-gradient(ellipse at 62% 42%,#6f7fd477 0%,#7950a955 32%,transparent 68%);transform:translate3d(8%,-4%,-360px) rotate(22deg) scale(1.4);animation:nebula-drift-two 37s ease-in-out infinite}
@@ -319,7 +319,7 @@ button:focus-visible,a:focus-visible{outline-color:#c4a7ff}
 .universe-planet-three{width:clamp(18px,2.6vw,34px);height:clamp(18px,2.6vw,34px);right:26%;bottom:16%;transform:translateZ(180px);background:radial-gradient(circle at 32% 26%,#fff1df 0%,#d49db7 30%,#714d7c 76%)}
 .universe-particles{position:absolute;inset:0;transform-style:preserve-3d}
 .universe-particles i{position:absolute;left:var(--particle-x);top:var(--particle-y);width:var(--particle-size);height:var(--particle-size);border-radius:50%;background:#eee4ff;box-shadow:0 0 8px #c8aaff,0 0 18px #9d7bd966;opacity:0;transform:translateZ(-900px) scale(.18);animation:universe-particle-arrival 14s linear var(--particle-delay) infinite;will-change:transform,opacity}
-@keyframes universe-approach{0%,100%{transform:translateZ(-360px) scale(.78)}50%{transform:translateZ(100px) scale(1.16)}}
+@keyframes universe-approach{0%{transform:translateZ(-760px) scale(.52);opacity:.65}88%{transform:translateZ(260px) scale(1.42);opacity:1}100%{transform:translateZ(340px) scale(1.55);opacity:0}}
 @keyframes universe-particle-arrival{0%{transform:translateZ(-900px) scale(.18);opacity:0}12%{opacity:.55}78%{opacity:.72}100%{transform:translateZ(360px) scale(2.2);opacity:0}}
 @keyframes galaxy-turn{from{rotate:0deg}to{rotate:360deg}}
 @keyframes orbit-spin{from{rotate:0deg}to{rotate:360deg}}
