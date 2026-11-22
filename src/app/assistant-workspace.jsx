@@ -112,8 +112,11 @@ function UniverseScene() {
       const c0 = new THREE.Color(colors[0]);
       const c1 = new THREE.Color(colors[1]);
       const c2 = new THREE.Color(colors[2]);
-      const toByte = (color) => color.clone().convertLinearToSRGB();
-      const p0 = toByte(c0), p1 = toByte(c1), p2 = toByte(c2);
+      const p0 = c0, p1 = c1, p2 = c2;
+      const toSRGBByte = (linear) => {
+        const value = Math.max(0, Math.min(1, linear));
+        return Math.round((value <= 0.0031308 ? value * 12.92 : 1.055 * Math.pow(value, 1 / 2.4) - 0.055) * 255);
+      };
       for (let y = 0; y < height; y++) {
         const v = y / height;
         for (let x = 0; x < width; x++) {
@@ -126,13 +129,13 @@ function UniverseScene() {
           const bands = Math.sin(v * 76 + noise * 7 + seed * 5) * 0.08;
           const land = noise + Math.sin(u * 13 + seed) * 0.12 > 0.08;
           const mix = land ? Math.min(1, Math.max(0, 0.45 + noise * 0.62)) : Math.min(1, Math.max(0, 0.25 + bands + (1 - latitude) * 0.18));
-          const base = (land ? c1 : c0).clone().lerp(c2, mix * (land ? 0.38 : 0.18));
-          const shade = 0.78 + (noise + bands) * 0.18 - latitude * 0.08;
-          const color = toByte(base.multiplyScalar(Math.max(0.52, Math.min(1.08, shade))));
+          const base = land ? p1 : p0;
+          const blend = mix * (land ? 0.38 : 0.18);
+          const shade = Math.max(0.52, Math.min(1.08, 0.78 + (noise + bands) * 0.18 - latitude * 0.08));
           const index = (y * width + x) * 4;
-          image.data[index] = Math.round(color.r * 255);
-          image.data[index + 1] = Math.round(color.g * 255);
-          image.data[index + 2] = Math.round(color.b * 255);
+          image.data[index] = toSRGBByte((base.r + (p2.r - base.r) * blend) * shade);
+          image.data[index + 1] = toSRGBByte((base.g + (p2.g - base.g) * blend) * shade);
+          image.data[index + 2] = toSRGBByte((base.b + (p2.b - base.b) * blend) * shade);
           image.data[index + 3] = 255;
           const relief = Math.max(0, Math.min(255, 118 + noise * 90 + bands * 90));
           bump.data[index] = relief;
