@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import * as THREE from "three";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getSourceFileMimeType, isSupportedSourceFile } from "@/lib/build/source-file-policy.mjs";
@@ -20,6 +21,175 @@ const starters = [
   "Write something thoughtful and concise",
   "Help me design an app or website",
 ];
+
+function UniverseScene() {
+  const canvasRef = useRef(null);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return undefined;
+    let renderer, raf = 0, active = true, inView = true, observer;
+    const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true;
+    const compact = window.matchMedia?.("(max-width: 760px)").matches === true;
+    const pointerEnabled = window.matchMedia?.("(pointer: fine)").matches === true;
+    try {
+      renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: false, powerPreference: "low-power", stencil: false });
+    } catch {
+      canvas.dataset.webglFallback = "true";
+      return undefined;
+    }
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(48, 1, 0.1, 120);
+    camera.position.set(0, 0, 15.5);
+    camera.lookAt(0, 0, -2.6);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, compact ? 1 : 1.35));
+    renderer.setClearColor(0x05040a, 0);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.18;
+
+    const world = new THREE.Group();
+    world.position.z = -2.5;
+    scene.add(world);
+    scene.add(new THREE.AmbientLight(0x9c8bbf, 0.72));
+    const keyLight = new THREE.PointLight(0xd8c4ff, 42, 38, 1.8);
+    keyLight.position.set(-4, 5, 7);
+    scene.add(keyLight);
+    const rimLight = new THREE.PointLight(0x7e8fe9, 24, 34, 1.7);
+    rimLight.position.set(7, -2, -3);
+    scene.add(rimLight);
+
+    const starCount = compact ? 1150 : 2300;
+    const starPositions = new Float32Array(starCount * 3);
+    const starColors = new Float32Array(starCount * 3);
+    const palette = [new THREE.Color(0xffffff), new THREE.Color(0xcbb8ff), new THREE.Color(0x9eafea)];
+    for (let i = 0; i < starCount; i++) {
+      const r = 18 + Math.random() * 48, theta = Math.random() * Math.PI * 2, phi = Math.acos(2 * Math.random() - 1);
+      starPositions.set([r * Math.sin(phi) * Math.cos(theta), r * Math.sin(phi) * Math.sin(theta), r * Math.cos(phi) - 8], i * 3);
+      const c = palette[Math.floor(Math.random() * palette.length)];
+      starColors.set([c.r, c.g, c.b], i * 3);
+    }
+    const starGeometry = new THREE.BufferGeometry();
+    starGeometry.setAttribute("position", new THREE.Float32BufferAttribute(starPositions, 3));
+    starGeometry.setAttribute("color", new THREE.Float32BufferAttribute(starColors, 3));
+    const stars = new THREE.Points(starGeometry, new THREE.PointsMaterial({ size: compact ? 0.045 : 0.052, vertexColors: true, transparent: true, opacity: 0.78, sizeAttenuation: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+    scene.add(stars);
+
+    const galaxy = new THREE.Group();
+    galaxy.position.set(0, 0, -2.4);
+    galaxy.rotation.x = -0.24;
+    world.add(galaxy);
+    const dustCount = compact ? 4200 : 8200;
+    const dustPositions = new Float32Array(dustCount * 3), dustColors = new Float32Array(dustCount * 3);
+    const hot = new THREE.Color(0xf0e6ff), cool = new THREE.Color(0x8066bd);
+    for (let i = 0; i < dustCount; i++) {
+      const arm = i % 4, radius = Math.pow(Math.random(), 0.72) * 5.8;
+      const angle = arm * Math.PI / 2 + radius * 0.78 + (Math.random() - 0.5) * 0.72;
+      const spread = (Math.random() - 0.5) * (0.12 + radius * 0.055);
+      dustPositions.set([Math.cos(angle) * radius + spread, Math.sin(angle) * radius * 0.42 + spread * 0.55, (Math.random() - 0.5) * (0.42 + radius * 0.055)], i * 3);
+      const c = hot.clone().lerp(cool, Math.min(1, radius / 6.2) * (0.62 + Math.random() * 0.34));
+      dustColors.set([c.r, c.g, c.b], i * 3);
+    }
+    const dustGeometry = new THREE.BufferGeometry();
+    dustGeometry.setAttribute("position", new THREE.Float32BufferAttribute(dustPositions, 3));
+    dustGeometry.setAttribute("color", new THREE.Float32BufferAttribute(dustColors, 3));
+    galaxy.add(new THREE.Points(dustGeometry, new THREE.PointsMaterial({ size: compact ? 0.036 : 0.042, vertexColors: true, transparent: true, opacity: 0.82, sizeAttenuation: true, depthWrite: false, blending: THREE.AdditiveBlending })));
+    const core = new THREE.Mesh(new THREE.SphereGeometry(0.25, 32, 24), new THREE.MeshBasicMaterial({ color: 0xe6d7ff }));
+    galaxy.add(core);
+    const corona = new THREE.Mesh(new THREE.SphereGeometry(0.58, 32, 24), new THREE.MeshBasicMaterial({ color: 0x9d78d8, transparent: true, opacity: 0.13, blending: THREE.AdditiveBlending, depthWrite: false }));
+    galaxy.add(corona);
+
+    const planets = [];
+    const addPlanet = (x, y, z, radius, color, ring = false) => {
+      const group = new THREE.Group();
+      group.position.set(x, y, z);
+      group.add(new THREE.Mesh(new THREE.SphereGeometry(radius, 48, 32), new THREE.MeshStandardMaterial({ color, roughness: 0.78, metalness: 0.06, emissive: new THREE.Color(color).multiplyScalar(0.12) })));
+      group.add(new THREE.Mesh(new THREE.SphereGeometry(radius * 1.075, 40, 28), new THREE.MeshBasicMaterial({ color: 0xc3a5ff, transparent: true, opacity: 0.105, side: THREE.BackSide, blending: THREE.AdditiveBlending, depthWrite: false })));
+      if (ring) {
+        const rings = new THREE.Mesh(new THREE.RingGeometry(radius * 1.35, radius * 2.05, 96), new THREE.MeshBasicMaterial({ color: 0xc8b4ee, transparent: true, opacity: 0.48, side: THREE.DoubleSide, depthWrite: false }));
+        rings.rotation.x = Math.PI / 2.35;
+        rings.rotation.y = 0.18;
+        group.add(rings);
+      }
+      world.add(group);
+      planets.push(group);
+    };
+    addPlanet(-5.6, 1.7, -2.4, 0.92, 0x8d73bc);
+    addPlanet(5.2, 1.1, -5.1, 0.64, 0x7782bd, true);
+    addPlanet(2.6, -3.1, 0.1, 0.34, 0xb57d9f);
+
+    const orbitMaterial = new THREE.LineBasicMaterial({ color: 0xcbb7ff, transparent: true, opacity: 0.2 });
+    const addOrbit = (rx, ry, z, tilt) => {
+      const points = [];
+      for (let i = 0; i <= 180; i++) {
+        const a = i / 180 * Math.PI * 2;
+        points.push(new THREE.Vector3(Math.cos(a) * rx, Math.sin(a) * ry, z));
+      }
+      const line = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(points), orbitMaterial);
+      line.rotation.z = tilt;
+      world.add(line);
+    };
+    addOrbit(7.1, 2.25, -3.6, -0.18);
+    addOrbit(8.8, 3.25, -5.8, 0.48);
+
+    const pointer = { x: 0, y: 0 };
+    const onPointer = (event) => {
+      pointer.x = (event.clientX / Math.max(1, window.innerWidth) - 0.5) * 2;
+      pointer.y = (event.clientY / Math.max(1, window.innerHeight) - 0.5) * 2;
+    };
+    if (pointerEnabled && !reduced) window.addEventListener("pointermove", onPointer, { passive: true });
+    const resize = () => {
+      const w = Math.max(1, canvas.clientWidth), h = Math.max(1, canvas.clientHeight);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h, false);
+    };
+    resize();
+    const resizeObserver = typeof ResizeObserver !== "undefined" ? new ResizeObserver(resize) : null;
+    resizeObserver?.observe(canvas);
+
+    const draw = () => {
+      if (!active || !inView || document.hidden) return;
+      raf = window.requestAnimationFrame(draw);
+      if (!reduced) {
+        galaxy.rotation.z += 0.00032;
+        stars.rotation.y += 0.000035;
+        stars.rotation.x += 0.000012;
+        planets.forEach((planet, i) => { planet.rotation.y += i === 0 ? 0.00055 : 0.0008; planet.rotation.x += 0.00008; });
+        camera.position.x += (pointer.x * 0.28 - camera.position.x) * 0.012;
+        camera.position.y += (-pointer.y * 0.18 - camera.position.y) * 0.012;
+        camera.lookAt(0, 0, -2.6);
+      }
+      renderer.render(scene, camera);
+    };
+    const start = () => {
+      if (!active || !inView || document.hidden) return;
+      if (reduced) renderer.render(scene, camera);
+      else if (!raf) raf = window.requestAnimationFrame(draw);
+    };
+    const stop = () => { if (raf) window.cancelAnimationFrame(raf); raf = 0; };
+    const onVisibility = () => { if (document.hidden) stop(); else start(); };
+    document.addEventListener("visibilitychange", onVisibility);
+    if (typeof IntersectionObserver !== "undefined") {
+      observer = new IntersectionObserver(([entry]) => { inView = entry.isIntersecting; if (inView) start(); else stop(); }, { threshold: 0.01 });
+      observer.observe(canvas);
+    }
+    start();
+    return () => {
+      active = false; stop();
+      document.removeEventListener("visibilitychange", onVisibility);
+      if (pointerEnabled && !reduced) window.removeEventListener("pointermove", onPointer);
+      resizeObserver?.disconnect(); observer?.disconnect();
+      scene.traverse((obj) => {
+        obj.geometry?.dispose?.();
+        if (Array.isArray(obj.material)) obj.material.forEach((m) => m.dispose());
+        else obj.material?.dispose?.();
+      });
+      renderer.dispose();
+    };
+  }, []);
+  return <canvas ref={canvasRef} className="universe-webgl" aria-hidden="true" />;
+}
+
 
 
 
@@ -1181,6 +1351,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
 
       <section className="main-panel">
         <div className="space-background" aria-hidden="true">
+          <UniverseScene />
           <div className="universe-flight" data-speed="65 km/h">
             <div className="universe-nebula universe-nebula-one" />
             <div className="universe-nebula universe-nebula-two" />
