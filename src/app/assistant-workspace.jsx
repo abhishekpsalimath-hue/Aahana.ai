@@ -1181,7 +1181,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
 
       <section className="main-panel">
         <div className="space-background" aria-hidden="true">
-          <div className="universe-flight">
+          <div className="universe-flight" data-speed="65 km/h">
             <div className="universe-nebula universe-nebula-one" />
             <div className="universe-nebula universe-nebula-two" />
             <div className="universe-galaxy">
