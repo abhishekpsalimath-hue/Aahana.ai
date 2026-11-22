@@ -453,3 +453,24 @@ button:focus-visible,a:focus-visible{outline-color:#c4a7ff}
 .space-background .universe-webgl[data-webgl-fallback="true"]{display:none}
 @media(max-width:760px){.space-background .universe-webgl{opacity:.48}}
 @media(prefers-reduced-motion:reduce){.space-background .universe-webgl{opacity:.4}}
+
+
+/* Cinematic realism pass: let the shaded WebGL scene lead; keep CSS as subtle depth support. */
+.space-background .universe-webgl{opacity:.92}
+.space-background .universe-flight{opacity:.58}
+.space-background .universe-nebula{opacity:.12;filter:blur(54px)}
+.space-background .universe-galaxy{opacity:.14;filter:drop-shadow(0 0 10px #9d78e918)}
+.space-background .universe-galaxy::before{opacity:.28}
+.space-background .galaxy-core{opacity:.3;box-shadow:0 0 22px #c5a5ff33,0 0 58px #9d78e922}
+.space-background .universe-orbit{opacity:.2;box-shadow:none}
+.space-background .universe-planet{opacity:.16;box-shadow:inset -18px -14px 30px #09081299,0 0 16px #a98af022}
+.space-background .universe-lens-flare{opacity:.2;filter:blur(2px)}
+.space-background .universe-comets i{opacity:.72;filter:drop-shadow(0 0 3px #d9c6ff)}
+@media(max-width:760px){
+  .space-background .universe-webgl{opacity:.78}
+  .space-background .universe-flight{opacity:.48}
+  .space-background .universe-nebula{filter:blur(32px);opacity:.1}
+}
+@media(prefers-reduced-motion:reduce){
+  .space-background .universe-webgl{opacity:.78}
+}
