@@ -44,12 +44,14 @@ export default function LoginPage() {
           setMessage("A confirmation email was requested recently. Please wait for the countdown, then try again. Check your inbox and spam folder first.");
         } else if (mode === "signin") {
           const text = (result.error.message || "").toLowerCase();
-          if (text.includes("invalid login credentials")) {
+          if (rateLimited) {
+            setMessage("Too many sign-in attempts. Please wait a moment before trying again.");
+          } else if (text.includes("invalid login credentials")) {
             setMessage("Email or password is incorrect. Check both and try again.");
           } else if (text.includes("email not confirmed")) {
             setMessage("Please confirm your email address using the confirmation email before signing in.");
           } else {
-            setMessage("We couldn't sign you in. Check your connection and try again.");
+            setMessage("We couldn't sign you in. Please try again. If the problem continues, contact support.");
           }
         } else {
           setMessage(result.error.message || "We couldn't create your account. Please try again.");
