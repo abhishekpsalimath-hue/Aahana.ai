@@ -147,6 +147,7 @@ function UniverseScene() {
 
 
     const planets = [];
+    const cloudLayers = [];
     const makePlanetMaps = (seed, colors) => {
       // Keep procedural texture work bounded on phones while retaining enough
       // texel detail for the planets at their on-screen size.
@@ -267,6 +268,64 @@ function UniverseScene() {
       });
       const atmosphere = new THREE.Mesh(new THREE.SphereGeometry(radius * 1.11, 48, 32), atmosphereMaterial);
       group.add(atmosphere);
+
+      // A slow, translucent cloud deck adds a second physical layer to the
+      // hero planet. The field is evaluated in 3D sphere space, so it has no
+      // longitude seam and does not depend on downloaded texture assets.
+      if (radius > 0.8) {
+        const cloudMaterial = new THREE.ShaderMaterial({
+          transparent: true,
+          depthWrite: false,
+          blending: THREE.NormalBlending,
+          vertexShader: `
+            varying vec3 vCloudPosition;
+            void main() {
+              vCloudPosition = normalize(position);
+              gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+          `,
+          fragmentShader: `
+            varying vec3 vCloudPosition;
+            float hash(vec3 p) {
+              return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453);
+            }
+            float noise(vec3 p) {
+              vec3 i = floor(p), f = fract(p);
+              f = f * f * (3.0 - 2.0 * f);
+              float n000 = hash(i);
+              float n100 = hash(i + vec3(1.0, 0.0, 0.0));
+              float n010 = hash(i + vec3(0.0, 1.0, 0.0));
+              float n110 = hash(i + vec3(1.0, 1.0, 0.0));
+              float n001 = hash(i + vec3(0.0, 0.0, 1.0));
+              float n101 = hash(i + vec3(1.0, 0.0, 1.0));
+              float n011 = hash(i + vec3(0.0, 1.0, 1.0));
+              float n111 = hash(i + vec3(1.0, 1.0, 1.0));
+              float z0 = mix(mix(n000, n100, f.x), mix(n010, n110, f.x), f.y);
+              float z1 = mix(mix(n001, n101, f.x), mix(n011, n111, f.x), f.y);
+              return mix(z0, z1, f.z);
+            }
+            float fbm(vec3 p) {
+              float value = 0.0, amplitude = 0.5;
+              for (int i = 0; i < 4; i++) {
+                value += noise(p) * amplitude;
+                p = p * 2.03 + vec3(13.1, 7.7, 19.3);
+                amplitude *= 0.5;
+              }
+              return value;
+            }
+            void main() {
+              float field = fbm(vCloudPosition * 5.4);
+              float cloud = smoothstep(0.53, 0.69, field) * (1.0 - smoothstep(0.82, 0.94, field));
+              float limb = pow(1.0 - abs(vCloudPosition.z), 0.45);
+              float alpha = cloud * (0.10 + limb * 0.12);
+              gl_FragColor = vec4(0.78, 0.76, 0.91, alpha);
+            }
+          `,
+        });
+        const cloudDeck = new THREE.Mesh(new THREE.SphereGeometry(radius * 1.018, 64, 48), cloudMaterial);
+        group.add(cloudDeck);
+        cloudLayers.push(cloudDeck);
+      }
       if (ring) {
         const rings = new THREE.Mesh(
           new THREE.RingGeometry(radius * 1.35, radius * 2.05, 128),
@@ -348,6 +407,7 @@ function UniverseScene() {
         stars.rotation.y += 0.000035 * delta;
         stars.rotation.x += 0.000012 * delta;
         planets.forEach((planet, i) => { planet.rotation.y += (i === 0 ? 0.00055 : 0.0008) * delta; planet.rotation.x += 0.00008 * delta; });
+        cloudLayers.forEach((cloud) => { cloud.rotation.y += 0.00068 * delta; cloud.rotation.x += 0.000035 * delta; });
         const easing = 1 - Math.pow(1 - 0.012, delta);
         camera.position.x += (pointer.x * 0.28 - camera.position.x) * easing;
         camera.position.y += (-pointer.y * 0.18 - camera.position.y) * easing;
