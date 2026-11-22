@@ -278,6 +278,9 @@ function UniverseScene() {
     let pointerListening = pointerEnabled && !reduced;
     if (pointerListening) window.addEventListener("pointermove", onPointer, { passive: true });
     const resize = () => {
+      // A lost WebGL context must not receive renderer sizing calls. The
+      // restored-context handler flips this guard before applying the new size.
+      if (!contextAvailable || !active) return;
       const w = Math.max(1, canvas.clientWidth), h = Math.max(1, canvas.clientHeight);
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
@@ -300,6 +303,8 @@ function UniverseScene() {
     resize();
     const resizeObserver = typeof ResizeObserver !== "undefined" ? new ResizeObserver(resize) : null;
     resizeObserver?.observe(canvas);
+    // Keep the canvas correctly sized in browsers without ResizeObserver too.
+    window.addEventListener("resize", resize, { passive: true });
 
     const draw = (time) => {
       if (!active || !inView || document.hidden || !contextAvailable) return;
@@ -357,6 +362,7 @@ function UniverseScene() {
       canvas.removeEventListener("webglcontextrestored", onContextRestored, false);
       if (pointerListening) window.removeEventListener("pointermove", onPointer);
       resizeObserver?.disconnect(); observer?.disconnect();
+      window.removeEventListener("resize", resize);
       scene.traverse((obj) => {
         obj.geometry?.dispose?.();
         const materials = Array.isArray(obj.material) ? obj.material : obj.material ? [obj.material] : [];
