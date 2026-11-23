@@ -585,3 +585,9 @@ h1,.brand,.composer-mode,.breadcrumb{font-family:"Space Grotesk","Manrope",sans-
   .astronaut-float{animation:none!important}
   .space-background .universe-particles i{animation:none!important;opacity:.35!important;transform:none!important}
 }
+
+
+/* Keep the welcome astronaut weightless: no ground shadow or orbit beneath the suit. */
+.astronaut-float{filter:drop-shadow(0 0 22px #9d7bd955)!important}
+.astronaut-float svg{overflow:visible}
+@media(max-width:760px){.astronaut-float{filter:drop-shadow(0 0 16px #9d7bd955)!important}}
