@@ -17,6 +17,7 @@ concurrency:
 
 jobs:
   propose:
+    if: github.actor == 'abhishekpsalimath-hue'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
