@@ -597,12 +597,17 @@ h1,.brand,.composer-mode,.breadcrumb{font-family:"Space Grotesk","Manrope",sans-
    even when the device requests reduced motion, using slower/softer movement. */
 @media(prefers-reduced-motion:reduce){
   .space-background .universe-particles i{
-    animation-name:universe-particle-arrival!important;
-    animation-duration:26s!important;
+    /* Preserve the same deep-space-to-viewer trajectory, only slow it down. */
+    animation-name:stars-toward-viewer!important;
+    animation-duration:28s!important;
     animation-timing-function:linear!important;
     animation-delay:var(--particle-delay)!important;
     animation-iteration-count:infinite!important;
     opacity:.38;
+  }
+  .space-background .universe-depth-stars i{
+    animation-play-state:running!important;
+    animation-duration:140s!important;
   }
   .space-background .universe-comets i{
     animation-name:comet-cross!important;
