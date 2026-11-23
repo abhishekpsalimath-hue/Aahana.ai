@@ -1,0 +1,88 @@
+name: Aahana isolated daily engineering report
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 19:00 India Standard Time (13:30 UTC), daily.
+    - cron: "30 13 * * *"
+  pull_request:
+    paths:
+      - ".github/workflows/aahana-isolated-daily-work.yml"
+      - "scripts/aahana-isolated-daily-report.mjs"
+      - "package.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aahana-isolated-daily-report-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  isolated-report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 20
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Run tests and production build in the isolated runner
+        id: checks
+        shell: bash
+        run: |
+          set +e
+          npm run build > aahana-checks.log 2>&1
+          result=$?
+          echo "exit_code=$result" >> "$GITHUB_OUTPUT"
+          echo "Build and test exit code: $result"
+          tail -n 80 aahana-checks.log
+          exit 0
+
+      - name: Generate Aahana engineering report
+        if: always()
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GROQ_MODEL: openai/gpt-oss-120b
+          AAHANA_CHECK_EXIT_CODE: ${{ steps.checks.outputs.exit_code }}
+          AAHANA_REPORT_FILE: aahana-daily-report.md
+          AAHANA_CHECK_LOG: aahana-checks.log
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: node scripts/aahana-isolated-daily-report.mjs
+
+      - name: Publish report in workflow summary
+        if: always()
+        run: |
+          if [ -f aahana-daily-report.md ]; then
+            cat aahana-daily-report.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "## Aahana daily report unavailable" >> "$GITHUB_STEP_SUMMARY"
+            echo "The report generator did not produce an artifact. Inspect the preceding step logs." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload report artifact
+        if: always() && hashFiles('aahana-daily-report.md') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: aahana-daily-report-${{ github.run_number }}
+          path: aahana-daily-report.md
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Mark failed verification as a failed workflow
+        if: always() && steps.checks.outputs.exit_code != '0'
+        run: |
+          echo "Aahana's test/build check did not pass. Review the report artifact before proceeding."
+          exit 1
