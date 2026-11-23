@@ -834,7 +834,8 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [listening, setListening] = useState(false);
   const [speakingMessage, setSpeakingMessage] = useState(null);
   const voiceLanguages = [
-    ["en-IN","English (India)"],["kn-IN","Kannada"],["hi-IN","Hindi"],["ta-IN","Tamil"],["te-IN","Telugu"],["ml-IN","Malayalam"],["mr-IN","Marathi"],["bn-IN","Bengali"],["gu-IN","Gujarati"],["pa-IN","Punjabi"],["ur-IN","Urdu"],["or-IN","Odia"],["as-IN","Assamese"],["en-US","English (US)"],["en-GB","English (UK)"],["es-ES","Spanish"],["fr-FR","French"],["de-DE","German"],["pt-BR","Portuguese"],["ar-SA","Arabic"],["zh-CN","Chinese"],["ja-JP","Japanese"],["ko-KR","Korean"],["ru-RU","Russian"],["it-IT","Italian"]
+    ["en-IN","English (India)"],["kn-IN","Kannada"],["hi-IN","Hindi"],["ta-IN","Tamil"],["te-IN","Telugu"],["ml-IN","Malayalam"],["mr-IN","Marathi"],["bn-IN","Bengali"],["gu-IN","Gujarati"],["pa-IN","Punjabi"],["ur-IN","Urdu"],["or-IN","Odia"],["as-IN","Assamese"],["sa-IN","Sanskrit"],["ne-NP","Nepali"],["si-LK","Sinhala"],
+    ["en-US","English (US)"],["en-GB","English (UK)"],["en-AU","English (Australia)"],["es-ES","Spanish"],["fr-FR","French"],["de-DE","German"],["pt-BR","Portuguese"],["ar-SA","Arabic"],["zh-CN","Chinese (Mandarin)"],["ja-JP","Japanese"],["ko-KR","Korean"],["ru-RU","Russian"],["it-IT","Italian"],["nl-NL","Dutch"],["tr-TR","Turkish"],["id-ID","Indonesian"],["th-TH","Thai"],["vi-VN","Vietnamese"],["fil-PH","Filipino"],["sw-KE","Swahili"],["fa-IR","Persian"],["he-IL","Hebrew"],["uk-UA","Ukrainian"],["pl-PL","Polish"]
   ];
 
   function startVoiceInput() {
@@ -852,7 +853,19 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       const transcript = event.results?.[0]?.[0]?.transcript || "";
       if (transcript) setPrompt((current) => current ? current + " " + transcript : transcript);
     };
-    recognition.onerror = () => setError("Voice recognition could not complete. Check microphone permission and try again.");
+    recognition.onerror = (event) => {
+      const reason = event?.error;
+      const message = reason === "not-allowed" || reason === "service-not-allowed"
+        ? "Microphone access is blocked. Allow microphone permission in your browser settings."
+        : reason === "no-speech"
+          ? "No speech was detected. Try again in a quieter place."
+          : reason === "language-not-supported"
+            ? "This browser does not support speech recognition for the selected language. Try another language or type your message."
+            : reason === "network"
+              ? "The browser speech service is unavailable. Check your connection and try again."
+              : "Voice recognition could not complete. Check microphone permission and try again.";
+      setError(message);
+    };
     recognition.onend = () => setListening(false);
     try { recognition.start(); } catch { setListening(false); setError("Voice input is already active. Please try again."); }
   }
