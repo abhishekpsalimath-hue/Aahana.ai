@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
@@ -9,10 +9,17 @@ export default function ForgotPasswordPage() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [sent, setSent] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+
+  useEffect(() => {
+    if (cooldown <= 0) return undefined;
+    const timer = setTimeout(() => setCooldown(seconds => Math.max(0, seconds - 1)), 1000);
+    return () => clearTimeout(timer);
+  }, [cooldown]);
 
   async function submit(event) {
     event.preventDefault();
-    if (busy) return;
+    if (busy || cooldown > 0) return;
     setBusy(true);
     setMessage("");
     try {
@@ -21,7 +28,12 @@ export default function ForgotPasswordPage() {
         redirectTo: `${window.location.origin}/auth/callback?next=%2Fupdate-password`,
       });
       if (error) {
-        setMessage("We couldn't send a reset link right now. Please check the email address and try again.");
+        if (error.status === 429 || error.code === "over_email_send_rate_limit") {
+          setCooldown(60);
+          setMessage("Please wait 60 seconds before requesting another reset email.");
+        } else {
+          setMessage("We could not send a reset link right now. Please check the email address and try again.");
+        }
       } else {
         setSent(true);
         setMessage("If an account exists for this email, a password reset link is on its way. Check your inbox and spam folder.");
@@ -44,7 +56,7 @@ export default function ForgotPasswordPage() {
           <label htmlFor="email">Email address</label>
           <input id="email" type="email" autoComplete="email" autoCapitalize="none" spellCheck="false" required value={email} onChange={event => setEmail(event.target.value)} placeholder="you@example.com" />
           {message && <p className="auth-message" role="status" aria-live="polite">{message}</p>}
-          <button className="auth-submit" type="submit" disabled={busy || sent}>{busy ? "Sending link…" : sent ? "Reset link requested" : "Send reset link"}</button>
+          <button className="auth-submit" type="submit" disabled={busy || sent || cooldown > 0}>{busy ? "Sending link…" : sent ? "Reset link requested" : cooldown > 0 ? `Try again in ${cooldown}s` : "Send reset link"}</button>
         </form>
         <p className="auth-switch"><Link href="/login">Back to sign in</Link></p>
         <p className="auth-legal">Your account and workspace remain protected.</p>
