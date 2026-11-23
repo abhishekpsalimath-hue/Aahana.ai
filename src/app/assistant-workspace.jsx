@@ -165,7 +165,7 @@ function UniverseScene() {
       const context = surface.getContext("2d", { willReadFrequently: true });
       if (!context) return { map: null, bumpMap: null };
       const image = context.createImageData(width, height);
-      const bump = document.createImageData(width, height);
+      const bump = context.createImageData(width, height);
       const c0 = new THREE.Color(colors[0]);
       const c1 = new THREE.Color(colors[1]);
       const c2 = new THREE.Color(colors[2]);
