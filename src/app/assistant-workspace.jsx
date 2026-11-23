@@ -48,7 +48,7 @@ function UniverseScene() {
     const camera = new THREE.PerspectiveCamera(48, 1, 0.1, 120);
     camera.position.set(0, 0, 15.5);
     camera.lookAt(0, 0, -2.6);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, compact ? 1 : 1.35));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, compact ? 1 : 1.2));
     renderer.setClearColor(0x05040a, 0);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -72,7 +72,7 @@ function UniverseScene() {
         }
         float fbm(vec2 p){
           float value=0.0, amplitude=0.5;
-          for(int i=0;i<5;i++){ value+=noise(p)*amplitude; p=p*2.03+vec2(17.2,9.4); amplitude*=0.5; }
+          for(int i=0;i<4;i++){ value+=noise(p)*amplitude; p=p*2.03+vec2(17.2,9.4); amplitude*=0.5; }
           return value;
         }
         void main(){
@@ -111,7 +111,7 @@ function UniverseScene() {
     rimLight.position.set(7, -2, -3);
     scene.add(rimLight);
 
-    const starCount = compact ? 1150 : 2300;
+    const starCount = compact ? 1150 : 1500;
     const starPositions = new Float32Array(starCount * 3);
     const starColors = new Float32Array(starCount * 3);
     const palette = [new THREE.Color(0xffffff), new THREE.Color(0xcbb8ff), new THREE.Color(0x9eafea)];
@@ -137,7 +137,7 @@ function UniverseScene() {
     const makePlanetMaps = (seed, colors) => {
       // Keep procedural texture work bounded on phones while retaining enough
       // texel detail for the planets at their on-screen size.
-      const width = compact ? 256 : 384, height = compact ? 128 : 192;
+      const width = compact ? 256 : 320, height = compact ? 128 : 160;
       const surface = document.createElement("canvas");
       surface.width = width;
       surface.height = height;
@@ -420,7 +420,7 @@ function UniverseScene() {
     addOrbit(8.8, 3.25, -5.8, 0.48);
 
     const pointer = { x: 0, y: 0 };
-    const frameInterval = compact ? 1000 / 30 : 1000 / 45;
+    const frameInterval = 1000 / 30;
     let lastFrameTime = 0;
     const onPointer = (event) => {
       pointer.x = (event.clientX / Math.max(1, window.innerWidth) - 0.5) * 2;
@@ -1551,6 +1551,18 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     setImageFile(null);
     setMessages((current) => [...current, userMessage, assistantMessage]);
 
+    let answer = "";
+    let answerUpdateTimer = null;
+    const queueAnswerUpdate = () => {
+      if (answerUpdateTimer !== null) return;
+      answerUpdateTimer = window.setTimeout(() => {
+        answerUpdateTimer = null;
+        setMessages((current) => current.map((item, index) =>
+          index === current.length - 1 ? { ...item, content: answer } : item
+        ));
+      }, 48);
+    };
+
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
@@ -1582,32 +1594,31 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       if (!response.body) throw new Error("The response stream was unavailable.");
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
-      let answer = "";
-
       while (true) {
         const { value, done } = await reader.read();
         if (done) break;
         answer += decoder.decode(value, { stream: true });
-        setMessages((current) => current.map((item, index) =>
-          index === current.length - 1 ? { ...item, content: answer } : item
-        ));
+        queueAnswerUpdate();
       }
       answer += decoder.decode();
+      if (answerUpdateTimer !== null) { window.clearTimeout(answerUpdateTimer); answerUpdateTimer = null; }
       setMessages((current) => current.map((item, index) =>
         index === current.length - 1 ? { ...item, content: answer || "I couldn't generate a response. Please try again." } : item
       ));
       setHistory([]);
     } catch (err) {
+      if (answerUpdateTimer !== null) { window.clearTimeout(answerUpdateTimer); answerUpdateTimer = null; }
       setMessages((current) => {
         const last = current[current.length - 1];
         if (last?.role !== "assistant") return current;
-        if (!last.content) return current.slice(0, -1);
+        if (!answer.trim()) return current.slice(0, -1);
         return current.map((item, index) => index === current.length - 1
-          ? { ...item, content: item.content + "\n\n[Response interrupted. You can retry your request.]" }
+          ? { ...item, content: answer + "\n\n[Response interrupted. You can retry your request.]" }
           : item);
       });
       setError(err.message || "Something went wrong. Please try again.");
     } finally {
+      if (answerUpdateTimer !== null) window.clearTimeout(answerUpdateTimer);
       setBusy(false);
     }
   }
@@ -1836,7 +1847,6 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                   <linearGradient id="astronautSuit" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#fffaff" /><stop offset="1" stopColor="#b9a6d8" /></linearGradient>
                   <linearGradient id="astronautGlass" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#51466f" /><stop offset="1" stopColor="#171426" /></linearGradient>
                 </defs>
-                <ellipse cx="91" cy="151" rx="42" ry="8" fill="#b89bfa" opacity=".14" />
                 <g transform="rotate(-22 90 88)">
                   <path d="M56 83 38 96 29 116 39 121 57 105" fill="url(#astronautSuit)" stroke="#a994c7" strokeWidth="3" strokeLinejoin="round" />
                   <path d="M119 84 139 93 151 111 142 118 121 104" fill="url(#astronautSuit)" stroke="#a994c7" strokeWidth="3" strokeLinejoin="round" />
