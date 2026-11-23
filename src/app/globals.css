@@ -556,19 +556,9 @@ h1,.brand,.composer-mode,.breadcrumb{font-family:"Space Grotesk","Manrope",sans-
 .welcome-signal::before,.welcome-signal::after{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:linear-gradient(145deg,#29213a,#171321 72%)!important;box-shadow:inset 1px 1px #ffffff18,0 14px 30px #0007!important}
 .founder-signature{font-family:'Caveat','Segoe Script','Brush Script MT',cursive!important;font-size:clamp(27px,3vw,35px)!important;font-weight:600!important;letter-spacing:.015em!important;line-height:1.05!important;color:#d6c2ff!important;opacity:.96!important;text-shadow:0 0 18px #a98be833;transform:rotate(-4deg);transform-origin:center;display:inline-block;margin-top:19px!important}
 .founder-signature::after{content:"";display:block;width:78%;height:7px;margin:0 auto;background:#cbb5ff;opacity:.72;clip-path:polygon(0 48%,18% 28%,42% 42%,68% 18%,100% 0,78% 45%,45% 68%,17% 58%);transform:rotate(-2deg)}
-/* Astronaut follows a loose, non-repeating-looking flight path instead of bobbing in place. */
-.astronaut-float{animation:astronaut-roam 31s cubic-bezier(.42,0,.58,1) infinite!important;will-change:transform}
-@keyframes astronaut-roam{
-  0%{transform:translate3d(0,0,0) rotate(-8deg)}
-  11%{transform:translate3d(-18px,11px,0) rotate(7deg)}
-  23%{transform:translate3d(-42px,-5px,0) rotate(15deg)}
-  36%{transform:translate3d(-27px,-24px,0) rotate(-4deg)}
-  49%{transform:translate3d(8px,-17px,0) rotate(-14deg)}
-  62%{transform:translate3d(21px,8px,0) rotate(5deg)}
-  74%{transform:translate3d(-6px,25px,0) rotate(13deg)}
-  87%{transform:translate3d(-31px,7px,0) rotate(-7deg)}
-  100%{transform:translate3d(0,0,0) rotate(-8deg)}
-}
+/* Randomized astronaut coordinates are driven by React state in assistant-workspace.jsx.
+   Do not add a CSS transform animation here: it would override the inline transform. */
+.astronaut-float{will-change:transform}
 /* Stars visibly accelerate from deep space toward the viewer. */
 .space-background .universe-particles i{animation-name:stars-toward-viewer!important;animation-timing-function:cubic-bezier(.18,.62,.36,1)!important}
 @keyframes stars-toward-viewer{
@@ -588,7 +578,7 @@ h1,.brand,.composer-mode,.breadcrumb{font-family:"Space Grotesk","Manrope",sans-
   .starter:hover{transform:translateY(-5px) scale(1.012)!important;border-color:#cbb5ff!important}
 }
 @media(max-width:760px){
-  .astronaut-float{right:8px;width:112px;height:112px;animation-duration:37s!important}
+  .astronaut-float{right:8px;width:112px;height:112px}
   .founder-signature{font-size:29px!important}
 }
 @media(prefers-reduced-motion:reduce){
