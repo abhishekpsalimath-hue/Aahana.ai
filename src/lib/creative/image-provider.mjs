@@ -40,7 +40,7 @@ export function buildImageProviderRequest({ model, prompt, steps = 8, seed, widt
     body.set("width", String(width));
     body.set("height", String(height));
     if (model === ACCURACY_IMAGE_MODEL) {
-      body.set("steps", String(Math.min(28, Math.max(20, steps === 8 ? 25 : steps))));
+      body.set("steps", "25");
       body.set("guidance", "4");
       if (Number.isInteger(seed) && seed >= 0 && seed <= 0xffffffff) body.set("seed", String(seed));
     }
