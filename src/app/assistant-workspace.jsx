@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getSourceFileMimeType, isSupportedSourceFile } from "@/lib/build/source-file-policy.mjs";
 import { isImageGenerationRequest, isImageEditRequest, isVideoGenerationRequest } from "@/lib/creative/creative-intent.mjs";
+import AahanaSelfBuildPanel from "@/app/experience-lab/self-build-panel.jsx";
 
 const modes = [
   { id: "solve", label: "Solve", hint: "Work through a problem" },
@@ -1862,6 +1863,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
             <button type="button" onClick={() => { setPrompt("Research this topic thoroughly, compare reliable sources and summarize the evidence: "); setError(""); }}>Research <span aria-hidden="true">⌕</span></button>
             <button type="button" onClick={startVoiceInput} disabled={listening || busy}>{listening ? "Listening…" : "Voice"} <span aria-hidden="true">◖</span></button>
           </div>
+          <AahanaSelfBuildPanel />
 
           {messages.length > 0 && (
             <div className="conversation" aria-live="polite">

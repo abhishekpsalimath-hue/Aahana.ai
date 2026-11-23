@@ -17,7 +17,7 @@ export async function GET(request) {
   return NextResponse.json({
     enabled: config.enabled && ownerAllowed,
     agentReady,
-    validationEnabled: process.env.VERCEL_ENV === "preview" && process.env.AAHANA_SELF_BUILD_VALIDATION_ENABLED === "true" && Boolean(request.headers.get("x-vercel-oidc-token") || process.env.VERCEL_OIDC_TOKEN),
+    validationEnabled: process.env.VERCEL_ENV === "preview" && process.env.AAHANA_SELF_BUILD_VALIDATION_ENABLED === "true",
     configured: config.enabled,
     ownerAllowed,
     repository: ownerAllowed ? config.repository : null,

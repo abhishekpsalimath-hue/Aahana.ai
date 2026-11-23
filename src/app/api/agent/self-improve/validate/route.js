@@ -41,9 +41,7 @@ export async function POST(request) {
   if (process.env.VERCEL_ENV !== "preview" || process.env.AAHANA_SELF_BUILD_VALIDATION_ENABLED !== "true") {
     return NextResponse.json({ error: "Isolated self-validation is not enabled in this Preview environment." }, { status: 503 });
   }
-  if (!request.headers.get("x-vercel-oidc-token") && !process.env.VERCEL_OIDC_TOKEN) {
-    return NextResponse.json({ error: "Secure isolated execution is unavailable in this environment." }, { status: 503 });
-  }
+  // On Vercel, @vercel/sandbox obtains deployment OIDC credentials automatically.
 
   let body;
   try { body = await request.json(); }
