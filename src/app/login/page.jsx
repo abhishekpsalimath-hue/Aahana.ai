@@ -2,11 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -50,7 +48,7 @@ export default function LoginPage() {
         const rateLimited = result.error.status === 429 || result.error.code === "over_email_send_rate_limit";
         if (mode === "signup" && rateLimited) {
           setSignupCooldown(60);
-          setMessage("A confirmation email was requested recently. Please wait for the countdown, then try again. Check your inbox and spam folder first.");
+          setMessage("A confirmation email was requested recently. Please wait before trying again, and check your inbox first.");
         } else if (mode === "signin") {
           const text = (result.error.message || "").toLowerCase();
           if (rateLimited) {
@@ -58,7 +56,7 @@ export default function LoginPage() {
           } else if (text.includes("invalid login credentials")) {
             setMessage("Email or password is incorrect. Check both and try again.");
           } else if (text.includes("email not confirmed")) {
-            setMessage("Your email still needs confirmation. You can request a fresh confirmation link below.");
+            setMessage("Your email still needs confirmation. You can request a fresh link below.");
             setCanResendConfirmation(true);
           } else {
             setMessage("We couldn't sign you in. Please try again. If the problem continues, contact support.");
@@ -68,15 +66,13 @@ export default function LoginPage() {
         }
       } else if (mode === "signup" && !result.data.session) {
         setSignupCooldown(60);
-        setMessage("Your signup request was received. Check your inbox and spam folder for the confirmation email. You can request another link below.");
+        setMessage("Your signup request was received. Check your inbox and spam folder for the confirmation email.");
         setCanResendConfirmation(true);
       } else if (mode === "signin") {
-        // Verify the browser has persisted the Supabase session before leaving login.
         const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
         if (sessionError || !sessionData.session) {
-          setMessage("Your sign-in was accepted, but the session could not be confirmed in this browser. Please try again.");
+          setMessage("Your sign-in was accepted, but this browser couldn't confirm the session. Please try again.");
         } else {
-          // Use a full document navigation so the server receives the latest auth cookies.
           window.location.assign("/");
         }
       } else {
@@ -89,6 +85,30 @@ export default function LoginPage() {
     }
   }
 
+  async function resendConfirmation() {
+    if (resending || !email.trim()) return;
+    setResending(true);
+    setMessage("");
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email: email.trim().toLowerCase(),
+        options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      });
+      if (error) {
+        setMessage("We couldn't send a new link right now. Please wait a little and try again.");
+      } else {
+        setMessage("If this address has a pending confirmation, a fresh link is on its way. Check your inbox and spam folder.");
+        setCanResendConfirmation(false);
+      }
+    } catch {
+      setMessage("Connection problem. Please check your internet and try again.");
+    } finally {
+      setResending(false);
+    }
+  }
+
   return (
     <main className="auth-shell">
       <section className="auth-card">
@@ -98,14 +118,16 @@ export default function LoginPage() {
         <p className="auth-copy">{mode === "signin" ? "Sign in to return to your workspace." : "Create your account to set up your workspace."}</p>
         <form className="auth-form" onSubmit={submit}>
           <label htmlFor="email">Email address</label>
-          <input id="email" type="email" autoComplete="email" autoCapitalize="none" spellCheck="false" required value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" />
-          <label htmlFor="password">Password</label>\n          {mode === "signin" && <div className="auth-inline-link"><Link href="/forgot-password">Forgot password?</Link></div>}
+          <input id="email" type="email" autoComplete="email" autoCapitalize="none" spellCheck="false" required value={email} onChange={event => setEmail(event.target.value)} placeholder="you@example.com" />
+          <label htmlFor="password">Password</label>
+          {mode === "signin" && <div className="auth-inline-link"><Link href="/forgot-password">Forgot password?</Link></div>}
           <div className="password-field">
-            <input id="password" type={showPassword ? "text" : "password"} autoComplete={mode === "signin" ? "current-password" : "new-password"} minLength={mode === "signup" ? 8 : undefined} required value={password} onChange={e => setPassword(e.target.value)} placeholder={mode === "signup" ? "At least 8 characters" : "Enter your password"} />
+            <input id="password" type={showPassword ? "text" : "password"} autoComplete={mode === "signin" ? "current-password" : "new-password"} minLength={mode === "signup" ? 8 : undefined} required value={password} onChange={event => setPassword(event.target.value)} placeholder={mode === "signup" ? "At least 8 characters" : "Enter your password"} />
             <button className="password-toggle" type="button" onClick={() => setShowPassword(value => !value)} aria-label={showPassword ? "Hide password" : "Show password"} aria-pressed={showPassword}>{showPassword ? "Hide" : "Show"}</button>
           </div>
           {mode === "signup" && <p className="auth-copy">Use at least 8 characters for your password.</p>}
-          {message && <p className="auth-message" role="status" aria-live="polite">{message}</p>}\n          {canResendConfirmation && mode === "signin" && <button className="auth-text-action" type="button" onClick={resendConfirmation} disabled={resending || !email.trim()}>{resending ? "Sending link…" : "Resend confirmation email"}</button>}
+          {message && <p className="auth-message" role="status" aria-live="polite">{message}</p>}
+          {canResendConfirmation && mode === "signin" && <button className="auth-text-action" type="button" onClick={resendConfirmation} disabled={resending || !email.trim()}>{resending ? "Sending link…" : "Resend confirmation email"}</button>}
           <button className="auth-submit" type="submit" disabled={busy || (mode === "signup" && signupCooldown > 0)}>
             {busy ? "Please wait…" : mode === "signin" ? "Sign in" : signupCooldown > 0 ? `Try again in ${signupCooldown}s` : "Create account"}
           </button>
