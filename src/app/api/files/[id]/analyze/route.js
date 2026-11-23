@@ -45,8 +45,8 @@ export async function POST(_request, { params }) {
   try {
     const buffer = Buffer.from(await blob.arrayBuffer());
     let extracted = "";
-  let extractionTruncated = false;
-  let extractedCharacters = null;
+    let extractionTruncated = false;
+    let extractedCharacters = null;
     if (file.mime_type === "application/pdf") {
       const parsed = await pdfParse(buffer);
       extracted = parsed.text || "";
