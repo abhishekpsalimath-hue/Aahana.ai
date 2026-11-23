@@ -1,6 +1,12 @@
 name: Aahana proposal worker safety checks
 
 on:
+  push:
+    paths:
+      - "scripts/aahana-isolated-proposal.mjs"
+      - ".github/workflows/aahana-isolated-proposal-worker.yml"
+      - ".github/workflows/aahana-proposal-worker-checks.yml"
+      - "docs/aahana-isolated-proposal-worker.md"
   pull_request:
     paths:
       - "scripts/aahana-isolated-proposal.mjs"
