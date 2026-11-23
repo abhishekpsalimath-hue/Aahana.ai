@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getSelfBuildConfig, isSelfBuildOwner } from "@/lib/build/self-build-policy.mjs";
 import { createSelfBuildPullRequest } from "@/lib/build/github-app.mjs";
+import { verifyValidationToken } from "@/app/api/agent/self-improve/approval-token.mjs";
 
 export const runtime = "nodejs";
 const MAX_BODY_BYTES = 3 * 1024 * 1024;
@@ -30,6 +31,10 @@ export async function POST(request) {
 
   if (!Array.isArray(body?.files) || body.files.length < 1 || body.files.length > MAX_REVIEW_FILES) {
     return NextResponse.json({ error: "Aahana review pull requests may contain one to three approved files." }, { status: 400 });
+  }
+
+  if (!verifyValidationToken(body?.validationToken, { userId: user.id, baseSha: body?.baseSha, files: body?.files })) {
+    return NextResponse.json({ error: "A successful isolated validation for these exact files is required before creating a draft pull request. Validate the reviewed proposal again." }, { status: 403 });
   }
 
   try {
