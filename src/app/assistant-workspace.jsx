@@ -743,6 +743,25 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [prompt, setPrompt] = useState("");
   const [imageFile, setImageFile] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [astronautMotion, setAstronautMotion] = useState({ x: 0, y: 0, rotation: -3, duration: 3600 });
+  useEffect(() => {
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return undefined;
+    let active = true;
+    let timer;
+    const moveAstronaut = () => {
+      if (!active) return;
+      const duration = 2600 + Math.round(Math.random() * 2600);
+      setAstronautMotion({
+        x: Math.round((Math.random() - 0.5) * 36),
+        y: Math.round((Math.random() - 0.5) * 30),
+        rotation: Math.round((Math.random() - 0.5) * 18),
+        duration,
+      });
+      timer = window.setTimeout(moveAstronaut, duration);
+    };
+    timer = window.setTimeout(moveAstronaut, 500);
+    return () => { active = false; window.clearTimeout(timer); };
+  }, []);
   useEffect(() => {
     if (messages.length) conversationEndRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
   }, [messages]);
@@ -1788,7 +1807,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
 
         <div className="welcome">
           {!messages.length && (
-            <div className="astronaut-float" aria-hidden="true">
+            <div className="astronaut-float" aria-hidden="true" style={{ transform: `translate3d(${astronautMotion.x}px, ${astronautMotion.y}px, 0) rotate(${astronautMotion.rotation}deg)`, transition: `transform ${astronautMotion.duration}ms cubic-bezier(.2,.7,.3,1)` }}>
               <svg viewBox="0 0 180 180" role="presentation">
                 <defs>
                   <linearGradient id="astronautSuit" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#fffaff" /><stop offset="1" stopColor="#b9a6d8" /></linearGradient>
