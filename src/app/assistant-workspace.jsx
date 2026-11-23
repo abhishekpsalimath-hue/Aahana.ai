@@ -1809,8 +1809,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         )}
 
         <div className="welcome">
-          {!messages.length && (
-            <div className="astronaut-float" aria-hidden="true">
+          <div className="astronaut-float" aria-hidden="true">
               <svg viewBox="0 0 180 180" role="presentation">
                 <defs>
                   <linearGradient id="astronautSuit" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#fffaff" /><stop offset="1" stopColor="#b9a6d8" /></linearGradient>
@@ -1836,8 +1835,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                 <path d="M25 55l3 7 7 3-7 3-3 7-3-7-7-3 7-3Z M148 42l2 5 5 2-5 2-2 5-2-5-5-2 5-2Z" fill="#d8c5ff" />
                 <circle cx="143" cy="142" r="3" fill="#c7aaff" /><circle cx="38" cy="39" r="2" fill="#fff" />
               </svg>
-            </div>
-          )}
+          </div>
           <div className="welcome-signal" aria-hidden="true">
             <span className="signal-orbit signal-orbit-one" />
             <span className="signal-orbit signal-orbit-two" />
@@ -1849,8 +1847,8 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
           {!messages.length && <>
             <h1>Good ideas<br /><em>start somewhere.</em></h1>
             <p>Think freely. Explore ideas. Build something real.</p>
-            <p className="founder-signature">— Abhishekayya Salimath</p>
           </>}
+          <p className="founder-signature">— Abhishekayya Salimath</p>
 
           <div className="mode-row assistance-context" aria-label="Current workspace">
             <span className="active-mode">Assistance</span>
