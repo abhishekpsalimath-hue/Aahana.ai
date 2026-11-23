@@ -11,6 +11,7 @@ const MAX_FILE_BYTES = 10 * 1024 * 1024;
 const MAX_EXTRACTED_CHARACTERS = 14000;
 const TEXT_TYPES = new Set(["text/plain", "text/markdown", "text/csv"]);
 const XLSX_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+const IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
 
 export async function POST(_request, { params }) {
   const { id } = await params;
@@ -29,7 +30,10 @@ export async function POST(_request, { params }) {
   const supported = TEXT_TYPES.has(file.mime_type) ||
     file.mime_type === "application/pdf" ||
     file.mime_type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
-    file.mime_type === XLSX_TYPE;
+    file.mime_type === XLSX_TYPE || IMAGE_TYPES.has(file.mime_type);
+  if (IMAGE_TYPES.has(file.mime_type) && file.size_bytes > 2 * 1024 * 1024) {
+    return NextResponse.json({ error: "Saved image analysis supports images up to 2 MB. Open the file and attach a smaller image in the chat." }, { status: 413 });
+  }
   if (!supported) {
     return NextResponse.json({ error: "Analysis currently supports PDF, DOCX, XLSX, TXT, Markdown and CSV files. Image analysis for stored files is not enabled yet." }, { status: 415 });
   }
@@ -43,6 +47,13 @@ export async function POST(_request, { params }) {
 
   try {
     const buffer = Buffer.from(await blob.arrayBuffer());
+    if (IMAGE_TYPES.has(file.mime_type)) {
+      return NextResponse.json({
+        filename: file.original_filename,
+        mimeType: file.mime_type,
+        imageDataUrl: "data:" + file.mime_type + ";base64," + buffer.toString("base64"),
+      });
+    }
     let extracted = "";
     if (file.mime_type === "application/pdf") {
       const parsed = await pdfParse(buffer);
