@@ -605,9 +605,28 @@ h1,.brand,.composer-mode,.breadcrumb{font-family:"Space Grotesk","Manrope",sans-
     animation-iteration-count:infinite!important;
     opacity:.38;
   }
-  .space-background .universe-depth-stars i{
+  /* Re-enable each depth layer explicitly; an earlier reduced-motion
+     fallback disables these animations with a higher-specificity selector. */
+  .space-background .universe-depth-stars .depth-stars-far{
+    animation-name:starfield-drift-far!important;
+    animation-duration:180s!important;
+    animation-timing-function:linear!important;
+    animation-iteration-count:infinite!important;
     animation-play-state:running!important;
-    animation-duration:140s!important;
+  }
+  .space-background .universe-depth-stars .depth-stars-mid{
+    animation-name:starfield-drift-mid!important;
+    animation-duration:130s!important;
+    animation-timing-function:linear!important;
+    animation-iteration-count:infinite!important;
+    animation-play-state:running!important;
+  }
+  .space-background .universe-depth-stars .depth-stars-near{
+    animation-name:starfield-drift-near!important;
+    animation-duration:100s!important;
+    animation-timing-function:linear!important;
+    animation-iteration-count:infinite!important;
+    animation-play-state:running!important;
   }
   .space-background .universe-comets i{
     animation-name:comet-cross!important;
