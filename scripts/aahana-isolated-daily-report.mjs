@@ -88,7 +88,7 @@ if (process.env.GROQ_API_KEY) {
 if (!analysis) {
   analysis = [
     "## What ran",
-    "- The scheduled isolated test/build workflow ran against the checked-out repository.",
+    "- The isolated test/build workflow ran against the checked-out repository.",
     "",
     "## Verified results",
     `- Test/build process exit code: **${checkExitCode}**.`,
