@@ -80,3 +80,9 @@ jobs:
           path: aahana-daily-report.md
           if-no-files-found: warn
           retention-days: 30
+
+      - name: Mark failed verification as a failed workflow
+        if: always() && steps.checks.outputs.exit_code != '0'
+        run: |
+          echo "Aahana's test/build check did not pass. Review the report artifact before proceeding."
+          exit 1
