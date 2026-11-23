@@ -474,3 +474,14 @@ button:focus-visible,a:focus-visible{outline-color:#c4a7ff}
 @media(prefers-reduced-motion:reduce){
   .space-background .universe-webgl{opacity:.78}
 }
+
+
+/* Founder signature: quiet lilac accent beneath the welcome message. */
+.founder-signature{margin:14px 0 0!important;color:#c4a7ff!important;font:500 12px/1.5 Manrope,sans-serif!important;letter-spacing:.08em;opacity:.88}
+
+/* Assistance background: keep the moving star depth and comets, without galaxy artwork. */
+.space-background .universe-flight{opacity:1}
+.space-background .universe-depth-stars{opacity:.72}
+.space-background .universe-particles{opacity:.62}
+.space-background .universe-comets{opacity:.8}
+@media(prefers-reduced-motion:reduce){.space-background .universe-depth-stars i,.space-background .universe-particles i,.space-background .universe-comets i{animation:none!important}}
