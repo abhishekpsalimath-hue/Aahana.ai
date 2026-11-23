@@ -20,7 +20,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
       - run: npm install --no-audit --no-fund
       - name: Check proposal worker JavaScript syntax
         run: node --check scripts/aahana-isolated-proposal.mjs
