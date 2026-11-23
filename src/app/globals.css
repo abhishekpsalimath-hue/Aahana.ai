@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
 :root{color-scheme:dark;--bg:#09090d;--panel:#101016;--panel-2:#15151e;--line:#252431;--text:#f3f0f8;--muted:#9691a4;--lilac:#c4a7ff;--lilac-2:#a987f2}
 *{box-sizing:border-box}
@@ -493,3 +493,54 @@ button:focus-visible,a:focus-visible{outline-color:#c4a7ff}
 .space-background .depth-stars-near{animation-duration:61s}
 .space-background .universe-comets i{animation-timing-function:cubic-bezier(.32,.02,.62,.98)}
 @media(max-width:760px){.space-background .universe-particles i{box-shadow:0 0 5px #c8aaff,0 0 10px #9d7bd955}.space-background .universe-comets i{width:clamp(26px,7vw,48px)}}
+
+/* Aahana cinematic visual refresh — layered depth, restrained motion, no central galaxy. */
+:root{--lilac:#cbb5ff;--lilac-2:#a98be8;--line:#292536}
+html,body{font-family:"DM Sans",sans-serif}
+h1,.brand,.composer-mode,.breadcrumb{font-family:"Space Grotesk","Manrope",sans-serif}
+.main-panel{background:radial-gradient(ellipse at 68% 22%,#241b3828 0%,transparent 42%),linear-gradient(145deg,#09090e 0%,#0d0b14 48%,#09090d 100%)}
+.topbar{background:linear-gradient(90deg,#0b0a10d9,#100d18b8,#0b0a10d9);backdrop-filter:blur(18px);border-bottom-color:#c7afff18}
+.welcome{isolation:isolate;z-index:1}
+.welcome::before,.welcome::after{content:"";position:absolute;z-index:-1;pointer-events:none;transform-style:preserve-3d}
+.welcome::before{width:min(72vw,720px);height:min(58vw,510px);min-height:300px;top:-145px;right:-24%;border-radius:48%;background:radial-gradient(ellipse at 54% 42%,#9b78dc26 0%,#69539a18 28%,#25203b0b 56%,transparent 72%),radial-gradient(ellipse at 30% 65%,#8798d41a,transparent 48%);filter:blur(22px);animation:aahana-atmosphere 19s ease-in-out infinite alternate}
+.welcome::after{width:clamp(190px,28vw,330px);height:clamp(190px,28vw,330px);top:-105px;right:3%;border:1px solid #d8c7ff13;border-radius:34% 66% 58% 42% / 42% 38% 62% 58%;background:linear-gradient(138deg,#ffffff08 0%,#bda5ff0b 35%,transparent 68%);box-shadow:inset 1px 1px #ffffff10,18px 28px 70px #0005;transform:rotateX(58deg) rotateZ(-24deg);animation:aahana-layer-drift 23s ease-in-out infinite alternate}
+.welcome>*{position:relative}
+.welcome-signal{width:104px;height:104px;margin:0 0 25px 0;perspective:600px;transform-style:preserve-3d}
+.welcome-signal::before,.welcome-signal::after{content:"";position:absolute;inset:9px;border-radius:27px;transform:rotateX(58deg) rotateZ(38deg);border:1px solid #d9c8ff55;background:linear-gradient(145deg,#f4edff20,#a78be80c 44%,#5f4a8b12);box-shadow:inset 1px 1px #ffffff35,0 16px 35px #8f70c52a;backdrop-filter:blur(2px)}
+.welcome-signal::after{inset:19px;border-radius:20px;transform:rotateX(58deg) rotateZ(-42deg) translateZ(18px);border-color:#a9c0ff55;background:linear-gradient(135deg,#d8caff18,#8da4e80b);animation:aahana-layer-drift 8s ease-in-out infinite alternate}
+.welcome-signal .signal-core{width:25px;height:25px;position:relative;z-index:2;background:radial-gradient(circle at 32% 24%,#fff 0%,#eee4ff 13%,#c6a9ff 38%,#7956b4 72%,#382a55 100%);box-shadow:0 0 14px #e1d0ffb0,0 0 38px #a98be877,0 0 72px #8265b544;animation:core-breathe 4s ease-in-out infinite}
+.welcome-signal .signal-orbit{inset:3px;border-color:#d8c5ff66;border-radius:30%;transform:rotateX(62deg) rotateZ(34deg);box-shadow:0 0 20px #bca1ff22}
+.welcome-signal .signal-orbit-two{inset:-5px;border-color:#a6b7f044;transform:rotateX(62deg) rotateZ(-34deg)}
+.welcome-signal .signal-spark{z-index:3;box-shadow:0 0 14px #e5d5ff}
+.welcome h1{font-family:"Space Grotesk","Manrope",sans-serif;font-weight:600;letter-spacing:-.065em;line-height:1.02;text-wrap:balance}
+.welcome h1 em{background:linear-gradient(105deg,#f1eaff 0%,#cbb5ff 38%,#9da9ed 78%,#d6c6ff 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.welcome>p{max-width:560px}
+.assistance-tool-launchers button,.starter,.composer,.build-tools{transition:transform .28s cubic-bezier(.2,.7,.2,1),border-color .28s ease,background .28s ease,box-shadow .28s ease}
+.assistance-tool-launchers button{border-color:#bba5e82b;background:linear-gradient(135deg,#211b2dba,#111019c9);box-shadow:inset 0 1px #ffffff0b}
+.assistance-tool-launchers button:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 10px 28px #0005,0 0 24px #9e7bd51a}
+.starter{position:relative;overflow:hidden;border-color:#bca5e820;background:linear-gradient(135deg,#17141fdd,#0e0d14e8);box-shadow:inset 0 1px #ffffff08,0 12px 34px #0002}
+.starter::before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(115deg,transparent 15%,#d8c7ff0b 48%,transparent 78%);transform:translateX(-110%);transition:transform .7s ease}
+.starter:hover{transform:translateY(-3px);border-color:#bda5e866;background:linear-gradient(135deg,#211b2d,#111019);box-shadow:0 18px 38px #0005,0 0 28px #9e7bd51a}
+.starter:hover::before{transform:translateX(110%)}
+.composer{border-color:#bda5e83b;background:linear-gradient(145deg,#17141fef,#0f0e15f5);box-shadow:0 24px 70px #0007,inset 0 1px #ffffff0b}
+.composer:focus-within{border-color:#cbb5ff99;box-shadow:0 24px 70px #0008,0 0 0 3px #b99af51c,inset 0 1px #ffffff13}
+.space-background .universe-galaxy,.space-background .galaxy-core{display:none!important}
+.space-background .universe-webgl{opacity:.66}
+.space-background .universe-flight{opacity:.9}
+.space-background .universe-nebula{opacity:.16;filter:blur(48px)}
+@keyframes aahana-atmosphere{0%{transform:translate3d(-2%,0,-30px) scale(.96)}100%{transform:translate3d(3%,-2%,-30px) scale(1.06)}}
+@keyframes aahana-layer-drift{0%{translate:0 0;rotate:0deg}100%{translate:8px -12px;rotate:5deg}}
+@media(max-width:760px){
+  .welcome{margin-top:50px}
+  .welcome::before{width:110vw;height:90vw;top:-90px;right:-45%;opacity:.75}
+  .welcome::after{width:190px;height:190px;top:-65px;right:-4%;opacity:.7}
+  .welcome-signal{width:82px;height:82px;margin-bottom:20px}
+  .welcome-signal::before{inset:8px}.welcome-signal::after{inset:16px}
+  .space-background .universe-webgl{opacity:.42}
+  .starter{min-height:58px}
+}
+@media(prefers-reduced-motion:reduce){
+  .welcome::before,.welcome::after,.welcome-signal::after,.welcome-signal .signal-core,.starter,.assistance-tool-launchers button{animation:none!important;transition:none!important}
+  .starter::before{display:none}
+}
+
