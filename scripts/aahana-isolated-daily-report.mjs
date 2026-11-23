@@ -1,4 +1,4 @@
-import { appendFile, readFile, writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { execFileSync } from "node:child_process";
 
 const reportPath = process.env.AAHANA_REPORT_FILE || "aahana-daily-report.md";
@@ -19,7 +19,7 @@ function git(args) {
 }
 
 const recentCommits = git(["log", "-8", "--date=short", "--pretty=format:%h | %ad | %s"]);
-const changedFiles = git(["diff", "--name-only", "HEAD~1", "HEAD"]) || "(No previous commit available for comparison.)";
+const changedFiles = git(["log", "-3", "--name-only", "--pretty=format:"]) || "(No recent changed-file list available.)";
 let checkLog = "";
 try {
   checkLog = (await readFile(checkLogPath, "utf8")).slice(-14000);
