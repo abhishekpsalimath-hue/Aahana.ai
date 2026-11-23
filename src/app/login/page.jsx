@@ -18,6 +18,12 @@ export default function LoginPage() {
   const [resending, setResending] = useState(false);
 
   useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("error") === "auth_callback") {
+      setMessage("That confirmation or reset link may have expired or already been used. Request a fresh email link and try again.");
+    }
+  }, []);
+
+  useEffect(() => {
     if (signupCooldown <= 0) return undefined;
     const timer = setTimeout(() => setSignupCooldown(seconds => Math.max(0, seconds - 1)), 1000);
     return () => clearTimeout(timer);
