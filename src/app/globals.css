@@ -332,9 +332,9 @@ button:focus-visible,a:focus-visible{outline-color:#c4a7ff}
 @keyframes nebula-drift-one{0%,100%{translate:-2% 0;scale:1}50%{translate:3% -4%;scale:1.12}}
 @keyframes nebula-drift-two{0%,100%{translate:2% 2%;scale:1.08}50%{translate:-3% -2%;scale:.94}}
 @media(prefers-reduced-motion:reduce){.universe-flight,.universe-nebula,.universe-galaxy,.universe-orbit,.universe-particles i,.universe-comets i{animation:none!important}.universe-particles i{opacity:.42;transform:translateZ(0) scale(1)}}
-.astronaut-float{position:absolute;z-index:2;top:4px;right:18px;width:148px;height:148px;pointer-events:none;animation:astronaut-drift 7s ease-in-out infinite;filter:drop-shadow(0 12px 28px #9d7bd944)}
+.astronaut-float{position:absolute;z-index:2;top:4px;right:18px;width:148px;height:148px;pointer-events:none;will-change:transform;filter:drop-shadow(0 12px 28px #9d7bd944)}
 .astronaut-float svg{display:block;width:100%;height:100%;overflow:visible}
-@keyframes astronaut-drift{0%,100%{transform:translate3d(0,0,0) rotate(-3deg)}50%{transform:translate3d(5px,-13px,0) rotate(5deg)}}
+
 .message-content{min-width:0;color:#e7e2ee;font-size:14px;line-height:1.75;overflow-wrap:anywhere}
 .message-content p{margin:0 0 12px;color:inherit;font-size:14px;line-height:1.75;white-space:pre-wrap}
 .message-content p:last-child{margin-bottom:0}
