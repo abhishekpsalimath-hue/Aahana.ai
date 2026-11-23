@@ -73,6 +73,7 @@ export default function AahanaSelfBuildPanel() {
         baseSha, title: plan?.title || "Aahana self-build improvement",
         summary: [plan?.problem || "A focused Aahana self-improvement.", plan?.approach || "", "Acceptance checks: " + (plan?.acceptanceChecks || []).join("; "), "Isolated validation passed."].filter(Boolean).join("\n\n"),
         files: proposals.map((f) => ({ path: f.path, content: f.updatedContent })),
+        validationToken: validation?.validationToken,
       });
       setPullRequest(data.pullRequest);
     } catch (e) { setError(e.message || "A draft pull request could not be created."); }
