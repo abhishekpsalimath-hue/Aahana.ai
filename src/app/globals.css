@@ -493,3 +493,13 @@ button:focus-visible,a:focus-visible{outline-color:#c4a7ff}
 .space-background .depth-stars-near{animation-duration:61s}
 .space-background .universe-comets i{animation-timing-function:cubic-bezier(.32,.02,.62,.98)}
 @media(max-width:760px){.space-background .universe-particles i{box-shadow:0 0 5px #c8aaff,0 0 10px #9d7bd955}.space-background .universe-comets i{width:clamp(26px,7vw,48px)}}
+
+
+/* Clear, accessible account-recovery actions */
+.auth-inline-link{display:flex;justify-content:flex-end;margin:-4px 0 2px}
+.auth-inline-link a,.auth-switch a{color:#cfbaff;text-decoration:none;font-weight:600}
+.auth-inline-link a:hover,.auth-switch a:hover{text-decoration:underline;text-underline-offset:3px}
+.auth-text-action{align-self:flex-start;border:0;background:transparent;color:#cfbaff;padding:5px 0;font:inherit;font-size:12px;font-weight:600;text-align:left;cursor:pointer}
+.auth-text-action:hover{text-decoration:underline;text-underline-offset:3px}
+.auth-text-action:disabled{opacity:.55;cursor:wait}
+.auth-form input:focus-visible,.auth-submit:focus-visible,.auth-text-action:focus-visible,.auth-inline-link a:focus-visible,.auth-switch a:focus-visible{outline:2px solid #c4a7ff;outline-offset:3px}
