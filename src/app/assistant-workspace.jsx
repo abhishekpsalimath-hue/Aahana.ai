@@ -127,29 +127,8 @@ function UniverseScene() {
     const stars = new THREE.Points(starGeometry, new THREE.PointsMaterial({ size: compact ? 0.045 : 0.052, vertexColors: true, transparent: true, opacity: 0.78, sizeAttenuation: true, depthWrite: false, blending: THREE.AdditiveBlending }));
     scene.add(stars);
 
-    const galaxy = new THREE.Group();
-    galaxy.position.set(0, 0, -2.4);
-    galaxy.rotation.x = -0.24;
-    world.add(galaxy);
-    const dustCount = compact ? 4200 : 8200;
-    const dustPositions = new Float32Array(dustCount * 3), dustColors = new Float32Array(dustCount * 3);
-    const hot = new THREE.Color(0xf0e6ff), cool = new THREE.Color(0x8066bd);
-    for (let i = 0; i < dustCount; i++) {
-      const arm = i % 4, radius = Math.pow(Math.random(), 0.72) * 5.8;
-      const angle = arm * Math.PI / 2 + radius * 0.78 + (Math.random() - 0.5) * 0.72;
-      const spread = (Math.random() - 0.5) * (0.12 + radius * 0.055);
-      dustPositions.set([Math.cos(angle) * radius + spread, Math.sin(angle) * radius * 0.42 + spread * 0.55, (Math.random() - 0.5) * (0.42 + radius * 0.055)], i * 3);
-      const c = hot.clone().lerp(cool, Math.min(1, radius / 6.2) * (0.62 + Math.random() * 0.34));
-      dustColors.set([c.r, c.g, c.b], i * 3);
-    }
-    const dustGeometry = new THREE.BufferGeometry();
-    dustGeometry.setAttribute("position", new THREE.Float32BufferAttribute(dustPositions, 3));
-    dustGeometry.setAttribute("color", new THREE.Float32BufferAttribute(dustColors, 3));
-    galaxy.add(new THREE.Points(dustGeometry, new THREE.PointsMaterial({ size: compact ? 0.036 : 0.042, vertexColors: true, transparent: true, opacity: 0.82, sizeAttenuation: true, depthWrite: false, blending: THREE.AdditiveBlending })));
-    const core = new THREE.Mesh(new THREE.SphereGeometry(0.25, 32, 24), new THREE.MeshBasicMaterial({ color: 0xe6d7ff }));
-    galaxy.add(core);
-    const corona = new THREE.Mesh(new THREE.SphereGeometry(0.58, 32, 24), new THREE.MeshBasicMaterial({ color: 0x9d78d8, transparent: true, opacity: 0.13, blending: THREE.AdditiveBlending, depthWrite: false }));
-    galaxy.add(corona);
+    // The former central galaxy was intentionally removed. The scene now
+    // uses distributed planetary forms, atmospheric depth and moving stars.
 
 
     const planets = [];
@@ -486,7 +465,6 @@ function UniverseScene() {
       lastFrameTime = time;
       if (!reduced) {
         nebulaMaterial.uniforms.uTime.value = time;
-        galaxy.rotation.z += 0.00032 * delta;
         stars.rotation.y += 0.000035 * delta;
         stars.rotation.x += 0.000012 * delta;
         planets.forEach((planet, i) => { planet.rotation.y += (i === 0 ? 0.00055 : 0.0008) * delta; planet.rotation.x += 0.00008 * delta; });
@@ -765,6 +743,25 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [prompt, setPrompt] = useState("");
   const [imageFile, setImageFile] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [astronautMotion, setAstronautMotion] = useState({ x: 0, y: 0, rotation: -3, duration: 3600 });
+  useEffect(() => {
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return undefined;
+    let active = true;
+    let timer;
+    const moveAstronaut = () => {
+      if (!active) return;
+      const duration = 2600 + Math.round(Math.random() * 2600);
+      setAstronautMotion({
+        x: Math.round((Math.random() - 0.5) * 36),
+        y: Math.round((Math.random() - 0.5) * 30),
+        rotation: Math.round((Math.random() - 0.5) * 18),
+        duration,
+      });
+      timer = window.setTimeout(moveAstronaut, duration);
+    };
+    timer = window.setTimeout(moveAstronaut, 500);
+    return () => { active = false; window.clearTimeout(timer); };
+  }, []);
   useEffect(() => {
     if (messages.length) conversationEndRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
   }, [messages]);
@@ -1810,7 +1807,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
 
         <div className="welcome">
           {!messages.length && (
-            <div className="astronaut-float" aria-hidden="true">
+            <div className="astronaut-float" aria-hidden="true" style={{ transform: `translate3d(${astronautMotion.x}px, ${astronautMotion.y}px, 0) rotate(${astronautMotion.rotation}deg)`, transition: `transform ${astronautMotion.duration}ms cubic-bezier(.2,.7,.3,1)` }}>
               <svg viewBox="0 0 180 180" role="presentation">
                 <defs>
                   <linearGradient id="astronautSuit" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#fffaff" /><stop offset="1" stopColor="#b9a6d8" /></linearGradient>
