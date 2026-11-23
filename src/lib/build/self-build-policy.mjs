@@ -71,7 +71,7 @@ export function isAllowedSelfBuildPath(input) {
     /^(?:\.env|package(?:-lock)?\.json|pnpm-lock\.yaml|yarn\.lock|bun\.lockb?)$/i.test(segment)
   )) return false;
 
-  if (BLOCKED_FILES.has(segments.at(-1).toLowerCase()) || /\\.(?:test|spec)\\.[^.]+$/i.test(segments.at(-1))) return false;
+  if (BLOCKED_FILES.has(segments.at(-1).toLowerCase()) || /\.(?:test|spec)\.[^.]+$/i.test(segments.at(-1))) return false;
   return ALLOWED_FILES.has(input) || (ALLOWED_ROOTS.some((root) => input.startsWith(root)) &&
     /\.(?:js|jsx|mjs|cjs|ts|tsx|css|scss|json|md)$/i.test(input));
 }
