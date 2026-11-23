@@ -9,7 +9,7 @@ on:
     paths:
       - ".github/workflows/aahana-isolated-daily-work.yml"
       - "scripts/aahana-isolated-daily-report.mjs"
-      - "package.json"\n      - "package-lock.json"
+      - "package.json"
 
 permissions:
   contents: read
@@ -34,7 +34,7 @@ jobs:
           node-version: 22
 
       - name: Install dependencies
-        run: npm ci --no-audit --no-fund
+        run: npm install --no-audit --no-fund
 
       - name: Run tests and production build in the isolated runner
         id: checks
