@@ -1714,27 +1714,12 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
 
       <section className="main-panel">
         <div className="space-background" aria-hidden="true">
-          <UniverseScene />
           <div className="universe-flight" data-speed="65 km/h">
-            <div className="universe-nebula universe-nebula-one" />
-            <div className="universe-nebula universe-nebula-two" />
             <div className="universe-depth-stars" aria-hidden="true">
-            <i className="depth-stars-far" />
-            <i className="depth-stars-mid" />
-            <i className="depth-stars-near" />
-          </div>
-          <div className="universe-lens-flare" />
-          <div className="universe-galaxy">
-              <span className="galaxy-core" />
-              <span className="galaxy-arm galaxy-arm-one" />
-              <span className="galaxy-arm galaxy-arm-two" />
-              <span className="galaxy-arm galaxy-arm-three" />
+              <i className="depth-stars-far" />
+              <i className="depth-stars-mid" />
+              <i className="depth-stars-near" />
             </div>
-            <div className="universe-orbit universe-orbit-one"><i className="orbit-world orbit-world-one" /></div>
-            <div className="universe-orbit universe-orbit-two"><i className="orbit-world orbit-world-two" /></div>
-            <div className="universe-planet universe-planet-one" />
-            <div className="universe-planet universe-planet-two" />
-            <div className="universe-planet universe-planet-three" />
             <div className="universe-particles">
               {Array.from({ length: 64 }, (_, index) => (
                 <i
@@ -1743,6 +1728,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                     "--particle-x": `${(index * 37 + 11) % 100}%`,
                     "--particle-y": `${(index * 61 + 7) % 100}%`,
                     "--particle-delay": `${-((index * 7) % 19)}s`,
+                    "--particle-duration": `${11 + (index % 8) * 1.5}s`,
                     "--particle-size": `${1 + (index % 3)}px`,
                   }}
                 />
@@ -1863,6 +1849,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
           {!messages.length && <>
             <h1>Good ideas<br /><em>start somewhere.</em></h1>
             <p>Think freely. Explore ideas. Build something real.</p>
+            <p className="founder-signature">— Abhishekayya Salimath</p>
           </>}
 
           <div className="mode-row assistance-context" aria-label="Current workspace">

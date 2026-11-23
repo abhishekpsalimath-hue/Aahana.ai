@@ -318,7 +318,7 @@ button:focus-visible,a:focus-visible{outline-color:#c4a7ff}
 .universe-planet-two{width:clamp(26px,4vw,54px);height:clamp(26px,4vw,54px);right:15%;top:18%;transform:translateZ(-80px);background:radial-gradient(circle at 30% 25%,#f3eaff 0%,#a9a5df 24%,#51527e 65%,#25233c 88%)}
 .universe-planet-three{width:clamp(18px,2.6vw,34px);height:clamp(18px,2.6vw,34px);right:26%;bottom:16%;transform:translateZ(180px);background:radial-gradient(circle at 32% 26%,#fff1df 0%,#d49db7 30%,#714d7c 76%)}
 .universe-particles{position:absolute;inset:0;transform-style:preserve-3d}
-.universe-particles i{position:absolute;left:var(--particle-x);top:var(--particle-y);width:var(--particle-size);height:var(--particle-size);border-radius:50%;background:#eee4ff;box-shadow:0 0 8px #c8aaff,0 0 18px #9d7bd966;opacity:0;transform:translateZ(-900px) scale(.18);animation:universe-particle-arrival 14s linear var(--particle-delay) infinite;will-change:transform,opacity}
+.universe-particles i{position:absolute;left:var(--particle-x);top:var(--particle-y);width:var(--particle-size);height:var(--particle-size);border-radius:50%;background:#eee4ff;box-shadow:0 0 8px #c8aaff,0 0 18px #9d7bd966;opacity:0;transform:translateZ(-900px) scale(.18);animation:universe-particle-arrival var(--particle-duration,14s) linear var(--particle-delay) infinite;will-change:transform,opacity}
 .universe-flight{transform-origin:50% 46%}
 
 .universe-comets{position:absolute;inset:0;transform-style:preserve-3d;overflow:visible}
@@ -474,3 +474,22 @@ button:focus-visible,a:focus-visible{outline-color:#c4a7ff}
 @media(prefers-reduced-motion:reduce){
   .space-background .universe-webgl{opacity:.78}
 }
+
+
+/* Founder signature: quiet lilac accent beneath the welcome message. */
+.founder-signature{margin:14px 0 0!important;color:#c4a7ff!important;font:500 12px/1.5 Manrope,sans-serif!important;letter-spacing:.08em;opacity:.88}
+
+/* Assistance background: keep the moving star depth and comets, without galaxy artwork. */
+.space-background .universe-flight{opacity:1}
+.space-background .universe-depth-stars{opacity:.72}
+.space-background .universe-particles{opacity:.62}
+.space-background .universe-comets{opacity:.8}
+@media(prefers-reduced-motion:reduce){.space-background .universe-depth-stars i,.space-background .universe-particles i,.space-background .universe-comets i{animation:none!important}}
+
+
+/* Motion pass 06/07: varied approach speeds create depth without heavy scene rendering. */
+.space-background .depth-stars-far{animation-duration:132s}
+.space-background .depth-stars-mid{animation-duration:88s}
+.space-background .depth-stars-near{animation-duration:61s}
+.space-background .universe-comets i{animation-timing-function:cubic-bezier(.32,.02,.62,.98)}
+@media(max-width:760px){.space-background .universe-particles i{box-shadow:0 0 5px #c8aaff,0 0 10px #9d7bd955}.space-background .universe-comets i{width:clamp(26px,7vw,48px)}}
