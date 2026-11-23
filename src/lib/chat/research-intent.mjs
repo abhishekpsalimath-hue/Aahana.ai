@@ -1,7 +1,6 @@
 const ENGLISH_FRESHNESS = /\b(?:latest|currently|current|today|tonight|yesterday|this week|this month|recent|breaking|news|as of 20\d{2}|right now|live update|search the web|web search|research|find sources|with sources|cite sources|citations|latest price|current price|new rules|recent studies|new research|developments|announcements|breakthroughs|what happened|what's new)\b/i;
 
-const DATED_REQUEST = /\b(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+20\d{2}\b/i
-  .test.bind(/\b(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+20\d{2}\b/i);
+const DATED_REQUEST = /\b(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+20\d{2}\b/i;
 
 const NUMERIC_DATE = /\b20\d{2}[-/](?:0?[1-9]|1[0-2])(?:[-/](?:0?[1-9]|[12]\d|3[01]))?\b/;
 
@@ -12,7 +11,7 @@ const INTERNATIONAL_LANGUAGE_FRESHNESS = /últim[oa]s?|actualmente|hoy|ayer|noti
 export function shouldSearchWeb(prompt, image = null) {
   if (image) return false;
   const text = String(prompt || "");
-  const datedRequest = DATED_REQUEST(text) || NUMERIC_DATE.test(text);
+  const datedRequest = DATED_REQUEST.test(text) || NUMERIC_DATE.test(text);
   return ENGLISH_FRESHNESS.test(text)
     || datedRequest
     || INDIAN_LANGUAGE_FRESHNESS.test(text)
