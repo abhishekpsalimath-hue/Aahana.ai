@@ -591,3 +591,24 @@ h1,.brand,.composer-mode,.breadcrumb{font-family:"Space Grotesk","Manrope",sans-
 .astronaut-float{filter:drop-shadow(0 0 22px #9d7bd955)!important}
 .astronaut-float svg{overflow:visible}
 @media(max-width:760px){.astronaut-float{filter:drop-shadow(0 0 16px #9d7bd955)!important}}
+
+
+/* Space-motion correction: keep the welcome astronaut and approach stars moving
+   even when the device requests reduced motion, using slower/softer movement. */
+@media(prefers-reduced-motion:reduce){
+  .space-background .universe-particles i{
+    animation-name:universe-particle-arrival!important;
+    animation-duration:26s!important;
+    animation-timing-function:linear!important;
+    animation-delay:var(--particle-delay)!important;
+    animation-iteration-count:infinite!important;
+    opacity:.38;
+  }
+  .space-background .universe-comets i{
+    animation-name:comet-cross!important;
+    animation-duration:28s!important;
+    animation-timing-function:linear!important;
+    animation-delay:var(--comet-delay)!important;
+    animation-iteration-count:infinite!important;
+  }
+}
