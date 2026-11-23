@@ -3,6 +3,7 @@ import { Sandbox } from "@vercel/sandbox";
 import { createClient } from "@/lib/supabase/server";
 import { getSelfBuildConfig, isSelfBuildOwner, isAllowedSelfBuildPath, validateSelfBuildChangeSet } from "@/lib/build/self-build-policy.mjs";
 import { getSelfBuildRepository, getSelfBuildFile } from "@/lib/build/github-app.mjs";
+import { createValidationToken } from "../approval-token.mjs";
 
 export const runtime = "nodejs";
 export const maxDuration = 180;
@@ -131,13 +132,14 @@ export async function POST(request) {
     const buildOutput = await commandOutput(build);
     return NextResponse.json({
       ok: build.exitCode === 0,
-      stage: "tests_and_build",
+      stage: "production_build",
       message: build.exitCode === 0
-        ? "Aahana's tests and production build passed in an isolated sandbox."
-        : "Aahana's tests or production build failed. Review the diagnostics before changing the proposal.",
+        ? "Aahana's production build passed in an isolated sandbox."
+        : "Aahana's production build failed. Review the diagnostics before changing the proposal.",
       output: buildOutput,
       baseSha,
       filesValidated: changeSet.files.length,
+      validationToken: build.exitCode === 0 ? createValidationToken({ userId: user.id, baseSha, files: changeSet.files }) : null,
     }, { status: build.exitCode === 0 ? 200 : 422, headers: { "Cache-Control": "private, no-store" } });
   } catch (error) {
     console.error("Aahana isolated self-validation failed:", error?.message || "unknown error");
