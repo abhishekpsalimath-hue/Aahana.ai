@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { parseImageGenerationInput } from "@/lib/creative/image-generation.mjs";
-import { resolveImageModel, buildImageProviderRequest, detectImageMimeTypeFromBase64 } from "@/lib/creative/image-provider.mjs";
+import { resolveImageModel, ACCURACY_IMAGE_MODEL, ENHANCED_IMAGE_MODEL, buildImageProviderRequest, detectImageMimeTypeFromBase64 } from "@/lib/creative/image-provider.mjs";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -33,7 +33,8 @@ export async function POST(request) {
 
   try {
     const model = resolveImageModel(process.env.AAHANA_IMAGE_MODEL);
-    const providerRequest = buildImageProviderRequest({ model, prompt, steps });
+    const seed = Number.isInteger(body?.seed) && body.seed >= 0 && body.seed <= 0xffffffff ? body.seed : undefined;
+    const providerRequest = buildImageProviderRequest({ model, prompt, steps, seed });
     const response = await fetch(
       `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/ai/run/${model}`,
       {
@@ -61,7 +62,7 @@ export async function POST(request) {
     }
 
     return NextResponse.json(
-      { imageDataUrl: `data:${imageMimeType};base64,${image}`, model, steps: model === resolveImageModel("flux-2-klein-4b") ? 4 : steps },
+      { imageDataUrl: `data:${imageMimeType};base64,${image}`, model, steps: model === ENHANCED_IMAGE_MODEL ? 4 : model === ACCURACY_IMAGE_MODEL ? 25 : steps },
       { headers: { "Cache-Control": "no-store" } }
     );
   } catch (error) {
