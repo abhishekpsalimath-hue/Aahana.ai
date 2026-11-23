@@ -75,7 +75,7 @@ export default function LoginPage() {
         setSignupCooldown(60);
         setMessage("Your signup request was received. Check your inbox and spam folder for the confirmation email.");
         setCanResendConfirmation(true);
-        setResendCooldown(10);
+        setResendCooldown(60);
       } else if (mode === "signin") {
         const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
         if (sessionError || !sessionData.session) {
@@ -106,13 +106,13 @@ export default function LoginPage() {
       });
       if (error) {
         if (error.status === 429 || error.code === "over_email_send_rate_limit") {
-          setResendCooldown(10);
-          setMessage("Please wait 10 seconds before requesting another email. Check your inbox and spam folder first.");
+          setResendCooldown(60);
+          setMessage("Please wait 60 seconds before requesting another email. Check your inbox and spam folder first.");
         } else {
           setMessage("We couldn't send a new link right now. Please try again in a moment.");
         }
       } else {
-        setResendCooldown(10);
+        setResendCooldown(60);
         setMessage("If this address has a pending confirmation, a fresh link is on its way. Check your inbox and spam folder.");
         setCanResendConfirmation(false);
       }
