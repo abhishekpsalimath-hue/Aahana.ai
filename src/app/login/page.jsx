@@ -127,7 +127,7 @@ export default function LoginPage() {
           </div>
           {mode === "signup" && <p className="auth-copy">Use at least 8 characters for your password.</p>}
           {message && <p className="auth-message" role="status" aria-live="polite">{message}</p>}
-          {canResendConfirmation && mode === "signin" && <button className="auth-text-action" type="button" onClick={resendConfirmation} disabled={resending || !email.trim()}>{resending ? "Sending link…" : "Resend confirmation email"}</button>}
+          {canResendConfirmation && <button className="auth-text-action" type="button" onClick={resendConfirmation} disabled={resending || !email.trim()}>{resending ? "Sending link…" : "Resend confirmation email"}</button>}
           <button className="auth-submit" type="submit" disabled={busy || (mode === "signup" && signupCooldown > 0)}>
             {busy ? "Please wait…" : mode === "signin" ? "Sign in" : signupCooldown > 0 ? `Try again in ${signupCooldown}s` : "Create account"}
           </button>
