@@ -14,12 +14,19 @@ export default function LoginPage() {
   const [signupCooldown, setSignupCooldown] = useState(0);
   const [canResendConfirmation, setCanResendConfirmation] = useState(false);
   const [resending, setResending] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
 
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get("error") === "auth_callback") {
       setMessage("That confirmation or reset link may have expired or already been used. Request a fresh email link and try again.");
     }
   }, []);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return undefined;
+    const timer = setTimeout(() => setResendCooldown(seconds => Math.max(0, seconds - 1)), 1000);
+    return () => clearTimeout(timer);
+  }, [resendCooldown]);
 
   useEffect(() => {
     if (signupCooldown <= 0) return undefined;
@@ -68,6 +75,7 @@ export default function LoginPage() {
         setSignupCooldown(60);
         setMessage("Your signup request was received. Check your inbox and spam folder for the confirmation email.");
         setCanResendConfirmation(true);
+        setResendCooldown(10);
       } else if (mode === "signin") {
         const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
         if (sessionError || !sessionData.session) {
@@ -86,7 +94,7 @@ export default function LoginPage() {
   }
 
   async function resendConfirmation() {
-    if (resending || !email.trim()) return;
+    if (resending || resendCooldown > 0 || !email.trim()) return;
     setResending(true);
     setMessage("");
     try {
@@ -97,8 +105,14 @@ export default function LoginPage() {
         options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
       });
       if (error) {
-        setMessage("We couldn't send a new link right now. Please wait a little and try again.");
+        if (error.status === 429 || error.code === "over_email_send_rate_limit") {
+          setResendCooldown(10);
+          setMessage("Please wait 10 seconds before requesting another email. Check your inbox and spam folder first.");
+        } else {
+          setMessage("We couldn't send a new link right now. Please try again in a moment.");
+        }
       } else {
+        setResendCooldown(10);
         setMessage("If this address has a pending confirmation, a fresh link is on its way. Check your inbox and spam folder.");
         setCanResendConfirmation(false);
       }
@@ -127,12 +141,12 @@ export default function LoginPage() {
           </div>
           {mode === "signup" && <p className="auth-copy">Use at least 8 characters for your password.</p>}
           {message && <p className="auth-message" role="status" aria-live="polite">{message}</p>}
-          {canResendConfirmation && <button className="auth-text-action" type="button" onClick={resendConfirmation} disabled={resending || !email.trim()}>{resending ? "Sending link…" : "Resend confirmation email"}</button>}
+          {canResendConfirmation && <button className="auth-text-action" type="button" onClick={resendConfirmation} disabled={resending || resendCooldown > 0 || !email.trim()}>{resending ? "Sending link…" : resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Resend confirmation email"}</button>}
           <button className="auth-submit" type="submit" disabled={busy || (mode === "signup" && signupCooldown > 0)}>
             {busy ? "Please wait…" : mode === "signin" ? "Sign in" : signupCooldown > 0 ? `Try again in ${signupCooldown}s` : "Create account"}
           </button>
         </form>
-        <p className="auth-switch">{mode === "signin" ? "New to Aahana?" : "Already have an account?"} <button type="button" onClick={() => { setMode(mode === "signin" ? "signup" : "signin"); setMessage(""); setShowPassword(false); setSignupCooldown(0); setCanResendConfirmation(false); }}>{mode === "signin" ? "Create account" : "Sign in"}</button></p>
+        <p className="auth-switch">{mode === "signin" ? "New to Aahana?" : "Already have an account?"} <button type="button" onClick={() => { setMode(mode === "signin" ? "signup" : "signin"); setMessage(""); setShowPassword(false); setSignupCooldown(0); setCanResendConfirmation(false); setResendCooldown(0); }}>{mode === "signin" ? "Create account" : "Sign in"}</button></p>
         <p className="auth-legal">Your account and workspace are protected by Supabase authentication.</p>
       </section>
     </main>
