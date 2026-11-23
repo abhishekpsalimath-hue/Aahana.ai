@@ -21,7 +21,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - run: npm ci --no-audit --no-fund
+      - run: npm install --no-audit --no-fund
       - name: Check proposal worker JavaScript syntax
         run: node --check scripts/aahana-isolated-proposal.mjs
       - name: Run repository tests
