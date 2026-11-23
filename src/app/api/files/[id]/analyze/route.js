@@ -68,12 +68,12 @@ export async function POST(_request, { params }) {
             values.push(value.replace(/[\\t\\r\\n]+/g, " ").trim());
           }
           if (values.some(Boolean)) sections.push(values.join(" | "));
-          if (sections.join("\\n").length > MAX_EXTRACTED_CHARACTERS * 2) break;
+          if (sections.join("\n").length > MAX_EXTRACTED_CHARACTERS * 2) break;
         }
-        if (sections.join("\\n").length > MAX_EXTRACTED_CHARACTERS * 2) break;
+        if (sections.join("\n").length > MAX_EXTRACTED_CHARACTERS * 2) break;
       }
       if (workbook.worksheets.length > 8) sections.push("[Only the first 8 worksheets were included.]");
-      extracted = sections.join("\\n");
+      extracted = sections.join("\n");
     } else {
       extracted = buffer.toString("utf8");
     }
