@@ -548,7 +548,7 @@ h1,.brand,.composer-mode,.breadcrumb{font-family:"Space Grotesk","Manrope",sans-
 
 
 /* Founder signature + tactile interaction pass: no glass surfaces. */
-@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&display=swap');
+
 .topbar{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:#0c0a12!important}
 .assistance-tool-launchers button{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:#171321!important;border:1px solid #514366!important}
 .starter{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:#17141f!important;border:1px solid #393047!important;box-shadow:0 8px 24px #0005!important}
