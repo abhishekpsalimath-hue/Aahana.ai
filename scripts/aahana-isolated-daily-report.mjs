@@ -134,7 +134,4 @@ const report = [
 ].filter((line) => line !== null).join("\n");
 
 await writeFile(reportPath, report, "utf8");
-if (process.env.GITHUB_STEP_SUMMARY) {
-  await appendFile(process.env.GITHUB_STEP_SUMMARY, report + "\n", "utf8");
-}
 console.log(`Aahana report written. AI analysis: ${analysisStatus}`);
