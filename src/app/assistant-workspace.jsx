@@ -1137,6 +1137,16 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       const response = await fetch(`/api/files/${encodeURIComponent(id)}/analyze`, { method: "POST" });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || "Could not read this document.");
+      if (result.imageDataUrl) {
+        const imageResponse = await fetch(result.imageDataUrl);
+        if (!imageResponse.ok) throw new Error("Could not prepare this saved image.");
+        const imageBlob = await imageResponse.blob();
+        setImageFile(new File([imageBlob], result.filename || "aahana-image", { type: result.mimeType }));
+        setMode("solve");
+        setPrompt("Please inspect this saved image carefully. Describe what is visible, identify important details, and answer any questions I add.");
+        setFilesError("Image attached to your message. Add a question if you like, then send it to Aahana.");
+        return;
+      }
       const isSpreadsheet = result.mimeType === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
       const instruction = isSpreadsheet
         ? `Analyse this Excel workbook: ${result.filename}. Treat each SHEET as a separate worksheet. Explain what each sheet contains, identify headers and important fields, summarise key figures, calculate useful totals or comparisons when the extracted values support them, highlight patterns, missing values and unusual entries, and clearly state any assumptions. Do not invent values or claim to have analysed rows that are not included. If the extraction is incomplete, say so.\n\nWORKBOOK DATA:\n`
@@ -1673,7 +1683,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                 <span title={file.original_filename}>{file.original_filename}</span>
                 <small>{file.mime_type}</small>
                 <div className="file-actions">
-                  {(["application/pdf", "text/plain", "text/markdown", "text/csv", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"].includes(file.mime_type)) ? (
+                  {(["application/pdf", "text/plain", "text/markdown", "text/csv", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "image/png", "image/jpeg", "image/webp"].includes(file.mime_type)) ? (
                     <button type="button" onClick={() => analyzeFile(file.id)} disabled={Boolean(analyzingFileId) || busy}>
                       {analyzingFileId === file.id ? "Reading…" : "Analyse"}
                     </button>
