@@ -1728,6 +1728,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                     "--particle-x": `${(index * 37 + 11) % 100}%`,
                     "--particle-y": `${(index * 61 + 7) % 100}%`,
                     "--particle-delay": `${-((index * 7) % 19)}s`,
+                    "--particle-duration": `${11 + (index % 8) * 1.5}s`,
                     "--particle-size": `${1 + (index % 3)}px`,
                   }}
                 />
