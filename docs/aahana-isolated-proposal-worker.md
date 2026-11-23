@@ -1,6 +1,6 @@
 # Aahana isolated proposal worker — Phase 2
 
-This is a manually triggered, report-and-propose worker. It is intentionally not scheduled yet.
+This is a manually triggered, report-and-propose worker restricted to the repository owner account (GitHub actor `abhishekpsalimath-hue`). It is intentionally not scheduled yet.
 
 ## What it does
 
