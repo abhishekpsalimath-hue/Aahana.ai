@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createRequestTimeoutSignal, getClientAbortResponse } from "@/lib/ai/request-timeout.mjs";
+import { createReplyPersistence } from "@/lib/ai/stream-persistence.mjs";
+import { createSseDeltaParser } from "@/lib/ai/stream-parser.mjs";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -263,7 +266,7 @@ export async function POST(request) {
             include_raw_content: false,
             topic: /\b(?:news|breaking|today|yesterday|this week|this month|developments|announcements|breakthroughs|release|launched|November|December|October|September|August|July|June|May|April|March|February|January)\b/i.test(prompt) ? "news" : "general",
           }),
-          signal: AbortSignal.timeout(10000),
+          signal: createRequestTimeoutSignal(request.signal, 10000),
         });
         if (searchResponse.ok) {
           const searchData = await searchResponse.json();
@@ -310,6 +313,8 @@ export async function POST(request) {
           console.error("Aahana live research provider returned:", searchResponse.status);
         }
       } catch (researchError) {
+        const abortResponse = getClientAbortResponse(request.signal);
+        if (abortResponse) return abortResponse;
         console.error("Aahana live research failed:", researchError?.message || "unknown error");
       }
     }
@@ -359,15 +364,19 @@ export async function POST(request) {
           ...context,
         ],
       }),
-      signal: AbortSignal.timeout(45000),
+      signal: createRequestTimeoutSignal(request.signal, 45000),
     });
   } catch {
+    const abortResponse = getClientAbortResponse(request.signal);
+    if (abortResponse) return abortResponse;
     return NextResponse.json({ error: "Aahana could not connect to the AI service. Please try again." }, { status: 502 });
   }
 
   if (!upstream.ok || !upstream.body) {
     const gatewayRequestId = upstream.headers.get("x-request-id") || upstream.headers.get("x-vercel-id") || null;
     const responseText = await upstream.text().catch(() => "");
+    const abortResponse = getClientAbortResponse(request.signal);
+    if (abortResponse) return abortResponse;
     const safeDetail = responseText.replace(/[\r\n\t]+/g, " ").slice(0, 500);
     console.error("Aahana AI Gateway rejected request:", {
       status: upstream.status,
@@ -393,7 +402,11 @@ export async function POST(request) {
     let researchPayload;
     try {
       researchPayload = await upstream.json();
+      const abortResponse = getClientAbortResponse(request.signal);
+      if (abortResponse) return abortResponse;
     } catch {
+      const abortResponse = getClientAbortResponse(request.signal);
+      if (abortResponse) return abortResponse;
       return NextResponse.json({ error: "The research provider returned an unreadable response.", code: "RESEARCH_RESPONSE_INVALID" }, { status: 502 });
     }
     const researchReply = researchPayload?.choices?.[0]?.message?.content;
@@ -430,6 +443,8 @@ export async function POST(request) {
       });
       return NextResponse.json({ error: "Aahana retrieved sources but could not produce a verifiable citation. Please retry your research question.", code: "RESEARCH_CITATION_VALIDATION_FAILED" }, { status: 502 });
     }
+    const abortBeforeSave = getClientAbortResponse(request.signal);
+    if (abortBeforeSave) return abortBeforeSave;
     const { error: saveError } = await supabase.rpc("save_ai_reply", {
       p_conversation_id: conversationId,
       p_content: verifiedResearchReply.slice(0, 16000),
@@ -450,59 +465,54 @@ export async function POST(request) {
   const decoder = new TextDecoder();
   const reader = upstream.body.getReader();
   let fullReply = "";
+  const persistReply = createReplyPersistence({
+    getContent: () => fullReply,
+    persist: async (content) => {
+      const { error: saveError } = await supabase.rpc("save_ai_reply", {
+        p_conversation_id: conversationId,
+        p_content: content,
+      });
+      const { error: updateError } = await supabase.from("conversations")
+        .update({ updated_at: new Date().toISOString() })
+        .eq("id", conversationId);
+      if (saveError) throw saveError;
+      if (updateError) throw updateError;
+    },
+    onError: (error) => console.error("Aahana reply persistence failed:", error?.message || "unknown error"),
+  });
 
+  let streamCancelled = false;
   const stream = new ReadableStream({
     async start(controller) {
-      let buffer = "";
-      let finished = false;
-
-      const handleLine = (line) => {
-        if (!line.startsWith("data:")) return;
-        const data = line.slice(5).trim();
-        if (!data || data === "[DONE]") return;
-        try {
-          const payload = JSON.parse(data);
-          const delta = payload.choices?.[0]?.delta?.content;
-          if (typeof delta === "string" && delta) {
-            fullReply += delta;
-            controller.enqueue(encoder.encode(delta));
-          }
-        } catch {
-          // Ignore non-JSON keepalive or metadata frames.
-        }
-      };
-
+      const parser = createSseDeltaParser((delta) => {
+        fullReply += delta;
+        if (!streamCancelled) controller.enqueue(encoder.encode(delta));
+      });
       try {
-        while (true) {
+        while (!streamCancelled) {
           const { value, done } = await reader.read();
-          if (done) break;
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split("\n");
-          buffer = lines.pop() ?? "";
-          for (const line of lines) handleLine(line.replace(/\r$/, ""));
+          if (done || streamCancelled) break;
+          parser.push(decoder.decode(value, { stream: true }));
         }
-        buffer += decoder.decode();
-        if (buffer) handleLine(buffer.replace(/\r$/, ""));
-        finished = true;
-
-        if (fullReply.trim()) {
-          const { error: saveError } = await supabase.rpc("save_ai_reply", {
-            p_conversation_id: conversationId,
-            p_content: fullReply.slice(0, 16000),
-          });
-          await supabase.from("conversations").update({ updated_at: new Date().toISOString() }).eq("id", conversationId);
-          if (saveError) console.error("Aahana reply persistence failed:", saveError.message);
+        if (!streamCancelled) {
+          parser.push(decoder.decode());
+          parser.flush();
+          await persistReply();
+          if (!streamCancelled) controller.close();
         }
-        controller.close();
       } catch (error) {
-        console.error("Aahana stream failed:", error?.message || "unknown error");
-        if (!finished) controller.error(error);
+        if (!streamCancelled) {
+          console.error("Aahana stream failed:", error?.message || "unknown error");
+          controller.error(error);
+        }
       } finally {
         reader.releaseLock();
       }
     },
     async cancel() {
+      streamCancelled = true;
       await reader.cancel().catch(() => {});
+      await persistReply();
     },
   });
 
