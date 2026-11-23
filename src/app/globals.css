@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&display=swap');\n@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
 :root{color-scheme:dark;--bg:#09090d;--panel:#101016;--panel-2:#15151e;--line:#252431;--text:#f3f0f8;--muted:#9691a4;--lilac:#c4a7ff;--lilac-2:#a987f2}
 *{box-sizing:border-box}
@@ -544,3 +544,53 @@ h1,.brand,.composer-mode,.breadcrumb{font-family:"Space Grotesk","Manrope",sans-
   .starter::before{display:none}
 }
 
+
+
+/* Founder signature + tactile interaction pass: no glass surfaces. */
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&display=swap');
+.topbar{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:#0c0a12!important}
+.assistance-tool-launchers button{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:#171321!important;border:1px solid #514366!important}
+.starter{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:#17141f!important;border:1px solid #393047!important;box-shadow:0 8px 24px #0005!important}
+.composer{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:#17141f!important;border:1px solid #55466d!important;box-shadow:0 16px 42px #0007!important}
+.welcome-signal::before,.welcome-signal::after{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:linear-gradient(145deg,#29213a,#171321 72%)!important;box-shadow:inset 1px 1px #ffffff18,0 14px 30px #0007!important}
+.founder-signature{font-family:'Caveat','Segoe Script','Brush Script MT',cursive!important;font-size:clamp(27px,3vw,35px)!important;font-weight:600!important;letter-spacing:.015em!important;line-height:1.05!important;color:#d6c2ff!important;opacity:.96!important;text-shadow:0 0 18px #a98be833;transform:rotate(-4deg);transform-origin:center;display:inline-block;margin-top:19px!important}
+.founder-signature::after{content:"";display:block;width:78%;height:7px;margin:0 auto;background:#cbb5ff;opacity:.72;clip-path:polygon(0 48%,18% 28%,42% 42%,68% 18%,100% 0,78% 45%,45% 68%,17% 58%);transform:rotate(-2deg)}
+/* Astronaut follows a loose, non-repeating-looking flight path instead of bobbing in place. */
+.astronaut-float{animation:astronaut-roam 31s cubic-bezier(.42,0,.58,1) infinite!important;will-change:transform}
+@keyframes astronaut-roam{
+  0%{transform:translate3d(0,0,0) rotate(-8deg)}
+  11%{transform:translate3d(-18px,11px,0) rotate(7deg)}
+  23%{transform:translate3d(-42px,-5px,0) rotate(15deg)}
+  36%{transform:translate3d(-27px,-24px,0) rotate(-4deg)}
+  49%{transform:translate3d(8px,-17px,0) rotate(-14deg)}
+  62%{transform:translate3d(21px,8px,0) rotate(5deg)}
+  74%{transform:translate3d(-6px,25px,0) rotate(13deg)}
+  87%{transform:translate3d(-31px,7px,0) rotate(-7deg)}
+  100%{transform:translate3d(0,0,0) rotate(-8deg)}
+}
+/* Stars visibly accelerate from deep space toward the viewer. */
+.space-background .universe-particles i{animation-name:stars-toward-viewer!important;animation-timing-function:cubic-bezier(.18,.62,.36,1)!important}
+@keyframes stars-toward-viewer{
+  0%{transform:translate3d(0,0,-1100px) scale(.08);opacity:0}
+  9%{opacity:.3}
+  48%{opacity:.62}
+  82%{opacity:.9}
+  100%{transform:translate3d(0,0,520px) scale(3.1);opacity:0}
+}
+/* Small responsive feedback makes the workspace feel alive without changing its tools. */
+.assistance-tool-launchers button,.starter,.composer,.welcome-signal{transition:transform .24s cubic-bezier(.2,.8,.2,1),border-color .24s ease,box-shadow .24s ease!important}
+.assistance-tool-launchers button:active,.starter:active{transform:translateY(1px) scale(.975)!important}
+.assistance-tool-launchers button:focus-visible,.starter:focus-visible,.composer:focus-within{outline:2px solid #cbb5ff!important;outline-offset:3px}
+@media(hover:hover) and (pointer:fine){
+  .welcome-signal:hover{transform:translateY(-5px) rotate(4deg) scale(1.045)}
+  .assistance-tool-launchers button:hover:not(:disabled){transform:translateY(-4px) scale(1.025)!important;border-color:#cbb5ff!important;box-shadow:0 12px 30px #0008,0 0 22px #a98be833!important}
+  .starter:hover{transform:translateY(-5px) scale(1.012)!important;border-color:#cbb5ff!important}
+}
+@media(max-width:760px){
+  .astronaut-float{right:8px;width:112px;height:112px;animation-duration:37s!important}
+  .founder-signature{font-size:29px!important}
+}
+@media(prefers-reduced-motion:reduce){
+  .astronaut-float{animation:none!important}
+  .space-background .universe-particles i{animation:none!important;opacity:.35!important;transform:none!important}
+}
