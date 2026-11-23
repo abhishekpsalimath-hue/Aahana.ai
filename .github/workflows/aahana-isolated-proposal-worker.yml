@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   propose:
-    if: github.actor == 'abhishekpsalimath-hue'
+    if: github.actor == 'abhishekpsalimath-hue' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
