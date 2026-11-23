@@ -50,7 +50,7 @@ const prompt = {
     maximum_patches_per_file: 8,
     patch_search_must_match_exactly_once: true,
     only_modify_files_in_inventory: true,
-    never_add_dependencies_or_change_authentication_database_secrets_student_mode_or_deployment,
+    never_add_dependencies_or_change_authentication_database_secrets_student_mode_or_deployment: true,
     output_json_only: true,
   },
   source_files: inventory,
@@ -105,7 +105,7 @@ for (const item of proposal.files) {
     }
     content = content.replace(patch.search, patch.replace);
   }
-  if (content === sourceByPath.get(item.path).content || secretPatterns.some((pattern) => pattern.test(content))) {
+  if (Buffer.byteLength(content, "utf8") > MAX_FILE_BYTES || content === sourceByPath.get(item.path).content || secretPatterns.some((pattern) => pattern.test(content))) {
     throw new Error(`The proposed change for ${item.path} is empty or contains a possible credential.`);
   }
   applied.push({ path: item.path, content, sha256: createHash("sha256").update(content).digest("hex") });
