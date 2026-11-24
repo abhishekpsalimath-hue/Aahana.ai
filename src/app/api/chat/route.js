@@ -369,12 +369,11 @@ export async function POST(request) {
 
   if (!upstream.ok || !upstream.body) {
     const gatewayRequestId = upstream.headers.get("x-request-id") || upstream.headers.get("x-vercel-id") || null;
-    const responseText = await upstream.text().catch(() => "");
-    const safeDetail = responseText.replace(/[\r\n\t]+/g, " ").slice(0, 500);
+    // Provider error bodies are untrusted and may echo request or account details.
+    // Log only the status and opaque request ID; keep diagnostics out of application logs.
     console.error("Aahana AI Gateway rejected request:", {
       status: upstream.status,
       requestId: gatewayRequestId,
-      detail: safeDetail,
     });
     const code = upstream.status === 401 ? "GATEWAY_UNAUTHORIZED"
       : upstream.status === 402 ? "GATEWAY_PAYMENT_REQUIRED"
