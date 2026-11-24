@@ -12,8 +12,11 @@ import {
 
 test("keeps FLUX.1 Schnell as the safe default unless enhanced model is explicitly selected", () => {
   assert.equal(resolveImageModel(undefined), DEFAULT_IMAGE_MODEL);
+  assert.equal(resolveImageModel(null), DEFAULT_IMAGE_MODEL);
   assert.equal(resolveImageModel(""), DEFAULT_IMAGE_MODEL);
-  assert.equal(resolveImageModel("unknown-model"), DEFAULT_IMAGE_MODEL);
+  assert.throws(() => resolveImageModel("unknown-model"), /Unsupported Aahana image model selection/);
+  assert.throws(() => resolveImageModel("flux-2-klein-4b-typo"), /Unsupported Aahana image model selection/);
+  assert.throws(() => resolveImageModel(" "), /Unsupported Aahana image model selection/);
   assert.equal(resolveImageModel("flux-2-klein-4b"), ENHANCED_IMAGE_MODEL);
   assert.equal(resolveImageModel("flux-2-dev"), ACCURACY_IMAGE_MODEL);
 });
