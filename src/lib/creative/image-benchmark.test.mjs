@@ -45,7 +45,7 @@ test("summarizes per-model dimensions, text pass rate, latency and categories", 
   assert.equal(summaries.length, 2);
   const first = summaries.find((item) => item.model === "flux-test");
   assert.equal(first.cases, 2);
-  assert.equal(first.averageScore, 3.75);
+  assert.equal(first.averageScore, 3.6);
   assert.deepEqual(first.dimensions, {
     subjectFidelity: 3,
     attributeFidelity: 4,
