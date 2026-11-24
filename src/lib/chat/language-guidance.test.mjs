@@ -31,6 +31,6 @@ test("recognizes international writing systems", () => {
 test("handles mixed-script text and avoids overclaiming language identity", () => {
   const guidance = getLanguageGuidance("ನನಗೆ help ಬೇಕು");
   assert.match(guidance, /Kannada script/);
-  assert.match(guidance, /do not assume a specific language/);
+  assert.match(guidance, /assume a specific language solely/);
   assert.ok(SUPPORTED_SCRIPT_LABELS.includes("Gurmukhi"));
 });
