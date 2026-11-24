@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { parseImageGenerationInput, parseImageEditInput, MAX_IMAGE_EDIT_BYTES, MAX_IMAGE_EDIT_PROMPT_LENGTH, getReferenceImageDimensions, isReferenceImageWithinProviderBounds } from "./image-generation.mjs";
+import { parseImageGenerationInput, parseImageEditInput, MAX_IMAGE_EDIT_BYTES, MAX_IMAGE_EDIT_PROMPT_LENGTH, MAX_IMAGE_EDIT_REQUEST_BYTES, getReferenceImageDimensions, isReferenceImageWithinProviderBounds, readBoundedStream } from "./image-generation.mjs";
 
 test("defaults to automatic masterpiece image direction without asking the user to choose settings", () => {
   assert.deepEqual(parseImageGenerationInput({ prompt: "A moonlit forest" }), {
@@ -119,4 +119,38 @@ test("parses JPEG and WebP reference dimensions without trusting client metadata
   webp[24] = 0xfe;
   webp[27] = 0xdf;
   assert.deepEqual(getReferenceImageDimensions(webp, "image/webp"), { width: 255, height: 224 });
+});
+
+
+test("bounded stream reader accepts uploads within the byte limit", async () => {
+  const stream = new ReadableStream({
+    start(controller) {
+      controller.enqueue(new Uint8Array([1, 2]));
+      controller.enqueue(new Uint8Array([3, 4]));
+      controller.close();
+    },
+  });
+  const result = await readBoundedStream(stream, 4);
+  assert.equal(result.ok, true);
+  assert.deepEqual([...result.bytes], [1, 2, 3, 4]);
+  assert.equal(MAX_IMAGE_EDIT_REQUEST_BYTES, MAX_IMAGE_EDIT_BYTES + 128 * 1024);
+});
+
+test("bounded stream reader cancels uploads as soon as they exceed the byte limit", async () => {
+  let cancelled = false;
+  const stream = new ReadableStream({
+    start(controller) {
+      controller.enqueue(new Uint8Array([1, 2, 3]));
+      controller.enqueue(new Uint8Array([4, 5]));
+    },
+    cancel() { cancelled = true; },
+  });
+  const result = await readBoundedStream(stream, 4);
+  assert.deepEqual(result, { ok: false, tooLarge: true });
+  assert.equal(cancelled, true);
+});
+
+test("bounded stream reader fails closed for invalid stream or limit", async () => {
+  assert.deepEqual(await readBoundedStream(null, 100), { ok: false, tooLarge: false });
+  assert.deepEqual(await readBoundedStream(new ReadableStream(), 0), { ok: false, tooLarge: false });
 });
