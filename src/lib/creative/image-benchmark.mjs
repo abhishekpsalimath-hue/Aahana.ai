@@ -6,6 +6,10 @@ const DIMENSIONS = Object.freeze([
   "visualCoherence",
 ]);
 
+// A case counts as accepted only when the subject and explicit constraints
+// are each at least 4/5 and the five-dimension mean is at least 4/5.
+export const IMAGE_CASE_ACCEPTANCE_THRESHOLD = 4;
+
 function isScore(value) {
   return Number.isFinite(value) && value >= 0 && value <= 5;
 }
@@ -69,6 +73,11 @@ export function summarizeImageBenchmark(results) {
       mean(entries.map((entry) => entry[dimension])),
     ]));
     const dimensionValues = Object.values(dimensions);
+    const acceptedCases = entries.filter((entry) =>
+      entry.subjectFidelity >= IMAGE_CASE_ACCEPTANCE_THRESHOLD &&
+      entry.constraintFidelity >= IMAGE_CASE_ACCEPTANCE_THRESHOLD &&
+      mean(DIMENSIONS.map((dimension) => entry[dimension])) >= IMAGE_CASE_ACCEPTANCE_THRESHOLD
+    ).length;
     const textChecks = entries.filter((entry) => entry.exactTextPass !== undefined);
     const latencies = entries.filter((entry) => entry.latencySeconds !== undefined).map((entry) => entry.latencySeconds);
     const categories = [...new Set(entries.map((entry) => entry.category.trim()))].sort();
@@ -83,6 +92,9 @@ export function summarizeImageBenchmark(results) {
       model,
       cases: entries.length,
       averageScore: mean(dimensionValues),
+      acceptedCases,
+      caseAcceptanceRate: Number((acceptedCases / entries.length).toFixed(3)),
+      acceptanceThreshold: IMAGE_CASE_ACCEPTANCE_THRESHOLD,
       dimensions,
       exactTextPassRate: textChecks.length
         ? Number((textChecks.filter((entry) => entry.exactTextPass).length / textChecks.length).toFixed(3))
