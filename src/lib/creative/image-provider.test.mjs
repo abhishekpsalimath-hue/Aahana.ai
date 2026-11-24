@@ -12,8 +12,11 @@ import {
 
 test("keeps FLUX.1 Schnell as the safe default unless enhanced model is explicitly selected", () => {
   assert.equal(resolveImageModel(undefined), DEFAULT_IMAGE_MODEL);
+  assert.equal(resolveImageModel(null), DEFAULT_IMAGE_MODEL);
   assert.equal(resolveImageModel(""), DEFAULT_IMAGE_MODEL);
-  assert.equal(resolveImageModel("unknown-model"), DEFAULT_IMAGE_MODEL);
+  assert.throws(() => resolveImageModel("unknown-model"), /Unsupported Aahana image model selection/);
+  assert.throws(() => resolveImageModel("flux-2-klein-4b-typo"), /Unsupported Aahana image model selection/);
+  assert.throws(() => resolveImageModel(" "), /Unsupported Aahana image model selection/);
   assert.equal(resolveImageModel("flux-2-klein-4b"), ENHANCED_IMAGE_MODEL);
   assert.equal(resolveImageModel("flux-2-dev"), ACCURACY_IMAGE_MODEL);
 });
@@ -61,7 +64,7 @@ test("preserves the existing JSON request contract for FLUX.1 Schnell", async ()
   });
   assert.equal(request.method, "POST");
   assert.equal(request.headers["Content-Type"], "application/json");
-  assert.deepEqual(JSON.parse(request.body), { prompt: "A moonlit forest", steps: 8 });
+  assert.deepEqual(JSON.parse(request.body), { prompt: "A moonlit forest", steps: 8, width: 1024, height: 1024 });
 });
 
 test("uses the correct output media type for each Cloudflare image model", () => {
@@ -86,4 +89,19 @@ test("rejects malformed, unsupported, and oversized provider image payloads", ()
   assert.equal(detectImageMimeTypeFromBase64(Buffer.from("GIF89a000000", "ascii").toString("base64")), null);
   assert.equal(detectImageMimeTypeFromBase64("A".repeat(24 * 1024 * 1024 + 4)), null);
   assert.equal(detectImageMimeTypeFromBase64(null), null);
+});
+
+
+test("passes portrait and widescreen dimensions to each provider request", () => {
+  const portrait = buildImageProviderRequest({
+    model: DEFAULT_IMAGE_MODEL, prompt: "A portrait", width: 768, height: 1024,
+  });
+  assert.deepEqual(JSON.parse(portrait.body), {
+    prompt: "A portrait", steps: 8, width: 768, height: 1024,
+  });
+  const widescreen = buildImageProviderRequest({
+    model: ACCURACY_IMAGE_MODEL, prompt: "A film still", width: 1024, height: 576,
+  });
+  assert.equal(widescreen.body.get("width"), "1024");
+  assert.equal(widescreen.body.get("height"), "576");
 });
