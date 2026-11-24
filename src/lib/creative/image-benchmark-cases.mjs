@@ -1,5 +1,5 @@
 /**
- * 100 synthetic prompts for offline image-generation evaluation.
+ * 110 synthetic prompts for offline image-generation evaluation.
  * These are prompt cases only; no provider calls or generated images are included.
  * Each case must be generated and manually scored before reporting accuracy.
  */
@@ -116,4 +116,5 @@ export const IMAGE_BENCHMARK_CASES = Object.freeze([
   Object.freeze({ id: "IMG-110", category: "composition", prompt: "Exactly four glowing lanterns hanging at different heights, dark evening background." }),
 ]);
 
+export const IMAGE_BENCHMARK_CASE_COUNT = IMAGE_BENCHMARK_CASES.length;
 export const IMAGE_BENCHMARK_CATEGORY_COUNT = 11;
