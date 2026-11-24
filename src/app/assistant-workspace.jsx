@@ -405,20 +405,6 @@ function UniverseScene() {
     };
     updatePlanetLightDirections();
 
-    const orbitMaterial = new THREE.LineBasicMaterial({ color: 0xcbb7ff, transparent: true, opacity: 0.2 });
-    const addOrbit = (rx, ry, z, tilt) => {
-      const points = [];
-      for (let i = 0; i <= 180; i++) {
-        const a = i / 180 * Math.PI * 2;
-        points.push(new THREE.Vector3(Math.cos(a) * rx, Math.sin(a) * ry, z));
-      }
-      const line = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(points), orbitMaterial);
-      line.rotation.z = tilt;
-      world.add(line);
-    };
-    addOrbit(7.1, 2.25, -3.6, -0.18);
-    addOrbit(8.8, 3.25, -5.8, 0.48);
-
     const pointer = { x: 0, y: 0 };
     const frameInterval = 1000 / 30;
     let lastFrameTime = 0;
@@ -745,16 +731,21 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [messages, setMessages] = useState([]);
   const [astronautMotion, setAstronautMotion] = useState({ x: 0, y: 0, rotation: -3, duration: 3600 });
   useEffect(() => {
-    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return undefined;
+    const prefersReducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true;
     let active = true;
     let timer;
     const moveAstronaut = () => {
       if (!active) return;
-      const duration = 2600 + Math.round(Math.random() * 2600);
+      // Keep the astronaut gently drifting even on devices that request reduced motion.
+      const duration = prefersReducedMotion
+        ? 8500 + Math.round(Math.random() * 4500)
+        : 2600 + Math.round(Math.random() * 2600);
+      const travelX = prefersReducedMotion ? 18 : 36;
+      const travelY = prefersReducedMotion ? 14 : 30;
       setAstronautMotion({
-        x: Math.round((Math.random() - 0.5) * 36),
-        y: Math.round((Math.random() - 0.5) * 30),
-        rotation: Math.round((Math.random() - 0.5) * 18),
+        x: Math.round((Math.random() - 0.5) * travelX),
+        y: Math.round((Math.random() - 0.5) * travelY),
+        rotation: Math.round((Math.random() - 0.5) * (prefersReducedMotion ? 8 : 18)),
         duration,
       });
       timer = window.setTimeout(moveAstronaut, duration);
@@ -1868,13 +1859,6 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
               </svg>
             </div>
           )}
-          <div className="welcome-signal" aria-hidden="true">
-            <span className="signal-orbit signal-orbit-one" />
-            <span className="signal-orbit signal-orbit-two" />
-            <span className="signal-core" />
-            <span className="signal-spark signal-spark-one" />
-            <span className="signal-spark signal-spark-two" />
-          </div>
           <div className="eyebrow"><span /> YOUR THINKING SPACE</div>
           {!messages.length && <>
             <h1>Good ideas<br /><em>start somewhere.</em></h1>
