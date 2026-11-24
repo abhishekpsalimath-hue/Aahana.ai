@@ -39,6 +39,21 @@ test("Ardhanarishvara prompt keeps natural detail while honoring requested frami
   assert.doesNotMatch(widescreen, /vertical 3:4 portrait/i);
 });
 
+test("recognizes sacred subjects written in Kannada, Tamil and Telugu scripts", () => {
+  const kannadaShiva = buildImagePrompt("ಶಿವನ ಸುಂದರ ಚಿತ್ರ", "masterpiece");
+  assert.match(kannadaShiva, /Depict Lord Shiva \\(Mahadev\\) unmistakably/i);
+
+  const tamilHanuman = buildImagePrompt("அனுமன் திருவுருவம்", "masterpiece");
+  assert.match(tamilHanuman, /monkey-faced deity/i);
+
+  const teluguGanesha = buildImagePrompt("గణేశుడు", "masterpiece");
+  assert.match(teluguGanesha, /elephant-headed Hindu deity/i);
+
+  const kannadaArdhanarishvara = buildImagePrompt("ಅರ್ಧನಾರೀಶ್ವರನ ದಿವ್ಯ ರೂಪ", "masterpiece");
+  assert.match(kannadaArdhanarishvara, /one unified divine being/i);
+  assert.match(kannadaArdhanarishvara, /VIEWER-LEFT HALF — Parvati/i);
+});
+
 test("standalone Shiva still receives the original Shiva-specific direction", () => {
   const prompt = buildImagePrompt("A portrait of Lord Shiva", "masterpiece");
   assert.match(prompt, /Depict Lord Shiva \(Mahadev\) unmistakably/i);
