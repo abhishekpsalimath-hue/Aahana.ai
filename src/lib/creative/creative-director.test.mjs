@@ -109,3 +109,23 @@ test("masterpiece direction protects explicit subject and composition constraint
   assert.match(prompt, /language it was written in/i);
   assert.match(prompt, /never invent text/i);
 });
+
+test("recognizes sacred subjects written in Hindi, Bengali and Gujarati scripts", () => {
+  const hindiShiva = buildImagePrompt("शिव का दिव्य रूप", "masterpiece");
+  assert.match(hindiShiva, /Depict Lord Shiva \\(Mahadev\\) unmistakably/i);
+
+  const hindiArdhanarishvara = buildImagePrompt("अर्धनारीश्वर", "masterpiece");
+  assert.match(hindiArdhanarishvara, /one unified divine being/i);
+
+  const bengaliHanuman = buildImagePrompt("হনুমান", "masterpiece");
+  assert.match(bengaliHanuman, /monkey-faced deity/i);
+
+  const bengaliGanesha = buildImagePrompt("গণেশ", "masterpiece");
+  assert.match(bengaliGanesha, /elephant-headed Hindu deity/i);
+
+  const gujaratiKrishna = buildImagePrompt("શ્રીકૃષ્ણ", "masterpiece");
+  assert.match(gujaratiKrishna, /peacock feather/i);
+
+  const gujaratiRama = buildImagePrompt("શ્રીરામ", "masterpiece");
+  assert.match(gujaratiRama, /traditional divine iconography/i);
+});
