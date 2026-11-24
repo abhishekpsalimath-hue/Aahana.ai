@@ -16,7 +16,24 @@ const VIDEO_DIRECTIONS = Object.freeze({
   anime: "Animation direction: maintain consistent character design, clean silhouettes, expressive but controlled motion, coherent staging, and stable visual style across every frame.",
 });
 
+const ARDHANARISHVARA_DIRECTION = [
+  "SUBJECT IDENTITY — Ardhanarishvara: depict one unified divine being, the combined form of Shiva and Parvati, not two people standing together, not two faces, and not a generic feminine portrait.",
+  "COMPOSITION — a single human-like body shown front-facing, centered and symmetrical, with one continuous head, one neck, one torso and one pair of shoulders. A precise, unmistakable vertical division runs from the crown through the center of the forehead, nose, lips, chin, throat, chest and waist. The two halves must join naturally along the exact centerline; do not blend their defining traits into one averaged appearance.",
+  "VIEWER-LEFT HALF — Parvati: warm natural golden-brown skin, soft feminine facial structure on this half only, graceful eye and cheek, long dark braided hair decorated with restrained fresh jasmine and a few marigold and lotus flowers. Rich crimson-saffron silk drape over this half of the torso, with believable woven fabric, fine embroidery and elegant traditional gold jewelry. Keep ornamentation physically plausible and not excessive.",
+  "VIEWER-RIGHT HALF — Shiva: cool ash-grey to muted blue-grey skin on this half only, subtly masculine facial structure, calm half-closed eye, matted jata gathered naturally with a small crescent moon at the crown, rudraksha beads and a restrained ascetic detail. A trident may appear beside the figure, not intersecting the body. Keep this half dignified and serene.",
+  "FACE AND ANATOMY — exactly one face with two complementary halves, one nose bridge, one mouth, one chin and two eyes positioned naturally. The center seam must be visible through the change in skin tone and facial characteristics, while the overall face remains anatomically coherent. No duplicate features, extra eyes, split heads, doubled noses, mismatched jawlines or melted facial geometry.",
+  "NATURALISM — prioritize a believable devotional portrait over fantasy ornament overload. Realistic skin pores and subtle tonal variation, individual hair strands, naturally placed flowers, realistic textile folds, physically plausible jewelry, soft controlled highlights and restrained sacred glow. Avoid plastic skin, exaggerated makeup, neon fire, excessive gold, oversaturated colors and decorative clutter.",
+  "BACKGROUND — a refined, softly illuminated cosmic mandala with subtle concentric geometry and a few lotus motifs. Keep it behind the figure, lower in contrast and softly out of focus so it never competes with the face.",
+  "LIGHT — soft directional portrait lighting with gentle warm illumination on Parvati's half and cooler, subdued illumination on Shiva's half. Preserve natural skin texture and detail in both shadow and highlight areas.",
+  "CAMERA AND FRAMING — vertical 3:4 portrait, waist-up or chest-up composition, straight-on eye-level camera, portrait-lens perspective, sharp focus on the entire face and upper body, background gently blurred. Keep the full central figure comfortably inside the frame.",
+  "STRICT EXCLUSIONS — do not render a single all-feminine or all-masculine face; do not merge the two skin tones into one; do not omit the center division; do not create two separate people; no text, watermark, signature, extra limbs, deformed hands or ornamental objects covering the face."
+].join(" ");
+
 const SACRED_SUBJECT_DIRECTIONS = [
+  {
+    pattern: /\bardhanarishvara\b|\bardhanarishwar\b|\bshiva\s*[-/]\s*parvati\s*combined\b/i,
+    direction: ARDHANARISHVARA_DIRECTION
+  },
   {
     pattern: /\b(lord\s+)?shiva\b|\bmahadev\b|\bmahadeva\b|\bshankar\b/i,
     direction: "Depict Lord Shiva (Mahadev) unmistakably as the Hindu deity, not a generic saint, monk, guru, or ordinary human. Include recognizable traditional iconography: blue-toned throat (Neelkanth), matted jatā hair with the crescent moon and a stream of the Ganga, tripundra ash stripes and third eye, rudraksha beads, and a trident (trishula); a serene divine presence. If seated, use a yogic Himalayan setting or Mount Kailash. Keep the face divine and dignified, with coherent anatomy and all requested attributes clearly visible."
