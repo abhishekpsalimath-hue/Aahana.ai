@@ -154,3 +154,34 @@ test("bounded stream reader fails closed for invalid stream or limit", async () 
   assert.deepEqual(await readBoundedStream(null, 100), { ok: false, tooLarge: false });
   assert.deepEqual(await readBoundedStream(new ReadableStream(), 0), { ok: false, tooLarge: false });
 });
+
+
+test("bounded multipart reconstruction preserves the boundary and parses image-edit fields", async () => {
+  const form = new FormData();
+  form.set("prompt", "Remove the background");
+  form.set("referencePrompt", "Keep the product shape and label unchanged");
+  form.set("image", new Blob([new Uint8Array([0x89, 0x50, 0x4e, 0x47])], {
+    type: "image/png",
+  }), "reference.png");
+
+  const originalRequest = new Request("https://aahana.test/api/images/edit", {
+    method: "POST",
+    body: form,
+  });
+  const bounded = await readBoundedStream(originalRequest.body, MAX_IMAGE_EDIT_REQUEST_BYTES);
+  assert.equal(bounded.ok, true);
+
+  const reconstructedRequest = new Request(originalRequest.url, {
+    method: "POST",
+    headers: originalRequest.headers,
+    body: bounded.bytes,
+  });
+  const parsed = await reconstructedRequest.formData();
+  const image = parsed.get("image");
+
+  assert.equal(parsed.get("prompt"), "Remove the background");
+  assert.equal(parsed.get("referencePrompt"), "Keep the product shape and label unchanged");
+  assert.equal(image.name, "reference.png");
+  assert.equal(image.type, "image/png");
+  assert.equal(image.size, 4);
+});
