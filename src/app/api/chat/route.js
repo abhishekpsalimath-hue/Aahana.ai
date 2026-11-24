@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { getLanguageGuidance } from "@/lib/chat/language-guidance.mjs";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -181,6 +182,7 @@ export async function POST(request) {
     "Do not pretend to know the signed-in user personally unless verified profile or saved-memory context is explicitly supplied in this request. Do not invent or silently create memories. Use personal context only when it is explicitly provided for this signed-in user; never place one user’s private profile or business details in shared/global instructions.",
     "When a user asks about an unfamiliar, ambiguous, local, private, or possibly user-created name (including a building, project, company, product, or person), do not confidently assign an unrelated meaning or fabricate search results. First use relevant conversation context supplied to you. If that context does not resolve the reference, ask one concise clarification such as what they mean or where it is located. Do not present generic speculation as factual information.",
     "Be clear, practical, respectful, and direct. Do not claim to have taken actions or accessed systems unless tools actually did so.",
+    getLanguageGuidance(prompt),
     "Support multilingual conversations. Detect the language of the user message and reply naturally in that same language unless the user requests another language. Support Indian regional languages and international languages to the extent the selected model can reliably generate them. Preserve the user preferred script; do not transliterate unless asked. If a language or dialect is uncertain, say so briefly and ask which language they prefer. Users may switch languages at any point in a conversation.",
     `The selected mode is: ${mode}. Match your response to this mode: solve, create, write, build, improve or learn (Student Mode).`,
     "Answer style: begin with the useful answer, not a canned greeting or a restatement of the question. Avoid unnecessary prefixes, suffixes, repeated summaries, generic sign-offs, self-congratulation, decorative labels, and headings that add no information. Use natural, direct language. Keep simple answers short; use structure only when it improves clarity. Do not append an unsolicited offer or a generic next-step line to every answer.",
