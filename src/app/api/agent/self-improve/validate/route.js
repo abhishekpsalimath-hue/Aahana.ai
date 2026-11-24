@@ -44,9 +44,22 @@ export async function POST(request) {
   }
   // On Vercel, @vercel/sandbox obtains deployment OIDC credentials automatically.
 
+  const MAX_VALIDATION_BODY_BYTES = 3 * 1024 * 1024;
+  const declaredLength = Number(request.headers.get("content-length") || 0);
+  if (declaredLength > MAX_VALIDATION_BODY_BYTES) {
+    return NextResponse.json({ error: "The validation request is too large." }, { status: 413 });
+  }
+
   let body;
-  try { body = await request.json(); }
-  catch { return NextResponse.json({ error: "Invalid validation request." }, { status: 400 }); }
+  try {
+    const raw = await request.text();
+    if (Buffer.byteLength(raw, "utf8") > MAX_VALIDATION_BODY_BYTES) {
+      return NextResponse.json({ error: "The validation request is too large." }, { status: 413 });
+    }
+    body = JSON.parse(raw);
+  } catch {
+    return NextResponse.json({ error: "Invalid validation request." }, { status: 400 });
+  }
 
   if (!Array.isArray(body?.files) || body.files.length < 1 || body.files.length > MAX_FILES) {
     return NextResponse.json({ error: "Validate one to three reviewed files at a time." }, { status: 400 });
