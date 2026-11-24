@@ -19,11 +19,29 @@ export async function POST(request) {
   }
 
   const declaredLength = Number(request.headers.get("content-length") || 0);
-  if (declaredLength > MAX_BODY_BYTES) return NextResponse.json({ error: "Self-build proposal is too large." }, { status: 413 });
+  if (declaredLength > MAX_BODY_BYTES) {
+    return NextResponse.json({ error: "Self-build proposal is too large." }, { status: 413 });
+  }
+
   let body;
   try {
-    const raw = await request.text();
-    if (Buffer.byteLength(raw, "utf8") > MAX_BODY_BYTES) return NextResponse.json({ error: "Self-build proposal is too large." }, { status: 413 });
+    const reader = request.body?.getReader();
+    const decoder = new TextDecoder();
+    let raw = "";
+    let totalBytes = 0;
+    if (reader) {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        totalBytes += value.byteLength;
+        if (totalBytes > MAX_BODY_BYTES) {
+          await reader.cancel();
+          return NextResponse.json({ error: "Self-build proposal is too large." }, { status: 413 });
+        }
+        raw += decoder.decode(value, { stream: true });
+      }
+      raw += decoder.decode();
+    }
     body = JSON.parse(raw);
   } catch {
     return NextResponse.json({ error: "Invalid self-build proposal." }, { status: 400 });
