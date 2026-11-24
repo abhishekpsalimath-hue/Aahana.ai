@@ -41,7 +41,7 @@ test("Ardhanarishvara prompt keeps natural detail while honoring requested frami
 
 test("recognizes sacred subjects written in Kannada, Tamil and Telugu scripts", () => {
   const kannadaShiva = buildImagePrompt("ಶಿವನ ಸುಂದರ ಚಿತ್ರ", "masterpiece");
-  assert.match(kannadaShiva, /Depict Lord Shiva \\(Mahadev\\) unmistakably/i);
+  assert.match(kannadaShiva, /Depict Lord Shiva \(Mahadev\) unmistakably/i);
 
   const tamilHanuman = buildImagePrompt("அனுமன் திருவுருவம்", "masterpiece");
   assert.match(tamilHanuman, /monkey-faced deity/i);
