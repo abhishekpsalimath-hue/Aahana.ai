@@ -79,3 +79,13 @@ test("reference image edit prompt preserves original sacred subject identity", (
 test("reference image edit prompt rejects empty instructions", () => {
   assert.equal(buildImageEditPrompt("A portrait", " "), null);
 });
+
+test("masterpiece direction protects explicit subject and composition constraints for every image", () => {
+  const prompt = buildImagePrompt("A red bicycle, exactly three yellow balloons, subject on the left, in Kannada", "masterpiece");
+  assert.match(prompt, /Treat the user prompt as a specification/i);
+  assert.match(prompt, /exact requested subject identity/i);
+  assert.match(prompt, /number of subjects and objects/i);
+  assert.match(prompt, /left\/right placement/i);
+  assert.match(prompt, /language it was written in/i);
+  assert.match(prompt, /never invent text/i);
+});
