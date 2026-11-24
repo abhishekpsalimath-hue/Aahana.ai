@@ -185,3 +185,18 @@ test("bounded multipart reconstruction preserves the boundary and parses image-e
   assert.equal(image.type, "image/png");
   assert.equal(image.size, 4);
 });
+
+
+test("bounded stream reader cancels and fails closed when the request stream errors", async () => {
+  let cancelled = false;
+  const stream = new ReadableStream({
+    start(controller) {
+      controller.enqueue(new Uint8Array([1, 2]));
+      controller.error(new Error("simulated upload interruption"));
+    },
+    cancel() { cancelled = true; },
+  });
+  const result = await readBoundedStream(stream, 4);
+  assert.deepEqual(result, { ok: false, tooLarge: false });
+  assert.equal(cancelled, false);
+});
