@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import pdfParse from "pdf-parse";
 import mammoth from "mammoth";
 import ExcelJS from "exceljs";
+import { extractSpreadsheetText } from "@/lib/files/spreadsheet-extraction.mjs";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -55,6 +56,8 @@ export async function POST(_request, { params }) {
       });
     }
     let extracted = "";
+    let extractionTruncated = false;
+    let extractedCharacters = null;
     if (file.mime_type === "application/pdf") {
       const parsed = await pdfParse(buffer);
       extracted = parsed.text || "";
@@ -64,27 +67,10 @@ export async function POST(_request, { params }) {
     } else if (file.mime_type === XLSX_TYPE) {
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(buffer);
-      const sections = [];
-      const sheets = workbook.worksheets.slice(0, 8);
-      for (const sheet of sheets) {
-        sections.push(`SHEET: ${sheet.name}`);
-        const rowLimit = Math.min(sheet.rowCount || 0, 200);
-        const columnLimit = Math.min(sheet.columnCount || 0, 30);
-        for (let rowNumber = 1; rowNumber <= rowLimit; rowNumber++) {
-          const row = sheet.getRow(rowNumber);
-          const values = [];
-          for (let columnNumber = 1; columnNumber <= columnLimit; columnNumber++) {
-            const cell = row.getCell(columnNumber);
-            const value = cell.text || (cell.value == null ? "" : String(cell.value));
-            values.push(value.replace(/[\\t\\r\\n]+/g, " ").trim());
-          }
-          if (values.some(Boolean)) sections.push(values.join(" | "));
-          if (sections.join("\n").length > MAX_EXTRACTED_CHARACTERS * 2) break;
-        }
-        if (sections.join("\n").length > MAX_EXTRACTED_CHARACTERS * 2) break;
-      }
-      if (workbook.worksheets.length > 8) sections.push("[Only the first 8 worksheets were included.]");
-      extracted = sections.join("\n");
+      const result = extractSpreadsheetText(workbook, MAX_EXTRACTED_CHARACTERS);
+      extracted = result.text;
+      extractionTruncated = result.truncated;
+      extractedCharacters = result.extractedCharacters;
     } else {
       extracted = buffer.toString("utf8");
     }
@@ -94,13 +80,13 @@ export async function POST(_request, { params }) {
       return NextResponse.json({ error: "No readable text was found. This may be a scanned PDF; OCR is not enabled for stored documents yet." }, { status: 422 });
     }
 
-    const truncated = extracted.length > MAX_EXTRACTED_CHARACTERS;
+    const truncated = extractionTruncated || extracted.length > MAX_EXTRACTED_CHARACTERS;
     return NextResponse.json({
       filename: file.original_filename,
       mimeType: file.mime_type,
       text: extracted.slice(0, MAX_EXTRACTED_CHARACTERS),
       truncated,
-      extractedCharacters: extracted.length,
+      extractedCharacters: extractedCharacters ?? extracted.length,
     });
   } catch (parseError) {
     console.error("Aahana document extraction failed:", parseError?.message || "unknown error");
