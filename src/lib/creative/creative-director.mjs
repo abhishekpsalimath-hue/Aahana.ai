@@ -55,7 +55,6 @@ const SACRED_SUBJECT_DIRECTIONS = [
     direction: "Depict Lord Rama unmistakably as the Hindu deity, with traditional divine iconography such as a bow, dignified royal-yet-humble presence, and appropriate traditional attire. Do not depict a generic monk or saint."
   },
   {
-  {
     pattern: /(?:शिव|महादेव|শিব|মহাদেব|શિવ|મહાદેવ)/u,
     direction: "Depict Lord Shiva (Mahadev) unmistakably as the Hindu deity, not a generic saint, monk, guru, or ordinary human. Include recognizable traditional iconography: blue-toned throat (Neelkanth), matted jata hair with the crescent moon and a stream of the Ganga, tripundra ash stripes and third eye, rudraksha beads, and a trident (trishula); a serene divine presence. If seated, use a yogic Himalayan setting or Mount Kailash. Keep the face divine and dignified, with coherent anatomy and all requested attributes clearly visible."
   },
@@ -79,6 +78,7 @@ const SACRED_SUBJECT_DIRECTIONS = [
     pattern: /(?:अर्धनारीश्वर|অর্ধনারীশ্বর|અર્ધનારીશ્વર)/u,
     direction: ARDHANARISHVARA_DIRECTION
   },
+  {
     pattern: /\bardhanarishvara\b|\bardhanarishwar\b|\bshiva\s*[-/]\s*parvati\s*combined\b/i,
     direction: ARDHANARISHVARA_DIRECTION
   },
