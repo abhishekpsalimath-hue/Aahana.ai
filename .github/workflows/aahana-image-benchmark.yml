@@ -1,0 +1,36 @@
+name: Aahana controlled image benchmark
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aahana-controlled-image-benchmark
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout approved benchmark branch
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run fixed ten-case synthetic benchmark
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          AAHANA_IMAGE_MODEL: ${{ vars.AAHANA_IMAGE_MODEL }}
+        run: node scripts/run-image-benchmark.mjs
+      - name: Store generated images privately as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: aahana-image-benchmark
+          path: artifacts/aahana-image-benchmark/
+          retention-days: 3
+          if-no-files-found: error
