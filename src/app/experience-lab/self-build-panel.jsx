@@ -1,8 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 
-const panel = { marginTop: 18, padding: 18, border: "1px solid rgba(190,165,235,.24)", borderRadius: 18, background: "rgba(20,16,31,.72)", color: "#f4efff" };
-const button = { border: "1px solid rgba(205,185,245,.32)", borderRadius: 999, padding: "9px 14px", background: "rgba(170,140,220,.16)", color: "#f5edff", cursor: "pointer", fontWeight: 600 };
+const panel = { marginTop: 18, padding: 18, border: "1px solid #514365", borderRadius: 18, background: "#171323", color: "#f4efff" };
+const button = { border: "1px solid #766292", borderRadius: 999, padding: "9px 14px", background: "#302544", color: "#f5edff", cursor: "pointer", fontWeight: 600 };
 const muted = { color: "#b9adc9", fontSize: 13, lineHeight: 1.55 };
 
 async function send(url, body) {
@@ -95,13 +95,13 @@ export default function AahanaSelfBuildPanel() {
         {!status.agentReady && <p role="status" style={muted}>The existing Groq AI connection is not ready in this environment. No task has been sent.</p>}
         <label style={{ display: "grid", gap: 7, fontSize: 13, fontWeight: 600 }}>Development task
           <textarea value={task} onChange={(e) => setTask(e.target.value)} maxLength={3000} rows={3} placeholder="Example: Improve the Experience Lab code editor and add tests. Do not change authentication, Student Mode or production data."
-            style={{ width: "100%", boxSizing: "border-box", resize: "vertical", borderRadius: 12, padding: 12, color: "#f5efff", background: "#100d18", border: "1px solid rgba(205,185,245,.25)" }} />
+            style={{ width: "100%", boxSizing: "border-box", resize: "vertical", borderRadius: 12, padding: 12, color: "#f5efff", background: "#100d18", border: "1px solid #514365" }} />
         </label>
         <div style={{ display: "flex", gap: 9, flexWrap: "wrap" }}>
           <button type="button" style={button} disabled={busy || !task.trim() || !status.agentReady} onClick={preparePlan}>{busy ? "Working…" : "Ask Aahana to plan"}</button>
           {plan && !proposals.length && <button type="button" style={button} disabled={busy} onClick={approveAndRun}>Approve plan & let Aahana work</button>}
         </div>
-        {plan && <div style={{ borderTop: "1px solid rgba(205,185,245,.18)", paddingTop: 12 }}>
+        {plan && <div style={{ borderTop: "1px solid #514365", paddingTop: 12 }}>
           <strong>{plan.title}</strong><p style={muted}>{plan.problem}</p><p style={muted}>{plan.approach}</p>
           <div style={muted}>Files Aahana may inspect: {plan.affectedPaths?.join(", ")}</div>
           {plan.risks?.length > 0 && <div style={muted}>Risks: {plan.risks.join("; ")}</div>}
@@ -109,7 +109,7 @@ export default function AahanaSelfBuildPanel() {
           <p style={{ ...muted, marginBottom: 0 }}>Planning reads no source. Your approval is required before execution.</p>
         </div>}
         {finalResponse && <p style={muted} role="status">{finalResponse}</p>}
-        {proposals.map((f) => <details key={f.path} style={{ borderTop: "1px solid rgba(205,185,245,.18)", paddingTop: 10 }}>
+        {proposals.map((f) => <details key={f.path} style={{ borderTop: "1px solid #514365", paddingTop: 10 }}>
           <summary style={{ cursor: "pointer", fontWeight: 600 }}>{f.path} — {f.summary}</summary>
           <pre style={{ maxHeight: 300, overflow: "auto", whiteSpace: "pre-wrap", overflowWrap: "anywhere", padding: 12, borderRadius: 10, background: "#0c0a12", color: "#e8def8", fontSize: 11 }}>{f.updatedContent}</pre>
         </details>)}
