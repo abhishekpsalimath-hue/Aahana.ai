@@ -187,7 +187,7 @@ test("bounded multipart reconstruction preserves the boundary and parses image-e
 });
 
 
-test("bounded stream reader cancels and fails closed when the request stream errors", async () => {
+test("bounded stream reader fails closed when the request stream errors", async () => {
   let cancelled = false;
   const stream = new ReadableStream({
     start(controller) {
