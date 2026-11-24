@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { summarizeImageBenchmark, IMAGE_BENCHMARK_DIMENSIONS } from "./image-benchmark.mjs";
+import { summarizeImageBenchmark, IMAGE_BENCHMARK_DIMENSIONS, IMAGE_CASE_ACCEPTANCE_THRESHOLD } from "./image-benchmark.mjs";
 
 function result(overrides = {}) {
   return {
@@ -17,6 +17,17 @@ function result(overrides = {}) {
     ...overrides,
   };
 }
+
+test("defines a strict case-level acceptance threshold", () => {
+  assert.equal(IMAGE_CASE_ACCEPTANCE_THRESHOLD, 4);
+  const summary = summarizeImageBenchmark([
+    result({ caseId: "pass", subjectFidelity: 4, attributeFidelity: 4, compositionFidelity: 4, constraintFidelity: 4, visualCoherence: 4 }),
+    result({ caseId: "fail", subjectFidelity: 5, attributeFidelity: 5, compositionFidelity: 5, constraintFidelity: 3, visualCoherence: 5 }),
+  ])[0];
+  assert.equal(summary.acceptedCases, 1);
+  assert.equal(summary.caseAcceptanceRate, 0.5);
+  assert.equal(summary.acceptanceThreshold, 4);
+});
 
 test("exposes the five fixed scoring dimensions", () => {
   assert.deepEqual(IMAGE_BENCHMARK_DIMENSIONS, [
