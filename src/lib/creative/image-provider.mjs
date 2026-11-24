@@ -28,9 +28,10 @@ export function detectImageMimeTypeFromBase64(value) {
 }
 
 export function resolveImageModel(value) {
+  if (value === undefined || value === null || value === "") return DEFAULT_IMAGE_MODEL;
   if (value === "flux-2-klein-4b") return ENHANCED_IMAGE_MODEL;
   if (value === "flux-2-dev") return ACCURACY_IMAGE_MODEL;
-  return DEFAULT_IMAGE_MODEL;
+  throw new Error("Unsupported Aahana image model selection. Choose flux-2-klein-4b or flux-2-dev, or leave it unset for the default model.");
 }
 
 export function buildImageProviderRequest({ model, prompt, steps = 8, seed, width = 1024, height = 1024 }) {
@@ -57,7 +58,7 @@ export function buildImageProviderRequest({ model, prompt, steps = 8, seed, widt
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ prompt, steps }),
+    body: JSON.stringify({ prompt, steps, width, height }),
     cache: "no-store",
     signal: AbortSignal.timeout(55000),
   };
