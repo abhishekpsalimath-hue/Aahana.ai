@@ -29,12 +29,12 @@ export async function POST(request) {
   if (!input.ok) {
     return NextResponse.json({ error: input.error }, { status: 400 });
   }
-  const { prompt, steps } = input;
+  const { prompt, steps, width, height, aspectRatio } = input;
 
   try {
     const model = resolveImageModel(process.env.AAHANA_IMAGE_MODEL);
     const seed = Number.isInteger(body?.seed) && body.seed >= 0 && body.seed <= 0xffffffff ? body.seed : undefined;
-    const providerRequest = buildImageProviderRequest({ model, prompt, steps, seed });
+    const providerRequest = buildImageProviderRequest({ model, prompt, steps, seed, width, height });
     const response = await fetch(
       `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/ai/run/${model}`,
       {
@@ -62,7 +62,7 @@ export async function POST(request) {
     }
 
     return NextResponse.json(
-      { imageDataUrl: `data:${imageMimeType};base64,${image}`, model, steps: model === ENHANCED_IMAGE_MODEL ? 4 : model === ACCURACY_IMAGE_MODEL ? 25 : steps },
+      { imageDataUrl: `data:${imageMimeType};base64,${image}`, model, steps: model === ENHANCED_IMAGE_MODEL ? 4 : model === ACCURACY_IMAGE_MODEL ? 25 : steps, width, height, aspectRatio },
       { headers: { "Cache-Control": "no-store" } }
     );
   } catch (error) {
