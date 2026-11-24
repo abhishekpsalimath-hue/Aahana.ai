@@ -125,17 +125,34 @@ export async function POST(request) {
   const model = process.env.AAHANA_AGENT_MODEL || "openai/gpt-oss-120b";
   if (!apiKey) return NextResponse.json({ error: "The existing Groq AI connection is not configured." }, { status: 503 });
 
-  let raw;
-  try {
-    raw = await request.text();
-    if (Buffer.byteLength(raw, "utf8") > MAX_BODY_BYTES) return NextResponse.json({ error: "The self-improvement task is too large." }, { status: 413 });
-  } catch {
-    return NextResponse.json({ error: "Could not read the self-improvement task." }, { status: 400 });
+  const declaredLength = Number(request.headers.get("content-length") || 0);
+  if (declaredLength > MAX_BODY_BYTES) {
+    return NextResponse.json({ error: "The self-improvement task is too large." }, { status: 413 });
   }
 
   let body;
-  try { body = JSON.parse(raw); }
-  catch { return NextResponse.json({ error: "Invalid self-improvement task." }, { status: 400 }); }
+  try {
+    const reader = request.body?.getReader();
+    const decoder = new TextDecoder();
+    let raw = "";
+    let totalBytes = 0;
+    if (reader) {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        totalBytes += value.byteLength;
+        if (totalBytes > MAX_BODY_BYTES) {
+          await reader.cancel();
+          return NextResponse.json({ error: "The self-improvement task is too large." }, { status: 413 });
+        }
+        raw += decoder.decode(value, { stream: true });
+      }
+      raw += decoder.decode();
+    }
+    body = JSON.parse(raw);
+  } catch {
+    return NextResponse.json({ error: "Invalid self-improvement task." }, { status: 400 });
+  }
 
   const task = typeof body?.task === "string" ? body.task.trim() : "";
   const pathHint = body?.pathHint == null ? null : String(body.pathHint);
