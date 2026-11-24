@@ -14,6 +14,32 @@ test("standard image direction stays minimal and unknown quality is rejected", (
   assert.equal(buildImagePrompt("A portrait", "unknown"), null);
 });
 
+test("Ardhanarishvara gets a dedicated unified-form direction before standalone Shiva matching", () => {
+  const prompt = buildImagePrompt("A hyper-realistic portrait of Ardhanarishvara, the divine half-male / half-female form of Shiva and Parvati", "masterpiece");
+  assert.match(prompt, /one unified divine being/i);
+  assert.match(prompt, /not two people standing together/i);
+  assert.match(prompt, /VIEWER-LEFT HALF — Parvati/i);
+  assert.match(prompt, /VIEWER-RIGHT HALF — Shiva/i);
+  assert.match(prompt, /one face with two complementary halves/i);
+  assert.match(prompt, /vertical division runs from the crown/i);
+  assert.match(prompt, /not a generic saint/i) === false;
+  assert.doesNotMatch(prompt, /Depict Lord Shiva \(Mahadev\) unmistakably/);
+});
+
+test("Ardhanarishvara prompt keeps natural portrait direction and strict vertical framing", () => {
+  const prompt = buildImagePrompt("Ardhanarishvara, one combined form of Shiva and Parvati, vertical portrait", "masterpiece");
+  assert.match(prompt, /realistic skin pores/i);
+  assert.match(prompt, /vertical 3:4 portrait/i);
+  assert.match(prompt, /avoid plastic skin/i);
+  assert.match(prompt, /no duplicate features/i);
+});
+
+test("standalone Shiva still receives the original Shiva-specific direction", () => {
+  const prompt = buildImagePrompt("A portrait of Lord Shiva", "masterpiece");
+  assert.match(prompt, /Depict Lord Shiva \(Mahadev\) unmistakably/i);
+  assert.match(prompt, /tripundra ash stripes/i);
+});
+
 test("cinematic video direction adds camera, continuity, and motion guidance", () => {
   const prompt = buildVideoPrompt("A lone astronaut walks across a red desert");
   assert.match(prompt, /motivated camera movement/i);
@@ -38,7 +64,6 @@ test("provider registry reports configuration without exposing credentials", () 
   assert.equal(status.find((item) => item.id === "higgsfield").configured, false);
   assert.equal(JSON.stringify(status).includes("secret"), false);
 });
-
 
 test("reference image edit prompt preserves original sacred subject identity", () => {
   const prompt = buildImageEditPrompt(
