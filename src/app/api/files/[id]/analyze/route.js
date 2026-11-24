@@ -4,6 +4,7 @@ import pdfParse from "pdf-parse";
 import mammoth from "mammoth";
 import ExcelJS from "exceljs";
 import { extractSpreadsheetText } from "@/lib/files/spreadsheet-extraction.mjs";
+import { limitDocumentText } from "@/lib/files/document-text-limits.mjs";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -80,13 +81,15 @@ export async function POST(_request, { params }) {
       return NextResponse.json({ error: "No readable text was found. This may be a scanned PDF; OCR is not enabled for stored documents yet." }, { status: 422 });
     }
 
-    const truncated = extractionTruncated || extracted.length > MAX_EXTRACTED_CHARACTERS;
+    const limited = extractionTruncated
+      ? { text: extracted.slice(0, MAX_EXTRACTED_CHARACTERS), truncated: true, extractedCharacters: extractedCharacters ?? extracted.length }
+      : limitDocumentText(extracted, MAX_EXTRACTED_CHARACTERS);
     return NextResponse.json({
       filename: file.original_filename,
       mimeType: file.mime_type,
-      text: extracted.slice(0, MAX_EXTRACTED_CHARACTERS),
-      truncated,
-      extractedCharacters: extractedCharacters ?? extracted.length,
+      text: limited.text,
+      truncated: limited.truncated,
+      extractedCharacters: extractedCharacters ?? limited.extractedCharacters,
     });
   } catch (parseError) {
     console.error("Aahana document extraction failed:", parseError?.message || "unknown error");
