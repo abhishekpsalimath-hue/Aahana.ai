@@ -6,7 +6,7 @@ const IMAGE_MASTERPIECE_DIRECTION = [
   "Establish one unmistakable focal subject and a deliberate visual hierarchy.",
   "Use intentional composition, believable perspective, rich but controlled color, nuanced lighting, dimensional depth, tactile material detail, and crisp subject separation.",
   "Make fine details coherent and purposeful; avoid visual clutter, accidental text, malformed anatomy, duplicate objects, plastic-looking textures, and oversharpening.",
-  "Preserve the subject and specific details requested by the user. Do not add logos, words, or extra objects unless requested."
+  "Treat the user prompt as a specification, not loose inspiration. Preserve the exact requested subject identity, number of subjects and objects, defining attributes, left/right placement, pose, setting, materials, palette, and framing. Resolve conflicts in favor of the user's explicit requirements; never replace a named subject with a visually similar generic subject. Interpret the request in the language it was written in; preserve proper names and any exact visible wording, and never invent text. Do not add logos, words, or extra objects unless requested."
 ].join(" ");
 
 const VIDEO_DIRECTIONS = Object.freeze({
