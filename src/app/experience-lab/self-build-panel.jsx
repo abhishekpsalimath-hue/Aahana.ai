@@ -111,8 +111,23 @@ export default function AahanaSelfBuildPanel() {
         {finalResponse && <p style={muted} role="status">{finalResponse}</p>}
         {proposals.map((f) => <details key={f.path} style={{ borderTop: "1px solid #514365", paddingTop: 10 }}>
           <summary style={{ cursor: "pointer", fontWeight: 600 }}>{f.path} — {f.summary}</summary>
-          <pre style={{ maxHeight: 300, overflow: "auto", whiteSpace: "pre-wrap", overflowWrap: "anywhere", padding: 12, borderRadius: 10, background: "#0c0a12", color: "#e8def8", fontSize: 11 }}>{f.updatedContent}</pre>
+          <label style={{ display: "grid", gap: 7, marginTop: 10, fontSize: 12, color: "#cfc2df" }}>
+            Review and edit proposed source
+            <textarea
+              aria-label={`Proposed source for ${f.path}`}
+              spellCheck={false}
+              value={f.updatedContent}
+              onChange={(event) => {
+                const updatedContent = event.target.value;
+                setProposals((current) => current.map((item) => item.path === f.path ? { ...item, updatedContent } : item));
+                setValidation(null);
+              }}
+              rows={14}
+              style={{ width: "100%", boxSizing: "border-box", resize: "vertical", borderRadius: 10, padding: 12, color: "#e8def8", background: "#0c0a12", border: "1px solid #514365", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", fontSize: 11, lineHeight: 1.5 }}
+            />
+          </label>
         </details>)}
+        {proposals.length > 0 && <p style={muted}>You can edit each proposed file before validation. Any edit clears the previous validation, so the exact reviewed content must pass the sandbox again.</p>}
         {proposals.length > 0 && <div style={{ display: "flex", gap: 9, flexWrap: "wrap" }}>
           <button type="button" style={button} disabled={busy || !status.validationEnabled} onClick={validateProposal}>Validate in isolated sandbox</button>
           <button type="button" style={button} disabled={busy || !validation?.ok} onClick={createDraftPullRequest}>Create draft PR for review</button>
