@@ -26,12 +26,17 @@ test("Ardhanarishvara gets a dedicated unified-form direction before standalone 
   assert.doesNotMatch(prompt, /Depict Lord Shiva \(Mahadev\) unmistakably/);
 });
 
-test("Ardhanarishvara prompt keeps natural portrait direction and strict vertical framing", () => {
-  const prompt = buildImagePrompt("Ardhanarishvara, one combined form of Shiva and Parvati, vertical portrait", "masterpiece");
-  assert.match(prompt, /realistic skin pores/i);
-  assert.match(prompt, /vertical 3:4 portrait/i);
-  assert.match(prompt, /avoid plastic skin/i);
-  assert.match(prompt, /no duplicate features/i);
+test("Ardhanarishvara prompt keeps natural detail while honoring requested framing", () => {
+  const portrait = buildImagePrompt("Ardhanarishvara, one combined form of Shiva and Parvati, vertical portrait", "masterpiece");
+  assert.match(portrait, /realistic skin pores/i);
+  assert.match(portrait, /favor a balanced vertical devotional portrait/i);
+  assert.match(portrait, /avoid plastic skin/i);
+  assert.match(portrait, /no duplicate features/i);
+
+  const widescreen = buildImagePrompt("Ardhanarishvara, one combined form of Shiva and Parvati, widescreen 16:9 landscape", "masterpiece");
+  assert.match(widescreen, /explicitly requested orientation, aspect ratio and framing/i);
+  assert.match(widescreen, /never force a portrait crop when landscape or widescreen was requested/i);
+  assert.doesNotMatch(widescreen, /vertical 3:4 portrait/i);
 });
 
 test("standalone Shiva still receives the original Shiva-specific direction", () => {
