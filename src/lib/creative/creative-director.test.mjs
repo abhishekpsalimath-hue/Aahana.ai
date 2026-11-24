@@ -6,7 +6,7 @@ test("masterpiece image direction adds composition, lighting, and detail guidanc
   const prompt = buildImagePrompt("A glass perfume bottle on black marble", "masterpiece");
   assert.match(prompt, /visual hierarchy/i);
   assert.match(prompt, /tactile material detail/i);
-  assert.match(prompt, /Preserve the subject/i);
+  assert.match(prompt, /Treat the user prompt as a specification/i);
 });
 
 test("standard image direction stays minimal and unknown quality is rejected", () => {
@@ -22,7 +22,7 @@ test("Ardhanarishvara gets a dedicated unified-form direction before standalone 
   assert.match(prompt, /VIEWER-RIGHT HALF — Shiva/i);
   assert.match(prompt, /one face with two complementary halves/i);
   assert.match(prompt, /vertical division runs from the crown/i);
-  assert.match(prompt, /not a generic saint/i) === false;
+  assert.doesNotMatch(prompt, /not a generic saint/i);
   assert.doesNotMatch(prompt, /Depict Lord Shiva \(Mahadev\) unmistakably/);
 });
 
