@@ -112,7 +112,7 @@ test("masterpiece direction protects explicit subject and composition constraint
 
 test("recognizes sacred subjects written in Hindi, Bengali and Gujarati scripts", () => {
   const hindiShiva = buildImagePrompt("शिव का दिव्य रूप", "masterpiece");
-  assert.match(hindiShiva, /Depict Lord Shiva \\(Mahadev\\) unmistakably/i);
+  assert.match(hindiShiva, /Depict Lord Shiva \(Mahadev\) unmistakably/i);
 
   const hindiArdhanarishvara = buildImagePrompt("अर्धनारीश्वर", "masterpiece");
   assert.match(hindiArdhanarishvara, /one unified divine being/i);
