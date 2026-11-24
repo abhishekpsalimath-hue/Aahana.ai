@@ -1,9 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { IMAGE_BENCHMARK_CASES, IMAGE_BENCHMARK_CATEGORY_COUNT } from "./image-benchmark-cases.mjs";
+import { IMAGE_BENCHMARK_CASES, IMAGE_BENCHMARK_CASE_COUNT, IMAGE_BENCHMARK_CATEGORY_COUNT } from "./image-benchmark-cases.mjs";
 
 test("provides at least 100 unique synthetic image cases across all categories", () => {
-  assert.ok(IMAGE_BENCHMARK_CASES.length >= 100);
+  assert.equal(IMAGE_BENCHMARK_CASE_COUNT, 110);
+  assert.equal(IMAGE_BENCHMARK_CASES.length, IMAGE_BENCHMARK_CASE_COUNT);
   assert.equal(new Set(IMAGE_BENCHMARK_CASES.map((item) => item.id)).size, IMAGE_BENCHMARK_CASES.length);
   assert.equal(new Set(IMAGE_BENCHMARK_CASES.map((item) => item.category)).size, IMAGE_BENCHMARK_CATEGORY_COUNT);
   assert.equal(IMAGE_BENCHMARK_CATEGORY_COUNT, 11);
