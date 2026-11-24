@@ -20,9 +20,13 @@ const IMAGE_STYLE_PROMPTS = Object.freeze({
 
 export function inferImageAspectRatio(prompt) {
   const text = typeof prompt === "string" ? prompt.toLowerCase() : "";
-  if (/\b(16:9|widescreen|wide\s+landscape|cinematic\s+landscape)\b/.test(text)) return "16:9";
-  if (/\b(4:3|landscape|horizontal)\b/.test(text)) return "4:3";
-  if (/\b(3:4|portrait|vertical|phone\s+wallpaper)\b/.test(text)) return "3:4";
+  // An explicit numeric ratio always outranks descriptive orientation words.
+  if (/\b16\s*:\s*9\b/.test(text)) return "16:9";
+  if (/\b4\s*:\s*3\b/.test(text)) return "4:3";
+  if (/\b3\s*:\s*4\b/.test(text)) return "3:4";
+  if (/\b(widescreen|wide\s+landscape|cinematic\s+landscape)\b/.test(text)) return "16:9";
+  if (/\b(landscape|horizontal)\b/.test(text)) return "4:3";
+  if (/\b(portrait|vertical|phone\s+wallpaper)\b/.test(text)) return "3:4";
   return "1:1";
 }
 
