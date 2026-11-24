@@ -31,6 +31,30 @@ const ARDHANARISHVARA_DIRECTION = [
 
 const SACRED_SUBJECT_DIRECTIONS = [
   {
+    pattern: /(?:ಅರ್ಧನಾರೀಶ್ವರ|ಅರ್ಧನಾರೀಶ್ವರಮೂರ್ತಿ|அர்த்தநாரீஸ்வரர்|அர்த்தநாரீஸ்வரர்|అర్ధనారీశ్వరుడు)/u,
+    direction: ARDHANARISHVARA_DIRECTION
+  },
+  {
+    pattern: /(?:ಶಿವ|ಮಹಾದೇವ|சிவன்|மகாதேவன்|శివుడు|మహాదేవుడు)/u,
+    direction: "Depict Lord Shiva (Mahadev) unmistakably as the Hindu deity, not a generic saint, monk, guru, or ordinary human. Include recognizable traditional iconography: blue-toned throat (Neelkanth), matted jatā hair with the crescent moon and a stream of the Ganga, tripundra ash stripes and third eye, rudraksha beads, and a trident (trishula); a serene divine presence. If seated, use a yogic Himalayan setting or Mount Kailash. Keep the face divine and dignified, with coherent anatomy and all requested attributes clearly visible."
+  },
+  {
+    pattern: /(?:ಹನುಮಂತ|ಆಂಜನೇಯ|அனுமன்|ஆஞ்சநேயர்|హనుమంతుడు|ఆంజనేయుడు)/u,
+    direction: "Depict Lord Hanuman (Anjaneya) unmistakably as the Hindu monkey-faced deity, not a human saint, monk, or generic warrior. Preserve the clearly recognizable vanara face and muzzle, expressive compassionate divine eyes, traditional crown or ornaments where appropriate, gada (mace), and devotional strength. If the scene calls for it, include a saffron dhoti and a reverent devotional pose. Do not replace the monkey-faced divine form with an ordinary human face."
+  },
+  {
+    pattern: /(?:ಗಣೇಶ|ಗಣಪತಿ|விநாயகர்|பிள்ளையார்|గణేశుడు|వినాయకుడు)/u,
+    direction: "Depict Lord Ganesha unmistakably as the elephant-headed Hindu deity, with a clear elephant face and trunk, traditional crown and ornaments, and his characteristic divine form. Never substitute an ordinary human face."
+  },
+  {
+    pattern: /(?:ಕೃಷ್ಣ|ಶ್ರೀಕೃಷ್ಣ|கிருஷ்ணர்|கண்ணன்|కృష్ణుడు)/u,
+    direction: "Depict Lord Krishna unmistakably as the Hindu deity, with a serene youthful divine appearance, blue-toned skin, peacock feather, yellow garments and flute when suitable to the requested scene. Do not substitute a generic human saint."
+  },
+  {
+    pattern: /(?:ರಾಮ|ಶ್ರೀರಾಮ|ராமர்|ஸ்ரீராமர்|రాముడు|శ్రీరాముడు)/u,
+    direction: "Depict Lord Rama unmistakably as the Hindu deity, with traditional divine iconography such as a bow, dignified royal-yet-humble presence, and appropriate traditional attire. Do not depict a generic monk or saint."
+  },
+  {
     pattern: /\bardhanarishvara\b|\bardhanarishwar\b|\bshiva\s*[-/]\s*parvati\s*combined\b/i,
     direction: ARDHANARISHVARA_DIRECTION
   },
