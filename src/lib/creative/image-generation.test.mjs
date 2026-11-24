@@ -129,6 +129,12 @@ test("infers portrait, landscape, and widescreen framing from natural language",
   assert.equal(inferImageAspectRatio("A beautiful flower"), "1:1");
 });
 
+test("explicit numeric aspect ratios outrank conflicting descriptive words", () => {
+  assert.equal(inferImageAspectRatio("A wide landscape composition, exact ratio 4:3"), "4:3");
+  assert.equal(inferImageAspectRatio("A portrait subject in a 16:9 frame"), "16:9");
+  assert.equal(inferImageAspectRatio("A horizontal scene, exact ratio 3:4"), "3:4");
+});
+
 test("accepts explicit supported framing and rejects unsupported dimensions", () => {
   const portrait = parseImageGenerationInput({ prompt: "A dancer", aspectRatio: "3:4" });
   assert.equal(portrait.ok, true);
