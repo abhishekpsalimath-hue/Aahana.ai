@@ -116,4 +116,4 @@ export const IMAGE_BENCHMARK_CASES = Object.freeze([
   Object.freeze({ id: "IMG-110", category: "composition", prompt: "Exactly four glowing lanterns hanging at different heights, dark evening background." }),
 ]);
 
-export const IMAGE_BENCHMARK_CATEGORY_COUNT = 10;
+export const IMAGE_BENCHMARK_CATEGORY_COUNT = 11;
