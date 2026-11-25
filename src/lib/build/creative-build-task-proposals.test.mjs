@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createCreativeBuildTaskProposals, validateCreativeBuildTargetPath } from "./creative-build-task-proposals.mjs";
+import { createCreativeBuildTaskProposals, validateCreativeBuildTargetPath, verifyCreativeBuildTaskProposal } from "./creative-build-task-proposals.mjs";
 
 const report = {
   proposalCount: 2,
@@ -51,4 +51,26 @@ test("rejects malformed, duplicate, excessive and unapproved task assignments", 
   const duplicate = { proposalCount: 2, proposals: [report.proposals[0], report.proposals[0]] };
   assert.throws(() => createCreativeBuildTaskProposals({ improvementReport: duplicate }), /unique/);
   assert.throws(() => createCreativeBuildTaskProposals({ improvementReport: report, targetPathsByProposal: { "image-subjectFidelity": ["src/lib/creative/a.mjs", "src/lib/creative/a.mjs"] } }), /unique/);
+});
+
+
+test("verifies immutable task identity and rejects client-tampered evidence, paths or permissions", () => {
+  const [task] = createCreativeBuildTaskProposals({
+    improvementReport: { proposalCount: 1, proposals: [report.proposals[0]] },
+    targetPathsByProposal: { "image-subjectFidelity": ["src/lib/creative/creative-director.mjs"] },
+  }).tasks;
+  assert.equal(verifyCreativeBuildTaskProposal(task), true);
+  assert.equal(verifyCreativeBuildTaskProposal({ ...task, title: "Changed title" }), true);
+  assert.equal(verifyCreativeBuildTaskProposal({
+    ...task, sourceEvidence: { ...task.sourceEvidence, evidence: { averageScore: 5, reviewCount: 4 } },
+  }), false);
+  assert.equal(verifyCreativeBuildTaskProposal({
+    ...task, targetPaths: ["src/lib/creative/other.mjs"],
+  }), false);
+  assert.equal(verifyCreativeBuildTaskProposal({
+    ...task, execution: { ...task.execution, writesAllowed: true },
+  }), false);
+  assert.equal(verifyCreativeBuildTaskProposal({
+    ...task, approval: { required: true, status: "approved" },
+  }), false);
 });
