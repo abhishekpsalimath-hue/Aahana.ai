@@ -12,6 +12,7 @@ export default function LoginPage() {
   const [mode, setMode] = useState("signin");
   const [authMethod, setAuthMethod] = useState("otp");
   const [step, setStep] = useState("credentials");
+  const [otpType, setOtpType] = useState("email");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [otpCooldown, setOtpCooldown] = useState(0);
@@ -54,7 +55,7 @@ export default function LoginPage() {
         const { error } = await supabase.auth.verifyOtp({
           email: normalizedEmail,
           token: otp,
-          type: mode === "signup" ? "signup" : "email",
+          type: otpType,
         });
 
         if (error) {
@@ -77,8 +78,25 @@ export default function LoginPage() {
           options: { shouldCreateUser: false },
         });
         if (error) {
-          setMessage(explainAuthError(error, "We couldn't send your sign-in code. Please try again."));
+          const errorCode = (error.code || "").toLowerCase();
+          const errorText = (error.message || "").toLowerCase();
+          const needsSignupConfirmation = errorCode === "email_not_confirmed" || errorText.includes("email not confirmed");
+          if (needsSignupConfirmation) {
+            const resend = await supabase.auth.resend({ type: "signup", email: normalizedEmail });
+            if (resend.error) {
+              setMessage(explainAuthError(resend.error, "This account still needs email verification. We couldn't send a new code yet; please wait and try again."));
+            } else {
+              setOtpType("signup");
+              setStep("verify");
+              setOtp("");
+              setOtpCooldown(60);
+              setMessage("This account needs one-time email verification. We sent a 6-digit code; enter it here to finish signing in.");
+            }
+          } else {
+            setMessage(explainAuthError(error, "We couldn't send your sign-in code. Please try again."));
+          }
         } else {
+          setOtpType("email");
           setStep("verify");
           setOtp("");
           setOtpCooldown(60);
@@ -112,6 +130,7 @@ export default function LoginPage() {
       if (error) {
         setMessage(explainAuthError(error, "We couldn't create your account. Please try again."));
       } else if (!data.session) {
+        setOtpType("signup");
         setStep("verify");
         setOtp("");
         setOtpCooldown(60);
@@ -133,7 +152,7 @@ export default function LoginPage() {
     try {
       const supabase = createClient();
       const normalizedEmail = email.trim().toLowerCase();
-      const result = mode === "signup"
+      const result = otpType === "signup"
         ? await supabase.auth.resend({ type: "signup", email: normalizedEmail })
         : await supabase.auth.signInWithOtp({
             email: normalizedEmail,
@@ -238,7 +257,7 @@ export default function LoginPage() {
         {!isVerifying && (
           <p className="auth-switch">
             {mode === "signin" ? "New to Aahana?" : "Already have an account?"}{" "}
-            <button type="button" onClick={() => { setMode(mode === "signin" ? "signup" : "signin"); setAuthMethod("otp"); setStep("credentials"); setMessage(""); setOtp(""); setPassword(""); setShowPassword(false); }}>
+            <button type="button" onClick={() => { setMode(mode === "signin" ? "signup" : "signin"); setAuthMethod("otp"); setOtpType("email"); setStep("credentials"); setMessage(""); setOtp(""); setPassword(""); setShowPassword(false); }}>
               {mode === "signin" ? "Create account" : "Sign in"}
             </button>
           </p>
