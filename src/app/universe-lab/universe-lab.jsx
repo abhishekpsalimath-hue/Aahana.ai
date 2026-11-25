@@ -145,6 +145,7 @@ export default function UniverseLab() {
   const [projectBlueprintReady, setProjectBlueprintReady] = useState(false);
   const [projectEvidenceChecked, setProjectEvidenceChecked] = useState([]);
   const [blueprintStatus, setBlueprintStatus] = useState("");
+  const [blueprintPreview, setBlueprintPreview] = useState("");
   const [gravityMass, setGravityMass] = useState(5);
   const [gravityDistance, setGravityDistance] = useState(5);
   const [rayRun, setRayRun] = useState(0);
@@ -291,9 +292,11 @@ Connect the selected subjects through defensible scientific relationships. Do no
   const copyProjectBlueprint = async () => {
     try {
       await navigator.clipboard.writeText(projectBlueprintText());
+      setBlueprintPreview("");
       setBlueprintStatus("Project architecture copied. Paste it into Aahana to continue.");
     } catch {
-      setBlueprintStatus("Clipboard unavailable. Use the project architecture text below.");
+      setBlueprintPreview(projectBlueprintText());
+      setBlueprintStatus("Clipboard unavailable. Your complete architecture is available below for manual copying.");
     }
   };
   const moveJourney = (direction) => {
@@ -434,7 +437,7 @@ Connect the selected subjects through defensible scientific relationships. Do no
           <span className={styles.knowledgeGlyph} aria-hidden="true">✧</span>
         </div>
         <label className={styles.creationField}>Project title
-          <input value={projectTitle} maxLength={100} onChange={(event) => { setProjectTitle(event.target.value); setProjectStatus(""); setProjectPreview(""); }} />
+          <input value={projectTitle} maxLength={100} onChange={(event) => { setProjectTitle(event.target.value); setProjectStatus(""); setProjectPreview(""); setProjectBlueprintReady(false); setProjectEvidenceChecked([]); setBlueprintStatus(""); setBlueprintPreview(""); }} />
         </label>
         <div className={styles.knowledgePicker}>
           <div className={styles.knowledgePickerTop}><span>ADD DISCOVERIES</span><span>{projectSubjects.length} / 6 selected · choose at least 2</span></div>
@@ -443,7 +446,7 @@ Connect the selected subjects through defensible scientific relationships. Do no
           </div>
         </div>
         <label className={styles.creationField}>Project format
-          <select value={projectFormat} onChange={(event) => { setProjectFormat(event.target.value); setProjectStatus(""); setProjectPreview(""); }}>
+          <select value={projectFormat} onChange={(event) => { setProjectFormat(event.target.value); setProjectStatus(""); setProjectPreview(""); setProjectBlueprintReady(false); setProjectEvidenceChecked([]); setBlueprintStatus(""); setBlueprintPreview(""); }}>
             <option value="learning">Connected learning journey</option>
             <option value="creative">Creative universe / story</option>
             <option value="research">Research project outline</option>
@@ -451,7 +454,7 @@ Connect the selected subjects through defensible scientific relationships. Do no
           </select>
         </label>
         <label className={styles.creationField}>Your project direction <span>Optional</span>
-          <textarea value={projectDirection} maxLength={400} rows={2} onChange={(event) => { setProjectDirection(event.target.value); setProjectStatus(""); setProjectPreview(""); }} placeholder="What should this project help someone understand, imagine or investigate?" />
+          <textarea value={projectDirection} maxLength={400} rows={2} onChange={(event) => { setProjectDirection(event.target.value); setProjectStatus(""); setProjectPreview(""); setProjectBlueprintReady(false); setProjectEvidenceChecked([]); setBlueprintStatus(""); setBlueprintPreview(""); }} placeholder="What should this project help someone understand, imagine or investigate?" />
         </label>
         <div className={styles.knowledgeActions}><span role="status" aria-live="polite">{projectStatus}</span><button type="button" onClick={copyKnowledgeProject} disabled={projectSubjects.length < 2 || !projectTitle.trim()}>Assemble project brief ↗</button></div>
         {projectPreview && <label className={styles.creationField}>Your complete project brief<textarea readOnly value={projectPreview} rows={12} onFocus={(event) => event.target.select()} /></label>}
@@ -463,6 +466,7 @@ Connect the selected subjects through defensible scientific relationships. Do no
           <div className={styles.blueprintEvidence}><div className={styles.blueprintEvidenceHead}><span className={styles.blueprintLabel}>EVIDENCE & RESEARCH CHECKLIST</span><strong>{projectEvidenceChecked.length} / {projectEvidenceTasks.length} reviewed</strong></div><div className={styles.blueprintProgress}><span style={{ width: (projectEvidenceChecked.length / projectEvidenceTasks.length * 100) + "%" }} /></div>{projectEvidenceTasks.map((task) => <label key={task.id}><input type="checkbox" checked={projectEvidenceChecked.includes(task.id)} onChange={() => toggleEvidenceTask(task.id)} /><span>{task.label}</span></label>)}</div>
           <div className={styles.blueprintDeliverable}><span className={styles.blueprintLabel}>DELIVERABLE STRUCTURE</span><p>{({ learning: "Opening question → foundations → discovery chapters → cross-subject synthesis → reflection and knowledge check.", creative: "Central premise → world-building rules → scene sequence → visual language → science notes → final reveal.", research: "Research question → background → evidence by subject → methods and observations → uncertainty register → conclusion.", presentation: "Title and hook → concept map → discovery sections → comparison → evidence and open questions → closing synthesis." })[projectFormat]}</p></div>
           <p className={styles.blueprintStatus} role="status" aria-live="polite">{blueprintStatus}</p>
+          {blueprintPreview && <label className={styles.creationField}>Complete project architecture<textarea readOnly value={blueprintPreview} rows={16} onFocus={(event) => event.target.select()} /></label>}
           <p className={styles.gravityCaution}>Checklist progress exists only in this page session. No research has been fetched or verified, and no project data is persisted.</p>
         </div>}
         <p className={styles.gravityCaution}>Your project is assembled from the selected Universe Lab notes in this page session. It is not saved to an account, does not create a file, and does not send or generate anything automatically.</p>
