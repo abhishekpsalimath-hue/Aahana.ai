@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createApprovalToken, verifyApprovalToken } from "./approval-token.mjs";
 import { validateAgentToolCalls } from "./tool-call-guard.mjs";
+import { createAgentToolCallLedger, recordAgentToolCalls } from "./tool-call-ledger.mjs";
 import { readBoundedUpstreamJson } from "./bounded-upstream-json.mjs";
 import { createClient } from "@/lib/supabase/server";
 import { getSelfBuildConfig, isSelfBuildOwner, isAllowedSelfBuildPath, validateSelfBuildChangeSet } from "@/lib/build/self-build-policy.mjs";
@@ -244,6 +245,7 @@ export async function POST(request) {
       : task },
   ];
 
+  const toolCallLedger = createAgentToolCallLedger();
   let toolCallsExecuted = 0;
   let inventoryListed = false;
   let changePlan = phase === "execute" ? approvedChangePlan : null;
@@ -306,6 +308,10 @@ export async function POST(request) {
         return NextResponse.json({ error: guardedCalls.error }, { status: 502 });
       }
       const safeCalls = guardedCalls.calls;
+      const ledgerResult = recordAgentToolCalls(toolCallLedger, safeCalls);
+      if (!ledgerResult.ok) {
+        return NextResponse.json({ error: ledgerResult.error }, { status: 502 });
+      }
       messages.push({
         role: "assistant",
         content: typeof message.content === "string" ? message.content : null,
