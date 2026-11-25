@@ -215,3 +215,14 @@
 .gravityCaution{margin:11px 0 0;color:#746b82;font-size:8px;line-height:1.6}
 @media(max-width:600px){.gravityLab{padding:14px 12px}.gravityControls{grid-template-columns:1fr;gap:13px}.gravityFooter{align-items:flex-start;flex-direction:column}.gravityFooter button{min-height:40px}.gravityHeader h2{font-size:19px}}
 @media(prefers-reduced-motion:reduce){.rayPath{animation:none!important}}
+
+
+/* Orbit Lab visualizes Kepler's proportional relationship with relative units. */
+.orbitLab{width:min(590px,100%);margin:18px auto 0;padding:17px 18px 14px;border:1px solid #a98bd833;border-radius:16px;background:linear-gradient(135deg,#19182bdd,#0d0b15ed);box-shadow:0 18px 60px #0005}
+.orbitDiagram{display:block;width:100%;height:auto;max-height:200px;margin:8px auto 0;overflow:visible}
+.orbitReadout{display:grid;gap:4px;padding:11px 13px;border:1px solid #8e75b52b;border-radius:10px;background:#120e1c99}
+.orbitReadout>span{color:#a995c5;font-size:7px;letter-spacing:1.6px}
+.orbitReadout strong{color:#f0e6ff;font-size:23px;letter-spacing:-.7px;font-variant-numeric:tabular-nums}
+.orbitReadout strong small{color:#a89bb8;font-size:9px;font-weight:400;letter-spacing:0}
+.orbitReadout em{color:#9c91aa;font-size:9px;font-style:normal;line-height:1.5}
+@media(max-width:600px){.orbitLab{padding:14px 12px}.orbitReadout strong{font-size:21px}}
