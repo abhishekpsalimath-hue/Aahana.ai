@@ -9,7 +9,9 @@ export function compareBenchmarkModels(snapshots=[]) {
   if (!verifyBenchmarkSnapshot(first)) throw new Error("Model comparison contains an invalid snapshot digest.");
   const benchmark=first.benchmark;
   const benchmarkVersion=first.benchmarkVersion;
-  const expectedIds=[...first.results.map((item)=>item.caseId)].sort();
+  const expectedIds=[...first.results.map((item)=>item?.caseId)].sort();
+  if (expectedIds.some((id)=>typeof id!=="string" || !id)) throw new TypeError("Model snapshot contains invalid case IDs.");
+  const expectedCategories=new Map(first.results.map((item)=>[item.caseId,item.category]));
   const models=new Map();
   const digests=new Set();
   for (const snapshot of snapshots) {
@@ -18,13 +20,14 @@ export function compareBenchmarkModels(snapshots=[]) {
     if (digests.has(snapshot.digest)) throw new Error("Duplicate model evaluation snapshots are not allowed.");
     digests.add(snapshot.digest);
     if (typeof snapshot.modelLabel!=="string" || !snapshot.modelLabel.trim()) throw new TypeError("Every snapshot requires a model label.");
-    const ids=snapshot.results.map((item)=>item.caseId).sort();
+    const ids=snapshot.results.map((item)=>item?.caseId).sort();
     if (ids.length!==expectedIds.length || ids.some((id,index)=>id!==expectedIds[index])) throw new Error("Model comparison requires an identical evaluated case set.");
     const seen=new Set();
     const rows=snapshot.results.map((item)=>{
       if (!item || typeof item.caseId!=="string" || seen.has(item.caseId) || typeof item.category!=="string" || !item.category.trim() || typeof item.passed!=="boolean" || typeof item.structuralScore!=="number" || !Number.isFinite(item.structuralScore)) {
         throw new TypeError("Model snapshot contains invalid benchmark result rows.");
       }
+      if (expectedCategories.get(item.caseId)!==item.category) throw new Error("Model comparison requires identical case categories.");
       seen.add(item.caseId);
       return item;
     });
