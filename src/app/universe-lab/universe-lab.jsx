@@ -142,6 +142,9 @@ export default function UniverseLab() {
   const [projectDirection, setProjectDirection] = useState("");
   const [projectStatus, setProjectStatus] = useState("");
   const [projectPreview, setProjectPreview] = useState("");
+  const [projectBlueprintReady, setProjectBlueprintReady] = useState(false);
+  const [projectEvidenceChecked, setProjectEvidenceChecked] = useState([]);
+  const [blueprintStatus, setBlueprintStatus] = useState("");
   const [gravityMass, setGravityMass] = useState(5);
   const [gravityDistance, setGravityDistance] = useState(5);
   const [rayRun, setRayRun] = useState(0);
@@ -229,6 +232,9 @@ export default function UniverseLab() {
       setProjectStatus("A project can include up to six discoveries. Remove one to add another.");
     }
     setProjectPreview("");
+    setProjectBlueprintReady(false);
+    setProjectEvidenceChecked([]);
+    setBlueprintStatus("");
   };
   const copyKnowledgeProject = async () => {
     const chosenWorlds = worlds.filter((world) => projectSubjects.includes(world.id));
@@ -261,6 +267,33 @@ Connect the selected subjects through defensible scientific relationships. Do no
     } catch {
       setProjectPreview(prompt);
       setProjectStatus("Clipboard unavailable. Your complete project brief is shown below for manual copying.");
+    }
+  };
+  const projectWorlds = worlds.filter((world) => projectSubjects.includes(world.id));
+  const projectEvidenceTasks = projectWorlds.flatMap((world) => [
+    { id: world.id + "-fact", label: "Verify the core fact about " + world.name },
+    { id: world.id + "-evidence", label: "Find an observation or experiment supporting " + world.name },
+    { id: world.id + "-limits", label: "Record one uncertainty or limitation for " + world.name },
+  ]);
+  const projectBlueprintText = () => {
+    const chapters = projectWorlds.map((world, index) =>
+      "CHAPTER " + (index + 1) + ": " + world.name + "\nCore idea: " + world.note + "\nAnchor: " + world.fact + "\nQuestion to investigate: " + world.experiment
+    ).join("\n\n");
+    const outputs = {
+      learning: "Opening question; foundations; one chapter per discovery; comparison and synthesis; reflection and knowledge check.",
+      creative: "Central premise; world-building rules; sequence of scenes; visual and sensory language; science notes; final reveal.",
+      research: "Research question; background; one evidence section per discovery; methods and observations; uncertainty register; conclusion.",
+      presentation: "Title and hook; concept map; one section per discovery; comparison slide; evidence and open questions; closing synthesis.",
+    };
+    return "PROJECT ARCHITECTURE\n" + projectTitle.trim() + "\nFormat: " + projectFormat + "\n\nEXPLORATION SEQUENCE\n" + projectWorlds.map((world, index) => (index + 1) + ". " + world.name + " — " + world.note).join("\n") + "\n\nCHAPTER / SECTION BLUEPRINT\n" + chapters + "\n\nKNOWLEDGE MAP GUIDANCE\nTreat each selected subject as its own node. Add a connecting line only when a defensible scientific relationship is established; label analogies separately from physical mechanisms. The sequence above is a proposed reading order, not a claim of causation.\n\nOPEN QUESTIONS\n" + projectWorlds.map((world) => "• " + world.name + ": " + world.experiment).join("\n") + "\n\nEVIDENCE CHECKLIST\n" + projectEvidenceTasks.map((task) => "[ ] " + task.label).join("\n") + "\n\nDELIVERABLE OUTLINE\n" + outputs[projectFormat] + "\n\nUSER DIRECTION\n" + (projectDirection.trim() || "None supplied yet.") + "\n\nRESEARCH INTEGRITY\nVerify claims against reliable sources before publication. Keep established evidence, hypotheses, analogies and creative invention clearly labelled. This blueprint is a planning scaffold, not completed research.";
+  };
+  const toggleEvidenceTask = (id) => setProjectEvidenceChecked((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
+  const copyProjectBlueprint = async () => {
+    try {
+      await navigator.clipboard.writeText(projectBlueprintText());
+      setBlueprintStatus("Project architecture copied. Paste it into Aahana to continue.");
+    } catch {
+      setBlueprintStatus("Clipboard unavailable. Use the project architecture text below.");
     }
   };
   const moveJourney = (direction) => {
@@ -422,6 +455,16 @@ Connect the selected subjects through defensible scientific relationships. Do no
         </label>
         <div className={styles.knowledgeActions}><span role="status" aria-live="polite">{projectStatus}</span><button type="button" onClick={copyKnowledgeProject} disabled={projectSubjects.length < 2 || !projectTitle.trim()}>Assemble project brief ↗</button></div>
         {projectPreview && <label className={styles.creationField}>Your complete project brief<textarea readOnly value={projectPreview} rows={12} onFocus={(event) => event.target.select()} /></label>}
+        <div className={styles.blueprintLaunch}><div><strong>Project Intelligence Layer</strong><span>Turn your selected discoveries into a chapter plan, knowledge map, open questions and evidence checklist.</span></div><button type="button" disabled={projectSubjects.length < 2 || !projectTitle.trim()} onClick={() => { setProjectBlueprintReady(true); setProjectEvidenceChecked([]); setBlueprintStatus("Your project architecture is ready to review."); }}>Build project architecture ↗</button></div>
+        {projectBlueprintReady && <div className={styles.blueprintWorkspace}>
+          <div className={styles.blueprintTop}><div><span className={styles.detailEyebrow}>YOUR PROJECT WORKSPACE</span><h3>{projectTitle}</h3><p>{projectWorlds.length} discovery nodes · {projectEvidenceTasks.length} evidence tasks</p></div><button type="button" onClick={copyProjectBlueprint}>Copy full blueprint ↗</button></div>
+          <div className={styles.blueprintMap}><span className={styles.blueprintLabel}>KNOWLEDGE CONSTELLATION · PROPOSED READING ORDER</span><div className={styles.blueprintNodes}>{projectWorlds.map((world, index) => <div className={styles.blueprintNode} key={world.id}><span>{String(index + 1).padStart(2, "0")}</span><strong>{world.name}</strong></div>)}</div><p>These are connected as a project sequence, not asserted as a causal chain. Add scientific links only when evidence supports them.</p></div>
+          <div className={styles.blueprintChapters}><span className={styles.blueprintLabel}>CHAPTERS & KEY QUESTIONS</span>{projectWorlds.map((world, index) => <article key={world.id}><span>SECTION {String(index + 1).padStart(2, "0")}</span><h4>{world.name}</h4><p>{world.fact}</p><em>{world.experiment}</em></article>)}</div>
+          <div className={styles.blueprintEvidence}><div className={styles.blueprintEvidenceHead}><span className={styles.blueprintLabel}>EVIDENCE & RESEARCH CHECKLIST</span><strong>{projectEvidenceChecked.length} / {projectEvidenceTasks.length} reviewed</strong></div><div className={styles.blueprintProgress}><span style={{ width: (projectEvidenceChecked.length / projectEvidenceTasks.length * 100) + "%" }} /></div>{projectEvidenceTasks.map((task) => <label key={task.id}><input type="checkbox" checked={projectEvidenceChecked.includes(task.id)} onChange={() => toggleEvidenceTask(task.id)} /><span>{task.label}</span></label>)}</div>
+          <div className={styles.blueprintDeliverable}><span className={styles.blueprintLabel}>DELIVERABLE STRUCTURE</span><p>{({ learning: "Opening question → foundations → discovery chapters → cross-subject synthesis → reflection and knowledge check.", creative: "Central premise → world-building rules → scene sequence → visual language → science notes → final reveal.", research: "Research question → background → evidence by subject → methods and observations → uncertainty register → conclusion.", presentation: "Title and hook → concept map → discovery sections → comparison → evidence and open questions → closing synthesis." })[projectFormat]}</p></div>
+          <p className={styles.blueprintStatus} role="status" aria-live="polite">{blueprintStatus}</p>
+          <p className={styles.gravityCaution}>Checklist progress exists only in this page session. No research has been fetched or verified, and no project data is persisted.</p>
+        </div>}
         <p className={styles.gravityCaution}>Your project is assembled from the selected Universe Lab notes in this page session. It is not saved to an account, does not create a file, and does not send or generate anything automatically.</p>
       </section>
 
