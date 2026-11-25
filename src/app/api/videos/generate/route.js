@@ -50,6 +50,12 @@ export async function POST(request) {
       aspectRatio: form.get("aspectRatio") ?? undefined,
       resolution: form.get("resolution") ?? undefined,
       director: form.get("director") ?? undefined,
+      continuity: (() => {
+        const raw = form.get("continuity");
+        if (raw === null) return undefined;
+        if (typeof raw !== "string" || raw.length > 2048) throw new Error("Invalid continuity plan");
+        return JSON.parse(raw);
+      })(),
     });
     imageFile = form.get("image");
   } catch {
