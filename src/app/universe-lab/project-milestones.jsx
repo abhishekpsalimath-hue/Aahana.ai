@@ -33,6 +33,6 @@ export default function ProjectMilestones() {
       <input value={newTitle} maxLength={100} onChange={(event) => setNewTitle(event.target.value)} placeholder="Add a deliverable or milestone" aria-label="New milestone title" />
       <button type="button" disabled={!newTitle.trim() || milestones.length >= 30} onClick={() => { setMilestones((current) => [...current, { id: "custom-" + Date.now(), title: newTitle.trim(), dueDate: "", status: "planned" }]); setNewTitle(""); }}>Add milestone +</button>
     </div>
-    <p className={styles.gravityCaution}>Milestones are temporary planning data in this browser session. They are not persisted or included in the chapter JSON export yet.</p>
+    <p className={styles.gravityCaution}>Milestones are stored with this project workspace and included in its downloadable JSON file.</p>
   </section>;
 }
