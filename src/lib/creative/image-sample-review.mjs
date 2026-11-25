@@ -65,10 +65,17 @@ export function validateImageSampleReviews(reviews) {
     }
 
     const model = requireText(raw.model, "model", 100);
-    const reviewer = requireText(raw.reviewer, "reviewer", 80);
+    const reviewer = requireText(raw.reviewer, "reviewer", 40);
+    if (!/^[A-Za-z0-9][A-Za-z0-9._-]{1,39}$/.test(reviewer)) {
+      throw new TypeError(`${label} reviewer must be a non-identifying reviewer label, not a name or email address.`);
+    }
     const reviewedAt = validateTimestamp(raw.reviewedAt);
     if (!raw.scores || typeof raw.scores !== "object" || Array.isArray(raw.scores)) {
       throw new TypeError(`${label} needs a complete five-dimension scores object.`);
+    }
+    const unexpectedDimensions = Object.keys(raw.scores).filter((key) => !DIMENSIONS.includes(key));
+    if (unexpectedDimensions.length) {
+      throw new TypeError(`${label} contains unsupported scoring dimensions: ${unexpectedDimensions.join(", ")}.`);
     }
     const scores = {};
     for (const dimension of DIMENSIONS) {
