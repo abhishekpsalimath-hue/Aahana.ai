@@ -29,7 +29,7 @@ export async function POST(request) {
   }
 
   const contentType = request.headers.get("content-type") || "";
-  if (!/^multipart\\/form-data;\\s*boundary=(?:"[^"]+"|[^;]+)$/i.test(contentType)) {
+  if (!/^multipart\/form-data;\s*boundary=(?:"[^"]+"|[^;]+)$/i.test(contentType)) {
     return NextResponse.json({ error: "Invalid video request." }, { status: 400 });
   }
   const boundedBody = await readBoundedRequestBody(request, MAX_VIDEO_REQUEST_BYTES);
