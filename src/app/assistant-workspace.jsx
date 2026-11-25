@@ -505,7 +505,7 @@ function UniverseScene() {
     for (let i = 0; i < asteroidCount; i++) {
       const angle = (i / asteroidCount) * Math.PI * 2 + Math.random() * 0.12;
       const radius = 4.7 + Math.random() * 2.15;
-      asteroidDummy.position.set(Math.cos(angle) * radius, (Math.random() - 0.5) * 0.72, Math.sin(angle) * radius * 0.52);
+      asteroidDummy.position.set(Math.cos(angle) * radius, Math.sin(angle) * radius * 0.66 + (Math.random() - 0.5) * 0.36, (Math.random() - 0.5) * 0.48);
       asteroidDummy.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
       const scale = 0.34 + Math.random() * 1.1;
       asteroidDummy.scale.set(scale, scale * (0.55 + Math.random() * 0.65), scale * (0.65 + Math.random() * 0.55));
@@ -515,6 +515,28 @@ function UniverseScene() {
     asteroids.instanceMatrix.needsUpdate = true;
     asteroidBelt.add(asteroids);
     world.add(asteroidBelt);
+
+    // A miniature solar system gives the eye a clear scale reference: a warm
+    // star, distinct orbital planes and four worlds moving at different rates.
+    const miniatureSystem = new THREE.Group();
+    miniatureSystem.position.set(0.4, -0.9, -18.5);
+    const sun = new THREE.Mesh(new THREE.SphereGeometry(0.43, 28, 20), new THREE.MeshBasicMaterial({ color: 0xffd9a1 }));
+    miniatureSystem.add(sun);
+    const sunHalo = new THREE.Mesh(new THREE.SphereGeometry(0.68, 24, 18), new THREE.MeshBasicMaterial({ color: 0xffb76c, transparent: true, opacity: 0.12, blending: THREE.AdditiveBlending, depthWrite: false }));
+    miniatureSystem.add(sunHalo);
+    const systemOrbits = [];
+    const systemPlanetColors = [0xb8a6e8, 0x6f9bc4, 0xc68c76, 0x9c91bd];
+    [1.0, 1.55, 2.25, 3.0].forEach((distance, i) => {
+      const orbit = new THREE.Group();
+      const track = new THREE.Mesh(new THREE.TorusGeometry(distance, 0.006, 5, 80), new THREE.MeshBasicMaterial({ color: 0xc5b2ed, transparent: true, opacity: 0.2 }));
+      orbit.add(track);
+      const planet = new THREE.Mesh(new THREE.SphereGeometry(0.09 + i * 0.025, 16, 12), new THREE.MeshStandardMaterial({ color: systemPlanetColors[i], roughness: 0.8, metalness: 0.04 }));
+      planet.position.x = distance;
+      orbit.add(planet);
+      miniatureSystem.add(orbit);
+      systemOrbits.push({ orbit, speed: (i % 2 ? -1 : 1) * (0.0018 / (1 + i * 0.8)) });
+    });
+    world.add(miniatureSystem);
 
     // A comet crosses the scene on a long elliptical path with a layered tail.
     const comet = new THREE.Group();
@@ -563,6 +585,11 @@ function UniverseScene() {
     meteorGeometry.setAttribute("position", new THREE.BufferAttribute(meteorPositions, 3));
     const meteors = new THREE.Points(meteorGeometry, new THREE.PointsMaterial({ color: 0xc8baff, size: compact ? 0.065 : 0.085, transparent: true, opacity: 0.72, blending: THREE.AdditiveBlending, depthWrite: false }));
     scene.add(meteors);
+    const meteorTrailPositions = new Float32Array(meteorCount * 6);
+    const meteorTrailGeometry = new THREE.BufferGeometry();
+    meteorTrailGeometry.setAttribute("position", new THREE.BufferAttribute(meteorTrailPositions, 3));
+    const meteorTrails = new THREE.LineSegments(meteorTrailGeometry, new THREE.LineBasicMaterial({ color: 0xb9a7ff, transparent: true, opacity: 0.34, blending: THREE.AdditiveBlending, depthWrite: false }));
+    scene.add(meteorTrails);
 
     // A stream of near-field stars travels towards the viewer, creating
     // genuine forward movement rather than rotating a static star dome.
@@ -663,6 +690,8 @@ function UniverseScene() {
           knot.position.set(Math.cos(a) * radius, Math.sin(a) * radius * 0.32, Math.sin(a) * radius * 0.88);
         });
         moonOrbits.forEach(({ orbit, speed }) => { orbit.rotation.z += speed * delta; });
+        systemOrbits.forEach(({ orbit, speed }) => { orbit.rotation.z += speed * delta; });
+        miniatureSystem.rotation.y += 0.00012 * delta;
         asteroidBelt.rotation.y += 0.00016 * delta;
         asteroidBelt.rotation.z += 0.000035 * delta;
         comet.position.x = -8 + Math.sin(time * 0.00011) * 5.2;
@@ -683,6 +712,17 @@ function UniverseScene() {
           }
         }
         meteorGeometry.attributes.position.needsUpdate = true;
+        const trailArray = meteorTrailGeometry.attributes.position.array;
+        for (let i = 0; i < meteorCount; i++) {
+          const o = i * 3, t = i * 6;
+          trailArray[t] = meteorArray[o] - meteorVelocity[o] * 5;
+          trailArray[t + 1] = meteorArray[o + 1] - meteorVelocity[o + 1] * 5;
+          trailArray[t + 2] = meteorArray[o + 2] - meteorVelocity[o + 2] * 5;
+          trailArray[t + 3] = meteorArray[o];
+          trailArray[t + 4] = meteorArray[o + 1];
+          trailArray[t + 5] = meteorArray[o + 2];
+        }
+        meteorTrailGeometry.attributes.position.needsUpdate = true;
         const nearPositions = nearStarGeometry.attributes.position.array;
         for (let i = 0; i < nearStarCount; i++) {
           const offset = i * 3;
