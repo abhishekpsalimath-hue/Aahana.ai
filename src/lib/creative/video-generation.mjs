@@ -1,4 +1,4 @@
-import { buildVideoPrompt, VIDEO_DIRECTOR_PRESETS } from "./creative-director.mjs";
+import { buildVideoContinuityPrompt, buildVideoPrompt, VIDEO_DIRECTOR_PRESETS } from "./creative-director.mjs";
 export const VIDEO_MODEL = "xai/grok-imagine-video";
 export const MAX_VIDEO_PROMPT_LENGTH = 2000;
 export const MAX_VIDEO_DURATION_SECONDS = 15;
@@ -31,9 +31,14 @@ export function parseVideoGenerationInput(body) {
     return { ok: false, error: "Choose a supported video direction." };
   }
   const directedPrompt = buildVideoPrompt(prompt, director);
-  if (!directedPrompt || directedPrompt.length > MAX_VIDEO_PROMPT_LENGTH) {
+  const continuityPrompt = body?.continuity === undefined ? "" : buildVideoContinuityPrompt(body.continuity);
+  if (continuityPrompt === null) {
+    return { ok: false, error: "Check the video continuity fields and keep each to 180 characters or fewer." };
+  }
+  const finalPrompt = [directedPrompt, continuityPrompt].filter(Boolean).join("\n\n");
+  if (!directedPrompt || finalPrompt.length > MAX_VIDEO_PROMPT_LENGTH) {
     return { ok: false, error: "This video prompt is too long for the selected direction. Shorten it and try again." };
   }
 
-  return { ok: true, prompt: directedPrompt, duration, aspectRatio, resolution, director };
+  return { ok: true, prompt: finalPrompt, duration, aspectRatio, resolution, director };
 }
