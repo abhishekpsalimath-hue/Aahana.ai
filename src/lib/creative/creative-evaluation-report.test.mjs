@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { buildCreativeEvaluationReport } from "./creative-evaluation-report.mjs";
 import { VIDEO_BENCHMARK_CASES } from "./video-benchmark-cases.mjs";
 import { runVideoContinuityBenchmark } from "./video-benchmark-runner.mjs";
+import { createBenchmarkSnapshot } from "./benchmark-snapshot.mjs";
 
 const imageReview={sampleId:"image-sample-01",caseId:"IMG-001",category:"people",model:"image-fixture",reviewer:"reviewer-a",reviewedAt:"2026-11-25T12:00:00Z",scores:{subjectFidelity:5,attributeFidelity:4,compositionFidelity:4,constraintFidelity:5,visualCoherence:4}};
 const videoReview=(shotNumber,sampleId)=>({seriesId:"video-series-01",sampleId,model:"video-fixture",reviewer:"reviewer-a",shotNumber,reviewedAt:"2026-11-25T12:00:00Z",scores:{identityContinuity:5,motionContinuity:4,cameraContinuity:4,transitionCoherence:5,temporalProgression:4}});
@@ -55,4 +56,16 @@ test("attaches baseline regression analysis and a reproducible provenance snapsh
 test("requires candidate plans when baseline or snapshot provenance is supplied",()=>{
  assert.throws(()=>buildCreativeEvaluationReport({videoBaselineRun:{}}),/requires candidate/);
  assert.throws(()=>buildCreativeEvaluationReport({snapshotProvenance:{}}),/requires candidate/);
+});
+
+test("attaches verified chronological snapshot history to the video report",()=>{
+ const makeSnapshot=(runAt,score)=>createBenchmarkSnapshot({
+  benchmark:"video-continuity-metadata-v1",benchmarkVersion:"v1",commitSha:runAt,modelLabel:"offline-preflight",runAt,
+  results:[{caseId:"VID-001",category:"character",structuralScore:score,passed:true}],
+ });
+ const history=[makeSnapshot("2026-11-25T10:00:00Z",80),makeSnapshot("2026-11-25T11:00:00Z",90)];
+ const report=buildCreativeEvaluationReport({videoSnapshotHistory:history});
+ assert.equal(report.video.snapshotHistory.snapshots.length,2);
+ assert.equal(report.video.snapshotHistory.transitions[0].averageStructuralScoreDelta,10);
+ assert.equal(report.video.snapshotHistory.overallTrend,"improving-or-mixed");
 });
