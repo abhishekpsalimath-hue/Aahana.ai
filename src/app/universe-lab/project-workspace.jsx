@@ -48,13 +48,65 @@ export default function ProjectWorkspace({ worlds, title }) {
     return "CHAPTER " + (index + 1) + ": " + chapter.title + "\nStatus: " + chapter.status + "\nNotes: " + chapter.notes + "\nDependencies: " + dependencies + "\nSources:\n" + sources;
   }).join("\n\n");
   const exportWorkspace = async () => {
-    try { await navigator.clipboard.writeText(exportText()); setStatus("Workspace exported to clipboard."); }
-    catch { setStatus("Clipboard unavailable. You can still select and copy each chapter's notes."); }
+    try { await navigator.clipboard.writeText(exportText()); setStatus("Workspace text copied to clipboard."); }
+    catch { setStatus("Clipboard unavailable. Use Save project file to keep a portable copy."); }
+  };
+  const saveProjectFile = () => {
+    const payload = { schema: "aahana-universe-project", version: 1, title, exportedAt: new Date().toISOString(), chapters };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = (title || "aahana-project").trim().replace(/[^a-z0-9-_]+/gi, "-").replace(/^-|-$/g, "").slice(0, 60) + ".json";
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+    setStatus("Project file saved. Keep it somewhere safe; Aahana has not uploaded it.");
+  };
+  const restoreProjectFile = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    if (file.size > 1024 * 1024) { setStatus("That project file is larger than the 1 MB safety limit."); return; }
+    try {
+      const payload = JSON.parse(await file.text());
+      const allowedIds = new Set(worlds.map((world) => world.id));
+      const validStatuses = new Set(["planned", "researching", "drafted", "reviewed"]);
+      if (payload.schema !== "aahana-universe-project" || payload.version !== 1 || !Array.isArray(payload.chapters) || payload.chapters.length < 2 || payload.chapters.length > 6) throw new Error("This is not a supported Aahana Universe project file.");
+      const seen = new Set();
+      const restored = payload.chapters.map((chapter) => {
+        if (!chapter || !allowedIds.has(chapter.id) || seen.has(chapter.id)) throw new Error("The file contains an unknown or duplicate discovery.");
+        seen.add(chapter.id);
+        if (typeof chapter.title !== "string" || chapter.title.length > 90 || typeof chapter.notes !== "string" || chapter.notes.length > 2400 || !validStatuses.has(chapter.status)) throw new Error("A chapter contains invalid or oversized fields.");
+        if (!Array.isArray(chapter.dependencyIds) || chapter.dependencyIds.some((id) => !allowedIds.has(id) || id === chapter.id)) throw new Error("A chapter contains an invalid dependency.");
+        if (!Array.isArray(chapter.sources) || chapter.sources.length > 30) throw new Error("A chapter contains too many references.");
+        const sources = chapter.sources.map((source) => {
+          if (!source || typeof source.title !== "string" || source.title.length > 140 || typeof source.note !== "string" || source.note.length > 400 || typeof source.url !== "string") throw new Error("A reference contains invalid text.");
+          let parsed;
+          try { parsed = new URL(source.url); } catch { throw new Error("A reference URL is invalid."); }
+          if (!["http:", "https:"].includes(parsed.protocol)) throw new Error("Only HTTP(S) reference links can be restored.");
+          return { id: String(source.id || chapter.id + "-" + Date.now()), title: source.title, url: parsed.href, note: source.note };
+        });
+        return { id: chapter.id, title: chapter.title, notes: chapter.notes, status: chapter.status, dependencyIds: chapter.dependencyIds, sources };
+      });
+      const restoredIds = new Set(restored.map((chapter) => chapter.id));
+      if (restored.some((chapter) => chapter.dependencyIds.some((id) => !restoredIds.has(id)))) throw new Error("A dependency points to a discovery that is not included in this project.");
+      setChapters(restored);
+      setDrafts({});
+      setStatus("Project restored from your file. Review the imported chapters and references before relying on them.");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Could not read this project file.");
+    }
   };
   return <section className={styles.projectWorkspaceEditor} aria-label="Editable project workspace">
     <div className={styles.projectWorkspaceHead}>
       <div><span className={styles.blueprintLabel}>PROJECT WORKSPACE · SESSION ONLY</span><h4>Shape the work, chapter by chapter.</h4><p>Edit titles and notes, track progress, reorder chapters and attach references you have checked.</p></div>
-      <button type="button" onClick={exportWorkspace}>Export workspace ↗</button>
+      <div className={styles.projectWorkspaceActions}>
+        <button type="button" onClick={exportWorkspace}>Copy workspace text</button>
+        <button type="button" onClick={saveProjectFile}>Save project JSON ↓</button>
+        <label className={styles.projectImportButton}>Restore JSON ↑<input type="file" accept="application/json,.json" onChange={restoreProjectFile} /></label>
+      </div>
     </div>
     <div className={styles.projectWorkspaceSummary}><span>{summary.reviewed} reviewed</span><span>{summary.drafted} drafted</span><span>{summary.sources} references attached</span></div>
     <div className={styles.projectWorkspaceChapters}>
@@ -77,6 +129,6 @@ export default function ProjectWorkspace({ worlds, title }) {
       })}
     </div>
     <p className={styles.projectWorkspaceStatus} role="status" aria-live="polite">{status}</p>
-    <p className={styles.gravityCaution}>References are manually supplied and not verified by Aahana. Dependencies are planning links, not proof of scientific causation. This workspace is temporary and resets when the page is reloaded.</p>
+    <p className={styles.gravityCaution}>References are manually supplied and not verified by Aahana. Dependencies are planning links, not proof of scientific causation. No project is uploaded or synced to an account.</p>
   </section>;
 }
