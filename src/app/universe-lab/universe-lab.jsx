@@ -132,6 +132,10 @@ export default function UniverseLab() {
   const [creationDirection, setCreationDirection] = useState("");
   const [creationStatus, setCreationStatus] = useState("");
   const [creationPreview, setCreationPreview] = useState("");
+  const [comparisonId, setComparisonId] = useState("stars");
+  const [comparisonQuestion, setComparisonQuestion] = useState("How are these two cosmic ideas connected, and where do they differ?");
+  const [comparisonStatus, setComparisonStatus] = useState("");
+  const [comparisonPreview, setComparisonPreview] = useState("");
   const [gravityMass, setGravityMass] = useState(5);
   const [gravityDistance, setGravityDistance] = useState(5);
   const [rayRun, setRayRun] = useState(0);
@@ -177,6 +181,35 @@ export default function UniverseLab() {
     } catch {
       setCreationPreview(prompt);
       setCreationStatus("Clipboard unavailable. Your prepared brief is shown below for manual copying.");
+    }
+  };
+  const comparisonWorld = worlds.find((world) => world.id === comparisonId && world.id !== selected)
+    || worlds[(worlds.findIndex((world) => world.id === selected) + 1) % worlds.length];
+  const copyComparisonBrief = async () => {
+    const question = comparisonQuestion.trim();
+    if (!question) return;
+    const prompt = `Aahana, help me connect these two discoveries through a careful scientific comparison.
+
+      WORLD A — ${active.name}
+      Context: ${active.note}
+      Scientific anchor: ${active.fact}
+      Field note: ${active.guide}
+
+      WORLD B — ${comparisonWorld.name}
+      Context: ${comparisonWorld.note}
+      Scientific anchor: ${comparisonWorld.fact}
+      Field note: ${comparisonWorld.guide}
+
+      My comparison question: ${question}
+
+      Build a clear synthesis: identify the underlying physical principles, meaningful similarities, important differences, and how the two ideas influence or relate to one another. Give one grounded analogy, flag where the analogy breaks down, distinguish established evidence from open questions, and finish with one experiment or observation that could deepen understanding. Do not invent a causal connection where none is established.`;
+    try {
+      await navigator.clipboard.writeText(prompt);
+      setComparisonPreview("");
+      setComparisonStatus("Comparison brief copied. Paste it into Aahana to explore the connection.");
+    } catch {
+      setComparisonPreview(prompt);
+      setComparisonStatus("Clipboard unavailable. Your comparison brief is shown below for manual copying.");
     }
   };
   const moveJourney = (direction) => {
@@ -284,6 +317,31 @@ export default function UniverseLab() {
         <div className={styles.creationActions}><span role="status" aria-live="polite">{creationStatus}</span><button type="button" onClick={copyCreationBrief}>Prepare creation brief ↗</button></div>
         {creationPreview && <label className={styles.creationField}>Your prepared brief<textarea readOnly value={creationPreview} rows={7} onFocus={(event) => event.target.select()} /></label>}
         <p className={styles.gravityCaution}>This prepares a context-rich brief only. It does not start image, video or research generation, call a provider, or alter an existing conversation.</p>
+      </section>
+
+      <section className={styles.comparisonLab} aria-label="Connect two cosmic discoveries">
+        <div className={styles.comparisonHeader}>
+          <div><span className={styles.detailEyebrow}>CROSS-UNIVERSE THINKING</span><h2>What connects these worlds?</h2><p>Compare the world you are exploring with another subject. Look for shared principles without flattening their differences.</p></div>
+          <span className={styles.comparisonGlyph} aria-hidden="true">⇄</span>
+        </div>
+        <div className={styles.comparisonPair}>
+          <div className={styles.comparisonWorld}><span>WORLD A · CURRENT</span><strong>{active.name}</strong></div>
+          <label className={styles.comparisonWorld}>WORLD B · COMPARE WITH
+            <select value={comparisonWorld.id} onChange={(event) => { setComparisonId(event.target.value); setComparisonStatus(""); setComparisonPreview(""); }}>
+              {worlds.filter((world) => world.id !== selected).map((world) => <option key={world.id} value={world.id}>{world.name}</option>)}
+            </select>
+          </label>
+        </div>
+        <div className={styles.comparisonFacts}>
+          <p><strong>{active.name}</strong>{active.fact}</p>
+          <p><strong>{comparisonWorld.name}</strong>{comparisonWorld.fact}</p>
+        </div>
+        <label className={styles.creationField}>What would you like to understand?
+          <textarea value={comparisonQuestion} maxLength={280} rows={2} onChange={(event) => { setComparisonQuestion(event.target.value); setComparisonStatus(""); setComparisonPreview(""); }} />
+        </label>
+        <div className={styles.creationActions}><span role="status" aria-live="polite">{comparisonStatus}</span><button type="button" onClick={copyComparisonBrief} disabled={!comparisonQuestion.trim()}>Prepare comparison ↗</button></div>
+        {comparisonPreview && <label className={styles.creationField}>Your prepared comparison brief<textarea readOnly value={comparisonPreview} rows={9} onFocus={(event) => event.target.select()} /></label>}
+        <p className={styles.gravityCaution}>A guided synthesis prompt only. It does not claim a connection exists, perform research, send a message or change a conversation.</p>
       </section>
 
       <section className={styles.experiment} aria-label="Cosmic thought experiment">
