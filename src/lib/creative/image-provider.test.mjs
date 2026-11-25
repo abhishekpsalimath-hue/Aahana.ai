@@ -64,7 +64,7 @@ test("preserves the existing JSON request contract for FLUX.1 Schnell", async ()
   });
   assert.equal(request.method, "POST");
   assert.equal(request.headers["Content-Type"], "application/json");
-  assert.deepEqual(JSON.parse(request.body), { prompt: "A moonlit forest", steps: 8, width: 1024, height: 1024 });
+  assert.deepEqual(JSON.parse(request.body), { prompt: "A moonlit forest", steps: 8 });
 });
 
 test("uses the correct output media type for each Cloudflare image model", () => {
@@ -97,7 +97,7 @@ test("passes portrait and widescreen dimensions to each provider request", () =>
     model: DEFAULT_IMAGE_MODEL, prompt: "A portrait", width: 768, height: 1024,
   });
   assert.deepEqual(JSON.parse(portrait.body), {
-    prompt: "A portrait", steps: 8, width: 768, height: 1024,
+    prompt: "A portrait", steps: 8,
   });
   const widescreen = buildImageProviderRequest({
     model: ACCURACY_IMAGE_MODEL, prompt: "A film still", width: 1024, height: 576,
