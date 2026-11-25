@@ -85,3 +85,20 @@ test("includes same-benchmark model comparison in the creative report",()=>{
  assert.equal(report.video.modelComparison.models.length,2);
  assert.deepEqual(report.video.modelComparison.comparison.rankedByAverageStructuralScore,["model-a","model-b"]);
 });
+
+test("publishes cross-modality improvement proposals at report level",()=>{
+ const weakImage={...imageReview,scores:{subjectFidelity:2,attributeFidelity:4,compositionFidelity:4,constraintFidelity:4,visualCoherence:4}};
+ const weakVideo=[videoReview(1,"clip-sample-01"),videoReview(2,"clip-sample-02")].map((review)=>({...review,scores:{...review.scores,identityContinuity:2}}));
+ const report=buildCreativeEvaluationReport({imageReviews:[weakImage],videoReviews:weakVideo});
+ assert.ok(report.improvementProposals.proposals.some((item)=>item.id==="image-subjectFidelity"));
+ assert.ok(report.improvementProposals.proposals.some((item)=>item.id==="video-identityContinuity"));
+ assert.equal(report.improvementProposals.proposalCount,2);
+ assert.equal(Object.hasOwn(report.video,"improvementProposals"),false);
+});
+test("surfaces regression follow-up proposals alongside the regression evidence",()=>{
+ const baseline=runVideoContinuityBenchmark(completePlans());
+ const candidatePlans=completePlans().map((item)=>item.caseId==="VID-001" ? planFor(VIDEO_BENCHMARK_CASES[0],true) : item);
+ const report=buildCreativeEvaluationReport({videoContinuityPlans:candidatePlans,videoBaselineRun:baseline});
+ assert.equal(report.video.regression.status,"regression-detected");
+ assert.ok(report.improvementProposals.proposals.some((item)=>item.id==="video-regression-follow-up"));
+});
