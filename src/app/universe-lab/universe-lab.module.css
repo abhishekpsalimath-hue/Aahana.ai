@@ -388,3 +388,12 @@
   .projectWorkspaceHead { align-items: flex-start; flex-direction: column; }
   .projectWorkspaceChapters { grid-template-columns: minmax(0, 1fr); }
 }
+
+.projectWorkspaceActions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.projectImportButton { display: inline-flex; align-items: center; justify-content: center; border: 1px solid rgba(199, 167, 255, .35); border-radius: 999px; padding: 9px 13px; color: #e7d9ff; background: rgba(173, 135, 255, .1); cursor: pointer; font-size: .82rem; }
+.projectImportButton input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+.projectImportButton:focus-within { outline: 2px solid #cdb5ff; outline-offset: 3px; }
+@media (max-width: 680px) {
+  .projectWorkspaceActions { justify-content: flex-start; }
+  .projectWorkspaceActions > button, .projectImportButton { min-height: 42px; }
+}
