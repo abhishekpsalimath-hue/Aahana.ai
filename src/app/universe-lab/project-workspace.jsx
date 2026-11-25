@@ -123,7 +123,7 @@ export default function ProjectWorkspace({ worlds, title }) {
       </div>
     </div>
     <ProjectMilestones milestones={milestones} setMilestones={setMilestones} />
-    <div className={styles.projectWorkspaceSummary}><span>{summary.reviewed} reviewed</span><span>{summary.drafted} drafted</span><span>{summary.sources} references attached</span></div>
+    <div className={styles.projectWorkspaceSummary}><span>{summary.reviewed} reviewed</span><span>{summary.drafted} drafted</span><span>{summary.sources} references attached</span><span>{milestones.filter((item) => item.status === "done").length}/{milestones.length} milestones complete</span></div>
     <div className={styles.projectWorkspaceChapters}>
       {chapters.map((chapter, index) => {
         const draft = drafts[chapter.id] || {};
