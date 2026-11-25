@@ -78,6 +78,12 @@ test("rejects incomplete rubrics and scores outside integer 1–5", () => {
   assert.throws(() => validateImageSampleReviews([review({ scores: { ...review().scores, subjectFidelity: 4.5 } })]), /subjectFidelity/);
 });
 
+test("rejects identifying reviewer labels and unknown rubric dimensions", () => {
+  assert.throws(() => validateImageSampleReviews([review({ reviewer: "person@example.com" })]), /non-identifying reviewer label/);
+  assert.throws(() => validateImageSampleReviews([review({ reviewer: "Abhishek Salimath" })]), /non-identifying reviewer label/);
+  assert.throws(() => validateImageSampleReviews([review({ scores: { ...review().scores, realism: 5 } })]), /unsupported scoring dimensions/);
+});
+
 test("rejects malformed timestamps and oversized notes", () => {
   assert.throws(() => validateImageSampleReviews([review({ reviewedAt: "yesterday" })]), /ISO timestamp/);
   assert.throws(() => validateImageSampleReviews([review({ reviewedAt: "2026-02-30T12:00:00Z" })]), /ISO timestamp/);
