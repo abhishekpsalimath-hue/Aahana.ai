@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { validateCreativeBuildTargetPath } from "./creative-build-task-proposals.mjs";
+import { validateCreativeBuildTargetPath, verifyCreativeBuildTaskProposal } from "./creative-build-task-proposals.mjs";
 
 const DECISIONS = new Set(["approve-for-planning", "reject"]);
 
@@ -26,17 +26,7 @@ export function createCreativeTaskReviewDecision({
   if (!owner || !reviewer || reviewer !== owner) {
     throw new Error("Only the configured Aahana owner may review creative build tasks.");
   }
-  if (!task || typeof task !== "object" || Array.isArray(task) ||
-      typeof task.taskId !== "string" || !/^creative-task-[a-f0-9]{20}$/.test(task.taskId) ||
-      typeof task.proposalId !== "string" ||
-      task.status !== "awaiting-owner-review" ||
-      task.approval?.required !== true || task.approval?.status !== "pending" ||
-      task.execution?.mode !== "draft-only" ||
-      task.execution?.writesAllowed !== false ||
-      task.execution?.automaticAcceptance !== false ||
-      task.execution?.mergeAllowed !== false ||
-      task.execution?.deploymentAllowed !== false ||
-      !Array.isArray(task.targetPaths)) {
+  if (!verifyCreativeBuildTaskProposal(task)) {
     throw new TypeError("A valid pending, draft-only creative task is required.");
   }
   if (!DECISIONS.has(decision)) {
