@@ -818,6 +818,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     subject: "", setting: "", action: "", camera: "", openingFrame: "", closingFrame: "",
   });
   const [imageAspectRatio, setImageAspectRatio] = useState("auto");
+  const [imageSeries, setImageSeries] = useState({ subject: "", wardrobe: "", palette: "", style: "", scene: "", sceneNumber: "" });
   const [generatedVideo, setGeneratedVideo] = useState(null);
   const [memoryOpen, setMemoryOpen] = useState(false);
   const [memoryEnabled, setMemoryEnabled] = useState(false);
@@ -1168,7 +1169,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       const response = await fetch("/api/images/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: imagePrompt, steps: 8, quality: "masterpiece", ...(imageAspectRatio === "auto" ? {} : { aspectRatio: imageAspectRatio }) }),
+        body: JSON.stringify({ prompt: imagePrompt, steps: 8, quality: "masterpiece", ...(imageAspectRatio === "auto" ? {} : { aspectRatio: imageAspectRatio }), ...(() => { const series = Object.fromEntries(Object.entries(imageSeries).filter(([key, value]) => value !== "" && (key !== "sceneNumber" || Number.isInteger(Number(value)))).map(([key, value]) => [key, key === "sceneNumber" ? Number(value) : value.trim()])); return Object.keys(series).length ? { series } : {}; })() }),
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || "Could not generate the image.");
@@ -2069,6 +2070,21 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                   <option value="4:3">Landscape 4:3</option>
                   <option value="16:9">Widescreen 16:9</option>
                 </select>
+              </details>
+              <details className="video-advanced-settings">
+                <summary>Image series consistency (optional)</summary>
+                <input aria-label="Series subject identity" className="copy-message" maxLength={180} placeholder="Same subject identity and defining traits"
+                  value={imageSeries.subject} onChange={(event) => setImageSeries((current) => ({ ...current, subject: event.target.value }))} />
+                <input aria-label="Series wardrobe" className="copy-message" maxLength={180} placeholder="Consistent wardrobe and accessories"
+                  value={imageSeries.wardrobe} onChange={(event) => setImageSeries((current) => ({ ...current, wardrobe: event.target.value }))} />
+                <input aria-label="Series color palette" className="copy-message" maxLength={180} placeholder="Locked color palette"
+                  value={imageSeries.palette} onChange={(event) => setImageSeries((current) => ({ ...current, palette: event.target.value }))} />
+                <input aria-label="Series visual style" className="copy-message" maxLength={180} placeholder="Locked visual style and medium"
+                  value={imageSeries.style} onChange={(event) => setImageSeries((current) => ({ ...current, style: event.target.value }))} />
+                <input aria-label="Current image scene" className="copy-message" maxLength={180} placeholder="What happens in this scene?"
+                  value={imageSeries.scene} onChange={(event) => setImageSeries((current) => ({ ...current, scene: event.target.value }))} />
+                <input aria-label="Image series scene number" className="copy-message" type="number" min="1" max="12" placeholder="Scene number (1–12)"
+                  value={imageSeries.sceneNumber} onChange={(event) => setImageSeries((current) => ({ ...current, sceneNumber: event.target.value }))} />
               </details>
               <button className="copy-message" type="button" onClick={generateImage}
                 disabled={!prompt.trim() || imageGenerating || busy || Boolean(imageFile)}>
