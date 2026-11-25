@@ -56,7 +56,7 @@ export default function LoginPage() {
         const { data: verifiedData, error } = await supabase.auth.verifyOtp({
           email: normalizedEmail,
           token: otp,
-          type: "email",
+          type: otpPurpose === "signup" ? "signup" : "email",
         });
 
         if (error) {
