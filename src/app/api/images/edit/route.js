@@ -27,12 +27,12 @@ export async function POST(request) {
   }
 
   const contentType = request.headers.get("content-type") || "";
-  if (!/^multipart\\/form-data;\\s*boundary=(?:"[^"]+"|[^;]+)$/i.test(contentType)) {
+  if (!/^multipart\/form-data;\s*boundary=(?:"[^"]+"|[^;]+)$/i.test(contentType)) {
     return NextResponse.json({ error: "Invalid image-edit request." }, { status: 400 });
   }
 
   const declaredLength = request.headers.get("content-length");
-  if (declaredLength !== null && !/^\\d+$/.test(declaredLength)) {
+  if (declaredLength !== null && !/^\d+$/.test(declaredLength)) {
     return NextResponse.json({ error: "Invalid image-edit request." }, { status: 400 });
   }
   const contentLength = declaredLength === null ? null : Number(declaredLength);
