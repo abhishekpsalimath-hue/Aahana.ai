@@ -135,3 +135,40 @@
 .galaxy,.planetOne,.planetTwo,.blackHole,.nebulaObject,.darkMatterLens{translate:var(--parallax-x-soft,0px) var(--parallax-y-soft,0px)}
 .nebula{translate:var(--parallax-x,0px) var(--parallax-y,0px);transition:translate .28s ease-out}
 @media(prefers-reduced-motion:reduce){.halo,.nebula{transition:none}}
+
+
+/* Touch-first controls: keep the spatial scene discoverable without tiny tap targets. */
+@media (hover: none) and (pointer: coarse) {
+  .world {
+    min-height: 40px;
+    padding: 10px 13px;
+    background: #100c1dcc;
+    backdrop-filter: none;
+  }
+  .worldList {
+    gap: 9px;
+    padding-inline: 2px;
+  }
+  .worldList button {
+    min-height: 40px;
+    padding: 10px 13px;
+    background: #100c1d88;
+  }
+  .journeyControls button,
+  .footer button {
+    min-height: 42px;
+    padding-inline: 14px;
+  }
+  .orbitStage button:focus-visible {
+    outline-offset: 5px;
+  }
+}
+@media (max-width: 380px) {
+  .worldGalaxy { left: -2%; }
+  .worldPlanet { right: -2%; }
+  .worldHole { right: -2%; }
+  .worldComet { right: 1%; }
+  .worldEnergy { left: 34%; }
+  .orbitStage { height: 300px; }
+  .journeyControls span { max-width: 94px; line-height: 1.4; }
+}
