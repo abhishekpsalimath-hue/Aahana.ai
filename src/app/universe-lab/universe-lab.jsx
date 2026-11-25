@@ -20,36 +20,28 @@ const worlds = [
 
 function Starfield({ pointerRef, animate }) {
   const canvasRef = useRef(null);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     const context = canvas?.getContext("2d", { alpha: true });
     if (!canvas || !context) return;
+
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     let frame = 0;
     let width = 0;
     let height = 0;
     let stars = [];
     let dpr = 1;
-    const resize = () => {
-      const rect = canvas.getBoundingClientRect();
-      dpr = Math.min(window.devicePixelRatio || 1, 1.5);
-      width = rect.width;
-      height = rect.height;
-      canvas.width = Math.round(width * dpr);
-      canvas.height = Math.round(height * dpr);
-      context.setTransform(dpr, 0, 0, dpr, 0, 0);
-      const count = Math.min(850, Math.max(180, Math.round(width * height / 2200)));
-      stars = Array.from({ length: count }, () => ({
-        x: Math.random() * width, y: Math.random() * height,
-        radius: Math.random() * 1.25 + 0.2, alpha: Math.random() * 0.62 + 0.16,
-        phase: Math.random() * Math.PI * 2, speed: Math.random() * 0.006 + 0.0015,
-      }));
-      draw();
-    };
+    let inView = true;
+    let pageVisible = !document.hidden;
+
+    const shouldAnimate = () => animate && !reduced && inView && pageVisible;
     const draw = (time = 0) => {
       context.clearRect(0, 0, width, height);
       for (const star of stars) {
-        const pulse = reduced || !animate ? 1 : 0.68 + Math.sin(time * star.speed + star.phase) * 0.26;
+        const pulse = shouldAnimate()
+          ? 0.68 + Math.sin(time * star.speed + star.phase) * 0.26
+          : 1;
         const px = star.x + (pointerRef.current.x - 0.5) * star.radius * 2.8;
         const py = star.y + (pointerRef.current.y - 0.5) * star.radius * 2.8;
         context.beginPath();
@@ -57,16 +49,62 @@ function Starfield({ pointerRef, animate }) {
         context.arc(px, py, star.radius, 0, Math.PI * 2);
         context.fill();
       }
-      if (!reduced && animate) frame = requestAnimationFrame(draw);
+      if (shouldAnimate()) frame = requestAnimationFrame(draw);
+      else frame = 0;
     };
-    resize();
+
+    const scheduleDraw = () => {
+      if (frame) cancelAnimationFrame(frame);
+      frame = 0;
+      draw();
+    };
+
+    const resize = () => {
+      const rect = canvas.getBoundingClientRect();
+      dpr = Math.min(window.devicePixelRatio || 1, 1.25);
+      width = rect.width;
+      height = rect.height;
+      canvas.width = Math.round(width * dpr);
+      canvas.height = Math.round(height * dpr);
+      context.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const area = width * height;
+      const count = Math.min(560, Math.max(120, Math.round(area / 3200)));
+      stars = Array.from({ length: count }, () => ({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        radius: Math.random() * 1.15 + 0.2,
+        alpha: Math.random() * 0.62 + 0.16,
+        phase: Math.random() * Math.PI * 2,
+        speed: Math.random() * 0.006 + 0.0015,
+      }));
+      scheduleDraw();
+    };
+
     const observer = new ResizeObserver(resize);
     observer.observe(canvas);
-    return () => { cancelAnimationFrame(frame); observer.disconnect(); };
+    const visibilityObserver = new IntersectionObserver(([entry]) => {
+      inView = entry.isIntersecting;
+      scheduleDraw();
+    }, { threshold: 0 });
+    visibilityObserver.observe(canvas);
+    const onVisibilityChange = () => {
+      pageVisible = !document.hidden;
+      scheduleDraw();
+    };
+
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    resize();
+
+    return () => {
+      if (frame) cancelAnimationFrame(frame);
+      observer.disconnect();
+      visibilityObserver.disconnect();
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
   }, [animate, pointerRef]);
+
   return <canvas ref={canvasRef} className={styles.starfield} aria-hidden="true" />;
 }
-
 export default function UniverseLab() {
   const [selected, setSelected] = useState("galaxies");
   const pointerRef = useRef({ x: 0.5, y: 0.5 });
