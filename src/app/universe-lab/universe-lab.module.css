@@ -128,3 +128,10 @@
 @keyframes planetary-revolution{from{transform:rotate(0deg) translateX(var(--orbit-radius))}to{transform:rotate(360deg) translateX(var(--orbit-radius))}}
 .universe[data-motion="false"] .solarOrbit i{animation:none}
 @media(prefers-reduced-motion:reduce){.solarOrbit i{animation:none!important}}
+
+
+/* Pointer parallax adds depth without changing the scene's layout geometry. */
+.halo{translate:var(--parallax-x,0px) var(--parallax-y,0px);transition:translate .18s ease-out}
+.galaxy,.planetOne,.planetTwo,.blackHole,.nebulaObject,.darkMatterLens{translate:var(--parallax-x-soft,0px) var(--parallax-y-soft,0px)}
+.nebula{translate:var(--parallax-x,0px) var(--parallax-y,0px);transition:translate .28s ease-out}
+@media(prefers-reduced-motion:reduce){.halo,.nebula{transition:none}}
