@@ -426,7 +426,7 @@ export default function LearningStudio({ userEmail = "" }) {
     <main className="learning-page">
       <UniverseScene />
       <header className="learning-header">
-        <Link className="learning-brand" href="/">Aahana <span>ai</span></Link>
+        <Link className="learning-brand" href="/">Aahana <span>AI</span></Link>
         <nav><Link href="/">Assistant</Link><span className="learning-user">{userEmail || "Your workspace"}</span></nav>
       </header>
 
