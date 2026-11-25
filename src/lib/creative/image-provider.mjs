@@ -2,6 +2,10 @@ export const DEFAULT_IMAGE_MODEL = "@cf/black-forest-labs/flux-1-schnell";
 export const ENHANCED_IMAGE_MODEL = "@cf/black-forest-labs/flux-2-klein-4b";
 export const ACCURACY_IMAGE_MODEL = "@cf/black-forest-labs/flux-2-dev";
 
+export function supportsImageAspectRatio(model, aspectRatio) {
+  return model !== DEFAULT_IMAGE_MODEL || aspectRatio === "1:1";
+}
+
 export function getImageOutputMimeType(model) {
   return model === ENHANCED_IMAGE_MODEL || model === ACCURACY_IMAGE_MODEL ? "image/png" : "image/jpeg";
 }
