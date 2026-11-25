@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import styles from "./universe-lab.module.css";
+import ProjectMilestones from "./project-milestones";
 
 export default function ProjectWorkspace({ worlds, title }) {
   const initial = worlds.map((world, index) => ({
@@ -108,6 +109,7 @@ export default function ProjectWorkspace({ worlds, title }) {
         <label className={styles.projectImportButton}>Restore JSON ↑<input type="file" accept="application/json,.json" onChange={restoreProjectFile} /></label>
       </div>
     </div>
+    <ProjectMilestones />
     <div className={styles.projectWorkspaceSummary}><span>{summary.reviewed} reviewed</span><span>{summary.drafted} drafted</span><span>{summary.sources} references attached</span></div>
     <div className={styles.projectWorkspaceChapters}>
       {chapters.map((chapter, index) => {
