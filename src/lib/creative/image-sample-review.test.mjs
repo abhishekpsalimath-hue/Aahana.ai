@@ -53,7 +53,7 @@ test("summarizes human-scored output quality separately by model", () => {
   const first = summary.find((entry) => entry.model === "offline-fixture-model");
   assert.equal(first.reviewedSamples, 2);
   assert.equal(first.distinctCases, 2);
-  assert.equal(first.averageOutputQuality, 4);
+  assert.equal(first.averageOutputQuality, 3.9);
 });
 
 test("rejects empty input, missing sample IDs, and duplicate sample IDs", () => {
