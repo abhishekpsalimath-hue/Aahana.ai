@@ -51,15 +51,43 @@ test("summarizes human-scored output quality separately by model", () => {
   ]);
   assert.equal(summary.length, 2);
   const first = summary.find((entry) => entry.model === "offline-fixture-model");
-  assert.equal(first.reviewedSamples, 2);
+  assert.equal(first.reviewCount, 2);
+  assert.equal(first.distinctSamples, 2);
+  assert.equal(first.multiReviewedSamples, 0);
   assert.equal(first.distinctCases, 2);
   assert.equal(first.averageOutputQuality, 3.9);
+  assert.equal(first.averageReviewerSpread, null);
 });
 
-test("rejects empty input, missing sample IDs, and duplicate sample IDs", () => {
+test("rejects empty input and duplicate reviewer submissions while allowing independent reviews of one sample", () => {
   assert.throws(() => validateImageSampleReviews([]), /at least one/);
   assert.throws(() => validateImageSampleReviews([review({ sampleId: "" })]), /sampleId/);
-  assert.throws(() => validateImageSampleReviews([review(), review()]), /Duplicate image sampleId/);
+  assert.throws(() => validateImageSampleReviews([review(), review()]), /Duplicate review from reviewer-a/);
+  const independent = validateImageSampleReviews([
+    review(),
+    review({ reviewer: "reviewer-b", scores: { ...review().scores, visualCoherence: 3 } }),
+  ]);
+  assert.equal(independent.length, 2);
+});
+
+test("measures reviewer spread when multiple reviewers score the same sample", () => {
+  const summary = summarizeImageSampleReviews([
+    review(),
+    review({
+      reviewer: "reviewer-b",
+      scores: {
+        subjectFidelity: 4, attributeFidelity: 4, compositionFidelity: 3,
+        constraintFidelity: 5, visualCoherence: 2,
+      },
+    }),
+  ])[0];
+  assert.equal(summary.reviewCount, 2);
+  assert.equal(summary.distinctSamples, 1);
+  assert.equal(summary.multiReviewedSamples, 1);
+  assert.equal(summary.reviewerCount, 2);
+  assert.equal(summary.reviewerSpread.subjectFidelity, 1);
+  assert.equal(summary.reviewerSpread.visualCoherence, 2);
+  assert.equal(summary.averageReviewerSpread, 0.8);
 });
 
 test("rejects paths and remote URLs as sample identifiers", () => {
