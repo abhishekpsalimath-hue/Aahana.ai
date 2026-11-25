@@ -122,36 +122,66 @@ export function createCreativeBuildTaskProposals({ improvementReport, targetPath
  * This detects client-edited evidence, paths, IDs and permission flags before
  * a review decision is accepted by a future authenticated server boundary.
  */
+function hasExactKeys(value, expected) {
+  return value && typeof value === "object" && !Array.isArray(value) &&
+    Object.keys(value).sort().join("|") === [...expected].sort().join("|");
+}
+
+/**
+ * Verify the task's canonical shape, bounded JSON evidence and stable identity.
+ * The digest detects accidental or partial edits; it is not an authentication
+ * signature. A future server must load the original task from trusted storage.
+ */
 export function verifyCreativeBuildTaskProposal(task) {
   try {
-    if (!task || typeof task !== "object" || Array.isArray(task) ||
+    if (!hasExactKeys(task, [
+      "taskId", "proposalId", "title", "priority", "action",
+      "sourceEvidence", "targetPaths", "status", "approval", "execution",
+    ]) ||
+        typeof task.taskId !== "string" ||
         typeof task.proposalId !== "string" || !/^[a-z0-9-]{3,100}$/i.test(task.proposalId) ||
-        typeof task.title !== "string" || typeof task.action !== "string" ||
+        typeof task.title !== "string" || !task.title.trim() || task.title.length > MAX_TITLE_LENGTH ||
+        typeof task.action !== "string" || !task.action.trim() || task.action.length > MAX_ACTION_LENGTH ||
         !["high", "medium", "low"].includes(task.priority) ||
-        !task.sourceEvidence || typeof task.sourceEvidence !== "object" ||
-        Array.isArray(task.sourceEvidence) ||
+        !hasExactKeys(task.sourceEvidence, ["source", "evidence"]) ||
         typeof task.sourceEvidence.source !== "string" ||
+        !task.sourceEvidence.source.trim() || task.sourceEvidence.source.length > MAX_SOURCE_LENGTH ||
         !task.sourceEvidence.evidence || typeof task.sourceEvidence.evidence !== "object" ||
         Array.isArray(task.sourceEvidence.evidence) ||
         !Array.isArray(task.targetPaths) || task.targetPaths.length > MAX_PATHS_PER_TASK ||
         task.status !== "awaiting-owner-review" ||
-        task.approval?.required !== true || task.approval?.status !== "pending" ||
-        task.execution?.mode !== "draft-only" ||
-        task.execution?.writesAllowed !== false ||
-        task.execution?.testsRequiredBeforeAcceptance !== true ||
-        task.execution?.automaticAcceptance !== false ||
-        task.execution?.mergeAllowed !== false ||
-        task.execution?.deploymentAllowed !== false) return false;
+        !hasExactKeys(task.approval, ["required", "status"]) ||
+        task.approval.required !== true || task.approval.status !== "pending" ||
+        !hasExactKeys(task.execution, [
+          "mode", "writesAllowed", "testsRequiredBeforeAcceptance",
+          "automaticAcceptance", "mergeAllowed", "deploymentAllowed",
+        ]) ||
+        task.execution.mode !== "draft-only" ||
+        task.execution.writesAllowed !== false ||
+        task.execution.testsRequiredBeforeAcceptance !== true ||
+        task.execution.automaticAcceptance !== false ||
+        task.execution.mergeAllowed !== false ||
+        task.execution.deploymentAllowed !== false) return false;
+
+    const serializedEvidence = JSON.stringify(task.sourceEvidence.evidence);
+    if (typeof serializedEvidence !== "string" ||
+        new TextEncoder().encode(serializedEvidence).byteLength > MAX_EVIDENCE_BYTES) return false;
+    const normalizedEvidence = JSON.parse(serializedEvidence);
+    if (!normalizedEvidence || typeof normalizedEvidence !== "object" || Array.isArray(normalizedEvidence)) return false;
 
     const paths = task.targetPaths.map(validateCreativeBuildTargetPath);
     if (new Set(paths).size !== paths.length ||
         paths.some((path, index) => path !== [...paths].sort()[index])) return false;
+    const canonicalSourceEvidence = {
+      source: task.sourceEvidence.source,
+      evidence: normalizedEvidence,
+    };
     const identity = stableJson({
       proposalId: task.proposalId,
       title: task.title,
       priority: task.priority,
       action: task.action,
-      sourceEvidence: task.sourceEvidence,
+      sourceEvidence: canonicalSourceEvidence,
       targetPaths: paths,
     });
     const expected = "creative-task-" + createHash("sha256").update(identity).digest("hex").slice(0, 20);
