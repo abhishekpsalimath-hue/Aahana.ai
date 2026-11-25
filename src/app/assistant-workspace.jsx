@@ -1169,7 +1169,8 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       const response = await fetch("/api/images/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: imagePrompt, steps: 8, quality: "masterpiece", ...(imageAspectRatio === "auto" ? {} : { aspectRatio: imageAspectRatio }), ...(() => { const series = Object.fromEntries(Object.entries(imageSeries).filter(([key, value]) => value !== "" && (key !== "sceneNumber" || Number.isInteger(Number(value)))).map(([key, value]) => [key, key === "sceneNumber" ? Number(value) : value.trim()])); return Object.keys(series).length ? { series } : {}; })() }),
+        body: JSON.stringify({ prompt: imagePrompt, steps: 8, quality: "masterpiece", ...(imageAspectRatio === "auto" ? {} : { aspectRatio: imageAspectRatio }),
+          ...(Object.values(imageSeries).some((value) => String(value).trim()) ? { series: { ...imageSeries, sceneNumber: imageSeries.sceneNumber.trim() ? Number(imageSeries.sceneNumber) : undefined } } : {}), ...(() => { const series = Object.fromEntries(Object.entries(imageSeries).filter(([key, value]) => value !== "" && (key !== "sceneNumber" || Number.isInteger(Number(value)))).map(([key, value]) => [key, key === "sceneNumber" ? Number(value) : value.trim()])); return Object.keys(series).length ? { series } : {}; })() }),
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || "Could not generate the image.");
@@ -1486,7 +1487,8 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         const response = await fetch("/api/images/generate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt: text, steps: 8, quality: "masterpiece", ...(imageAspectRatio === "auto" ? {} : { aspectRatio: imageAspectRatio }) }),
+          body: JSON.stringify({ prompt: text, steps: 8, quality: "masterpiece", ...(imageAspectRatio === "auto" ? {} : { aspectRatio: imageAspectRatio }),
+          ...(Object.values(imageSeries).some((value) => String(value).trim()) ? { series: { ...imageSeries, sceneNumber: imageSeries.sceneNumber.trim() ? Number(imageSeries.sceneNumber) : undefined } } : {}) }),
         });
         const result = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(result.error || "Could not generate the image.");
