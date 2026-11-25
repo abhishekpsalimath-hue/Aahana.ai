@@ -1753,6 +1753,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
 
       <section className="main-panel">
         <div className="space-background" aria-hidden="true">
+          <UniverseScene />
           <div className="universe-flight" data-speed="65 km/h">
             <div className="universe-depth-stars" aria-hidden="true">
               <i className="depth-stars-far" />
