@@ -114,6 +114,7 @@ export default function AahanaSelfBuildPanel() {
           <span style={muted}>Reason: {execution.reasonCode.replaceAll("_", " ").toLowerCase()}</span>
           <span style={muted}>Tool calls: {execution.successfulToolCalls} succeeded · {execution.failedToolCalls} failed · {execution.proposalsStaged} proposal(s) staged</span>
           <span style={muted}>Acceptance checks: {execution.acceptanceChecks.status.replaceAll("_", " ")} — no checks are claimed as passed here.</span>
+          {execution.failures?.map((failure, index) => <span key={`${failure.tool}-${index}`} style={muted}>{failure.tool}: {failure.code} · {failure.retryable ? "retryable after backoff" : "do not retry unchanged"} · {failure.recoveryAction.replaceAll("_", " ").toLowerCase()}</span>)}
         </div>}
         {finalResponse && <p style={muted} role="status">{finalResponse}</p>}
         {proposals.map((f) => <details key={f.path} style={{ borderTop: "1px solid #514365", paddingTop: 10 }}>
