@@ -111,6 +111,11 @@ export default function UniverseLab() {
   const [motion, setMotion] = useState(true);
   const [journeyStarted, setJourneyStarted] = useState(false);
   const [experimentOpen, setExperimentOpen] = useState(false);
+  const [gravityMass, setGravityMass] = useState(5);
+  const [gravityDistance, setGravityDistance] = useState(5);
+  const [rayRun, setRayRun] = useState(0);
+  const gravityBend = Math.min(70, (gravityMass * 13) / (gravityDistance * 0.55 + 0.4));
+  const rayControlY = 22 + gravityBend * 1.4;
   const active = worlds.find((world) => world.id === selected) || worlds[0];
   const choose = (id) => { setSelected(id); setJourneyStarted(true); setExperimentOpen(false); };
   const moveJourney = (direction) => {
@@ -191,6 +196,25 @@ export default function UniverseLab() {
         <div className={styles.experimentHeading}><span>THINK LIKE AN EXPLORER</span><button type="button" onClick={() => setExperimentOpen((value) => !value)} aria-expanded={experimentOpen}>{experimentOpen ? "Close experiment −" : "Try a thought experiment +"}</button></div>
         {experimentOpen && <div className={styles.experimentPrompt}><p>{active.experiment}</p><span>Take a moment to form your own explanation. There is more than one useful question to ask.</span></div>}
       </section>
+
+      {selected === "black-holes" && <section className={styles.gravityLab} aria-label="Black-hole gravity experiment">
+        <div className={styles.gravityHeader}><div><span className={styles.detailEyebrow}>INTERACTIVE PHYSICS · CONCEPTUAL MODEL</span><h2>Gravity Lab</h2><p>Change the black hole and the passing light ray. Watch how the path bends.</p></div><span className={styles.gravityTag}>LIGHT PATH</span></div>
+        <svg className={styles.gravityDiagram} viewBox="0 0 300 132" role="img" aria-label={`Conceptual light path bending around a black hole. Mass ${gravityMass} of 10, approach distance ${gravityDistance} of 10.`} data-run={rayRun}>
+          <defs><radialGradient id="gravityGlow"><stop offset="0" stopColor="#b99aff" stopOpacity=".42"/><stop offset="1" stopColor="#b99aff" stopOpacity="0"/></radialGradient></defs>
+          <ellipse cx="150" cy="78" rx="63" ry="44" fill="url(#gravityGlow)"/>
+          <ellipse cx="150" cy="78" rx="35" ry="9" fill="none" stroke="#c6a8ff" strokeOpacity=".75" strokeWidth="2" transform="rotate(-17 150 78)"/>
+          <circle cx="150" cy="78" r="19" fill="#030207" stroke="#a98bd8" strokeOpacity=".8" strokeWidth="1.5"/>
+          <path d={`M 8 22 Q 150 ${rayControlY.toFixed(1)} 292 22`} className={styles.rayPath} fill="none" stroke="#b8f4ff" strokeWidth="2.2" strokeLinecap="round"/>
+          <circle cx="8" cy="22" r="3" fill="#e8fcff"/><circle cx="292" cy="22" r="3" fill="#e8fcff"/>
+          <text x="8" y="12" fill="#a99bbd" fontSize="7">LIGHT IN</text><text x="292" y="12" fill="#a99bbd" fontSize="7" textAnchor="end">LIGHT OUT</text>
+        </svg>
+        <div className={styles.gravityControls}>
+          <label>Black-hole mass <output>{gravityMass} / 10</output><input type="range" min="1" max="10" step="1" value={gravityMass} onChange={(event) => setGravityMass(Number(event.target.value))} /></label>
+          <label>Light-ray distance <output>{gravityDistance} / 10 · {gravityDistance <= 3 ? "Close" : gravityDistance >= 8 ? "Far" : "Mid-range"}</output><input type="range" min="1" max="10" step="1" value={gravityDistance} onChange={(event) => setGravityDistance(Number(event.target.value))} /></label>
+        </div>
+        <div className={styles.gravityFooter}><span>Greater mass and a closer pass produce stronger bending in this simplified illustration.</span><button type="button" onClick={() => setRayRun((value) => value + 1)}>Trace light path ↗</button></div>
+        <p className={styles.gravityCaution}>Learning model only: real gravitational lensing depends on the space-time geometry and the ray’s full trajectory.</p>
+      </section>}
 
       <div className={styles.journeyControls} aria-label="Guided universe journey">
         <button type="button" onClick={() => moveJourney(-1)} aria-label="Explore previous cosmic subject">← Previous</button>
