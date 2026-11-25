@@ -219,10 +219,15 @@ export default function UniverseLab() {
     }
   };
   const toggleProjectSubject = (id) => {
-    setProjectSubjects((current) => current.includes(id)
-      ? current.filter((item) => item !== id)
-      : current.length < 6 ? [...current, id] : current);
-    setProjectStatus("");
+    if (projectSubjects.includes(id)) {
+      setProjectSubjects((current) => current.filter((item) => item !== id));
+      setProjectStatus("");
+    } else if (projectSubjects.length < 6) {
+      setProjectSubjects((current) => [...current, id]);
+      setProjectStatus("");
+    } else {
+      setProjectStatus("A project can include up to six discoveries. Remove one to add another.");
+    }
     setProjectPreview("");
   };
   const copyKnowledgeProject = async () => {
@@ -401,7 +406,7 @@ Connect the selected subjects through defensible scientific relationships. Do no
         <div className={styles.knowledgePicker}>
           <div className={styles.knowledgePickerTop}><span>ADD DISCOVERIES</span><span>{projectSubjects.length} / 6 selected · choose at least 2</span></div>
           <div className={styles.knowledgeChips}>
-            {worlds.map((world) => <button type="button" key={world.id} onClick={() => toggleProjectSubject(world.id)} className={projectSubjects.includes(world.id) ? styles.knowledgeChipActive : ""} aria-pressed={projectSubjects.includes(world.id)}>{world.name}<span>{projectSubjects.includes(world.id) ? "✓" : "+"}</span></button>)}
+            {worlds.map((world) => <button type="button" key={world.id} onClick={() => toggleProjectSubject(world.id)} className={projectSubjects.includes(world.id) ? styles.knowledgeChipActive : ""} aria-pressed={projectSubjects.includes(world.id)} disabled={!projectSubjects.includes(world.id) && projectSubjects.length >= 6}>{world.name}<span>{projectSubjects.includes(world.id) ? "✓" : "+"}</span></button>)}
           </div>
         </div>
         <label className={styles.creationField}>Project format
