@@ -11,8 +11,7 @@ const DEFAULT_MILESTONES = [
   { id: "deliver", title: "Prepare final deliverable", dueDate: "", status: "planned" },
 ];
 
-export default function ProjectMilestones() {
-  const [milestones, setMilestones] = useState(DEFAULT_MILESTONES);
+export default function ProjectMilestones({ milestones, setMilestones }) {
   const [newTitle, setNewTitle] = useState("");
   const completed = useMemo(() => milestones.filter((item) => item.status === "done").length, [milestones]);
   const update = (id, patch) => setMilestones((current) => current.map((item) => item.id === id ? { ...item, ...patch } : item));
