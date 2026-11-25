@@ -50,7 +50,7 @@ export async function readBoundedResponseJson(response, maxBytes = 256 * 1024) {
   }
   const declaredLength = response?.headers?.get?.("content-length");
   if (declaredLength !== null && declaredLength !== undefined) {
-    if (!/^\\d+$/.test(declaredLength)) return { ok: false, reason: "invalid" };
+    if (!/^\d+$/.test(declaredLength)) return { ok: false, reason: "invalid" };
     if (Number(declaredLength) > maxBytes) return { ok: false, reason: "too-large" };
   }
   if (!response?.body || typeof response.body.getReader !== "function") {
