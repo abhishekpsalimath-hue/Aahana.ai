@@ -40,3 +40,11 @@ test("keeps planning outcomes distinct and validates counters", () => {
   assert.throws(() => buildSelfImproveExecutionOutcome({ ...base, failedToolCalls: -1 }), /counters/);
   assert.throws(() => buildSelfImproveExecutionOutcome({ ...base, phase: "other" }), /phase/);
 });
+
+
+test("includes bounded classified recovery metadata without raw tool error messages", () => {
+  const result = buildSelfImproveExecutionOutcome({ ...base, failedToolCalls: 1, failureDetails: [{ tool: "propose_source_changes", code: "PATCH_NOT_UNIQUE", retryable: false, recoveryAction: "READ_CURRENT_SOURCE_AND_REFINE_PATCH" }] });
+  assert.equal(result.failures.length, 1);
+  assert.equal(result.failures[0].retryable, false);
+  assert.equal("message" in result.failures[0], false);
+});
