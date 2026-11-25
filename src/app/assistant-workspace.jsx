@@ -812,6 +812,8 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [videoDuration, setVideoDuration] = useState(5);
   const [videoAspectRatio, setVideoAspectRatio] = useState("16:9");
   const [videoResolution, setVideoResolution] = useState("480p");
+  const [videoDirector, setVideoDirector] = useState("cinematic");
+  const [imageAspectRatio, setImageAspectRatio] = useState("auto");
   const [generatedVideo, setGeneratedVideo] = useState(null);
   const [memoryOpen, setMemoryOpen] = useState(false);
   const [memoryEnabled, setMemoryEnabled] = useState(false);
@@ -1162,7 +1164,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       const response = await fetch("/api/images/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: imagePrompt, steps: 8, quality: "masterpiece" }),
+        body: JSON.stringify({ prompt: imagePrompt, steps: 8, quality: "masterpiece", ...(imageAspectRatio === "auto" ? {} : { aspectRatio: imageAspectRatio }) }),
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || "Could not generate the image.");
@@ -1220,21 +1222,24 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     try {
       const response = await fetch(generatedImage.dataUrl);
       const blob = await response.blob();
-      const file = new File([blob], `aahana-image-${Date.now()}.jpg`, { type: "image/jpeg" });
+      const mimeType = generatedImage.dataUrl.match(/^data:(image\/(?:jpeg|png|webp));base64,/i)?.[1]?.toLowerCase();
+      const extension = mimeType === "image/png" ? "png" : mimeType === "image/webp" ? "webp" : mimeType === "image/jpeg" ? "jpg" : null;
+      if (!mimeType || !extension || blob.type !== mimeType) throw new Error("The generated image format could not be verified.");
+      const file = new File([blob], "aahana-image-" + Date.now() + "." + extension, { type: mimeType });
       const supabase = createClient();
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError || !user) throw new Error("Please sign in again.");
       const folder = selectedProjectId || "personal";
       const objectPath = `${user.id}/${folder}/${crypto.randomUUID()}-${file.name}`;
       const { error: storageError } = await supabase.storage.from("aahana-private").upload(objectPath, file, {
-        contentType: "image/jpeg", upsert: false,
+        contentType: mimeType, upsert: false,
       });
       if (storageError) throw new Error("Could not save the generated image. Please try again.");
       const saved = await fetch("/api/files", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          objectPath, originalFilename: file.name, mimeType: "image/jpeg",
+          objectPath, originalFilename: file.name, mimeType,
           sizeBytes: file.size, projectId: selectedProjectId,
         }),
       });
@@ -1264,6 +1269,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       form.set("duration", String(videoDuration));
       form.set("aspectRatio", videoAspectRatio);
       form.set("resolution", videoResolution);
+      form.set("director", videoDirector);
       if (imageFile) form.set("image", imageFile);
       const response = await fetch("/api/videos/generate", {
         method: "POST",
@@ -1471,7 +1477,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         const response = await fetch("/api/images/generate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt: text, steps: 8, quality: "masterpiece" }),
+          body: JSON.stringify({ prompt: text, steps: 8, quality: "masterpiece", ...(imageAspectRatio === "auto" ? {} : { aspectRatio: imageAspectRatio }) }),
         });
         const result = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(result.error || "Could not generate the image.");
@@ -1962,7 +1968,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
               <div className="generated-image-preview">
                 <img src={generatedImage.dataUrl} alt={generatedImage.prompt} style={{ display: "block", width: "100%", maxWidth: "640px", borderRadius: "14px" }} />
                 <div className="message-actions">
-                  <a className="copy-message" href={generatedImage.dataUrl} download="aahana-generated-image.jpg">Download image</a>
+                  <a className="copy-message" href={generatedImage.dataUrl} download={"aahana-generated-image." + (generatedImage.dataUrl.startsWith("data:image/png") ? "png" : generatedImage.dataUrl.startsWith("data:image/webp") ? "webp" : "jpg")}>Download image</a>
                   <button className="copy-message" type="button" onClick={saveGeneratedImage} disabled={imageSaving}>{imageSaving ? "Saving…" : "Save to Files"}</button>
                   <button className="copy-message" type="button" onClick={() => setGeneratedImage(null)}>Remove</button>
                 </div>
@@ -2001,6 +2007,13 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                       <option value="3:2">3:2</option>
                       <option value="2:3">2:3</option>
                     </select>
+                    <select aria-label="Video direction" value={videoDirector} onChange={(event) => setVideoDirector(event.target.value)} className="copy-message">
+                      <option value="cinematic">Cinematic</option>
+                      <option value="commercial">Commercial</option>
+                      <option value="documentary">Documentary</option>
+                      <option value="anime">Anime</option>
+                      <option value="none">Use my prompt as written</option>
+                    </select>
                     <select aria-label="Video resolution" value={videoResolution} onChange={(event) => setVideoResolution(event.target.value)} className="copy-message">
                       <option value="480p">480p</option>
                       <option value="720p">720p</option>
@@ -2024,6 +2037,16 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                   }} />
               </label>
               {imageFile && <span className="image-attach-name">{imageFile.name} <button type="button" onClick={() => setImageFile(null)}>Remove</button></span>}
+              <details className="video-advanced-settings">
+                <summary>Image framing</summary>
+                <select aria-label="Image aspect ratio" value={imageAspectRatio} onChange={(event) => setImageAspectRatio(event.target.value)} className="copy-message">
+                  <option value="auto">Automatic from prompt</option>
+                  <option value="1:1">Square 1:1</option>
+                  <option value="3:4">Portrait 3:4</option>
+                  <option value="4:3">Landscape 4:3</option>
+                  <option value="16:9">Widescreen 16:9</option>
+                </select>
+              </details>
               <button className="copy-message" type="button" onClick={generateImage}
                 disabled={!prompt.trim() || imageGenerating || busy || Boolean(imageFile)}>
                 {imageGenerating ? "Creating image…" : "Generate image"}
