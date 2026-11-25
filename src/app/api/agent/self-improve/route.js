@@ -4,7 +4,8 @@ import { validateAgentToolCalls } from "./tool-call-guard.mjs";
 import { createAgentToolCallLedger, recordAgentToolCalls } from "./tool-call-ledger.mjs";
 import { readBoundedUpstreamJson } from "./bounded-upstream-json.mjs";
 import { buildSelfImproveExecutionOutcome } from "./execution-outcome.mjs";
-import { summarizeSelfBuildFailures } from "./failure-classifier.mjs";
+import { summarizeSelfBuildFailures, classifySelfBuildToolFailure } from "./failure-classifier.mjs";
+import { createSelfBuildExecutionJournal, startSelfBuildExecutionStep, finishSelfBuildExecutionStep, summarizeSelfBuildExecutionJournal } from "./execution-journal.mjs";
 import { createClient } from "@/lib/supabase/server";
 import { getSelfBuildConfig, isSelfBuildOwner, isAllowedSelfBuildPath, validateSelfBuildChangeSet } from "@/lib/build/self-build-policy.mjs";
 import { getSelfBuildRepository, getSelfBuildFile } from "@/lib/build/github-app.mjs";
@@ -252,6 +253,7 @@ export async function POST(request) {
   let successfulToolCalls = 0;
   let failedToolCalls = 0;
   const toolFailures = [];
+  const executionJournal = createSelfBuildExecutionJournal();
   let inventoryListed = false;
   let changePlan = phase === "execute" ? approvedChangePlan : null;
   let finalResponse = "";
@@ -335,6 +337,7 @@ export async function POST(request) {
         }
         const name = call.name;
         const args = call.args;
+        const journalStep = startSelfBuildExecutionStep(executionJournal, name);
 
         let result;
         try {
@@ -444,7 +447,12 @@ export async function POST(request) {
         if (result && typeof result.error === "string") {
           failedToolCalls += 1;
           toolFailures.push({ tool: name, message: result.error });
-        } else successfulToolCalls += 1;
+          const classification = classifySelfBuildToolFailure(result.error);
+          finishSelfBuildExecutionStep(executionJournal, journalStep, { ok: false, outcomeCode: classification.code, retryAllowed: classification.retryable });
+        } else {
+          successfulToolCalls += 1;
+          finishSelfBuildExecutionStep(executionJournal, journalStep, { ok: true });
+        }
 
         messages.push({
           role: "tool",
@@ -467,7 +475,7 @@ export async function POST(request) {
   if (phase === "plan" && planReady && changePlan) {
     return NextResponse.json({
       status: "plan_ready",
-      execution: buildSelfImproveExecutionOutcome({ phase, planReady: true, successfulToolCalls, failedToolCalls, roundsUsed: Math.min(rounds + 1, MAX_TOOL_ROUNDS), failureDetails: summarizeSelfBuildFailures(toolFailures) }),
+      execution: buildSelfImproveExecutionOutcome({ phase, planReady: true, successfulToolCalls, failedToolCalls, roundsUsed: Math.min(rounds + 1, MAX_TOOL_ROUNDS), failureDetails: summarizeSelfBuildFailures(toolFailures), executionSteps: summarizeSelfBuildExecutionJournal(executionJournal) }),
       repository: { name: repository.repository, branch: repository.branch, baseSha: repository.baseSha },
       finalResponse: "Plan ready for your review. No source files were read and no changes were proposed.",
       changePlan,
@@ -498,6 +506,7 @@ export async function POST(request) {
     roundsUsed,
     roundLimitReached: rounds >= MAX_TOOL_ROUNDS,
     failureDetails: summarizeSelfBuildFailures(toolFailures),
+    executionSteps: summarizeSelfBuildExecutionJournal(executionJournal),
   });
 
   return NextResponse.json({
