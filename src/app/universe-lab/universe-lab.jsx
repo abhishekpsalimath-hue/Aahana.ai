@@ -99,8 +99,8 @@ export default function UniverseLab() {
       <section className={styles.orbitStage} aria-label="Interactive universe">
         <div className={styles.halo} aria-hidden="true" />
         <div className={styles.galaxy} aria-hidden="true"><i /><i /><i /></div>
-        <div className={styles.planet planetOne} aria-hidden="true" />
-        <div className={styles.planet planetTwo} aria-hidden="true" />
+        <div className={`${styles.planet} ${styles.planetOne}`} aria-hidden="true" />
+        <div className={`${styles.planet} ${styles.planetTwo}`} aria-hidden="true" />
         <div className={styles.solarOrbit} aria-hidden="true"><i /></div>
         <div className={styles.cometTrail} aria-hidden="true" />
         <div className={styles.blackHole} aria-hidden="true"><i /></div>
