@@ -63,6 +63,7 @@ test("validates video reference image signatures and safe dimensions", () => {
   assert.equal(valid.ok, true);
   assert.deepEqual(valid.dimensions, { width: 1920, height: 1080 });
   assert.equal(validateVideoReferenceImage({ bytes: pngHeader(1920, 1080), imageType: "image/jpeg", imageSize: 1000 }).ok, false);
+  assert.equal(validateVideoReferenceImage({ bytes: pngHeader(1920, 1080), imageType: "image/png", imageSize: 999 }).ok, false);
   assert.equal(validateVideoReferenceImage({ bytes: pngHeader(8192, 1080), imageType: "image/png", imageSize: 1000 }).ok, false);
   assert.equal(validateVideoReferenceImage({ bytes: pngHeader(4096, 4096), imageType: "image/png", imageSize: 1000 }).ok, true);
   assert.equal(validateVideoReferenceImage({ bytes: pngHeader(4096, 4096), imageType: "image/png", imageSize: MAX_VIDEO_REFERENCE_IMAGE_BYTES + 1 }).ok, false);
