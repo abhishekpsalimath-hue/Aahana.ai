@@ -109,8 +109,8 @@ export default function UniverseLab() {
         <button className={`${styles.world} ${styles.worldPlanet} ${selected === "planets" ? styles.chosen : ""}`} onClick={() => setSelected("planets")} aria-pressed={selected === "planets"}>Planets</button>
         <button className={`${styles.world} ${styles.worldHole} ${selected === "black-holes" ? styles.chosen : ""}`} onClick={() => setSelected("black-holes")} aria-pressed={selected === "black-holes"}>Black holes</button>
         <button className={`${styles.world} ${styles.worldNebula} ${selected === "nebulae" ? styles.chosen : ""}`} onClick={() => setSelected("nebulae")} aria-pressed={selected === "nebulae"}>Nebulae</button>
-        <button className={`${styles.world} ${styles.worldComet} ${selected === "comets" ? styles.chosen : ""}`} onClick={() => setSelected("comets")} aria-pressed={selected === "comets"}>Comets</button>
-        <button className={`${styles.world} ${styles.worldEnergy} ${selected === "cosmic-energy" ? styles.chosen : ""}`} onClick={() => setSelected("cosmic-energy")} aria-pressed={selected === "cosmic-energy"}>Cosmic energy</button>
+        <button className={`${styles.world} ${styles.worldComet} ${selected === "asteroids-comets" ? styles.chosen : ""}`} onClick={() => setSelected("asteroids-comets")} aria-pressed={selected === "asteroids-comets"}>Asteroids &amp; comets</button>
+        <button className={`${styles.world} ${styles.worldEnergy} ${selected === "matter-energy" ? styles.chosen : ""}`} onClick={() => setSelected("matter-energy")} aria-pressed={selected === "matter-energy"}>Matter &amp; energy</button>
       </section>
 
       <section className={styles.detail} aria-live="polite">
