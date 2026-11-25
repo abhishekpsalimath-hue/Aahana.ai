@@ -11,12 +11,14 @@ export function buildSelfImproveExecutionOutcome({
   roundLimitReached = false,
   failureDetails = [],
   executionSteps = [],
+  acceptanceCheckLabels = [],
 }) {
   if (!VALID_PHASES.has(phase)) throw new TypeError("Invalid self-improvement phase.");
   for (const value of [proposalCount, successfulToolCalls, failedToolCalls, roundsUsed]) {
     if (!Number.isSafeInteger(value) || value < 0) throw new TypeError("Execution counters must be non-negative safe integers.");
   }
   if (typeof finalResponse !== "string") throw new TypeError("Final response must be a string.");
+  if (!Array.isArray(acceptanceCheckLabels) || acceptanceCheckLabels.length > 5 || acceptanceCheckLabels.some((label) => typeof label !== "string" || !label.trim() || label.length > 240)) throw new TypeError("Acceptance check labels are invalid.");
 
   let status;
   let reasonCode;
@@ -47,7 +49,12 @@ export function buildSelfImproveExecutionOutcome({
     failedToolCalls,
     proposalsStaged: proposalCount,
     roundsUsed,
-    acceptanceChecks: Object.freeze({ status: "not_run", passed: 0, total: null }),
+    acceptanceChecks: Object.freeze({
+      status: acceptanceCheckLabels.length ? "review_required" : "not_run",
+      passed: 0,
+      total: acceptanceCheckLabels.length || null,
+      checks: Object.freeze(acceptanceCheckLabels.map((label) => Object.freeze({ label, status: "not_run" }))),
+    }),
     completionClaim: status === "completed" ? "agent_turn_finished_no_change_proposed" : "not_claimed",
     failures: Object.freeze(failureDetails.slice(0, 8)),
     steps: Object.freeze(executionSteps.slice(0, 8).map((step) => Object.freeze({ ...step }))),
