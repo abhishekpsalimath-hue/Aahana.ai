@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import UniverseScene from "@/components/universe-scene";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -90,6 +91,7 @@ export default function LoginPage() {
       }}
     >
       <div className="auth-universe" aria-hidden="true">
+        <UniverseScene />
         <span className="auth-nebula auth-nebula-one" />
         <span className="auth-nebula auth-nebula-two" />
         <span className="auth-galaxy" />
