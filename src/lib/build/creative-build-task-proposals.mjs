@@ -97,3 +97,45 @@ export function createCreativeBuildTaskProposals({ improvementReport, targetPath
     tasks: Object.freeze(tasks),
   });
 }
+
+
+/**
+ * Verify that a task is an unchanged product of the proposal adapter.
+ * This detects client-edited evidence, paths, IDs and permission flags before
+ * a review decision is accepted by a future authenticated server boundary.
+ */
+export function verifyCreativeBuildTaskProposal(task) {
+  try {
+    if (!task || typeof task !== "object" || Array.isArray(task) ||
+        typeof task.proposalId !== "string" || !/^[a-z0-9-]{3,100}$/i.test(task.proposalId) ||
+        typeof task.title !== "string" || typeof task.action !== "string" ||
+        !["high", "medium", "low"].includes(task.priority) ||
+        !task.sourceEvidence || typeof task.sourceEvidence !== "object" ||
+        Array.isArray(task.sourceEvidence) ||
+        typeof task.sourceEvidence.source !== "string" ||
+        !task.sourceEvidence.evidence || typeof task.sourceEvidence.evidence !== "object" ||
+        Array.isArray(task.sourceEvidence.evidence) ||
+        !Array.isArray(task.targetPaths) || task.targetPaths.length > MAX_PATHS_PER_TASK ||
+        task.status !== "awaiting-owner-review" ||
+        task.approval?.required !== true || task.approval?.status !== "pending" ||
+        task.execution?.mode !== "draft-only" ||
+        task.execution?.writesAllowed !== false ||
+        task.execution?.testsRequiredBeforeAcceptance !== true ||
+        task.execution?.automaticAcceptance !== false ||
+        task.execution?.mergeAllowed !== false ||
+        task.execution?.deploymentAllowed !== false) return false;
+
+    const paths = task.targetPaths.map(validateCreativeBuildTargetPath);
+    if (new Set(paths).size !== paths.length ||
+        paths.some((path, index) => path !== [...paths].sort()[index])) return false;
+    const identity = stableJson({
+      proposalId: task.proposalId,
+      sourceEvidence: task.sourceEvidence,
+      targetPaths: paths,
+    });
+    const expected = "creative-task-" + createHash("sha256").update(identity).digest("hex").slice(0, 20);
+    return task.taskId === expected;
+  } catch {
+    return false;
+  }
+}
