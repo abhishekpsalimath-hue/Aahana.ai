@@ -4,7 +4,7 @@ export async function readBoundedRequestBody(request, maxBytes) {
   }
   const declaredLength = request?.headers?.get?.("content-length");
   if (declaredLength !== null && declaredLength !== undefined) {
-    if (!/^\\d+$/.test(declaredLength)) return { ok: false, reason: "invalid" };
+    if (!/^\d+$/.test(declaredLength)) return { ok: false, reason: "invalid" };
     if (Number(declaredLength) > maxBytes) return { ok: false, reason: "too-large" };
   }
   if (!request?.body || typeof request.body.getReader !== "function") {
