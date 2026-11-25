@@ -25,6 +25,7 @@ export default function AahanaSelfBuildPanel() {
   const [validation, setValidation] = useState(null);
   const [pullRequest, setPullRequest] = useState(null);
   const [finalResponse, setFinalResponse] = useState("");
+  const [execution, setExecution] = useState(null);
 
   useEffect(() => {
     let active = true;
@@ -40,7 +41,7 @@ export default function AahanaSelfBuildPanel() {
     setBusy(true); setError(""); setPlan(null); setProposals([]); setValidation(null); setPullRequest(null); setFinalResponse("");
     try {
       const data = await send("/api/agent/self-improve", { task, phase: "plan", pathHint: null });
-      setPlan(data.changePlan); setApprovalToken(data.approvalToken); setBaseSha(data.repository.baseSha); setFinalResponse(data.finalResponse || "");
+      setPlan(data.changePlan); setApprovalToken(data.approvalToken); setBaseSha(data.repository.baseSha); setFinalResponse(data.finalResponse || ""); setExecution(data.execution || null);
     } catch (e) { setError(e.message || "Aahana could not prepare a plan."); }
     finally { setBusy(false); }
   }
@@ -50,7 +51,7 @@ export default function AahanaSelfBuildPanel() {
     setBusy(true); setError(""); setProposals([]); setValidation(null); setPullRequest(null);
     try {
       const data = await send("/api/agent/self-improve", { task, phase: "execute", pathHint: null, approvedPlan: plan, approvedBaseSha: baseSha, approvalToken });
-      setProposals(Array.isArray(data.proposals) ? data.proposals : []); setFinalResponse(data.finalResponse || ""); setApprovalToken("");
+      setProposals(Array.isArray(data.proposals) ? data.proposals : []); setFinalResponse(data.finalResponse || ""); setExecution(data.execution || null); setApprovalToken("");
     } catch (e) { setError(e.message || "Aahana could not complete the approved task."); }
     finally { setBusy(false); }
   }
@@ -107,6 +108,12 @@ export default function AahanaSelfBuildPanel() {
           {plan.risks?.length > 0 && <div style={muted}>Risks: {plan.risks.join("; ")}</div>}
           {plan.acceptanceChecks?.length > 0 && <div style={muted}>Checks: {plan.acceptanceChecks.join("; ")}</div>}
           <p style={{ ...muted, marginBottom: 0 }}>Planning reads no source. Your approval is required before execution.</p>
+        </div>}
+        {execution && <div role="status" aria-live="polite" style={{ border: "1px solid #514365", borderRadius: 10, padding: 10, display: "grid", gap: 5 }}>
+          <strong>Execution: {execution.status.replaceAll("_", " ")}</strong>
+          <span style={muted}>Reason: {execution.reasonCode.replaceAll("_", " ").toLowerCase()}</span>
+          <span style={muted}>Tool calls: {execution.successfulToolCalls} succeeded · {execution.failedToolCalls} failed · {execution.proposalsStaged} proposal(s) staged</span>
+          <span style={muted}>Acceptance checks: {execution.acceptanceChecks.status.replaceAll("_", " ")} — no checks are claimed as passed here.</span>
         </div>}
         {finalResponse && <p style={muted} role="status">{finalResponse}</p>}
         {proposals.map((f) => <details key={f.path} style={{ borderTop: "1px solid #514365", paddingTop: 10 }}>
