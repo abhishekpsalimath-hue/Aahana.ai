@@ -145,3 +145,12 @@ export function isReferenceImageWithinProviderBounds(dimensions) {
   return Boolean(dimensions && Number.isInteger(dimensions.width) && Number.isInteger(dimensions.height) &&
     dimensions.width > 0 && dimensions.height > 0 && dimensions.width < 512 && dimensions.height < 512);
 }
+
+
+export function getGeneratedImageFileMetadata(dataUrl, blobType) {
+  const match = typeof dataUrl === "string" ? dataUrl.match(/^data:(image\/(?:jpeg|png|webp));base64,/i) : null;
+  const mimeType = match?.[1]?.toLowerCase();
+  const extension = mimeType === "image/png" ? "png" : mimeType === "image/webp" ? "webp" : mimeType === "image/jpeg" ? "jpg" : null;
+  if (!mimeType || !extension || blobType !== mimeType) return null;
+  return { mimeType, extension };
+}
