@@ -73,7 +73,7 @@ test("rejects altered, already-reviewed or out-of-scope tasks", () => {
   assert.throws(() => createCreativeTaskReviewDecision({
     task: { ...task, targetPaths: ["src/app/student-mode/page.jsx"] },
     decision: "approve-for-planning", reviewerEmail: owner, ownerEmail: owner, reviewedAt,
-  }), /outside the approved/);
+  }), /valid pending, draft-only/);
 });
 
 test("requires canonical UTC review timestamps and is deterministic", () => {
