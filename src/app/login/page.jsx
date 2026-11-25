@@ -5,6 +5,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
+  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
@@ -52,7 +53,7 @@ export default function LoginPage() {
       const normalizedEmail = email.trim().toLowerCase();
 
       if (step === "verify") {
-        const { error } = await supabase.auth.verifyOtp({
+        const { data: verifiedData, error } = await supabase.auth.verifyOtp({
           email: normalizedEmail,
           token: otp,
           type: "email",
@@ -63,9 +64,8 @@ export default function LoginPage() {
           return;
         }
 
-        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-        if (sessionError || !sessionData.session) {
-          setMessage("Your code was accepted, but this browser couldn't confirm the session. Please try signing in again.");
+        if (!verifiedData.session) {
+          setMessage("Your code was accepted, but a sign-in session was not returned. Please try signing in again.");
           return;
         }
         window.location.assign("/");
@@ -126,6 +126,7 @@ export default function LoginPage() {
       const { data, error } = await supabase.auth.signUp({
         email: normalizedEmail,
         password,
+        options: { data: { full_name: fullName.trim() } },
       });
       if (error) {
         setMessage(explainAuthError(error, "We couldn't create your account. Please try again."));
@@ -192,6 +193,12 @@ export default function LoginPage() {
         <form className="auth-form" onSubmit={submit}>
           {!isVerifying ? (
             <>
+              {mode === "signup" && (
+                <>
+                  <label htmlFor="fullName">Full name</label>
+                  <input id="fullName" type="text" autoComplete="name" maxLength={100} required value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Your name" />
+                </>
+              )}
               <label htmlFor="email">Email address</label>
               <input id="email" type="email" autoComplete="email" autoCapitalize="none" spellCheck="false" required value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" />
 
@@ -257,7 +264,7 @@ export default function LoginPage() {
         {!isVerifying && (
           <p className="auth-switch">
             {mode === "signin" ? "New to Aahana?" : "Already have an account?"}{" "}
-            <button type="button" onClick={() => { setMode(mode === "signin" ? "signup" : "signin"); setAuthMethod("otp"); setOtpPurpose("signin"); setStep("credentials"); setMessage(""); setOtp(""); setPassword(""); setShowPassword(false); }}>
+            <button type="button" onClick={() => { setMode(mode === "signin" ? "signup" : "signin"); setAuthMethod("otp"); setOtpPurpose("signin"); setStep("credentials"); setMessage(""); setOtp(""); setPassword(""); setFullName(""); setShowPassword(false); }}>
               {mode === "signin" ? "Create account" : "Sign in"}
             </button>
           </p>
