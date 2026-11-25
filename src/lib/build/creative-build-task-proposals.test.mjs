@@ -60,7 +60,7 @@ test("verifies immutable task identity and rejects client-tampered evidence, pat
     targetPathsByProposal: { "image-subjectFidelity": ["src/lib/creative/creative-director.mjs"] },
   }).tasks;
   assert.equal(verifyCreativeBuildTaskProposal(task), true);
-  assert.equal(verifyCreativeBuildTaskProposal({ ...task, title: "Changed title" }), true);
+  assert.equal(verifyCreativeBuildTaskProposal({ ...task, title: "Changed title" }), false);
   assert.equal(verifyCreativeBuildTaskProposal({
     ...task, sourceEvidence: { ...task.sourceEvidence, evidence: { averageScore: 5, reviewCount: 4 } },
   }), false);
