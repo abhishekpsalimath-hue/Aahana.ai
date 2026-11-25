@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { parseImageGenerationInput } from "@/lib/creative/image-generation.mjs";
+import { readBoundedImageGenerationJson, readBoundedImageProviderJson } from "@/lib/creative/bounded-image-generation-json.mjs";
 import { resolveImageModel, ACCURACY_IMAGE_MODEL, ENHANCED_IMAGE_MODEL, buildImageProviderRequest, detectImageMimeTypeFromBase64 } from "@/lib/creative/image-provider.mjs";
 
 export const runtime = "nodejs";
@@ -21,10 +22,11 @@ export async function POST(request) {
     }, { status: 503 });
   }
 
-  let body;
-  try { body = await request.json(); } catch {
-    return NextResponse.json({ error: "Invalid request." }, { status: 400 });
+  const parsedBody = await readBoundedImageGenerationJson(request);
+  if (!parsedBody.ok) {
+    return NextResponse.json({ error: parsedBody.error }, { status: parsedBody.status });
   }
+  const body = parsedBody.value;
   const input = parseImageGenerationInput(body);
   if (!input.ok) {
     return NextResponse.json({ error: input.error }, { status: 400 });
@@ -46,7 +48,8 @@ export async function POST(request) {
       }
     );
 
-    const result = await response.json().catch(() => null);
+    const parsedProviderResponse = await readBoundedImageProviderJson(response);
+    const result = parsedProviderResponse.ok ? parsedProviderResponse.value : null;
     const image = result?.result?.image;
     const imageMimeType = detectImageMimeTypeFromBase64(image);
     if (!response.ok || !imageMimeType) {
