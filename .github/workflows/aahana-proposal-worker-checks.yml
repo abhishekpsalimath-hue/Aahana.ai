@@ -1,0 +1,33 @@
+name: Aahana proposal worker safety checks
+
+on:
+  push:
+    paths:
+      - "scripts/aahana-isolated-proposal.mjs"
+      - ".github/workflows/aahana-isolated-proposal-worker.yml"
+      - ".github/workflows/aahana-proposal-worker-checks.yml"
+      - "docs/aahana-isolated-proposal-worker.md"
+  pull_request:
+    paths:
+      - "scripts/aahana-isolated-proposal.mjs"
+      - ".github/workflows/aahana-isolated-proposal-worker.yml"
+      - ".github/workflows/aahana-proposal-worker-checks.yml"
+      - "docs/aahana-isolated-proposal-worker.md"
+
+permissions:
+  contents: read
+
+jobs:
+  proposal-worker-checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - name: Check proposal worker JavaScript syntax
+        run: node --check scripts/aahana-isolated-proposal.mjs
+      - name: Run repository tests
+        run: npm test
