@@ -93,7 +93,19 @@ export default function UniverseLab() {
     <main className={styles.universe} data-motion={motion ? "true" : "false"} onPointerMove={(event) => {
       if (event.pointerType !== "mouse") return;
       const rect = event.currentTarget.getBoundingClientRect();
-      pointerRef.current = { x: (event.clientX - rect.left) / rect.width, y: (event.clientY - rect.top) / rect.height };
+      const x = (event.clientX - rect.left) / Math.max(rect.width, 1);
+      const y = (event.clientY - rect.top) / Math.max(rect.height, 1);
+      pointerRef.current = { x, y };
+      event.currentTarget.style.setProperty("--parallax-x", `${(0.5 - x) * 22}px`);
+      event.currentTarget.style.setProperty("--parallax-y", `${(0.5 - y) * 16}px`);
+      event.currentTarget.style.setProperty("--parallax-x-soft", `${(0.5 - x) * 10}px`);
+      event.currentTarget.style.setProperty("--parallax-y-soft", `${(0.5 - y) * 7}px`);
+    }} onPointerLeave={(event) => {
+      pointerRef.current = { x: 0.5, y: 0.5 };
+      event.currentTarget.style.setProperty("--parallax-x", "0px");
+      event.currentTarget.style.setProperty("--parallax-y", "0px");
+      event.currentTarget.style.setProperty("--parallax-x-soft", "0px");
+      event.currentTarget.style.setProperty("--parallax-y-soft", "0px");
     }}>
       <Starfield pointerRef={pointerRef} animate={motion} />
       <div className={styles.nebula} aria-hidden="true" />
