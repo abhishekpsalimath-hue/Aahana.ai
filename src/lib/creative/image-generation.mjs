@@ -120,3 +120,42 @@ export function isReferenceImageWithinProviderBounds(dimensions) {
   return Boolean(dimensions && Number.isInteger(dimensions.width) && Number.isInteger(dimensions.height) &&
     dimensions.width > 0 && dimensions.height > 0 && dimensions.width < 512 && dimensions.height < 512);
 }
+
+export const MAX_IMAGE_EDIT_REQUEST_BYTES = MAX_IMAGE_EDIT_BYTES + 128 * 1024;
+
+export async function readBoundedStream(stream, maxBytes) {
+  if (!stream || typeof stream.getReader !== "function" ||
+      !Number.isSafeInteger(maxBytes) || maxBytes < 1) {
+    return { ok: false, tooLarge: false };
+  }
+
+  const reader = stream.getReader();
+  const chunks = [];
+  let totalBytes = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const chunk = value instanceof Uint8Array ? value : new Uint8Array(value);
+      totalBytes += chunk.byteLength;
+      if (totalBytes > maxBytes) {
+        await reader.cancel().catch(() => {});
+        return { ok: false, tooLarge: true };
+      }
+      chunks.push(chunk);
+    }
+  } catch {
+    await reader.cancel().catch(() => {});
+    return { ok: false, tooLarge: false };
+  } finally {
+    try { reader.releaseLock(); } catch {}
+  }
+
+  const bytes = new Uint8Array(totalBytes);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return { ok: true, bytes };
+}
