@@ -114,6 +114,11 @@ export default function UniverseLab() {
   const [gravityMass, setGravityMass] = useState(5);
   const [gravityDistance, setGravityDistance] = useState(5);
   const [rayRun, setRayRun] = useState(0);
+  const [starMass, setStarMass] = useState(5);
+  const [orbitDistance, setOrbitDistance] = useState(5);
+  const orbitalPeriod = Math.sqrt((orbitDistance ** 3) / starMass);
+  const orbitRadiusX = 40 + orbitDistance * 7;
+  const orbitRadiusY = 20 + orbitDistance * 3.5;
   const gravityBend = Math.min(70, (gravityMass * 13) / (gravityDistance * 0.55 + 0.4));
   const rayControlY = 22 + gravityBend * 1.4;
   const active = worlds.find((world) => world.id === selected) || worlds[0];
@@ -215,6 +220,25 @@ export default function UniverseLab() {
         </div>
         <div className={styles.gravityFooter}><span>Greater mass and a closer pass produce stronger bending in this simplified illustration.</span><button type="button" onClick={() => setRayRun((value) => value + 1)}>Trace light path ↗</button></div>
         <p className={styles.gravityCaution}>Learning model only: real gravitational lensing depends on the space-time geometry and the ray’s full trajectory.</p>
+      </section>}
+
+      {selected === "solar-systems" && <section className={styles.orbitLab} aria-label="Planetary orbit experiment">
+        <div className={styles.gravityHeader}><div><span className={styles.detailEyebrow}>INTERACTIVE ASTRONOMY · KEPLER'S THIRD LAW</span><h2>Orbit Lab</h2><p>Change the star's mass and a planet's orbital distance. Compare the relative time needed for one orbit.</p></div><span className={styles.gravityTag}>ORBIT MODEL</span></div>
+        <svg className={styles.orbitDiagram} viewBox="0 0 300 160" role="img" aria-label={`A planet orbiting a star. Star mass ${starMass} relative units; orbital distance ${orbitDistance} relative units.`}>
+          <ellipse cx="150" cy="80" rx={orbitRadiusX} ry={orbitRadiusY} fill="none" stroke="#b99aff" strokeOpacity=".55" strokeWidth="1.5" strokeDasharray="4 5"/>
+          <circle cx="150" cy="80" r={6 + starMass * 1.1} fill="#ffd89b" filter="url(#starGlow)"/>
+          <defs><filter id="starGlow"><feGaussianBlur stdDeviation="5" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+          <circle cx={150 + orbitRadiusX} cy="80" r="5" fill="#a9d5ff" stroke="#e4f3ff" strokeWidth="1"/>
+          <circle cx="150" cy="80" r="2" fill="#fff5d9"/>
+          <text x="150" y="151" fill="#9488a8" fontSize="7" textAnchor="middle">ILLUSTRATIVE · NOT TO SCALE</text>
+        </svg>
+        <div className={styles.orbitReadout}><span>RELATIVE ORBITAL PERIOD</span><strong>{orbitalPeriod.toFixed(1)} <small>time units</small></strong><em>Longer distance → longer orbit. Greater star mass → shorter orbit.</em></div>
+        <div className={styles.gravityControls}>
+          <label>Star mass <output>{starMass} / 10</output><input type="range" min="1" max="10" step="1" value={starMass} onChange={(event) => setStarMass(Number(event.target.value))}/></label>
+          <label>Orbital distance <output>{orbitDistance} / 10</output><input type="range" min="1" max="10" step="1" value={orbitDistance} onChange={(event) => setOrbitDistance(Number(event.target.value))}/></label>
+        </div>
+        <div className={styles.gravityFooter}><span>Based on the proportional relationship T² ∝ a³ / M, using relative units for learning.</span><button type="button" onClick={() => { setStarMass(5); setOrbitDistance(5); }}>Reset system ↺</button></div>
+        <p className={styles.gravityCaution}>Simplified two-body model: real systems can be affected by other planets, eccentric orbits and additional gravitational interactions.</p>
       </section>}
 
       <div className={styles.journeyControls} aria-label="Guided universe journey">
