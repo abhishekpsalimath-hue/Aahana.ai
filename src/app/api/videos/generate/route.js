@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { parseVideoGenerationInput, VIDEO_MODEL } from "@/lib/creative/video-generation.mjs";
+import { parseVideoGenerationInput, validateVideoReferenceImage, hasCompletedVideoProviderResult, VIDEO_MODEL } from "@/lib/creative/video-generation.mjs";
+import { readBoundedRequestBody, readBoundedResponseJson } from "@/lib/http/bounded-request-body.mjs";
 
 export const runtime = "nodejs";
 export const maxDuration = 180;
 
 const ALLOWED_IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
 const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
+const MAX_VIDEO_REQUEST_BYTES = MAX_IMAGE_BYTES + 128 * 1024;
 
 export async function POST(request) {
   const supabase = await createClient();
@@ -26,15 +28,34 @@ export async function POST(request) {
     return NextResponse.json({ error: "The video provider is not configured in private server settings." }, { status: 503 });
   }
 
+  const contentType = request.headers.get("content-type") || "";
+  if (!/^multipart\/form-data;\s*boundary=(?:"[^"]+"|[^;]+)$/i.test(contentType)) {
+    return NextResponse.json({ error: "Invalid video request." }, { status: 400 });
+  }
+  const boundedBody = await readBoundedRequestBody(request, MAX_VIDEO_REQUEST_BYTES);
+  if (!boundedBody.ok) {
+    return NextResponse.json(
+      { error: boundedBody.reason === "too-large" ? "The video request exceeds the 2 MB image-upload limit." : "Invalid video request." },
+      { status: boundedBody.reason === "too-large" ? 413 : 400 }
+    );
+  }
+
   let input;
   let imageFile = null;
   try {
-    const form = await request.formData();
+    const form = await new Response(boundedBody.bytes, { headers: { "content-type": contentType } }).formData();
     input = parseVideoGenerationInput({
       prompt: form.get("prompt"),
-      duration: Number(form.get("duration")),
-      aspectRatio: form.get("aspectRatio"),
-      resolution: form.get("resolution"),
+      duration: form.get("duration") === null ? undefined : Number(form.get("duration")),
+      aspectRatio: form.get("aspectRatio") ?? undefined,
+      resolution: form.get("resolution") ?? undefined,
+      director: form.get("director") ?? undefined,
+      continuity: (() => {
+        const raw = form.get("continuity");
+        if (raw === null) return undefined;
+        if (typeof raw !== "string" || raw.length > 2048) throw new Error("Invalid continuity plan");
+        return JSON.parse(raw);
+      })(),
     });
     imageFile = form.get("image");
   } catch {
@@ -59,7 +80,12 @@ export async function POST(request) {
     if (imageFile) {
       const extension = imageFile.type === "image/png" ? "png" : imageFile.type === "image/webp" ? "webp" : "jpg";
       temporaryObjectPath = `${user.id}/personal/video-input-${crypto.randomUUID()}.${extension}`;
-      const bytes = Buffer.from(await imageFile.arrayBuffer());
+      const bytes = new Uint8Array(await imageFile.arrayBuffer());
+      const validation = validateVideoReferenceImage({ bytes, imageType: imageFile.type, imageSize: imageFile.size });
+      if (!validation.ok) {
+        temporaryObjectPath = null;
+        return NextResponse.json({ error: validation.error }, { status: 400 });
+      }
       const { error: uploadError } = await supabase.storage.from("aahana-private").upload(
         temporaryObjectPath, bytes, { contentType: imageFile.type, upsert: false }
       );
@@ -89,9 +115,10 @@ export async function POST(request) {
       }
     );
 
-    const result = await response.json().catch(() => null);
+    const parsedProviderResponse = await readBoundedResponseJson(response);
+    const result = parsedProviderResponse.ok ? parsedProviderResponse.value : null;
     const videoUrl = result?.result?.video;
-    if (!response.ok || result?.state === "Failed" || typeof videoUrl !== "string") {
+    if (!response.ok || !hasCompletedVideoProviderResult(result) || typeof videoUrl !== "string") {
       const providerStatus = response.status;
       const status = providerStatus === 429 ? 429 : providerStatus >= 500 ? 503 : 502;
       console.error("Aahana video provider request failed:", {

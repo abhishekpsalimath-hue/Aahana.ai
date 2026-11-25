@@ -13,6 +13,7 @@ on:
       - feat/experience-lab-ai-code-proposals
       - fix/build-workspace-size-preflight
       - fix/build-preview-oidc-runtime-detection
+      - integration/creative-continuity-mainline
     paths:
       - "src/app/experience-lab/**"
       - "src/app/api/build/**"
@@ -40,6 +41,7 @@ on:
       - feat/creative-image-video-foundation
       - feat/creative-director-multimodel-foundation
       - release/assistance-creative-mainline
+      - integration/creative-continuity-mainline
     paths:
       - "src/app/experience-lab/**"
       - "src/app/api/build/**"

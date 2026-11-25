@@ -1,6 +1,12 @@
-import { buildImagePrompt, IMAGE_QUALITY_PRESETS } from "./creative-director.mjs";
+import { buildImagePrompt, buildImageSeriesPrompt, IMAGE_QUALITY_PRESETS } from "./creative-director.mjs";
 export const MAX_IMAGE_PROMPT_LENGTH = 2048;
 export const SUPPORTED_IMAGE_STEPS = Object.freeze([4, 8]);
+export const IMAGE_ASPECT_RATIOS = Object.freeze({
+  "1:1": Object.freeze({ width: 1024, height: 1024 }),
+  "3:4": Object.freeze({ width: 768, height: 1024 }),
+  "4:3": Object.freeze({ width: 1024, height: 768 }),
+  "16:9": Object.freeze({ width: 1024, height: 576 }),
+});
 
 const IMAGE_STYLE_PROMPTS = Object.freeze({
   cinematic: "Cinematic visual style, intentional composition, atmospheric depth, nuanced color grading, and dramatic but natural lighting.",
@@ -10,6 +16,19 @@ const IMAGE_STYLE_PROMPTS = Object.freeze({
   illustration: "Polished digital illustration, deliberate shapes, cohesive color palette, expressive detail, and clean visual hierarchy.",
   editorial: "Premium editorial art direction, thoughtful negative space, refined composition, sophisticated typography-safe layout, and balanced lighting.",
 });
+
+
+export function inferImageAspectRatio(prompt) {
+  const text = typeof prompt === "string" ? prompt.toLowerCase() : "";
+  // An explicit numeric ratio always outranks descriptive orientation words.
+  if (/\b16\s*:\s*9\b/.test(text)) return "16:9";
+  if (/\b4\s*:\s*3\b/.test(text)) return "4:3";
+  if (/\b3\s*:\s*4\b/.test(text)) return "3:4";
+  if (/\b(widescreen|wide\s+landscape|cinematic\s+landscape)\b|वाइडस्क्रीन|चौड़ी\s+स्क्रीन|ವೈಡ್‌ಸ್ಕ್ರೀನ್|ವಿಶಾಲ\s+ಪರದೆ/u.test(text)) return "16:9";
+  if (/\b(landscape|horizontal)\b|क्षैतिज|आड़ा\s+दृश्य|ಅಡ್ಡ(?:ವಾದ|ವಾಗಿ)?(?:\s*ಚಿತ್ರ)?/u.test(text)) return "4:3";
+  if (/\b(portrait|vertical|phone\s+wallpaper)\b|लंबवत|ऊर्ध्वाधर|वर्टिकल|फोन\s+वॉलपेपर|ಲಂಬ(?:ವಾದ|ವಾಗಿ)?(?:\s*ಚಿತ್ರ)?|ಮೊಬೈಲ್\s+ವಾಲ್‌ಪೇಪರ್/u.test(text)) return "3:4";
+  return "1:1";
+}
 
 export function parseImageGenerationInput(body) {
   const prompt = typeof body?.prompt === "string" ? body.prompt.trim() : "";
@@ -27,18 +46,26 @@ export function parseImageGenerationInput(body) {
     return { ok: false, error: "Choose standard or masterpiece image quality." };
   }
 
+  const aspectRatio = body?.aspectRatio === undefined ? inferImageAspectRatio(prompt) : body.aspectRatio;
+  if (!Object.hasOwn(IMAGE_ASPECT_RATIOS, aspectRatio)) {
+    return { ok: false, error: "Choose a supported image aspect ratio." };
+  }
+  const { width, height } = IMAGE_ASPECT_RATIOS[aspectRatio];
+
   const style = body?.style === undefined ? "none" : body.style;
   if (style !== "none" && !Object.hasOwn(IMAGE_STYLE_PROMPTS, style)) {
     return { ok: false, error: "Choose a supported visual style." };
   }
 
   const qualityPrompt = buildImagePrompt(prompt, quality);
-  const styledPrompt = style === "none" ? qualityPrompt : `${qualityPrompt}\n\nArt direction: ${IMAGE_STYLE_PROMPTS[style]}`;
+  const seriesPrompt = buildImageSeriesPrompt(qualityPrompt, body?.series);
+  if (seriesPrompt === null) return { ok: false, error: "Check the image-series fields: use text up to 180 characters and a scene number from 1 to 12." };
+  const styledPrompt = style === "none" ? seriesPrompt : `${seriesPrompt}\n\nArt direction: ${IMAGE_STYLE_PROMPTS[style]}`;
   if (styledPrompt.length > MAX_IMAGE_PROMPT_LENGTH + 1400) {
     return { ok: false, error: "This prompt is too long for the selected style. Shorten it and try again." };
   }
 
-  return { ok: true, prompt: styledPrompt, steps, style, quality };
+  return { ok: true, prompt: styledPrompt, steps, style, quality, aspectRatio, width, height };
 }
 
 
@@ -119,4 +146,13 @@ export function getReferenceImageDimensions(input, imageType) {
 export function isReferenceImageWithinProviderBounds(dimensions) {
   return Boolean(dimensions && Number.isInteger(dimensions.width) && Number.isInteger(dimensions.height) &&
     dimensions.width > 0 && dimensions.height > 0 && dimensions.width < 512 && dimensions.height < 512);
+}
+
+
+export function getGeneratedImageFileMetadata(dataUrl, blobType) {
+  const match = typeof dataUrl === "string" ? dataUrl.match(/^data:(image\/(?:jpeg|png|webp));base64,/i) : null;
+  const mimeType = match?.[1]?.toLowerCase();
+  const extension = mimeType === "image/png" ? "png" : mimeType === "image/webp" ? "webp" : mimeType === "image/jpeg" ? "jpg" : null;
+  if (!mimeType || !extension || blobType !== mimeType) return null;
+  return { mimeType, extension };
 }

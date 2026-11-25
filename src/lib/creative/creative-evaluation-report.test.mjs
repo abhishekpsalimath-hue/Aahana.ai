@@ -1,0 +1,131 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { buildCreativeEvaluationReport } from "./creative-evaluation-report.mjs";
+import { VIDEO_BENCHMARK_CASES } from "./video-benchmark-cases.mjs";
+import { runVideoContinuityBenchmark } from "./video-benchmark-runner.mjs";
+import { createBenchmarkSnapshot } from "./benchmark-snapshot.mjs";
+
+const imageReview={sampleId:"image-sample-01",caseId:"IMG-001",category:"people",model:"image-fixture",reviewer:"reviewer-a",reviewedAt:"2026-11-25T12:00:00Z",scores:{subjectFidelity:5,attributeFidelity:4,compositionFidelity:4,constraintFidelity:5,visualCoherence:4}};
+const videoReview=(shotNumber,sampleId)=>({seriesId:"video-series-01",sampleId,model:"video-fixture",reviewer:"reviewer-a",shotNumber,reviewedAt:"2026-11-25T12:00:00Z",scores:{identityContinuity:5,motionContinuity:4,cameraContinuity:4,transitionCoherence:5,temporalProgression:4}});
+function planFor(item, mutate = false) {
+ const shots=Array.from({length:item.shotCount},(_,index)=>{
+  const shot={shotNumber:index+1,subjectId:mutate && item.id==="VID-001" ? "wrong-subject" : item.expected.subjectId,actionProgress:index};
+  for (const field of ["wardrobeId","propIds","cameraSide","screenDirection"]) if (item.expected[field]!==undefined) shot[field]=item.expected[field];
+  if (item.required.includes("transition")) shot.transition="motivated match cut";
+  return shot;
+ });
+ return {caseId:item.id,shots};
+}
+const completePlans=()=>VIDEO_BENCHMARK_CASES.map((item)=>planFor(item));
+test("builds separate image and video evidence sections without conflating rubrics",()=>{
+ const report=buildCreativeEvaluationReport({imageReviews:[imageReview],videoReviews:[videoReview(1,"clip-sample-01"),videoReview(2,"clip-sample-02")]});
+ assert.equal(report.image.humanOutputReviews[0].distinctSamples,1);
+ assert.equal(report.video.humanShotReviews[0].reviewedShots,2);
+ assert.match(report.comparisonPolicy,/Do not compare image and video averages/);
+ assert.match(report.evidenceScope,/no provider calls or media inspection/);
+});
+test("supports an empty report and rejects non-array input",()=>{
+ const report=buildCreativeEvaluationReport();
+ assert.deepEqual(report.image.humanOutputReviews,[]);
+ assert.deepEqual(report.video.humanShotReviews,[]);
+ assert.throws(()=>buildCreativeEvaluationReport({videoReviews:{}}),/must be arrays/);
+});
+test("embeds a coverage-aware video structural benchmark separately from human ratings",()=>{
+ const item=VIDEO_BENCHMARK_CASES[0];
+ const report=buildCreativeEvaluationReport({videoContinuityPlans:[planFor(item)]});
+ assert.equal(report.video.structuralPreflight.evaluatedCases,1);
+ assert.equal(report.video.structuralPreflight.catalogueCases,12);
+ assert.equal(report.video.structuralPreflight.coverageRate,Number((1/12).toFixed(3)));
+ assert.equal(report.video.humanShotReviews.length,0);
+ assert.match(report.video.structuralPreflight.scope,/Metadata-only/);
+});
+test("attaches baseline regression analysis and a reproducible provenance snapshot",()=>{
+ const baseline=runVideoContinuityBenchmark(completePlans());
+ const candidatePlans=completePlans().map((item)=>item.caseId==="VID-001" ? planFor(VIDEO_BENCHMARK_CASES[0],true) : item);
+ const report=buildCreativeEvaluationReport({
+  videoContinuityPlans:candidatePlans,
+  videoBaselineRun:baseline,
+  snapshotProvenance:{benchmarkVersion:"v1",commitSha:"test-commit",modelLabel:"offline-preflight",runAt:"2026-11-25T12:00:00Z"},
+ });
+ assert.equal(report.video.regression.status,"regression-detected");
+ assert.ok(report.video.regression.caseRegressions.some((item)=>item.caseId==="VID-001"));
+ assert.equal(report.video.reproducibleSnapshot.schemaVersion,1);
+ assert.equal(report.video.reproducibleSnapshot.commitSha,"test-commit");
+ assert.match(report.video.reproducibleSnapshot.digest,/^[a-f0-9]{64}$/);
+});
+test("requires candidate plans when baseline or snapshot provenance is supplied",()=>{
+ assert.throws(()=>buildCreativeEvaluationReport({videoBaselineRun:{}}),/requires candidate/);
+ assert.throws(()=>buildCreativeEvaluationReport({snapshotProvenance:{}}),/requires candidate/);
+});
+
+test("attaches verified chronological snapshot history to the video report",()=>{
+ const makeSnapshot=(runAt,score)=>createBenchmarkSnapshot({
+  benchmark:"video-continuity-metadata-v1",benchmarkVersion:"v1",commitSha:runAt,modelLabel:"offline-preflight",runAt,
+  results:[{caseId:"VID-001",category:"character",structuralScore:score,passed:true}],
+ });
+ const history=[makeSnapshot("2026-11-25T10:00:00Z",80),makeSnapshot("2026-11-25T11:00:00Z",90)];
+ const report=buildCreativeEvaluationReport({videoSnapshotHistory:history});
+ assert.equal(report.video.snapshotHistory.snapshots.length,2);
+ assert.equal(report.video.snapshotHistory.transitions[0].averageStructuralScoreDelta,10);
+ assert.equal(report.video.snapshotHistory.overallTrend,"improving-or-mixed");
+});
+
+test("includes same-benchmark model comparison in the creative report",()=>{
+ const make=(modelLabel,runAt,score)=>createBenchmarkSnapshot({
+  benchmark:"video-continuity-metadata-v1",benchmarkVersion:"v1",commitSha:runAt,modelLabel,runAt,
+  results:[
+   {caseId:"VID-001",category:"character",structuralScore:score,passed:true},
+   {caseId:"VID-002",category:"product",structuralScore:score-5,passed:true},
+  ],
+ });
+ const report=buildCreativeEvaluationReport({videoModelSnapshots:[
+  make("model-a","2026-11-25T10:00:00Z",90),
+  make("model-b","2026-11-25T11:00:00Z",85),
+ ]});
+ assert.equal(report.video.modelComparison.models.length,2);
+ assert.deepEqual(report.video.modelComparison.comparison.rankedByAverageStructuralScore,["model-a","model-b"]);
+});
+
+test("publishes cross-modality improvement proposals at report level",()=>{
+ const weakImage={...imageReview,scores:{subjectFidelity:2,attributeFidelity:4,compositionFidelity:4,constraintFidelity:4,visualCoherence:4}};
+ const weakVideo=[videoReview(1,"clip-sample-01"),videoReview(2,"clip-sample-02")].map((review)=>({...review,scores:{...review.scores,identityContinuity:2}}));
+ const report=buildCreativeEvaluationReport({imageReviews:[weakImage],videoReviews:weakVideo});
+ assert.ok(report.improvementProposals.proposals.some((item)=>item.id==="image-subjectFidelity"));
+ assert.ok(report.improvementProposals.proposals.some((item)=>item.id==="video-identityContinuity"));
+ assert.equal(report.improvementProposals.proposalCount,2);
+ assert.equal(Object.hasOwn(report.video,"improvementProposals"),false);
+});
+test("surfaces regression follow-up proposals alongside the regression evidence",()=>{
+ const baseline=runVideoContinuityBenchmark(completePlans());
+ const candidatePlans=completePlans().map((item)=>item.caseId==="VID-001" ? planFor(VIDEO_BENCHMARK_CASES[0],true) : item);
+ const report=buildCreativeEvaluationReport({videoContinuityPlans:candidatePlans,videoBaselineRun:baseline});
+ assert.equal(report.video.regression.status,"regression-detected");
+ assert.ok(report.improvementProposals.proposals.some((item)=>item.id==="video-regression-follow-up"));
+});
+
+test("connects improvement evidence to owner-gated build tasks without authorizing execution",()=> {
+ const weakImage={...imageReview,scores:{subjectFidelity:2,attributeFidelity:4,compositionFidelity:4,constraintFidelity:4,visualCoherence:4}};
+ const report=buildCreativeEvaluationReport({
+  imageReviews:[weakImage],
+  buildTaskTargetPaths:{"image-subjectFidelity":["src/lib/creative/creative-director.mjs"]},
+ });
+ assert.equal(report.improvementProposals.proposalCount,1);
+ assert.equal(report.buildTaskProposals.taskCount,1);
+ const task=report.buildTaskProposals.tasks[0];
+ assert.equal(task.proposalId,"image-subjectFidelity");
+ assert.equal(task.sourceEvidence.source,"human-review");
+ assert.deepEqual(task.targetPaths,["src/lib/creative/creative-director.mjs"]);
+ assert.equal(task.status,"awaiting-owner-review");
+ assert.equal(task.approval.status,"pending");
+ assert.equal(task.execution.mode,"draft-only");
+ assert.equal(task.execution.writesAllowed,false);
+ assert.equal(task.execution.automaticAcceptance,false);
+ assert.equal(task.execution.mergeAllowed,false);
+ assert.equal(task.execution.deploymentAllowed,false);
+});
+
+test("keeps task proposals empty and non-executable when no creative evidence exists",()=> {
+ const report=buildCreativeEvaluationReport();
+ assert.equal(report.buildTaskProposals.taskCount,0);
+ assert.deepEqual(report.buildTaskProposals.tasks,[]);
+});

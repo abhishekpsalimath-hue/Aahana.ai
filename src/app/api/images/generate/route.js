@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { parseImageGenerationInput } from "@/lib/creative/image-generation.mjs";
 import { readBoundedImageGenerationJson, readBoundedImageProviderJson } from "@/lib/creative/bounded-image-generation-json.mjs";
-import { resolveImageModel, ACCURACY_IMAGE_MODEL, ENHANCED_IMAGE_MODEL, buildImageProviderRequest, detectImageMimeTypeFromBase64 } from "@/lib/creative/image-provider.mjs";
+import { resolveImageModel, DEFAULT_IMAGE_MODEL, ACCURACY_IMAGE_MODEL, ENHANCED_IMAGE_MODEL, buildImageProviderRequest, detectImageMimeTypeFromBase64, supportsImageAspectRatio } from "@/lib/creative/image-provider.mjs";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -31,12 +31,15 @@ export async function POST(request) {
   if (!input.ok) {
     return NextResponse.json({ error: input.error }, { status: 400 });
   }
-  const { prompt, steps } = input;
+  const { prompt, steps, width, height, aspectRatio } = input;
 
   try {
     const model = resolveImageModel(process.env.AAHANA_IMAGE_MODEL);
+    if (!supportsImageAspectRatio(model, aspectRatio)) {
+      return NextResponse.json({ error: "The current default image model supports square output only. Portrait and landscape ratios require a FLUX.2 image model." }, { status: 400 });
+    }
     const seed = Number.isInteger(body?.seed) && body.seed >= 0 && body.seed <= 0xffffffff ? body.seed : undefined;
-    const providerRequest = buildImageProviderRequest({ model, prompt, steps, seed });
+    const providerRequest = buildImageProviderRequest({ model, prompt, steps, seed, width, height });
     const response = await fetch(
       `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/ai/run/${model}`,
       {
@@ -65,7 +68,7 @@ export async function POST(request) {
     }
 
     return NextResponse.json(
-      { imageDataUrl: `data:${imageMimeType};base64,${image}`, model, steps: model === ENHANCED_IMAGE_MODEL ? 4 : model === ACCURACY_IMAGE_MODEL ? 25 : steps },
+      { imageDataUrl: `data:${imageMimeType};base64,${image}`, model, steps: model === ENHANCED_IMAGE_MODEL ? 4 : model === ACCURACY_IMAGE_MODEL ? 25 : steps, width, height, aspectRatio },
       { headers: { "Cache-Control": "no-store" } }
     );
   } catch (error) {
