@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { parseImageGenerationInput } from "@/lib/creative/image-generation.mjs";
-import { resolveImageModel, ACCURACY_IMAGE_MODEL, ENHANCED_IMAGE_MODEL, buildImageProviderRequest, detectImageMimeTypeFromBase64 } from "@/lib/creative/image-provider.mjs";
+import { resolveImageModel, DEFAULT_IMAGE_MODEL, ACCURACY_IMAGE_MODEL, ENHANCED_IMAGE_MODEL, buildImageProviderRequest, detectImageMimeTypeFromBase64 } from "@/lib/creative/image-provider.mjs";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -33,6 +33,9 @@ export async function POST(request) {
 
   try {
     const model = resolveImageModel(process.env.AAHANA_IMAGE_MODEL);
+    if (model === DEFAULT_IMAGE_MODEL && aspectRatio !== "1:1") {
+      return NextResponse.json({ error: "The current default image model supports square output only. Portrait and landscape ratios require a FLUX.2 image model." }, { status: 400 });
+    }
     const seed = Number.isInteger(body?.seed) && body.seed >= 0 && body.seed <= 0xffffffff ? body.seed : undefined;
     const providerRequest = buildImageProviderRequest({ model, prompt, steps, seed, width, height });
     const response = await fetch(
