@@ -2,72 +2,120 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [otp, setOtp] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [mode, setMode] = useState("signin");
+  const [authMethod, setAuthMethod] = useState("otp");
+  const [step, setStep] = useState("credentials");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
-  const [signupCooldown, setSignupCooldown] = useState(0);
+  const [otpCooldown, setOtpCooldown] = useState(0);
 
   useEffect(() => {
-    if (signupCooldown <= 0) return undefined;
-    const timer = setTimeout(() => setSignupCooldown(seconds => Math.max(0, seconds - 1)), 1000);
+    if (otpCooldown <= 0) return undefined;
+    const timer = setTimeout(() => setOtpCooldown(seconds => Math.max(0, seconds - 1)), 1000);
     return () => clearTimeout(timer);
-  }, [signupCooldown]);
+  }, [otpCooldown]);
+
+  function explainAuthError(error, fallback) {
+    const text = (error?.message || "").toLowerCase();
+    if (error?.status === 429 || error?.code === "over_email_send_rate_limit") {
+      setOtpCooldown(60);
+      return "Too many code requests. Please wait a minute before trying again.";
+    }
+    if (text.includes("email not confirmed")) {
+      return "This account still needs email verification. Switch to Create account and request a fresh verification code, or contact support if you need help recovering the account.";
+    }
+    if (text.includes("invalid login credentials")) {
+      return "Email or password is incorrect. Check your details and try again.";
+    }
+    if (text.includes("expired") || text.includes("invalid") || text.includes("token")) {
+      return "That code may have expired or was entered incorrectly. Request a new code and try again.";
+    }
+    return error?.message || fallback;
+  }
 
   async function submit(event) {
     event.preventDefault();
-    if (busy || (mode === "signup" && signupCooldown > 0)) return;
+    if (busy || (step === "verify" && otp.length !== 6)) return;
+
     setBusy(true);
     setMessage("");
     try {
       const supabase = createClient();
       const normalizedEmail = email.trim().toLowerCase();
-      const result = mode === "signin"
-        ? await supabase.auth.signInWithPassword({ email: normalizedEmail, password })
-        : await supabase.auth.signUp({
-            email: normalizedEmail,
-            password,
-            options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
-          });
 
-      if (result.error) {
-        const rateLimited = result.error.status === 429 || result.error.code === "over_email_send_rate_limit";
-        if (mode === "signup" && rateLimited) {
-          setSignupCooldown(60);
-          setMessage("A confirmation email was requested recently. Please wait for the countdown, then try again. Check your inbox and spam folder first.");
-        } else if (mode === "signin") {
-          const text = (result.error.message || "").toLowerCase();
-          if (rateLimited) {
-            setMessage("Too many sign-in attempts. Please wait a moment before trying again.");
-          } else if (text.includes("invalid login credentials")) {
-            setMessage("Email or password is incorrect. Check both and try again.");
-          } else if (text.includes("email not confirmed")) {
-            setMessage("Please confirm your email address using the confirmation email before signing in.");
-          } else {
-            setMessage("We couldn't sign you in. Please try again. If the problem continues, contact support.");
-          }
-        } else {
-          setMessage(result.error.message || "We couldn't create your account. Please try again.");
+      if (step === "verify") {
+        const { error } = await supabase.auth.verifyOtp({
+          email: normalizedEmail,
+          token: otp,
+          type: mode === "signup" ? "signup" : "email",
+        });
+
+        if (error) {
+          setMessage(explainAuthError(error, "We couldn't verify that code. Please try again."));
+          return;
         }
-      } else if (mode === "signup" && !result.data.session) {
-        setSignupCooldown(60);
-        setMessage("Your signup request was received. Check your inbox and spam folder for the confirmation email before signing in.");
-      } else if (mode === "signin") {
-        // Verify the browser has persisted the Supabase session before leaving login.
+
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError || !sessionData.session) {
+          setMessage("Your code was accepted, but this browser couldn't confirm the session. Please try signing in again.");
+          return;
+        }
+        window.location.assign("/");
+        return;
+      }
+
+      if (mode === "signin" && authMethod === "otp") {
+        const { error } = await supabase.auth.signInWithOtp({
+          email: normalizedEmail,
+          options: { shouldCreateUser: false },
+        });
+        if (error) {
+          setMessage(explainAuthError(error, "We couldn't send your sign-in code. Please try again."));
+        } else {
+          setStep("verify");
+          setOtp("");
+          setOtpCooldown(60);
+          setMessage("Your 6-digit sign-in code is on its way. Check your inbox and spam folder.");
+        }
+        return;
+      }
+
+      if (mode === "signin") {
+        const { error } = await supabase.auth.signInWithPassword({
+          email: normalizedEmail,
+          password,
+        });
+        if (error) {
+          setMessage(explainAuthError(error, "We couldn't sign you in. Please try again."));
+          return;
+        }
         const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
         if (sessionError || !sessionData.session) {
           setMessage("Your sign-in was accepted, but the session could not be confirmed in this browser. Please try again.");
         } else {
-          // Use a full document navigation so the server receives the latest auth cookies.
           window.location.assign("/");
         }
+        return;
+      }
+
+      const { data, error } = await supabase.auth.signUp({
+        email: normalizedEmail,
+        password,
+      });
+      if (error) {
+        setMessage(explainAuthError(error, "We couldn't create your account. Please try again."));
+      } else if (!data.session) {
+        setStep("verify");
+        setOtp("");
+        setOtpCooldown(60);
+        setMessage("Your account request is ready. Enter the 6-digit code we emailed you to verify your address.");
       } else {
         window.location.assign("/");
       }
@@ -78,28 +126,123 @@ export default function LoginPage() {
     }
   }
 
+  async function resendCode() {
+    if (busy || otpCooldown > 0) return;
+    setBusy(true);
+    setMessage("");
+    try {
+      const supabase = createClient();
+      const normalizedEmail = email.trim().toLowerCase();
+      const result = mode === "signup"
+        ? await supabase.auth.resend({ type: "signup", email: normalizedEmail })
+        : await supabase.auth.signInWithOtp({
+            email: normalizedEmail,
+            options: { shouldCreateUser: false },
+          });
+
+      if (result.error) {
+        setMessage(explainAuthError(result.error, "We couldn't resend the code. Please try again."));
+      } else {
+        setOtp("");
+        setOtpCooldown(60);
+        setMessage("A fresh 6-digit code has been sent. Use the newest email.");
+      }
+    } catch {
+      setMessage("Connection problem. Please try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const isVerifying = step === "verify";
+
   return (
     <main className="auth-shell">
       <section className="auth-card">
         <Link className="brand auth-brand" href="/"><span className="brand-word">Aahana</span><span className="brand-ai">AI</span></Link>
         <div className="eyebrow"><span /> YOUR THINKING SPACE</div>
-        <h1>{mode === "signin" ? "Welcome back." : "Start with Aahana."}</h1>
-        <p className="auth-copy">{mode === "signin" ? "Sign in to return to your workspace." : "Create your account to set up your workspace."}</p>
+        <h1>{isVerifying ? "Check your inbox." : mode === "signin" ? "Welcome back." : "Start with Aahana."}</h1>
+        <p className="auth-copy">
+          {isVerifying
+            ? `Enter the 6-digit code sent to ${email.trim()}.`
+            : mode === "signin"
+              ? "Sign in to return to your workspace."
+              : "Create your account to set up your workspace."}
+        </p>
+
         <form className="auth-form" onSubmit={submit}>
-          <label htmlFor="email">Email address</label>
-          <input id="email" type="email" autoComplete="email" autoCapitalize="none" spellCheck="false" required value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" />
-          <label htmlFor="password">Password</label>
-          <div className="password-field">
-            <input id="password" type={showPassword ? "text" : "password"} autoComplete={mode === "signin" ? "current-password" : "new-password"} minLength={mode === "signup" ? 8 : undefined} required value={password} onChange={e => setPassword(e.target.value)} placeholder={mode === "signup" ? "At least 8 characters" : "Enter your password"} />
-            <button className="password-toggle" type="button" onClick={() => setShowPassword(value => !value)} aria-label={showPassword ? "Hide password" : "Show password"} aria-pressed={showPassword}>{showPassword ? "Hide" : "Show"}</button>
-          </div>
-          {mode === "signup" && <p className="auth-copy">Use at least 8 characters for your password.</p>}
+          {!isVerifying ? (
+            <>
+              <label htmlFor="email">Email address</label>
+              <input id="email" type="email" autoComplete="email" autoCapitalize="none" spellCheck="false" required value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" />
+
+              {mode === "signin" ? (
+                <div className="auth-switch">
+                  <button type="button" onClick={() => { setAuthMethod(authMethod === "otp" ? "password" : "otp"); setMessage(""); }}>
+                    {authMethod === "otp" ? "Use password instead" : "Sign in with email code"}
+                  </button>
+                </div>
+              ) : null}
+
+              {(mode === "signup" || authMethod === "password") && (
+                <>
+                  <label htmlFor="password">Password</label>
+                  <div className="password-field">
+                    <input id="password" type={showPassword ? "text" : "password"} autoComplete={mode === "signin" ? "current-password" : "new-password"} minLength={mode === "signup" ? 8 : undefined} required value={password} onChange={e => setPassword(e.target.value)} placeholder={mode === "signup" ? "At least 8 characters" : "Enter your password"} />
+                    <button className="password-toggle" type="button" onClick={() => setShowPassword(value => !value)} aria-label={showPassword ? "Hide password" : "Show password"} aria-pressed={showPassword}>{showPassword ? "Hide" : "Show"}</button>
+                  </div>
+                  {mode === "signup" && <p className="auth-copy">Use at least 8 characters for your password.</p>}
+                </>
+              )}
+            </>
+          ) : (
+            <>
+              <label htmlFor="otp">6-digit verification code</label>
+              <input
+                id="otp"
+                type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                pattern="[0-9]{6}"
+                maxLength={6}
+                required
+                value={otp}
+                onChange={e => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                placeholder="000000"
+                aria-describedby="otp-help"
+              />
+              <p className="auth-copy" id="otp-help">For your security, only the newest code can be used.</p>
+              <div className="auth-switch">
+                <button type="button" onClick={resendCode} disabled={busy || otpCooldown > 0}>
+                  {otpCooldown > 0 ? `Resend code in ${otpCooldown}s` : "Resend code"}
+                </button>
+                <button type="button" onClick={() => { setStep("credentials"); setOtp(""); setMessage(""); }}>
+                  Change email
+                </button>
+              </div>
+            </>
+          )}
+
           {message && <p className="auth-message" role="status" aria-live="polite">{message}</p>}
-          <button className="auth-submit" type="submit" disabled={busy || (mode === "signup" && signupCooldown > 0)}>
-            {busy ? "Please wait…" : mode === "signin" ? "Sign in" : signupCooldown > 0 ? `Try again in ${signupCooldown}s` : "Create account"}
+          <button className="auth-submit" type="submit" disabled={busy || (isVerifying && otp.length !== 6)}>
+            {busy
+              ? "Please wait…"
+              : isVerifying
+                ? "Verify code"
+                : mode === "signin"
+                  ? authMethod === "otp" ? "Send sign-in code" : "Sign in"
+                  : "Create account"}
           </button>
         </form>
-        <p className="auth-switch">{mode === "signin" ? "New to Aahana?" : "Already have an account?"} <button type="button" onClick={() => { setMode(mode === "signin" ? "signup" : "signin"); setMessage(""); setShowPassword(false); setSignupCooldown(0); }}>{mode === "signin" ? "Create account" : "Sign in"}</button></p>
+
+        {!isVerifying && (
+          <p className="auth-switch">
+            {mode === "signin" ? "New to Aahana?" : "Already have an account?"}{" "}
+            <button type="button" onClick={() => { setMode(mode === "signin" ? "signup" : "signin"); setAuthMethod("otp"); setStep("credentials"); setMessage(""); setOtp(""); setPassword(""); setShowPassword(false); }}>
+              {mode === "signin" ? "Create account" : "Sign in"}
+            </button>
+          </p>
+        )}
         <p className="auth-legal">Your account and workspace are protected by Supabase authentication.</p>
       </section>
     </main>
