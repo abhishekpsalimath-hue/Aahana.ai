@@ -153,3 +153,13 @@ test("maps generated PNG, JPEG and WebP data URLs to matching file metadata", ()
   assert.equal(getGeneratedImageFileMetadata("data:image/webp;base64,AAAA", "image/jpeg"), null);
   assert.equal(getGeneratedImageFileMetadata("https://example.test/image.png", "image/png"), null);
 });
+
+
+test("infers image framing from Kannada and Hindi prompts", () => {
+  assert.equal(inferImageAspectRatio("ಲಂಬ ಚಿತ್ರದಲ್ಲಿ ಒಂದು ಹೂವು"), "3:4");
+  assert.equal(inferImageAspectRatio("ಅಡ್ಡ ಚಿತ್ರದಲ್ಲಿ ಪರ್ವತಗಳು"), "4:3");
+  assert.equal(inferImageAspectRatio("ವೈಡ್‌ಸ್ಕ್ರೀನ್ ಸಿನೆಮಾಟಿಕ್ ದೃಶ್ಯ"), "16:9");
+  assert.equal(inferImageAspectRatio("ऊर्ध्वाधर चित्र में एक फूल"), "3:4");
+  assert.equal(inferImageAspectRatio("क्षैतिज दृश्य में पहाड़"), "4:3");
+  assert.equal(inferImageAspectRatio("वाइडस्क्रीन सिनेमाई दृश्य"), "16:9");
+});
