@@ -3,6 +3,7 @@ import { createApprovalToken, verifyApprovalToken } from "./approval-token.mjs";
 import { validateAgentToolCalls } from "./tool-call-guard.mjs";
 import { createAgentToolCallLedger, recordAgentToolCalls } from "./tool-call-ledger.mjs";
 import { readBoundedUpstreamJson } from "./bounded-upstream-json.mjs";
+import { buildSelfImproveExecutionOutcome } from "./execution-outcome.mjs";
 import { createClient } from "@/lib/supabase/server";
 import { getSelfBuildConfig, isSelfBuildOwner, isAllowedSelfBuildPath, validateSelfBuildChangeSet } from "@/lib/build/self-build-policy.mjs";
 import { getSelfBuildRepository, getSelfBuildFile } from "@/lib/build/github-app.mjs";
@@ -247,6 +248,8 @@ export async function POST(request) {
 
   const toolCallLedger = createAgentToolCallLedger();
   let toolCallsExecuted = 0;
+  let successfulToolCalls = 0;
+  let failedToolCalls = 0;
   let inventoryListed = false;
   let changePlan = phase === "execute" ? approvedChangePlan : null;
   let finalResponse = "";
@@ -436,6 +439,8 @@ export async function POST(request) {
         } catch (error) {
           result = { error: error.message || "Tool execution failed." };
         }
+        if (result && typeof result.error === "string") failedToolCalls += 1;
+        else successfulToolCalls += 1;
 
         messages.push({
           role: "tool",
@@ -458,6 +463,7 @@ export async function POST(request) {
   if (phase === "plan" && planReady && changePlan) {
     return NextResponse.json({
       status: "plan_ready",
+      execution: buildSelfImproveExecutionOutcome({ phase, planReady: true, successfulToolCalls, failedToolCalls, roundsUsed: Math.min(rounds + 1, MAX_TOOL_ROUNDS) }),
       repository: { name: repository.repository, branch: repository.branch, baseSha: repository.baseSha },
       finalResponse: "Plan ready for your review. No source files were read and no changes were proposed.",
       changePlan,
@@ -478,15 +484,26 @@ export async function POST(request) {
   if (!finalResponse && rounds >= MAX_TOOL_ROUNDS) {
     finalResponse = "I reached the safe planning and tool-call limit before completing the task. No repository changes were committed.";
   }
+  const roundsUsed = Math.min(rounds + 1, MAX_TOOL_ROUNDS);
+  const execution = buildSelfImproveExecutionOutcome({
+    phase,
+    proposalCount: proposals.size,
+    successfulToolCalls,
+    failedToolCalls,
+    finalResponse,
+    roundsUsed,
+    roundLimitReached: rounds >= MAX_TOOL_ROUNDS,
+  });
 
   return NextResponse.json({
-    status: proposals.size ? "proposal_ready" : "completed",
+    status: execution.status,
+    execution,
     repository: { name: repository.repository, branch: repository.branch, baseSha: repository.baseSha },
     finalResponse,
     changePlan,
     proposals: [...proposals.values()],
     toolCallsExecuted,
-    roundsUsed: Math.min(rounds + 1, MAX_TOOL_ROUNDS),
+    roundsUsed,
     commitCreated: false,
     pullRequestCreated: false,
   }, { headers: { "Cache-Control": "private, no-store" } });
