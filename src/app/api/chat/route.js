@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createSseContentParser } from "@/lib/chat/sse-content-parser.mjs";
 import { getLanguageGuidance } from "@/lib/chat/language-guidance.mjs";
 
 export const runtime = "nodejs";
@@ -454,36 +455,20 @@ export async function POST(request) {
 
   const stream = new ReadableStream({
     async start(controller) {
-      let buffer = "";
       let finished = false;
-
-      const handleLine = (line) => {
-        if (!line.startsWith("data:")) return;
-        const data = line.slice(5).trim();
-        if (!data || data === "[DONE]") return;
-        try {
-          const payload = JSON.parse(data);
-          const delta = payload.choices?.[0]?.delta?.content;
-          if (typeof delta === "string" && delta) {
-            fullReply += delta;
-            controller.enqueue(encoder.encode(delta));
-          }
-        } catch {
-          // Ignore non-JSON keepalive or metadata frames.
-        }
-      };
+      const parser = createSseContentParser((delta) => {
+        fullReply += delta;
+        controller.enqueue(encoder.encode(delta));
+      });
 
       try {
         while (true) {
           const { value, done } = await reader.read();
           if (done) break;
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split("\n");
-          buffer = lines.pop() ?? "";
-          for (const line of lines) handleLine(line.replace(/\r$/, ""));
+          parser.push(decoder.decode(value, { stream: true }));
         }
-        buffer += decoder.decode();
-        if (buffer) handleLine(buffer.replace(/\r$/, ""));
+        parser.push(decoder.decode());
+        parser.finish();
         finished = true;
 
         if (fullReply.trim()) {
