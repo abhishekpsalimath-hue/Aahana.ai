@@ -93,3 +93,13 @@ test("rejects malformed and non-object provider responses", async () => {
     assert.equal((await readBoundedImageProviderJson(new Response(body))).ok, false);
   }
 });
+
+test("accepts numeric Content-Length values and rejects malformed provider lengths", async () => {
+  const request = new Request("https://example.test", {
+    method: "POST", headers: { "content-length": "2" }, body: "{}",
+  });
+  assert.deepEqual(await readBoundedImageGenerationJson(request), { ok: true, value: {} });
+
+  const provider = new Response("{}", { headers: { "content-length": "not-a-number" } });
+  assert.equal((await readBoundedImageProviderJson(provider)).ok, false);
+});
