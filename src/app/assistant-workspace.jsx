@@ -814,6 +814,9 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [videoAspectRatio, setVideoAspectRatio] = useState("16:9");
   const [videoResolution, setVideoResolution] = useState("480p");
   const [videoDirector, setVideoDirector] = useState("cinematic");
+  const [videoContinuity, setVideoContinuity] = useState({
+    subject: "", setting: "", action: "", camera: "", openingFrame: "", closingFrame: "",
+  });
   const [imageAspectRatio, setImageAspectRatio] = useState("auto");
   const [generatedVideo, setGeneratedVideo] = useState(null);
   const [memoryOpen, setMemoryOpen] = useState(false);
@@ -1271,6 +1274,10 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       form.set("aspectRatio", videoAspectRatio);
       form.set("resolution", videoResolution);
       form.set("director", videoDirector);
+      const continuity = Object.fromEntries(
+        Object.entries(videoContinuity).map(([key, value]) => [key, value.trim()]).filter(([, value]) => value)
+      );
+      if (Object.keys(continuity).length) form.set("continuity", JSON.stringify(continuity));
       if (imageFile) form.set("image", imageFile);
       const response = await fetch("/api/videos/generate", {
         method: "POST",
@@ -2019,6 +2026,21 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                       <option value="480p">480p</option>
                       <option value="720p">720p</option>
                     </select>
+                    <details className="video-advanced-settings">
+                      <summary>Scene continuity (optional)</summary>
+                      <input aria-label="Continuity subject identity" className="copy-message" maxLength={180} placeholder="Subject identity and defining traits"
+                        value={videoContinuity.subject} onChange={(event) => setVideoContinuity((current) => ({ ...current, subject: event.target.value }))} />
+                      <input aria-label="Continuity setting" className="copy-message" maxLength={180} placeholder="Setting and environment"
+                        value={videoContinuity.setting} onChange={(event) => setVideoContinuity((current) => ({ ...current, setting: event.target.value }))} />
+                      <input aria-label="Continuity action" className="copy-message" maxLength={180} placeholder="Action and direction"
+                        value={videoContinuity.action} onChange={(event) => setVideoContinuity((current) => ({ ...current, action: event.target.value }))} />
+                      <input aria-label="Continuity camera movement" className="copy-message" maxLength={180} placeholder="Camera position and movement"
+                        value={videoContinuity.camera} onChange={(event) => setVideoContinuity((current) => ({ ...current, camera: event.target.value }))} />
+                      <input aria-label="Video opening frame" className="copy-message" maxLength={180} placeholder="Opening frame"
+                        value={videoContinuity.openingFrame} onChange={(event) => setVideoContinuity((current) => ({ ...current, openingFrame: event.target.value }))} />
+                      <input aria-label="Video closing frame" className="copy-message" maxLength={180} placeholder="Closing frame"
+                        value={videoContinuity.closingFrame} onChange={(event) => setVideoContinuity((current) => ({ ...current, closingFrame: event.target.value }))} />
+                    </details>
                   </details>
                 </>
               )}
