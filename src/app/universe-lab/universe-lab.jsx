@@ -4,18 +4,18 @@ import { useEffect, useRef, useState } from "react";
 import styles from "./universe-lab.module.css";
 
 const worlds = [
-  { id: "galaxies", name: "Galaxies", note: "Vast island universes, each holding billions of stars.", color: "#c7a7ff" },
-  { id: "stars", name: "Stars", note: "Stellar nurseries, brilliant suns and the light between them.", color: "#ffe2ad" },
-  { id: "planets", name: "Planets", note: "Worlds with their own colour, atmosphere and character.", color: "#8db9ff" },
-  { id: "moons", name: "Moons", note: "Natural satellites orbiting planets, from icy worlds to cratered landscapes.", color: "#d9d4ff" },
-  { id: "solar-systems", name: "Solar systems", note: "Stars and the families of planets, moons, rings and smaller bodies around them.", color: "#ffc98c" },
-  { id: "black-holes", name: "Black holes", note: "Regions where gravity bends space-time so intensely that not even light escapes beyond the event horizon.", color: "#d6b5ff" },
-  { id: "nebulae", name: "Nebulae", note: "Cosmic clouds of gas and dust, including stellar nurseries where new stars form.", color: "#ff9fd7" },
-  { id: "asteroids-comets", name: "Asteroids & comets", note: "Rocky and icy travellers moving through planetary space.", color: "#9fe9e4" },
-  { id: "space-time", name: "Space & time", note: "The four-dimensional fabric in which every cosmic event takes place.", color: "#a8c4ff" },
-  { id: "matter-energy", name: "Matter & energy", note: "The physical ingredients and processes that make the cosmos dynamic.", color: "#ffdb9e" },
-  { id: "dark-matter", name: "Dark matter", note: "Invisible matter inferred from its gravitational influence on galaxies and cosmic structure.", color: "#9b8bff" },
-  { id: "dark-energy", name: "Dark energy", note: "The name for the unknown cause of the universe's accelerated expansion.", color: "#88c9ff" },
+  { id: "galaxies", name: "Galaxies", note: "Vast island universes, each holding billions of stars.", fact: "The Milky Way is a barred spiral galaxy, one among an enormous cosmic population.", color: "#c7a7ff" },
+  { id: "stars", name: "Stars", note: "Stellar nurseries, brilliant suns and the light between them.", fact: "Stars shine because nuclear fusion in their cores releases energy as light and heat.", color: "#ffe2ad" },
+  { id: "planets", name: "Planets", note: "Worlds with their own colour, atmosphere and character.", fact: "Planets form in disks of gas and dust around young stars.", color: "#8db9ff" },
+  { id: "moons", name: "Moons", note: "Natural satellites orbiting planets, from icy worlds to cratered landscapes.", fact: "Some moons may hide vast oceans beneath icy crusts.", color: "#d9d4ff" },
+  { id: "solar-systems", name: "Solar systems", note: "Stars and the families of planets, moons, rings and smaller bodies around them.", fact: "Our solar system formed about 4.6 billion years ago from a rotating cloud of gas and dust.", color: "#ffc98c" },
+  { id: "black-holes", name: "Black holes", note: "Regions where gravity bends space-time so intensely that not even light escapes beyond the event horizon.", fact: "The event horizon is the boundary beyond which escape is impossible—not a solid surface.", color: "#d6b5ff" },
+  { id: "nebulae", name: "Nebulae", note: "Cosmic clouds of gas and dust, including stellar nurseries where new stars form.", fact: "Nebulae can be stellar nurseries or the expanding remains of stars.", color: "#ff9fd7" },
+  { id: "asteroids-comets", name: "Asteroids & comets", note: "Rocky and icy travellers moving through planetary space.", fact: "A comet's tail points generally away from the Sun as sunlight warms its icy nucleus.", color: "#9fe9e4" },
+  { id: "space-time", name: "Space & time", note: "The four-dimensional fabric in which every cosmic event takes place.", fact: "In general relativity, mass and energy shape space-time, and that geometry guides motion.", color: "#a8c4ff" },
+  { id: "matter-energy", name: "Matter & energy", note: "The physical ingredients and processes that make the cosmos dynamic.", fact: "Mass and energy are linked by E = mc².", color: "#ffdb9e" },
+  { id: "dark-matter", name: "Dark matter", note: "Invisible matter inferred from its gravitational influence on galaxies and cosmic structure.", fact: "We infer dark matter through gravity, including galaxy rotation and gravitational lensing.", color: "#9b8bff" },
+  { id: "dark-energy", name: "Dark energy", note: "The name for the unknown cause of the universe's accelerated expansion.", fact: "Dark energy names the unknown cause of the observed acceleration of cosmic expansion.", color: "#88c9ff" },
 ];
 
 function Starfield({ pointerRef, animate }) {
@@ -70,9 +70,9 @@ function Starfield({ pointerRef, animate }) {
 export default function UniverseLab() {
   const [selected, setSelected] = useState("galaxies");
   const pointerRef = useRef({ x: 0.5, y: 0.5 });
-  const [motion, setMotion] = useState(true);
+  const [motion, setMotion] = useState(true);\n  const [journeyStarted, setJourneyStarted] = useState(false);
   const active = worlds.find((world) => world.id === selected) || worlds[0];
-  const choose = (id) => setSelected(id);
+  const choose = (id) => { setSelected(id); setJourneyStarted(true); };\n  const moveJourney = (direction) => {\n    const index = worlds.findIndex((world) => world.id === selected);\n    choose(worlds[(index + direction + worlds.length) % worlds.length].id);\n  };
   const sceneTarget = (id, className, label, children) => (
     <button type="button" className={`${className} ${selected === id ? styles.sceneChosen : ""}`}
       onClick={() => choose(id)} aria-label={`Explore ${label}`} aria-pressed={selected === id}>
@@ -103,7 +103,7 @@ export default function UniverseLab() {
         <p className={styles.intro}>A living space for ideas, discovery and creation. Move through the cosmos and choose a world to explore.</p>
       </section>
 
-      <section className={styles.orbitStage} aria-label="Interactive universe">
+      <section className={styles.orbitStage} aria-label="Interactive universe" data-world={selected}>
         <div className={styles.halo} aria-hidden="true" />
         {sceneTarget("galaxies", `${styles.galaxy} ${styles.sceneGalaxy}`, "galaxies", <><i /><i /><i /></>)}
         {sceneTarget("planets", `${styles.planet} ${styles.planetOne}`, "a planet")}
@@ -116,7 +116,7 @@ export default function UniverseLab() {
         {sceneTarget("nebulae", styles.nebulaObject, "a nebula")}
         {sceneTarget("dark-matter", styles.darkMatterLens, "dark matter")}
         {sceneTarget("dark-energy", styles.darkEnergyWave, "dark energy")}
-        {sceneTarget("space-time", styles.spaceTimeGrid, "space-time")}
+        {sceneTarget("space-time", styles.spaceTimeGrid, "space-time")}\n        {sceneTarget("matter-energy", styles.energyField, "matter and energy")}
         <button className={`${styles.world} ${styles.worldGalaxy} ${selected === "galaxies" ? styles.chosen : ""}`} onClick={() => choose("galaxies")} aria-pressed={selected === "galaxies"}>Galaxies</button>
         <button className={`${styles.world} ${styles.worldStar} ${selected === "stars" ? styles.chosen : ""}`} onClick={() => choose("stars")} aria-pressed={selected === "stars"}>Stars</button>
         <button className={`${styles.world} ${styles.worldPlanet} ${selected === "planets" ? styles.chosen : ""}`} onClick={() => choose("planets")} aria-pressed={selected === "planets"}>Planets</button>
@@ -127,9 +127,14 @@ export default function UniverseLab() {
       </section>
 
       <section className={styles.detail} aria-live="polite" aria-atomic="true">
-        <div><span className={styles.detailEyebrow}>NOW EXPLORING</span><h2>{active.name}</h2><p>{active.note}</p></div>
+        <div className={styles.detailCopy}><span className={styles.detailEyebrow}>NOW EXPLORING · {String(worlds.findIndex((world) => world.id === selected) + 1).padStart(2, "0")} / 12</span><h2>{active.name}</h2><p>{active.note}</p><p className={styles.fact}><strong>A COSMIC FACT</strong> {active.fact}</p></div>
         <div className={styles.detailMark} style={{ "--world-color": active.color }} aria-hidden="true" />
       </section>
+      <div className={styles.journeyControls} aria-label="Guided universe journey">
+        <button type="button" onClick={() => moveJourney(-1)} aria-label="Explore previous cosmic subject">← Previous</button>
+        <span>{journeyStarted ? "KEEP EXPLORING" : "12 WORLDS · ONE UNIVERSE"}</span>
+        <button type="button" onClick={() => moveJourney(1)} aria-label="Explore next cosmic subject">Next world →</button>
+      </div>
 
       <nav className={styles.worldList} aria-label="Choose a cosmic element">
         {worlds.map((world) => <button type="button" key={world.id} onClick={() => choose(world.id)} className={selected === world.id ? styles.activeWorld : ""} aria-pressed={selected === world.id}>{world.name}</button>)}
