@@ -183,16 +183,18 @@ function buildVideoShotSequence(shots) {
   const lines = [];
   for (const [index, shot] of shots.entries()) {
     if (!shot || typeof shot !== "object" || Array.isArray(shot)) return null;
-    if (Object.keys(shot).some((key) => !["duration", "action", "camera", "transition"].includes(key))) return null;
+    if (Object.keys(shot).some((key) => !["duration", "action", "camera", "framing", "screenDirection", "transition"].includes(key))) return null;
     if (!Number.isInteger(shot.duration) || shot.duration < 1 || shot.duration > 15) return null;
     if (typeof shot.action !== "string" || !shot.action.trim() || shot.action.length > 180) return null;
     if (shot.camera !== undefined && (typeof shot.camera !== "string" || shot.camera.length > 120)) return null;
+    if (shot.framing !== undefined && (typeof shot.framing !== "string" || shot.framing.length > 80)) return null;
+    if (shot.screenDirection !== undefined && (typeof shot.screenDirection !== "string" || shot.screenDirection.length > 80)) return null;
     if (shot.transition !== undefined && !VIDEO_SHOT_TRANSITIONS.includes(shot.transition)) return null;
     totalDuration += shot.duration;
     if (totalDuration > 15) return null;
-    lines.push(`Shot ${index + 1} (${shot.duration}s): ${shot.action.trim()}${shot.camera?.trim() ? ` | Camera: ${shot.camera.trim()}` : ""}${shot.transition ? ` | Transition: ${shot.transition}` : ""}`);
+    lines.push(`Shot ${index + 1} (${shot.duration}s): ${shot.action.trim()}${shot.camera?.trim() ? ` | Camera: ${shot.camera.trim()}` : ""}${shot.framing?.trim() ? ` | Framing: ${shot.framing.trim()}` : ""}${shot.screenDirection?.trim() ? ` | Screen direction: ${shot.screenDirection.trim()}` : ""}${shot.transition ? ` | Transition: ${shot.transition}` : ""}`);
   }
-  return ["SHOT-BY-SHOT TIMELINE:", ...lines, "Respect the shot order and timing. Keep screen direction and subject position coherent across cuts; transitions must connect the preceding shot to the next rather than resetting the scene."].join("\n");
+  return ["SHOT-BY-SHOT TIMELINE:", ...lines, "Respect the shot order and timing. Preserve the established screen direction, axis of action, subject eyeline, geography, and camera side across adjacent shots unless a motivated transition explicitly changes them. Match subject position and movement vectors at cuts; transitions must connect the preceding shot to the next rather than resetting the scene."].join("\n");
 }
 
 export function buildVideoContinuityPrompt(continuity) {
