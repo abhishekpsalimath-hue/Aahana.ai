@@ -17,7 +17,7 @@ test("previews only selected weekdays for weekly schedules", () => {
   const result = previewScheduleOccurrences({
     frequency: "weekly", daysOfWeek: [1, 3], hour: 8, minute: 0, timeZone: "Asia/Kolkata",
   }, "2026-11-25T03:00:00.000Z", 3);
-  assert.deepEqual(result.map((item) => item.localDate), ["2026-11-25", "2026-11-30", "2026-12-02"]);
+  assert.deepEqual(result.map((item) => item.localDate), ["2026-11-30", "2026-12-02", "2026-12-07"]);
 });
 
 test("skips a nonexistent spring-forward wall-clock time", () => {
