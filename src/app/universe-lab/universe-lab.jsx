@@ -70,9 +70,14 @@ function Starfield({ pointerRef, animate }) {
 export default function UniverseLab() {
   const [selected, setSelected] = useState("galaxies");
   const pointerRef = useRef({ x: 0.5, y: 0.5 });
-  const [motion, setMotion] = useState(true);\n  const [journeyStarted, setJourneyStarted] = useState(false);
+  const [motion, setMotion] = useState(true);
+  const [journeyStarted, setJourneyStarted] = useState(false);
   const active = worlds.find((world) => world.id === selected) || worlds[0];
-  const choose = (id) => { setSelected(id); setJourneyStarted(true); };\n  const moveJourney = (direction) => {\n    const index = worlds.findIndex((world) => world.id === selected);\n    choose(worlds[(index + direction + worlds.length) % worlds.length].id);\n  };
+  const choose = (id) => { setSelected(id); setJourneyStarted(true); };
+  const moveJourney = (direction) => {
+    const index = worlds.findIndex((world) => world.id === selected);
+    choose(worlds[(index + direction + worlds.length) % worlds.length].id);
+  };
   const sceneTarget = (id, className, label, children) => (
     <button type="button" className={`${className} ${selected === id ? styles.sceneChosen : ""}`}
       onClick={() => choose(id)} aria-label={`Explore ${label}`} aria-pressed={selected === id}>
@@ -116,7 +121,8 @@ export default function UniverseLab() {
         {sceneTarget("nebulae", styles.nebulaObject, "a nebula")}
         {sceneTarget("dark-matter", styles.darkMatterLens, "dark matter")}
         {sceneTarget("dark-energy", styles.darkEnergyWave, "dark energy")}
-        {sceneTarget("space-time", styles.spaceTimeGrid, "space-time")}\n        {sceneTarget("matter-energy", styles.energyField, "matter and energy")}
+        {sceneTarget("space-time", styles.spaceTimeGrid, "space-time")}
+        {sceneTarget("matter-energy", styles.energyField, "matter and energy")}
         <button className={`${styles.world} ${styles.worldGalaxy} ${selected === "galaxies" ? styles.chosen : ""}`} onClick={() => choose("galaxies")} aria-pressed={selected === "galaxies"}>Galaxies</button>
         <button className={`${styles.world} ${styles.worldStar} ${selected === "stars" ? styles.chosen : ""}`} onClick={() => choose("stars")} aria-pressed={selected === "stars"}>Stars</button>
         <button className={`${styles.world} ${styles.worldPlanet} ${selected === "planets" ? styles.chosen : ""}`} onClick={() => choose("planets")} aria-pressed={selected === "planets"}>Planets</button>
