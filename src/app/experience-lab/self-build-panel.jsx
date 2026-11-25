@@ -113,7 +113,8 @@ export default function AahanaSelfBuildPanel() {
           <strong>Execution: {execution.status.replaceAll("_", " ")}</strong>
           <span style={muted}>Reason: {execution.reasonCode.replaceAll("_", " ").toLowerCase()}</span>
           <span style={muted}>Tool calls: {execution.successfulToolCalls} succeeded · {execution.failedToolCalls} failed · {execution.proposalsStaged} proposal(s) staged</span>
-          <span style={muted}>Acceptance checks: {execution.acceptanceChecks.status.replaceAll("_", " ")} — no checks are claimed as passed here.</span>
+          <span style={muted}>Acceptance checks: {execution.acceptanceChecks.status.replaceAll("_", " ")} · {execution.acceptanceChecks.passed}/{execution.acceptanceChecks.total ?? "—"} passed</span>
+          {execution.acceptanceChecks.checks?.map((check, index) => <span key={`${index}-${check.label}`} style={muted}>Check {index + 1}: {check.label} · {check.status.replaceAll("_", " ")}</span>)}
           {execution.steps?.map((step) => <span key={step.step} style={muted}>Step {step.step}: {step.tool} · {step.status} · {step.outcomeCode.replaceAll("_", " ").toLowerCase()}{step.status === "failed" ? (step.retryAllowed ? " · retry may be considered" : " · refresh context before retrying") : ""}</span>)}
           {execution.failures?.map((failure, index) => <span key={`${failure.tool}-${index}`} style={muted}>{failure.tool}: {failure.code} · {failure.retryable ? "retryable after backoff" : "do not retry unchanged"} · {failure.recoveryAction.replaceAll("_", " ").toLowerCase()}</span>)}
         </div>}
