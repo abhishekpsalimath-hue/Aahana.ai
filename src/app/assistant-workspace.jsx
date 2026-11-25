@@ -33,7 +33,7 @@ function UniverseScene() {
     let renderer, raf = 0, active = true, inView = true, observer, contextAvailable = true;
     const motionQuery = window.matchMedia?.("(prefers-reduced-motion: reduce)");
     let reduced = motionQuery?.matches === true;
-    const pointerEnabled = window.matchMedia?.("(pointer: fine)").matches === true;
+    // Pointer movement also receives touch-drag PointerEvents on phones.
     try {
       renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: false, powerPreference: "low-power", stencil: false });
     } catch {
@@ -384,6 +384,21 @@ function UniverseScene() {
     addPlanet(5.2, 1.1, -5.1, 0.64, 0x7782bd, [0x4c527b, 0x858bb7, 0xc6b8df], true, 5.3);
     addPlanet(2.6, -3.1, 0.1, 0.34, 0xb57d9f, [0x583c65, 0xa76f91, 0xe4b7ca], false, 8.1);
 
+    // Small moons orbit their parent worlds, making the planetary system feel lived-in.
+    const moonOrbits = [];
+    const addMoon = (parent, distance, size, color, speed) => {
+      const orbit = new THREE.Group();
+      const path = new THREE.Mesh(new THREE.TorusGeometry(distance, 0.006, 5, 72), new THREE.MeshBasicMaterial({ color: 0xbba9e8, transparent: true, opacity: 0.22 }));
+      orbit.add(path);
+      const moon = new THREE.Mesh(new THREE.IcosahedronGeometry(size, 2), new THREE.MeshStandardMaterial({ color, roughness: 0.9, metalness: 0.02 }));
+      moon.position.x = distance;
+      orbit.add(moon);
+      parent.add(orbit);
+      moonOrbits.push({ orbit, speed });
+    };
+    addMoon(planets[0], 1.28, 0.105, 0xc9c1d9, 0.0019);
+    addMoon(planets[1], 0.92, 0.075, 0xb8c2dc, -0.0025);
+
     // Living travellers: astronauts and friendly alien explorers move through
     // the same 3D scene on independent, gently varied trajectories.
     const travellers = [];
@@ -464,6 +479,90 @@ function UniverseScene() {
     );
     diskInner.rotation.x = 1.12; diskInner.rotation.y = 0.18; blackHole.add(diskInner);
     world.add(blackHole);
+    // A thin photon-ring cue and faint outer lensing halo frame the shadow.
+    // This is an artistic real-time approximation, not a ray-traced GR solver.
+    const photonRing = new THREE.Mesh(new THREE.TorusGeometry(1.13, 0.035, 10, 120), new THREE.MeshBasicMaterial({ color: 0xf2e5ff, transparent: true, opacity: 0.86, blending: THREE.AdditiveBlending }));
+    photonRing.rotation.x = 1.12; photonRing.rotation.y = 0.18; blackHole.add(photonRing);
+    const lensingHalo = new THREE.Mesh(new THREE.TorusGeometry(1.92, 0.095, 8, 120), new THREE.MeshBasicMaterial({ color: 0x9275d8, transparent: true, opacity: 0.16, blending: THREE.AdditiveBlending }));
+    lensingHalo.rotation.x = 1.12; lensingHalo.rotation.y = 0.18; blackHole.add(lensingHalo);
+    const plasmaMaterial = new THREE.MeshBasicMaterial({ color: 0xffd6ff, transparent: true, opacity: 0.82, blending: THREE.AdditiveBlending });
+    const plasmaKnots = [];
+    for (let i = 0; i < 5; i++) {
+      const knot = new THREE.Mesh(new THREE.SphereGeometry(0.055 + (i % 2) * 0.025, 10, 8), plasmaMaterial);
+      blackHole.add(knot);
+      plasmaKnots.push({ knot, angle: (i / 5) * Math.PI * 2, radius: 1.52 + (i % 2) * 0.16 });
+    }
+
+    // An asteroid belt uses instancing: many individually varied rocks at a
+    // low draw-call cost, including on compact mobile GPUs.
+    const asteroidBelt = new THREE.Group();
+    asteroidBelt.position.set(-0.5, 0.2, -10.5);
+    const asteroidCount = compact ? 52 : 104;
+    const asteroidGeometry = new THREE.DodecahedronGeometry(0.12, 0);
+    const asteroidMaterial = new THREE.MeshStandardMaterial({ color: 0x8c829b, roughness: 0.96, metalness: 0.03 });
+    const asteroids = new THREE.InstancedMesh(asteroidGeometry, asteroidMaterial, asteroidCount);
+    const asteroidDummy = new THREE.Object3D();
+    for (let i = 0; i < asteroidCount; i++) {
+      const angle = (i / asteroidCount) * Math.PI * 2 + Math.random() * 0.12;
+      const radius = 4.7 + Math.random() * 2.15;
+      asteroidDummy.position.set(Math.cos(angle) * radius, (Math.random() - 0.5) * 0.72, Math.sin(angle) * radius * 0.52);
+      asteroidDummy.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+      const scale = 0.34 + Math.random() * 1.1;
+      asteroidDummy.scale.set(scale, scale * (0.55 + Math.random() * 0.65), scale * (0.65 + Math.random() * 0.55));
+      asteroidDummy.updateMatrix();
+      asteroids.setMatrixAt(i, asteroidDummy.matrix);
+    }
+    asteroids.instanceMatrix.needsUpdate = true;
+    asteroidBelt.add(asteroids);
+    world.add(asteroidBelt);
+
+    // A comet crosses the scene on a long elliptical path with a layered tail.
+    const comet = new THREE.Group();
+    const cometHead = new THREE.Mesh(new THREE.IcosahedronGeometry(0.16, 2), new THREE.MeshStandardMaterial({ color: 0xd9e8ff, emissive: 0x7896d8, emissiveIntensity: 1.2, roughness: 0.35 }));
+    comet.add(cometHead);
+    const cometTail = new THREE.Mesh(new THREE.ConeGeometry(0.3, 3.6, 18, 1, true), new THREE.MeshBasicMaterial({ color: 0x8fb8ff, transparent: true, opacity: 0.19, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, depthWrite: false }));
+    cometTail.rotation.z = Math.PI / 2;
+    cometTail.position.x = 1.82;
+    comet.add(cometTail);
+    const cometInnerTail = new THREE.Mesh(new THREE.ConeGeometry(0.12, 2.6, 14, 1, true), new THREE.MeshBasicMaterial({ color: 0xd8c9ff, transparent: true, opacity: 0.22, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, depthWrite: false }));
+    cometInnerTail.rotation.z = Math.PI / 2;
+    cometInnerTail.position.x = 1.3;
+    comet.add(cometInnerTail);
+    comet.position.set(-8, 3.8, -8.5);
+    world.add(comet);
+
+    // A distant wormhole is built from nested, tilted energy rings rather than
+    // a flat portal image, so it retains depth as the camera gently shifts.
+    const wormhole = new THREE.Group();
+    wormhole.position.set(-7.4, 4.0, -27);
+    const wormholeCore = new THREE.Mesh(new THREE.SphereGeometry(0.9, 24, 18), new THREE.MeshBasicMaterial({ color: 0x090713 }));
+    wormhole.add(wormholeCore);
+    const wormholeRings = [];
+    [1.12, 1.38, 1.68].forEach((radius, i) => {
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(radius, i === 1 ? 0.045 : 0.022, 8, 96), new THREE.MeshBasicMaterial({ color: i === 1 ? 0xa9b8ff : 0xb99aff, transparent: true, opacity: 0.42 - i * 0.07, blending: THREE.AdditiveBlending }));
+      ring.rotation.set(0.42 + i * 0.24, 0.2 - i * 0.18, i * 0.36);
+      wormhole.add(ring);
+      wormholeRings.push(ring);
+    });
+    world.add(wormhole);
+
+    // Meteor particles use a compact point buffer and recycle after each pass.
+    const meteorCount = compact ? 18 : 36;
+    const meteorPositions = new Float32Array(meteorCount * 3);
+    const meteorVelocity = new Float32Array(meteorCount * 3);
+    for (let i = 0; i < meteorCount; i++) {
+      const o = i * 3;
+      meteorPositions[o] = (Math.random() - 0.5) * 28;
+      meteorPositions[o + 1] = (Math.random() - 0.5) * 18;
+      meteorPositions[o + 2] = -Math.random() * 52;
+      meteorVelocity[o] = -0.035 - Math.random() * 0.045;
+      meteorVelocity[o + 1] = -0.018 - Math.random() * 0.025;
+      meteorVelocity[o + 2] = 0.012 + Math.random() * 0.025;
+    }
+    const meteorGeometry = new THREE.BufferGeometry();
+    meteorGeometry.setAttribute("position", new THREE.BufferAttribute(meteorPositions, 3));
+    const meteors = new THREE.Points(meteorGeometry, new THREE.PointsMaterial({ color: 0xc8baff, size: compact ? 0.065 : 0.085, transparent: true, opacity: 0.72, blending: THREE.AdditiveBlending, depthWrite: false }));
+    scene.add(meteors);
 
     // A stream of near-field stars travels towards the viewer, creating
     // genuine forward movement rather than rotating a static star dome.
@@ -505,7 +604,7 @@ function UniverseScene() {
       pointer.x = (event.clientX / Math.max(1, window.innerWidth) - 0.5) * 2;
       pointer.y = (event.clientY / Math.max(1, window.innerHeight) - 0.5) * 2;
     };
-    let pointerListening = pointerEnabled && !reduced;
+    let pointerListening = !reduced;
     if (pointerListening) window.addEventListener("pointermove", onPointer, { passive: true });
     const resize = () => {
       // A lost WebGL context must not receive renderer sizing calls. The
@@ -559,6 +658,31 @@ function UniverseScene() {
           object.rotation.z += Math.sin(t * 0.8) * 0.0007 * delta;
         });
         blackHole.rotation.z += 0.00018 * delta;
+        plasmaKnots.forEach(({ knot, angle, radius }) => {
+          const a = angle + time * 0.00022;
+          knot.position.set(Math.cos(a) * radius, Math.sin(a) * radius * 0.32, Math.sin(a) * radius * 0.88);
+        });
+        moonOrbits.forEach(({ orbit, speed }) => { orbit.rotation.z += speed * delta; });
+        asteroidBelt.rotation.y += 0.00016 * delta;
+        asteroidBelt.rotation.z += 0.000035 * delta;
+        comet.position.x = -8 + Math.sin(time * 0.00011) * 5.2;
+        comet.position.y = 3.8 - Math.cos(time * 0.00014) * 2.4;
+        comet.rotation.z = Math.sin(time * 0.00008) * 0.12;
+        wormhole.rotation.z += 0.00013 * delta;
+        wormholeRings.forEach((ring, i) => { ring.rotation.z += (i % 2 ? -1 : 1) * 0.00024 * delta; });
+        const meteorArray = meteorGeometry.attributes.position.array;
+        for (let i = 0; i < meteorCount; i++) {
+          const o = i * 3;
+          meteorArray[o] += meteorVelocity[o] * delta;
+          meteorArray[o + 1] += meteorVelocity[o + 1] * delta;
+          meteorArray[o + 2] += meteorVelocity[o + 2] * delta;
+          if (meteorArray[o] < -15 || meteorArray[o + 1] < -10 || meteorArray[o + 2] > 7) {
+            meteorArray[o] = 12 + Math.random() * 5;
+            meteorArray[o + 1] = 5 + Math.random() * 6;
+            meteorArray[o + 2] = -35 - Math.random() * 22;
+          }
+        }
+        meteorGeometry.attributes.position.needsUpdate = true;
         const nearPositions = nearStarGeometry.attributes.position.array;
         for (let i = 0; i < nearStarCount; i++) {
           const offset = i * 3;
@@ -589,10 +713,10 @@ function UniverseScene() {
     const stop = () => { if (raf) window.cancelAnimationFrame(raf); raf = 0; };
     const onMotionPreferenceChange = (event) => {
       reduced = event.matches;
-      if (pointerEnabled && reduced && pointerListening) {
+      if (reduced && pointerListening) {
         window.removeEventListener("pointermove", onPointer);
         pointerListening = false;
-      } else if (pointerEnabled && !reduced && !pointerListening) {
+      } else if (!reduced && !pointerListening) {
         window.addEventListener("pointermove", onPointer, { passive: true });
         pointerListening = true;
       }
