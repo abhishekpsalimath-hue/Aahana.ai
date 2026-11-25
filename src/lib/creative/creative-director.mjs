@@ -162,6 +162,63 @@ export function buildImageSeriesPrompt(prompt, series) {
   ].join("\n\n");
 }
 
+const VIDEO_CONTINUITY_FIELDS = Object.freeze({
+  subject: "Subject identity and defining visual traits",
+  setting: "Scene and environment",
+  wardrobe: "Wardrobe and appearance",
+  props: "Important props and their positions",
+  action: "Primary action and its direction",
+  camera: "Camera position and movement",
+  openingFrame: "Opening frame",
+  closingFrame: "Closing frame",
+  referenceNotes: "Reference-image preservation notes",
+});
+const MAX_CONTINUITY_FIELD_LENGTH = 180;
+
+const VIDEO_SHOT_TRANSITIONS = Object.freeze(["cut", "dissolve", "match-cut", "continuous"]);
+
+function buildVideoShotSequence(shots) {
+  if (!Array.isArray(shots) || shots.length < 1 || shots.length > 4) return null;
+  let totalDuration = 0;
+  const lines = [];
+  for (const [index, shot] of shots.entries()) {
+    if (!shot || typeof shot !== "object" || Array.isArray(shot)) return null;
+    if (Object.keys(shot).some((key) => !["duration", "action", "camera", "transition"].includes(key))) return null;
+    if (!Number.isInteger(shot.duration) || shot.duration < 1 || shot.duration > 15) return null;
+    if (typeof shot.action !== "string" || !shot.action.trim() || shot.action.length > 180) return null;
+    if (shot.camera !== undefined && (typeof shot.camera !== "string" || shot.camera.length > 120)) return null;
+    if (shot.transition !== undefined && !VIDEO_SHOT_TRANSITIONS.includes(shot.transition)) return null;
+    totalDuration += shot.duration;
+    if (totalDuration > 15) return null;
+    lines.push(`Shot ${index + 1} (${shot.duration}s): ${shot.action.trim()}${shot.camera?.trim() ? ` | Camera: ${shot.camera.trim()}` : ""}${shot.transition ? ` | Transition: ${shot.transition}` : ""}`);
+  }
+  return ["SHOT-BY-SHOT TIMELINE:", ...lines, "Respect the shot order and timing. Keep screen direction and subject position coherent across cuts; transitions must connect the preceding shot to the next rather than resetting the scene."].join("\n");
+}
+
+export function buildVideoContinuityPrompt(continuity) {
+  if (!continuity || typeof continuity !== "object" || Array.isArray(continuity)) return null;
+  const keys = Object.keys(continuity);
+  if (keys.some((key) => !Object.hasOwn(VIDEO_CONTINUITY_FIELDS, key) && key !== "shots")) return null;
+
+  const lines = [];
+  for (const [key, value] of Object.entries(continuity)) {
+    if (key === "shots") continue;
+    if (typeof value !== "string" || value.length > MAX_CONTINUITY_FIELD_LENGTH) return null;
+    const normalized = value.trim();
+    if (normalized) lines.push(`${VIDEO_CONTINUITY_FIELDS[key]}: ${normalized}`);
+  }
+  const shotSequence = continuity.shots === undefined ? "" : buildVideoShotSequence(continuity.shots);
+  if (continuity.shots !== undefined && shotSequence === null) return null;
+  if (lines.length === 0 && !shotSequence) return "";
+  return [
+    "Continuity plan: treat the following details as a single coherent scene across the entire clip.",
+    ...lines,
+    shotSequence,
+    "Keep subject identity, anatomy, scale, wardrobe, props, lighting direction, and spatial relationships stable from frame to frame. Make the stated action progress naturally; do not reset, teleport, duplicate, or redesign the subject. The closing frame should follow plausibly from the opening frame. Treat reference notes as preservation constraints, not permission to invent new details.",
+  ].filter(Boolean).join("\n");
+}
+
+
 export function buildVideoPrompt(prompt, director = "cinematic") {
   if (director === "none") return prompt;
   const direction = VIDEO_DIRECTIONS[director];
