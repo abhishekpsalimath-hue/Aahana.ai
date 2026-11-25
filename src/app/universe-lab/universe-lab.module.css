@@ -90,3 +90,32 @@
   .universe[data-motion="true"] .starObject,.universe[data-motion="true"] .nebulaObject,
   .universe[data-motion="true"] .darkMatterLens,.universe[data-motion="true"] .darkEnergyWave{animation:none}
 }
+
+
+/* Guided discovery layer */
+.detailCopy{min-width:0;max-width:520px}
+.fact{margin-top:10px!important;color:#c9b8e4!important;font-size:11px!important}
+.fact strong{display:block;margin-bottom:4px;color:#a98bd8;font-size:8px;letter-spacing:1.7px}
+.journeyControls{width:min(590px,100%);margin:12px auto 0;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.journeyControls span{color:#776d89;font-size:8px;letter-spacing:1.4px;text-align:center}
+.journeyControls button{border:1px solid #463858;border-radius:999px;background:#120e1b;color:#cdbbe9;padding:9px 13px;font-size:10px;cursor:pointer;transition:background .2s,border-color .2s,transform .2s}
+.journeyControls button:hover{background:#21182f;border-color:#a98bd8;transform:translateY(-1px)}
+.journeyControls button:focus-visible{outline:2px solid #e5d6ff;outline-offset:3px}
+.energyField{position:absolute;left:50%;top:50%;width:135px;height:135px;border:1px solid #ffd99a55;border-radius:50%;transform:translate(-50%,-50%);background:radial-gradient(circle,#fff0c933 0%,#ffc87516 26%,transparent 68%);box-shadow:0 0 38px #ffc87533,inset 0 0 28px #ffc87522}
+.energyField:before,.energyField:after{content:"";position:absolute;inset:20px -25px;border:1px solid #ffdb9a55;border-radius:50%;transform:rotate(36deg)}
+.energyField:after{transform:rotate(-36deg);border-color:#c3a7ff55}
+.orbitStage[data-world="matter-energy"] .energyField{filter:brightness(1.6) drop-shadow(0 0 20px #ffcf88)}
+.orbitStage[data-world="dark-matter"] .darkMatterLens,.orbitStage[data-world="dark-energy"] .darkEnergyWave,
+.orbitStage[data-world="space-time"] .spaceTimeGrid{filter:brightness(1.7) drop-shadow(0 0 14px #bda4ff)}
+.orbitStage[data-world="galaxies"] .sceneGalaxy,.orbitStage[data-world="stars"] .starObject,
+.orbitStage[data-world="planets"] .planet,.orbitStage[data-world="moons"] .planetMoon,
+.orbitStage[data-world="solar-systems"] .solarOrbit,.orbitStage[data-world="asteroids-comets"] .cometTrail,
+.orbitStage[data-world="black-holes"] .blackHole,.orbitStage[data-world="nebulae"] .nebulaObject{filter:brightness(1.45) drop-shadow(0 0 14px #c7a7ff88)}
+@media(max-width:600px){
+ .journeyControls{gap:6px}
+ .journeyControls button{padding:8px 10px;font-size:9px;white-space:nowrap}
+ .journeyControls span{font-size:7px;letter-spacing:.8px}
+ .fact{font-size:10px!important}
+ .energyField{width:100px;height:100px}
+}
+@media(prefers-reduced-motion:reduce){.journeyControls button{transition:none}}
