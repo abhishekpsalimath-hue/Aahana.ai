@@ -69,3 +69,19 @@ test("attaches verified chronological snapshot history to the video report",()=>
  assert.equal(report.video.snapshotHistory.transitions[0].averageStructuralScoreDelta,10);
  assert.equal(report.video.snapshotHistory.overallTrend,"improving-or-mixed");
 });
+
+test("includes same-benchmark model comparison in the creative report",()=>{
+ const make=(modelLabel,runAt,score)=>createBenchmarkSnapshot({
+  benchmark:"video-continuity-metadata-v1",benchmarkVersion:"v1",commitSha:runAt,modelLabel,runAt,
+  results:[
+   {caseId:"VID-001",category:"character",structuralScore:score,passed:true},
+   {caseId:"VID-002",category:"product",structuralScore:score-5,passed:true},
+  ],
+ });
+ const report=buildCreativeEvaluationReport({videoModelSnapshots:[
+  make("model-a","2026-11-25T10:00:00Z",90),
+  make("model-b","2026-11-25T11:00:00Z",85),
+ ]});
+ assert.equal(report.video.modelComparison.models.length,2);
+ assert.deepEqual(report.video.modelComparison.comparison.rankedByAverageStructuralScore,["model-a","model-b"]);
+});
