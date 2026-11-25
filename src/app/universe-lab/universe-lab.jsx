@@ -18,6 +18,21 @@ const worlds = [
   { id: "dark-energy", name: "Dark energy", note: "The name for the unknown cause of the universe's accelerated expansion.", fact: "Dark energy names the unknown cause of the observed acceleration of cosmic expansion.", guide: "Imagine distant galaxies separating faster over cosmic time; the cause of that accelerated expansion remains unknown.", experiment: "If the universe expands while galaxies move farther apart, what observations could help distinguish steady expansion from accelerated expansion?", color: "#88c9ff" },
 ];
 
+const companionQuestions = {
+  galaxies: ["How do spiral arms form and persist?", "How do astronomers map a galaxy we are inside?", "What evidence reveals a galaxy's central black hole?"],
+  stars: ["How does a star's mass determine its lifetime?", "What can a star's spectrum tell us?", "How are elements heavier than helium created?"],
+  planets: ["How can we detect an exoplanet without seeing it directly?", "What makes a planet potentially habitable?", "How do planetary atmospheres evolve?"],
+  moons: ["What evidence could reveal an ocean beneath ice?", "How do tidal forces heat a moon?", "Could a moon support conditions for life?"],
+  "solar-systems": ["Why do planets farther from a star usually take longer to orbit?", "How do astronomers discover unseen planets?", "What can orbital resonances reveal about a system?"],
+  "black-holes": ["What would an observer see near an event horizon?", "How does gravitational lensing reveal invisible mass?", "What happens to matter in an accretion disk?"],
+  nebulae: ["What triggers a cloud to collapse into a star?", "How do newborn stars reshape their nebula?", "What is the difference between an emission and reflection nebula?"],
+  "asteroids-comets": ["How are asteroid families formed?", "Why do comet tails point away from the Sun?", "What can meteorites tell us about the early solar system?"],
+  "space-time": ["Why does gravity affect the passage of time?", "How do gravitational waves carry information?", "What does it mean for space-time to be curved?"],
+  "matter-energy": ["How does fusion turn mass into radiant energy?", "Where does the energy in sunlight originate?", "How are mass and energy measured in modern physics?"],
+  "dark-matter": ["What observations support the dark-matter hypothesis?", "How does gravitational lensing map unseen mass?", "What experiments are trying to detect dark matter directly?"],
+  "dark-energy": ["How do astronomers measure cosmic expansion?", "What observations indicate expansion is accelerating?", "Why is the physical nature of dark energy still unknown?"],
+};
+
 function Starfield({ pointerRef, animate }) {
   const canvasRef = useRef(null);
 
@@ -111,6 +126,8 @@ export default function UniverseLab() {
   const [motion, setMotion] = useState(true);
   const [journeyStarted, setJourneyStarted] = useState(false);
   const [experimentOpen, setExperimentOpen] = useState(false);
+  const [companionQuestion, setCompanionQuestion] = useState("");
+  const [companionStatus, setCompanionStatus] = useState("");
   const [gravityMass, setGravityMass] = useState(5);
   const [gravityDistance, setGravityDistance] = useState(5);
   const [rayRun, setRayRun] = useState(0);
@@ -122,7 +139,18 @@ export default function UniverseLab() {
   const gravityBend = Math.min(70, (gravityMass * 13) / (gravityDistance * 0.55 + 0.4));
   const rayControlY = 22 + gravityBend * 1.4;
   const active = worlds.find((world) => world.id === selected) || worlds[0];
-  const choose = (id) => { setSelected(id); setJourneyStarted(true); setExperimentOpen(false); };
+  const choose = (id) => { setSelected(id); setJourneyStarted(true); setExperimentOpen(false); setCompanionQuestion(""); setCompanionStatus(""); };
+  const copyCompanionPrompt = async () => {
+    const question = companionQuestion.trim();
+    if (!question) return;
+    const prompt = `Aahana, guide me deeper into ${active.name}. Context: ${active.fact} Your field note: ${active.guide} My question: ${question} Please explain clearly, build from first principles, and suggest one small way to explore this idea further.`;
+    try {
+      await navigator.clipboard.writeText(prompt);
+      setCompanionStatus("Question copied. Paste it into Aahana's assistant to continue.");
+    } catch {
+      setCompanionStatus("Clipboard access is unavailable here. Select and copy the question manually.");
+    }
+  };
   const moveJourney = (direction) => {
     const index = worlds.findIndex((world) => world.id === selected);
     choose(worlds[(index + direction + worlds.length) % worlds.length].id);
@@ -197,6 +225,18 @@ export default function UniverseLab() {
         <div className={styles.detailCopy}><span className={styles.detailEyebrow}>NOW EXPLORING · {String(worlds.findIndex((world) => world.id === selected) + 1).padStart(2, "0")} / 12</span><h2>{active.name}</h2><p>{active.note}</p><p className={styles.fact}><strong>A COSMIC FACT</strong> {active.fact}</p><p className={styles.guide}><strong>AAHANA'S FIELD NOTE</strong> {active.guide}</p></div>
         <div className={styles.detailMark} style={{ "--world-color": active.color }} aria-hidden="true" />
       </section>
+      <section className={styles.companion} aria-label="Aahana exploration companion">
+        <div className={styles.companionTop}><div><span className={styles.detailEyebrow}>YOUR COSMIC COMPANION</span><h2>Where should curiosity take you?</h2><p>Choose a question and take this discovery into a deeper conversation with Aahana.</p></div><span className={styles.companionOrb} aria-hidden="true">✦</span></div>
+        <div className={styles.companionQuestions}>
+          {(companionQuestions[selected] || companionQuestions.galaxies).map((question) => <button type="button" key={question} className={companionQuestion === question ? styles.companionQuestionActive : ""} onClick={() => { setCompanionQuestion(question); setCompanionStatus(""); }} aria-pressed={companionQuestion === question}>{question}<span>↗</span></button>)}
+        </div>
+        <label className={styles.companionCustom}>Or write your own question
+          <textarea value={companionQuestion} maxLength={240} rows={2} onChange={(event) => { setCompanionQuestion(event.target.value); setCompanionStatus(""); }} placeholder={`What would you like to understand about ${active.name.toLowerCase()}?`} />
+        </label>
+        <div className={styles.companionActions}><span role="status" aria-live="polite">{companionStatus}</span><button type="button" onClick={copyCompanionPrompt} disabled={!companionQuestion.trim()}>Ask Aahana ↗</button></div>
+        <p className={styles.gravityCaution}>This prepares a context-rich question for the existing assistant. It does not send a message or change your conversation until you paste and send it.</p>
+      </section>
+
       <section className={styles.experiment} aria-label="Cosmic thought experiment">
         <div className={styles.experimentHeading}><span>THINK LIKE AN EXPLORER</span><button type="button" onClick={() => setExperimentOpen((value) => !value)} aria-expanded={experimentOpen}>{experimentOpen ? "Close experiment −" : "Try a thought experiment +"}</button></div>
         {experimentOpen && <div className={styles.experimentPrompt}><p>{active.experiment}</p><span>Take a moment to form your own explanation. There is more than one useful question to ask.</span></div>}
