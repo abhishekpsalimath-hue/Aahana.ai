@@ -7,7 +7,7 @@ export async function readBoundedImageGenerationJson(request, maxBytes = MAX_IMA
 
   const declaredLength = request.headers.get("content-length");
   if (declaredLength !== null) {
-    if (!/^\\d+$/.test(declaredLength)) {
+    if (!/^\d+$/.test(declaredLength)) {
       return { ok: false, status: 400, error: "Invalid request size." };
     }
     if (Number(declaredLength) > maxBytes) {
@@ -65,7 +65,7 @@ export async function readBoundedImageProviderJson(response, maxBytes = MAX_IMAG
   }
   const declaredLength = response.headers.get("content-length");
   if (declaredLength !== null) {
-    if (!/^\\d+$/.test(declaredLength) || Number(declaredLength) > maxBytes) {
+    if (!/^\d+$/.test(declaredLength) || Number(declaredLength) > maxBytes) {
       await response.body?.cancel("Provider response exceeds the allowed size.").catch(() => {});
       return { ok: false, error: "Provider response is too large or invalid." };
     }
