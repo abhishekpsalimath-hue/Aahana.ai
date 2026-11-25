@@ -1,4 +1,4 @@
-import { buildImagePrompt, IMAGE_QUALITY_PRESETS } from "./creative-director.mjs";
+import { buildImagePrompt, buildImageSeriesPrompt, IMAGE_QUALITY_PRESETS } from "./creative-director.mjs";
 export const MAX_IMAGE_PROMPT_LENGTH = 2048;
 export const SUPPORTED_IMAGE_STEPS = Object.freeze([4, 8]);
 export const IMAGE_ASPECT_RATIOS = Object.freeze({
@@ -58,7 +58,9 @@ export function parseImageGenerationInput(body) {
   }
 
   const qualityPrompt = buildImagePrompt(prompt, quality);
-  const styledPrompt = style === "none" ? qualityPrompt : `${qualityPrompt}\n\nArt direction: ${IMAGE_STYLE_PROMPTS[style]}`;
+  const seriesPrompt = buildImageSeriesPrompt(qualityPrompt, body?.series);
+  if (seriesPrompt === null) return { ok: false, error: "Check the image-series fields: use text up to 180 characters and a scene number from 1 to 12." };
+  const styledPrompt = style === "none" ? seriesPrompt : `${seriesPrompt}\n\nArt direction: ${IMAGE_STYLE_PROMPTS[style]}`;
   if (styledPrompt.length > MAX_IMAGE_PROMPT_LENGTH + 1400) {
     return { ok: false, error: "This prompt is too long for the selected style. Shorten it and try again." };
   }
