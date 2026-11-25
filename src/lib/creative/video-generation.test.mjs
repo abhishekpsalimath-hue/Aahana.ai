@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { parseVideoGenerationInput, validateVideoReferenceImage, MAX_VIDEO_REFERENCE_IMAGE_BYTES } from "./video-generation.mjs";
+import { parseVideoGenerationInput, validateVideoReferenceImage, hasCompletedVideoProviderResult, MAX_VIDEO_REFERENCE_IMAGE_BYTES } from "./video-generation.mjs";
 import { buildVideoContinuityPrompt } from "./creative-director.mjs";
 
 test("defaults to a five-second 480p widescreen video", () => {
@@ -119,4 +119,13 @@ test("rejects invalid continuity and plans that exceed the provider prompt limit
     prompt: "A".repeat(1800),
     continuity: { subject: "A stable subject", setting: "A detailed setting", action: "A carefully described action" },
   }).ok, false);
+});
+
+test("accepts only completed provider responses with a video URL", () => {
+  assert.equal(hasCompletedVideoProviderResult({ state: "Completed", result: { video: "https://examples.aig.cloudflare.com/video.mp4" } }), true);
+  assert.equal(hasCompletedVideoProviderResult({ state: "InProgress", result: { video: "https://examples.aig.cloudflare.com/video.mp4" } }), false);
+  assert.equal(hasCompletedVideoProviderResult({ state: "Failed", result: { video: "https://examples.aig.cloudflare.com/video.mp4" } }), false);
+  assert.equal(hasCompletedVideoProviderResult({ state: "Completed", result: {} }), false);
+  assert.equal(hasCompletedVideoProviderResult(null), false);
+  assert.equal(hasCompletedVideoProviderResult([]), false);
 });
