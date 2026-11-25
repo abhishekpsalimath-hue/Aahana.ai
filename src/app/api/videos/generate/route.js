@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { parseVideoGenerationInput, VIDEO_MODEL } from "@/lib/creative/video-generation.mjs";
+import { parseVideoGenerationInput, validateVideoReferenceImage, VIDEO_MODEL } from "@/lib/creative/video-generation.mjs";
 import { readBoundedRequestBody } from "@/lib/http/bounded-request-body.mjs";
 
 export const runtime = "nodejs";
@@ -74,7 +74,12 @@ export async function POST(request) {
     if (imageFile) {
       const extension = imageFile.type === "image/png" ? "png" : imageFile.type === "image/webp" ? "webp" : "jpg";
       temporaryObjectPath = `${user.id}/personal/video-input-${crypto.randomUUID()}.${extension}`;
-      const bytes = Buffer.from(await imageFile.arrayBuffer());
+      const bytes = new Uint8Array(await imageFile.arrayBuffer());
+      const validation = validateVideoReferenceImage({ bytes, imageType: imageFile.type, imageSize: imageFile.size });
+      if (!validation.ok) {
+        temporaryObjectPath = null;
+        return NextResponse.json({ error: validation.error }, { status: 400 });
+      }
       const { error: uploadError } = await supabase.storage.from("aahana-private").upload(
         temporaryObjectPath, bytes, { contentType: imageFile.type, upsert: false }
       );
