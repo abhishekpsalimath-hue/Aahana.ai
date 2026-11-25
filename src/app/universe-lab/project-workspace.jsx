@@ -4,6 +4,14 @@ import { useMemo, useState } from "react";
 import styles from "./universe-lab.module.css";
 import ProjectMilestones from "./project-milestones";
 
+const DEFAULT_MILESTONES = [
+  { id: "scope", title: "Confirm project scope", dueDate: "", status: "planned" },
+  { id: "evidence", title: "Gather and assess evidence", dueDate: "", status: "planned" },
+  { id: "draft", title: "Complete first draft", dueDate: "", status: "planned" },
+  { id: "review", title: "Review and refine", dueDate: "", status: "planned" },
+  { id: "deliver", title: "Prepare final deliverable", dueDate: "", status: "planned" },
+];
+
 export default function ProjectWorkspace({ worlds, title }) {
   const initial = worlds.map((world, index) => ({
     id: world.id,
@@ -14,6 +22,7 @@ export default function ProjectWorkspace({ worlds, title }) {
     sources: [],
   }));
   const [chapters, setChapters] = useState(initial);
+  const [milestones, setMilestones] = useState(DEFAULT_MILESTONES);
   const [drafts, setDrafts] = useState({});
   const [status, setStatus] = useState("Edit the chapter plan, track progress and attach references you have personally checked.");
   const summary = useMemo(() => ({
@@ -53,7 +62,7 @@ export default function ProjectWorkspace({ worlds, title }) {
     catch { setStatus("Clipboard unavailable. Use Save project file to keep a portable copy."); }
   };
   const saveProjectFile = () => {
-    const payload = { schema: "aahana-universe-project", version: 1, title, exportedAt: new Date().toISOString(), chapters };
+    const payload = { schema: "aahana-universe-project", version: 1, title, exportedAt: new Date().toISOString(), chapters, milestones };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
@@ -93,7 +102,11 @@ export default function ProjectWorkspace({ worlds, title }) {
       });
       const restoredIds = new Set(restored.map((chapter) => chapter.id));
       if (restored.some((chapter) => chapter.dependencyIds.some((id) => !restoredIds.has(id)))) throw new Error("A dependency points to a discovery that is not included in this project.");
+      const restoredMilestones = payload.milestones === undefined ? DEFAULT_MILESTONES : payload.milestones;
+      if (!Array.isArray(restoredMilestones) || restoredMilestones.length > 30 || restoredMilestones.some((item) => !item || typeof item.id !== "string" || typeof item.title !== "string" || item.title.length > 100 || typeof item.dueDate !== "string" || (item.dueDate && !/^\d{4}-\d{2}-\d{2}$/.test(item.dueDate)) || !["planned", "in-progress", "done"].includes(item.status))) throw new Error("The project contains invalid milestone data.");
+      if (new Set(restoredMilestones.map((item) => item.id)).size !== restoredMilestones.length) throw new Error("The project contains duplicate milestone identifiers.");
       setChapters(restored);
+      setMilestones(restoredMilestones);
       setDrafts({});
       setStatus("Project restored from your file. Review the imported chapters and references before relying on them.");
     } catch (error) {
@@ -109,7 +122,7 @@ export default function ProjectWorkspace({ worlds, title }) {
         <label className={styles.projectImportButton}>Restore JSON ↑<input type="file" accept="application/json,.json" onChange={restoreProjectFile} /></label>
       </div>
     </div>
-    <ProjectMilestones />
+    <ProjectMilestones milestones={milestones} setMilestones={setMilestones} />
     <div className={styles.projectWorkspaceSummary}><span>{summary.reviewed} reviewed</span><span>{summary.drafted} drafted</span><span>{summary.sources} references attached</span></div>
     <div className={styles.projectWorkspaceChapters}>
       {chapters.map((chapter, index) => {
