@@ -90,6 +90,11 @@ test("rejects empty input, missing identifiers and invalid scores", () => {
   assert.throws(() => summarizeImageBenchmark([result({ visualCoherence: NaN })]), /visualCoherence/);
 });
 
+test("rejects unknown case IDs and category mismatches against the synthetic case catalog", () => {
+  assert.throws(() => summarizeImageBenchmark([result({ caseId: "IMG-999" })]), /unknown benchmark case/);
+  assert.throws(() => summarizeImageBenchmark([result({ caseId: "IMG-001", category: "product" })]), /category does not match/);
+});
+
 test("rejects duplicate model and case pairs and malformed optional metrics", () => {
   assert.throws(() => summarizeImageBenchmark([result(), result()]), /Duplicate result/);
   assert.throws(() => summarizeImageBenchmark([result({ latencySeconds: -1 })]), /latencySeconds/);
