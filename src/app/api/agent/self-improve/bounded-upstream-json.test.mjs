@@ -41,6 +41,11 @@ test("rejects malformed JSON and non-object JSON", async () => {
   await assert.rejects(readBoundedUpstreamJson(scalar.response), { code: "INVALID_SHAPE" });
 });
 
+test("accepts a valid numeric content length", async () => {
+  const { response } = responseFromChunks(["{}"], { "content-length": "2" });
+  assert.deepEqual(await readBoundedUpstreamJson(response, 2), {});
+});
+
 test("rejects invalid content lengths and invalid limits", async () => {
   const invalidLength = responseFromChunks(["{}"], { "content-length": "1x" });
   await assert.rejects(readBoundedUpstreamJson(invalidLength.response), { code: "INVALID_LENGTH" });
