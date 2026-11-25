@@ -15,6 +15,7 @@ on:
       - fix/build-preview-oidc-runtime-detection
     paths:
       - "src/app/experience-lab/**"
+      - "src/app/universe-lab/**"
       - "src/app/api/build/**"
       - "src/app/api/chat/**"
       - "src/app/api/files/**"
@@ -30,6 +31,7 @@ on:
   push:
     branches:
       - feat/interactive-experience-lab
+      - feat/immersive-universe-experience
       - feat/aahana-contextual-interaction-cards
       - feat/experience-lab-live-assistant
       - feat/experience-lab-build-workspace
