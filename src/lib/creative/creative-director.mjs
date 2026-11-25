@@ -58,6 +58,40 @@ export function buildImageEditPrompt(referencePrompt, editPrompt) {
   return buildImagePrompt(brief, "masterpiece");
 }
 
+
+
+const VIDEO_CONTINUITY_FIELDS = Object.freeze({
+  subject: "Subject identity and defining visual traits",
+  setting: "Scene and environment",
+  wardrobe: "Wardrobe and appearance",
+  props: "Important props and their positions",
+  action: "Primary action and its direction",
+  camera: "Camera position and movement",
+  openingFrame: "Opening frame",
+  closingFrame: "Closing frame",
+  referenceNotes: "Reference-image preservation notes",
+});
+const MAX_CONTINUITY_FIELD_LENGTH = 180;
+
+export function buildVideoContinuityPrompt(continuity) {
+  if (!continuity || typeof continuity !== "object" || Array.isArray(continuity)) return null;
+  const keys = Object.keys(continuity);
+  if (keys.some((key) => !Object.hasOwn(VIDEO_CONTINUITY_FIELDS, key))) return null;
+
+  const lines = [];
+  for (const [key, value] of Object.entries(continuity)) {
+    if (typeof value !== "string" || value.length > MAX_CONTINUITY_FIELD_LENGTH) return null;
+    const normalized = value.trim();
+    if (normalized) lines.push(`${VIDEO_CONTINUITY_FIELDS[key]}: ${normalized}`);
+  }
+  if (lines.length === 0) return "";
+  return [
+    "Continuity plan: treat the following details as a single coherent scene across the entire clip.",
+    ...lines,
+    "Keep subject identity, anatomy, scale, wardrobe, props, lighting direction, and spatial relationships stable from frame to frame. Make the stated action progress naturally; do not reset, teleport, duplicate, or redesign the subject. The closing frame should follow plausibly from the opening frame. Treat reference notes as preservation constraints, not permission to invent new details.",
+  ].join("\\n");
+}
+
 export function buildVideoPrompt(prompt, director = "cinematic") {
   if (director === "none") return prompt;
   const direction = VIDEO_DIRECTIONS[director];
