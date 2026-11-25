@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { parseVideoGenerationInput, VIDEO_MODEL } from "@/lib/creative/video-generation.mjs";
+import { readBoundedRequestBody } from "@/lib/http/bounded-request-body.mjs";
 
 export const runtime = "nodejs";
 export const maxDuration = 180;
 
 const ALLOWED_IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
 const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
+const MAX_VIDEO_REQUEST_BYTES = MAX_IMAGE_BYTES + 128 * 1024;
 
 export async function POST(request) {
   const supabase = await createClient();
@@ -26,15 +28,28 @@ export async function POST(request) {
     return NextResponse.json({ error: "The video provider is not configured in private server settings." }, { status: 503 });
   }
 
+  const contentType = request.headers.get("content-type") || "";
+  if (!/^multipart\\/form-data;\\s*boundary=(?:"[^"]+"|[^;]+)$/i.test(contentType)) {
+    return NextResponse.json({ error: "Invalid video request." }, { status: 400 });
+  }
+  const boundedBody = await readBoundedRequestBody(request, MAX_VIDEO_REQUEST_BYTES);
+  if (!boundedBody.ok) {
+    return NextResponse.json(
+      { error: boundedBody.reason === "too-large" ? "The video request exceeds the 2 MB image-upload limit." : "Invalid video request." },
+      { status: boundedBody.reason === "too-large" ? 413 : 400 }
+    );
+  }
+
   let input;
   let imageFile = null;
   try {
-    const form = await request.formData();
+    const form = await new Response(boundedBody.bytes, { headers: { "content-type": contentType } }).formData();
     input = parseVideoGenerationInput({
       prompt: form.get("prompt"),
       duration: Number(form.get("duration")),
       aspectRatio: form.get("aspectRatio"),
       resolution: form.get("resolution"),
+      director: form.get("director") ?? undefined,
     });
     imageFile = form.get("image");
   } catch {
