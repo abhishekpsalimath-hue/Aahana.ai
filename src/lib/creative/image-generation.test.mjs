@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { parseImageGenerationInput, parseImageEditInput, MAX_IMAGE_EDIT_BYTES, MAX_IMAGE_EDIT_PROMPT_LENGTH, getReferenceImageDimensions, isReferenceImageWithinProviderBounds, inferImageAspectRatio, getGeneratedImageFileMetadata } from "./image-generation.mjs";
-import { buildImageEditPrompt } from "./creative-director.mjs";
+import { buildImageEditPrompt, buildImageSeriesPrompt } from "./creative-director.mjs";
 
 test("defaults to automatic masterpiece image direction without asking the user to choose settings", () => {
   assert.deepEqual(parseImageGenerationInput({ prompt: "A moonlit forest" }), {
@@ -184,4 +184,39 @@ test("image edit prompt builder rejects an empty refinement and bounds copied so
   assert.ok(prompt.length < 3000);
   assert.match(prompt, /x{1200}/);
   assert.doesNotMatch(prompt, /x{1201}/);
+});
+
+
+test("image series compiler locks subject, wardrobe, palette and style across scenes", () => {
+  const result = parseImageGenerationInput({
+    prompt: "Show the character discovering an ancient observatory",
+    series: {
+      subject: "Mira, short silver hair, green eyes, small star-shaped scar",
+      wardrobe: "Same navy flight jacket with copper fasteners",
+      palette: "Midnight navy, copper, muted teal",
+      style: "Painterly cinematic 3D with soft atmospheric lighting",
+      scene: "Mira enters the observatory and looks toward the telescope",
+      sceneNumber: 3,
+    },
+  });
+  assert.equal(result.ok, true);
+  assert.match(result.prompt, /IMAGE SERIES CONTINUITY/);
+  assert.match(result.prompt, /LOCKED SUBJECT IDENTITY: Mira/);
+  assert.match(result.prompt, /LOCKED WARDROBE AND DISTINCTIVE FEATURES: Same navy flight jacket/);
+  assert.match(result.prompt, /SCENE NUMBER: 3 of 12/);
+  assert.match(result.prompt, /Change only what the CURRENT SCENE/);
+});
+
+test("image series compiler leaves ordinary image requests unchanged", () => {
+  const prompt = "A lighthouse at sunset";
+  assert.equal(buildImageSeriesPrompt(prompt, undefined), prompt);
+  assert.equal(buildImageSeriesPrompt(prompt, {}), prompt);
+});
+
+test("image series compiler rejects unknown fields, invalid scene numbers and oversized values", () => {
+  assert.equal(buildImageSeriesPrompt("A scene", { surprise: "extra" }), null);
+  assert.equal(buildImageSeriesPrompt("A scene", { sceneNumber: 0 }), null);
+  assert.equal(buildImageSeriesPrompt("A scene", { sceneNumber: 13 }), null);
+  assert.equal(buildImageSeriesPrompt("A scene", { subject: "x".repeat(181) }), null);
+  assert.equal(parseImageGenerationInput({ prompt: "A scene", series: { sceneNumber: "3" } }).ok, false);
 });
