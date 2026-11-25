@@ -1,0 +1,38 @@
+.universe{--lilac:#cbb3ff;position:relative;isolation:isolate;min-height:100svh;overflow:hidden;background:#07060d;color:#f5f0ff;padding:0 clamp(20px,5vw,76px) 24px;font-family:var(--font-sans,"DM Sans",Arial,sans-serif)}
+.starfield,.nebula{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:-2}
+.nebula{z-index:-1;background:radial-gradient(ellipse at 48% 43%,#38214c88 0%,transparent 39%),radial-gradient(ellipse at 78% 57%,#202b5380 0%,transparent 32%),radial-gradient(ellipse at 18% 70%,#4b214555 0%,transparent 34%);filter:blur(22px)}
+.header{height:76px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #ffffff14}
+.brand{color:#fff;text-decoration:none;font-size:20px;font-weight:800;letter-spacing:-1px}.brand span{color:var(--lilac)}
+.headerRight,.kicker,.detailEyebrow{font-size:9px;letter-spacing:2px;color:#a69ab9}
+.liveDot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#bca0ff;box-shadow:0 0 14px #bca0ff;margin-right:9px}
+.hero{width:min(680px,100%);margin:clamp(44px,7vh,82px) auto 0;text-align:center}
+.kicker{color:#c5aaff}
+.hero h1{font-size:clamp(42px,7vw,76px);line-height:1.02;letter-spacing:-.065em;margin:18px 0 16px;font-weight:600}
+.hero h1 em{font-style:normal;color:#c9adff;text-shadow:0 0 36px #a77bff44}
+.intro{max-width:510px;margin:0 auto;color:#a8a0b7;font-size:14px;line-height:1.8}
+.orbitStage{position:relative;width:min(760px,100%);height:clamp(300px,43vw,480px);margin:12px auto 0;perspective:900px}
+.halo{position:absolute;width:66%;height:58%;left:17%;top:22%;border:1px solid #c5aaff24;border-radius:50%;transform:rotate(-17deg);box-shadow:0 0 70px #8b61d51c,inset 0 0 50px #8b61d511}
+.galaxy{position:absolute;left:50%;top:48%;width:210px;height:130px;transform:translate(-50%,-50%) rotate(-23deg);border-radius:50%;background:radial-gradient(ellipse,#fff 0%,#e9d5ff 2%,#b58cff 8%,#8b5acb44 23%,#603b9240 44%,transparent 70%);filter:drop-shadow(0 0 32px #a875ff88)}
+.galaxy i{position:absolute;inset:15% -12%;border:2px solid #c7a6ff36;border-radius:50%;transform:rotate(18deg) scaleY(.38)}
+.galaxy i:nth-child(2){transform:rotate(-32deg) scaleY(.3);border-color:#8ca9ff36}
+.galaxy i:nth-child(3){transform:rotate(68deg) scaleY(.22);border-color:#f0baff2a}
+.planet{position:absolute;border-radius:50%;box-shadow:inset -12px -9px 18px #08071199,0 0 35px #8c70ff33}
+.planetOne{width:58px;height:58px;left:22%;top:24%;background:radial-gradient(circle at 32% 28%,#f4d7ff,#b17ad5 40%,#47315e 75%)}
+.planetTwo{width:34px;height:34px;right:21%;bottom:24%;background:radial-gradient(circle at 30% 25%,#d4e7ff,#6e91c9 46%,#29324d 78%)}
+.blackHole{position:absolute;left:70%;top:25%;width:64px;height:64px;border-radius:50%;background:#030207;box-shadow:0 0 0 5px #ad8aff33,0 0 28px 9px #b48cff66}
+.blackHole i{position:absolute;left:-23px;top:19px;width:110px;height:25px;border:4px solid #d6b7ffb5;border-left-color:#7c5ac9;border-right-color:#e2caff;border-radius:50%;transform:rotate(-22deg);filter:blur(.5px)}
+.world{position:absolute;border:1px solid #ffffff22;border-radius:999px;background:#0e0b18c9;color:#c9bfd9;padding:8px 12px;font-size:11px;backdrop-filter:blur(8px);transition:transform .2s,border-color .2s,color .2s,box-shadow .2s}
+.world:hover,.world:focus-visible,.chosen{border-color:#c6a9ff;color:#fff;box-shadow:0 0 22px #a77bff38;outline:none}
+.worldGalaxy{left:7%;top:49%}.worldStar{left:31%;top:8%}.worldPlanet{right:8%;top:48%}.worldHole{right:9%;top:8%}.worldNebula{left:11%;bottom:15%}.worldComet{right:20%;bottom:9%}.worldEnergy{left:43%;bottom:1%}
+.detail{width:min(590px,100%);margin:-4px auto 0;border-top:1px solid #ffffff19;border-bottom:1px solid #ffffff19;padding:18px 4px;display:flex;align-items:center;justify-content:space-between;gap:20px}
+.detailEyebrow{font-size:8px;color:#a995c5}
+.detail h2{margin:5px 0 4px;font-size:19px;font-weight:600;letter-spacing:-.5px}
+.detail p{margin:0;color:#a49bb2;font-size:12px;line-height:1.6}
+.detailMark{flex:0 0 26px;width:26px;height:26px;border-radius:50%;background:var(--world-color);box-shadow:0 0 28px var(--world-color);opacity:.9}
+.worldList{width:min(700px,100%);display:flex;justify-content:center;flex-wrap:wrap;gap:7px;margin:18px auto}
+.worldList button{border:1px solid transparent;border-radius:999px;background:transparent;color:#938ba1;padding:7px 11px;font-size:10px}
+.worldList button:hover,.worldList .activeWorld{border-color:#6e598b;background:#21192e;color:#e7d9ff}
+.footer{max-width:900px;margin:22px auto 0;padding-top:14px;border-top:1px solid #ffffff10;display:flex;align-items:center;justify-content:space-between;gap:15px;color:#766e82;font-size:8px;letter-spacing:1.4px}
+.footer button{border:1px solid #40344f;border-radius:999px;background:#14101d;color:#b8a9d0;padding:7px 10px;font-size:10px;letter-spacing:0}
+@media(max-width:600px){.header{height:62px}.headerRight{font-size:7px;letter-spacing:1.2px}.hero{margin-top:54px}.intro{font-size:13px}.orbitStage{height:320px;margin-top:18px}.galaxy{width:155px;height:100px}.planetOne{left:15%;top:26%;width:43px;height:43px}.planetTwo{right:14%;bottom:23%;width:28px;height:28px}.blackHole{left:68%;top:25%;width:47px;height:47px}.blackHole i{width:84px;left:-19px;top:13px}.world{font-size:9px;padding:7px 9px}.worldGalaxy{left:0;top:50%}.worldPlanet{right:0;top:48%}.worldHole{right:0;top:7%}.worldStar{left:29%;top:4%}.worldNebula{left:0;bottom:12%}.worldComet{right:7%;bottom:8%}.worldEnergy{left:37%;bottom:0}.detail{margin-top:0}.footer{font-size:7px;letter-spacing:.8px}.footer button{white-space:nowrap}}
+@media(prefers-reduced-motion:reduce){.world{transition:none}}
