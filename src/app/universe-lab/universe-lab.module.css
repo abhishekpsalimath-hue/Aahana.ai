@@ -314,3 +314,5 @@
 .knowledgeActions button:disabled{opacity:.4;cursor:not-allowed}
 .knowledgeActions button:focus-visible{outline:2px solid #e8dfff;outline-offset:3px}
 @media(max-width:600px){.knowledgeProject{padding:15px 12px}.knowledgePickerTop{align-items:flex-start;flex-direction:column}.knowledgePickerTop span:last-child{text-align:left}.knowledgeActions{align-items:stretch;flex-direction:column}.knowledgeActions button{width:100%;min-height:45px}.knowledgeChips button{min-height:39px}}
+
+.knowledgeChips button:disabled{opacity:.38;cursor:not-allowed}
