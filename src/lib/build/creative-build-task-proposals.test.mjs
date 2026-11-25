@@ -74,3 +74,15 @@ test("verifies immutable task identity and rejects client-tampered evidence, pat
     ...task, approval: { required: true, status: "approved" },
   }), false);
 });
+
+
+test("bounds proposal text and evidence payloads before creating review tasks", () => {
+  const oversizedTitle = { proposalCount: 1, proposals: [{ ...report.proposals[0], title: "x".repeat(161) }] };
+  const oversizedAction = { proposalCount: 1, proposals: [{ ...report.proposals[0], action: "x".repeat(1001) }] };
+  const oversizedEvidence = { proposalCount: 1, proposals: [{ ...report.proposals[0], evidence: { notes: "x".repeat(8192) } }] };
+  const invalidSource = { proposalCount: 1, proposals: [{ ...report.proposals[0], source: " " }] };
+  assert.throws(() => createCreativeBuildTaskProposals({ improvementReport: oversizedTitle }), /malformed proposal/);
+  assert.throws(() => createCreativeBuildTaskProposals({ improvementReport: oversizedAction }), /malformed proposal/);
+  assert.throws(() => createCreativeBuildTaskProposals({ improvementReport: oversizedEvidence }), /8 KB task limit/);
+  assert.throws(() => createCreativeBuildTaskProposals({ improvementReport: invalidSource }), /non-empty label/);
+});
