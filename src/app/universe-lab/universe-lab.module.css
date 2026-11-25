@@ -36,3 +36,12 @@
 .footer button{border:1px solid #40344f;border-radius:999px;background:#14101d;color:#b8a9d0;padding:7px 10px;font-size:10px;letter-spacing:0}
 @media(max-width:600px){.header{height:62px}.headerRight{font-size:7px;letter-spacing:1.2px}.hero{margin-top:54px}.intro{font-size:13px}.orbitStage{height:320px;margin-top:18px}.galaxy{width:155px;height:100px}.planetOne{left:15%;top:26%;width:43px;height:43px}.planetTwo{right:14%;bottom:23%;width:28px;height:28px}.blackHole{left:68%;top:25%;width:47px;height:47px}.blackHole i{width:84px;left:-19px;top:13px}.world{font-size:9px;padding:7px 9px}.worldGalaxy{left:0;top:50%}.worldPlanet{right:0;top:48%}.worldHole{right:0;top:7%}.worldStar{left:29%;top:4%}.worldNebula{left:0;bottom:12%}.worldComet{right:7%;bottom:8%}.worldEnergy{left:37%;bottom:0}.detail{margin-top:0}.footer{font-size:7px;letter-spacing:.8px}.footer button{white-space:nowrap}}
 @media(prefers-reduced-motion:reduce){.world{transition:none}}
+
+.universe[data-motion="true"] .galaxy{animation:galaxy-drift 22s ease-in-out infinite alternate}
+.universe[data-motion="true"] .planetOne{animation:planet-float 13s ease-in-out infinite alternate}
+.universe[data-motion="true"] .planetTwo{animation:planet-float 17s ease-in-out infinite alternate-reverse}
+.universe[data-motion="true"] .blackHole{animation:hole-pulse 8s ease-in-out infinite}
+@keyframes galaxy-drift{from{transform:translate(-50%,-50%) rotate(-23deg) scale(.96)}to{transform:translate(-50%,-50%) rotate(-15deg) scale(1.05)}}
+@keyframes planet-float{from{translate:0 0}to{translate:0 -14px}}
+@keyframes hole-pulse{0%,100%{box-shadow:0 0 0 5px #ad8aff33,0 0 28px 9px #b48cff55}50%{box-shadow:0 0 0 8px #ad8aff22,0 0 42px 14px #b48cff88}}
+@media(prefers-reduced-motion:reduce){.universe[data-motion="true"] .galaxy,.universe[data-motion="true"] .planetOne,.universe[data-motion="true"] .planetTwo,.universe[data-motion="true"] .blackHole{animation:none}}
