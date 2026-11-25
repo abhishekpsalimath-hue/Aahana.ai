@@ -87,6 +87,21 @@ test("builds a coherent scene plan from bounded continuity fields", () => {
   assert.match(plan, /do not reset, teleport, duplicate, or redesign/);
 });
 
+test("compiles multi-shot camera framing and screen-direction continuity", () => {
+  const plan = buildVideoContinuityPrompt({
+    subject: "A cyclist in a yellow jacket",
+    shots: [
+      { duration: 4, action: "Cycles from left to right along the road", camera: "Side tracking shot", framing: "Wide establishing frame", screenDirection: "Left to right", transition: "cut" },
+      { duration: 5, action: "Continues forward and slows near the crossing", camera: "Tracking camera eases to a medium shot", framing: "Medium profile", screenDirection: "Left to right", transition: "match-cut" },
+    ],
+  });
+  assert.match(plan, /Framing: Wide establishing frame/);
+  assert.match(plan, /Screen direction: Left to right/);
+  assert.match(plan, /axis of action, subject eyeline, geography, and camera side/);
+  assert.equal(buildVideoContinuityPrompt({ shots: [{ duration: 4, action: "Moves", screenDirection: "x".repeat(81) }] }), null);
+  assert.equal(buildVideoContinuityPrompt({ shots: [{ duration: 4, action: "Moves", framing: "x".repeat(81) }] }), null);
+});
+
 test("rejects malformed, unknown, and overlong continuity fields", () => {
   assert.equal(buildVideoContinuityPrompt(null), null);
   assert.equal(buildVideoContinuityPrompt([]), null);
