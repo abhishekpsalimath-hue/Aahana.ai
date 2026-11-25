@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getSourceFileMimeType, isSupportedSourceFile } from "@/lib/build/source-file-policy.mjs";
 import { isImageGenerationRequest, isImageEditRequest, isVideoGenerationRequest } from "@/lib/creative/creative-intent.mjs";
+import { getGeneratedImageFileMetadata } from "@/lib/creative/image-generation.mjs";
 
 const modes = [
   { id: "solve", label: "Solve", hint: "Work through a problem" },
@@ -1222,9 +1223,9 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     try {
       const response = await fetch(generatedImage.dataUrl);
       const blob = await response.blob();
-      const mimeType = generatedImage.dataUrl.match(/^data:(image\/(?:jpeg|png|webp));base64,/i)?.[1]?.toLowerCase();
-      const extension = mimeType === "image/png" ? "png" : mimeType === "image/webp" ? "webp" : mimeType === "image/jpeg" ? "jpg" : null;
-      if (!mimeType || !extension || blob.type !== mimeType) throw new Error("The generated image format could not be verified.");
+      const metadata = getGeneratedImageFileMetadata(generatedImage.dataUrl, blob.type);
+      if (!metadata) throw new Error("The generated image format could not be verified.");
+      const { mimeType, extension } = metadata;
       const file = new File([blob], "aahana-image-" + Date.now() + "." + extension, { type: mimeType });
       const supabase = createClient();
       const { data: { user }, error: authError } = await supabase.auth.getUser();
