@@ -1,0 +1,54 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { createCreativeBuildTaskProposals, validateCreativeBuildTargetPath } from "./creative-build-task-proposals.mjs";
+
+const report = {
+  proposalCount: 2,
+  proposals: [
+    { id: "image-subjectFidelity", source: "human-review", priority: "high", title: "Improve image subject fidelity", action: "Review samples and refine constraints.", evidence: { averageScore: 2.1, reviewCount: 4 } },
+    { id: "video-regression-follow-up", source: "benchmark-regression", priority: "high", title: "Investigate video regression", action: "Inspect regressed cases and rerun the benchmark.", evidence: { regressions: 2, caseCount: 3 } },
+  ],
+};
+
+test("creates stable, traceable, owner-gated draft tasks from evidence-backed proposals", () => {
+  const options = { improvementReport: report, targetPathsByProposal: {
+    "image-subjectFidelity": ["src/lib/creative/creative-director.mjs"],
+    "video-regression-follow-up": ["src/lib/creative/benchmark-regression.mjs", "src/lib/creative/benchmark-regression.test.mjs"],
+  } };
+  const first = createCreativeBuildTaskProposals(options);
+  const second = createCreativeBuildTaskProposals(options);
+  assert.deepEqual(first, second);
+  assert.equal(first.taskCount, 2);
+  assert.match(first.tasks[0].taskId, /^creative-task-[a-f0-9]{20}$/);
+  assert.equal(first.tasks[0].status, "awaiting-owner-review");
+  assert.equal(first.tasks[0].approval.status, "pending");
+  assert.equal(first.tasks[0].execution.writesAllowed, false);
+  assert.equal(first.tasks[0].execution.automaticAcceptance, false);
+  assert.equal(first.tasks[0].execution.mergeAllowed, false);
+  assert.equal(first.tasks[0].execution.deploymentAllowed, false);
+  assert.deepEqual(first.tasks[0].sourceEvidence.evidence, { averageScore: 2.1, reviewCount: 4 });
+});
+
+test("permits only creative and build-internals source files", () => {
+  assert.equal(validateCreativeBuildTargetPath("src/lib/creative/review.mjs"), "src/lib/creative/review.mjs");
+  assert.equal(validateCreativeBuildTargetPath("src/lib/build/task.test.mjs"), "src/lib/build/task.test.mjs");
+  for (const path of [
+    "src/app/auth/page.jsx",
+    "src/app/student-mode/page.jsx",
+    "src/lib/supabase/server.js",
+    "supabase/migrations/next.sql",
+    ".github/workflows/deploy.yml",
+    "package.json",
+    "src/lib/creative/../../app/page.jsx",
+    "src/lib/creative/.env.local",
+  ]) assert.throws(() => validateCreativeBuildTargetPath(path));
+});
+
+test("rejects malformed, duplicate, excessive and unapproved task assignments", () => {
+  assert.throws(() => createCreativeBuildTaskProposals({ improvementReport: { proposalCount: 1, proposals: [] } }), /valid creative improvement report/);
+  assert.throws(() => createCreativeBuildTaskProposals({ improvementReport: { proposalCount: 51, proposals: Array.from({ length: 51 }, (_, i) => ({ ...report.proposals[0], id: "proposal-" + i })) } }), /limit/);
+  assert.throws(() => createCreativeBuildTaskProposals({ improvementReport: report, targetPathsByProposal: { "image-subjectFidelity": ["src/app/student-mode/page.jsx"] } }), /outside the approved/);
+  const duplicate = { proposalCount: 2, proposals: [report.proposals[0], report.proposals[0]] };
+  assert.throws(() => createCreativeBuildTaskProposals({ improvementReport: duplicate }), /unique/);
+  assert.throws(() => createCreativeBuildTaskProposals({ improvementReport: report, targetPathsByProposal: { "image-subjectFidelity": ["src/lib/creative/a.mjs", "src/lib/creative/a.mjs"] } }), /unique/);
+});
