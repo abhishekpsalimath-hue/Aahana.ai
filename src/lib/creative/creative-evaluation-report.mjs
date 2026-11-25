@@ -7,6 +7,7 @@ import { createBenchmarkSnapshot } from "./benchmark-snapshot.mjs";
 import { analyzeBenchmarkHistory } from "./benchmark-history.mjs";
 import { compareBenchmarkModels } from "./benchmark-model-comparison.mjs";
 import { buildCreativeImprovementProposals } from "./creative-improvement-proposals.mjs";
+import { createCreativeBuildTaskProposals } from "../build/creative-build-task-proposals.mjs";
 
 /**
  * Unified envelope for independent evidence streams. Image and video metrics
@@ -21,6 +22,7 @@ export function buildCreativeEvaluationReport({
   snapshotProvenance=null,
   videoSnapshotHistory=[],
   videoModelSnapshots=[],
+  buildTaskTargetPaths={},
 }={}) {
   if (!Array.isArray(imageReviews) || !Array.isArray(videoReviews) || !Array.isArray(imageBenchmarkResults) || !Array.isArray(videoContinuityPlans) || !Array.isArray(videoSnapshotHistory) || !Array.isArray(videoModelSnapshots)) {
     throw new TypeError("Creative evaluation inputs must be arrays.");
@@ -38,6 +40,7 @@ export function buildCreativeEvaluationReport({
   const imageHumanReviews=imageReviews.length ? summarizeImageSampleReviews(imageReviews) : [];
   const videoHumanReviews=videoReviews.length ? summarizeVideoSampleReviews(videoReviews) : [];
   const improvementProposals=buildCreativeImprovementProposals({imageReviews,videoReviews,videoRegression:regression,videoSnapshotHistory:snapshotHistory,videoModelComparison:modelComparison});
+  const buildTaskProposals=createCreativeBuildTaskProposals({improvementReport:improvementProposals,targetPathsByProposal:buildTaskTargetPaths});
   const snapshot=snapshotProvenance ? createBenchmarkSnapshot({
     ...snapshotProvenance,
     benchmark:structuralPreflight.benchmark,
@@ -51,6 +54,7 @@ export function buildCreativeEvaluationReport({
       promptBenchmark:imageBenchmarkResults.length ? summarizeImageBenchmark(imageBenchmarkResults) : [],
     },
     improvementProposals,
+    buildTaskProposals,
     video:{
       humanShotReviews:videoHumanReviews,
       structuralPreflight,
