@@ -26,7 +26,7 @@ export function validateVideoSampleReviews(reviews) {
     throw new TypeError("Provide at least two shot reviews for a video sequence.");
   }
   const seen = new Set();
-  return reviews.map((raw, index) => {
+  const validated = reviews.map((raw, index) => {
     const prefix = `Video review ${index + 1}`;
     if (!raw || typeof raw !== "object" || Array.isArray(raw)) throw new TypeError(`${prefix} must be an object.`);
     const seriesId = label(raw.seriesId, "seriesId", 80);
@@ -53,6 +53,16 @@ export function validateVideoSampleReviews(reviews) {
     if (typeof notes !== "string" || notes.length > 1000) throw new TypeError(`${prefix} notes must be text no longer than 1000 characters.`);
     return Object.freeze({ seriesId, sampleId, model, reviewer, shotNumber: raw.shotNumber, reviewedAt: timestamp(raw.reviewedAt), scores: Object.freeze(scores), notes: notes.trim() });
   });
+  const groups = new Map();
+  for (const entry of validated) {
+    const key = `${entry.model}::${entry.seriesId}`;
+    if (!groups.has(key)) groups.set(key, new Set());
+    groups.get(key).add(entry.shotNumber);
+  }
+  for (const [key, shots] of groups) {
+    if (shots.size < 2) throw new TypeError(`Video sequence ${key} must include at least two distinct shots.`);
+  }
+  return validated;
 }
 
 function mean(values) {
