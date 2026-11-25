@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { parseVideoGenerationInput } from "./video-generation.mjs";
+import { buildVideoContinuityPrompt } from "./creative-director.mjs";
 
 test("defaults to a five-second 480p widescreen video", () => {
   assert.deepEqual(parseVideoGenerationInput({ prompt: "A calm ocean at sunrise" }), {
@@ -45,4 +46,54 @@ test("accepts intermediate durations supported by the provider", () => {
   for (const duration of [1, 3, 5, 10, 15]) {
     assert.equal(parseVideoGenerationInput({ prompt: "A scene", duration }).ok, true);
   }
+});
+
+
+test("builds a coherent scene plan from bounded continuity fields", () => {
+  const plan = buildVideoContinuityPrompt({
+    subject: "A red vintage motorcycle with a round headlamp",
+    setting: "Wet city street at blue hour",
+    action: "Rides slowly from left to right and comes to a stop",
+    camera: "Low tracking shot that eases into a locked medium-wide frame",
+    openingFrame: "Motorcycle enters from the left edge",
+    closingFrame: "Motorcycle is stopped beneath a streetlight",
+  });
+  assert.match(plan, /Subject identity and defining visual traits: A red vintage motorcycle/);
+  assert.match(plan, /Opening frame: Motorcycle enters from the left edge/);
+  assert.match(plan, /closing frame should follow plausibly/);
+  assert.match(plan, /do not reset, teleport, duplicate, or redesign/);
+});
+
+test("rejects malformed, unknown, and overlong continuity fields", () => {
+  assert.equal(buildVideoContinuityPrompt(null), null);
+  assert.equal(buildVideoContinuityPrompt([]), null);
+  assert.equal(buildVideoContinuityPrompt({ unknown: "value" }), null);
+  assert.equal(buildVideoContinuityPrompt({ subject: 42 }), null);
+  assert.equal(buildVideoContinuityPrompt({ subject: "x".repeat(181) }), null);
+  assert.equal(buildVideoContinuityPrompt({ subject: "  " }), "");
+});
+
+test("integrates optional continuity into the validated video request", () => {
+  const result = parseVideoGenerationInput({
+    prompt: "A red motorcycle rides through a rainy city",
+    director: "cinematic",
+    continuity: {
+      subject: "Same red motorcycle throughout",
+      action: "Moves left to right without changing speed",
+      openingFrame: "Wide street establishing shot",
+      closingFrame: "Close tracking shot as it stops",
+    },
+  });
+  assert.equal(result.ok, true);
+  assert.match(result.prompt, /Same red motorcycle throughout/);
+  assert.match(result.prompt, /Moves left to right/);
+  assert.match(result.prompt, /closing frame should follow plausibly/);
+});
+
+test("rejects invalid continuity and plans that exceed the provider prompt limit", () => {
+  assert.equal(parseVideoGenerationInput({ prompt: "A scene", continuity: { subject: "x".repeat(181) } }).ok, false);
+  assert.equal(parseVideoGenerationInput({
+    prompt: "A".repeat(1800),
+    continuity: { subject: "A stable subject", setting: "A detailed setting", action: "A carefully described action" },
+  }).ok, false);
 });
