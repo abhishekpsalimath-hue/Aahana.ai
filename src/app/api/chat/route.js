@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createSseContentParser } from "@/lib/chat/sse-content-parser.mjs";
+import { readBoundedJson } from "@/lib/chat/bounded-json.mjs";
 import { getLanguageGuidance } from "@/lib/chat/language-guidance.mjs";
 
 export const runtime = "nodejs";
@@ -55,9 +56,12 @@ export async function POST(request) {
 
   let body;
   try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid request." }, { status: 400 });
+    body = await readBoundedJson(request, 3_200_000);
+  } catch (error) {
+    return NextResponse.json(
+      { error: error?.status === 413 ? "Request body is too large." : "Invalid request." },
+      { status: error?.status || 400 },
+    );
   }
 
   const prompt = typeof body?.message === "string" ? body.message.trim() : "";
