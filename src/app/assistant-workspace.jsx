@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getSourceFileMimeType, isSupportedSourceFile } from "@/lib/build/source-file-policy.mjs";
 import { isImageGenerationRequest, isImageEditRequest, isVideoGenerationRequest } from "@/lib/creative/creative-intent.mjs";
+import { getGeneratedImageFileMetadata } from "@/lib/creative/image-generation.mjs";
 
 const modes = [
   { id: "solve", label: "Solve", hint: "Work through a problem" },
@@ -812,6 +813,12 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [videoDuration, setVideoDuration] = useState(5);
   const [videoAspectRatio, setVideoAspectRatio] = useState("16:9");
   const [videoResolution, setVideoResolution] = useState("480p");
+  const [videoDirector, setVideoDirector] = useState("cinematic");
+  const [videoContinuity, setVideoContinuity] = useState({
+    subject: "", setting: "", action: "", camera: "", openingFrame: "", closingFrame: "",
+  });
+  const [imageAspectRatio, setImageAspectRatio] = useState("auto");
+  const [imageSeries, setImageSeries] = useState({ subject: "", wardrobe: "", palette: "", style: "", scene: "", sceneNumber: "" });
   const [generatedVideo, setGeneratedVideo] = useState(null);
   const [memoryOpen, setMemoryOpen] = useState(false);
   const [memoryEnabled, setMemoryEnabled] = useState(false);
@@ -1162,11 +1169,12 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       const response = await fetch("/api/images/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: imagePrompt, steps: 8, quality: "masterpiece" }),
+        body: JSON.stringify({ prompt: imagePrompt, steps: 8, quality: "masterpiece", ...(imageAspectRatio === "auto" ? {} : { aspectRatio: imageAspectRatio }),
+          ...(Object.values(imageSeries).some((value) => String(value).trim()) ? { series: { ...Object.fromEntries(Object.entries(imageSeries).filter(([key, value]) => key !== "sceneNumber" && value.trim()).map(([key, value]) => [key, value.trim()])), ...(imageSeries.sceneNumber.trim() ? { sceneNumber: Number(imageSeries.sceneNumber) } : {}) } } : {}) }),
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || "Could not generate the image.");
-      if (typeof result.imageDataUrl !== "string" || !/^data:image\/(?:jpeg|png);base64,/.test(result.imageDataUrl)) {
+      if (typeof result.imageDataUrl !== "string" || !/^data:image\/(?:jpeg|png|webp);base64,/.test(result.imageDataUrl)) {
         throw new Error("The image provider returned an invalid image.");
       }
       setGeneratedImage({ dataUrl: result.imageDataUrl, prompt: imagePrompt });
@@ -1195,7 +1203,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       const response = await fetch("/api/images/edit", { method: "POST", body: form });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || "Could not edit the image.");
-      if (typeof result.imageDataUrl !== "string" || !/^data:image\/(?:jpeg|png);base64,/.test(result.imageDataUrl)) {
+      if (typeof result.imageDataUrl !== "string" || !/^data:image\/(?:jpeg|png|webp);base64,/.test(result.imageDataUrl)) {
         throw new Error("The image editor returned an invalid image.");
       }
       setGeneratedImage({ dataUrl: result.imageDataUrl, prompt: generatedImage.prompt || editPrompt });
@@ -1220,21 +1228,24 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     try {
       const response = await fetch(generatedImage.dataUrl);
       const blob = await response.blob();
-      const file = new File([blob], `aahana-image-${Date.now()}.jpg`, { type: "image/jpeg" });
+      const metadata = getGeneratedImageFileMetadata(generatedImage.dataUrl, blob.type);
+      if (!metadata) throw new Error("The generated image format could not be verified.");
+      const { mimeType, extension } = metadata;
+      const file = new File([blob], "aahana-image-" + Date.now() + "." + extension, { type: mimeType });
       const supabase = createClient();
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError || !user) throw new Error("Please sign in again.");
       const folder = selectedProjectId || "personal";
       const objectPath = `${user.id}/${folder}/${crypto.randomUUID()}-${file.name}`;
       const { error: storageError } = await supabase.storage.from("aahana-private").upload(objectPath, file, {
-        contentType: "image/jpeg", upsert: false,
+        contentType: mimeType, upsert: false,
       });
       if (storageError) throw new Error("Could not save the generated image. Please try again.");
       const saved = await fetch("/api/files", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          objectPath, originalFilename: file.name, mimeType: "image/jpeg",
+          objectPath, originalFilename: file.name, mimeType,
           sizeBytes: file.size, projectId: selectedProjectId,
         }),
       });
@@ -1264,6 +1275,11 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       form.set("duration", String(videoDuration));
       form.set("aspectRatio", videoAspectRatio);
       form.set("resolution", videoResolution);
+      form.set("director", videoDirector);
+      const continuity = Object.fromEntries(
+        Object.entries(videoContinuity).map(([key, value]) => [key, value.trim()]).filter(([, value]) => value)
+      );
+      if (Object.keys(continuity).length) form.set("continuity", JSON.stringify(continuity));
       if (imageFile) form.set("image", imageFile);
       const response = await fetch("/api/videos/generate", {
         method: "POST",
@@ -1471,11 +1487,12 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         const response = await fetch("/api/images/generate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt: text, steps: 8, quality: "masterpiece" }),
+          body: JSON.stringify({ prompt: text, steps: 8, quality: "masterpiece", ...(imageAspectRatio === "auto" ? {} : { aspectRatio: imageAspectRatio }),
+          ...(Object.values(imageSeries).some((value) => String(value).trim()) ? { series: { ...imageSeries, sceneNumber: imageSeries.sceneNumber.trim() ? Number(imageSeries.sceneNumber) : undefined } } : {}) }),
         });
         const result = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(result.error || "Could not generate the image.");
-        if (typeof result.imageDataUrl !== "string" || !/^data:image\/(?:jpeg|png);base64,/.test(result.imageDataUrl)) {
+        if (typeof result.imageDataUrl !== "string" || !/^data:image\/(?:jpeg|png|webp);base64,/.test(result.imageDataUrl)) {
           throw new Error("The image provider returned an invalid image.");
         }
         setGeneratedImage({ dataUrl: result.imageDataUrl, prompt: text });
@@ -1962,7 +1979,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
               <div className="generated-image-preview">
                 <img src={generatedImage.dataUrl} alt={generatedImage.prompt} style={{ display: "block", width: "100%", maxWidth: "640px", borderRadius: "14px" }} />
                 <div className="message-actions">
-                  <a className="copy-message" href={generatedImage.dataUrl} download="aahana-generated-image.jpg">Download image</a>
+                  <a className="copy-message" href={generatedImage.dataUrl} download={"aahana-generated-image." + (generatedImage.dataUrl.startsWith("data:image/png") ? "png" : generatedImage.dataUrl.startsWith("data:image/webp") ? "webp" : "jpg")}>Download image</a>
                   <button className="copy-message" type="button" onClick={saveGeneratedImage} disabled={imageSaving}>{imageSaving ? "Saving…" : "Save to Files"}</button>
                   <button className="copy-message" type="button" onClick={() => setGeneratedImage(null)}>Remove</button>
                 </div>
@@ -2001,10 +2018,32 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                       <option value="3:2">3:2</option>
                       <option value="2:3">2:3</option>
                     </select>
+                    <select aria-label="Video direction" value={videoDirector} onChange={(event) => setVideoDirector(event.target.value)} className="copy-message">
+                      <option value="cinematic">Cinematic</option>
+                      <option value="commercial">Commercial</option>
+                      <option value="documentary">Documentary</option>
+                      <option value="anime">Anime</option>
+                      <option value="none">Use my prompt as written</option>
+                    </select>
                     <select aria-label="Video resolution" value={videoResolution} onChange={(event) => setVideoResolution(event.target.value)} className="copy-message">
                       <option value="480p">480p</option>
                       <option value="720p">720p</option>
                     </select>
+                    <details className="video-advanced-settings">
+                      <summary>Scene continuity (optional)</summary>
+                      <input aria-label="Continuity subject identity" className="copy-message" maxLength={180} placeholder="Subject identity and defining traits"
+                        value={videoContinuity.subject} onChange={(event) => setVideoContinuity((current) => ({ ...current, subject: event.target.value }))} />
+                      <input aria-label="Continuity setting" className="copy-message" maxLength={180} placeholder="Setting and environment"
+                        value={videoContinuity.setting} onChange={(event) => setVideoContinuity((current) => ({ ...current, setting: event.target.value }))} />
+                      <input aria-label="Continuity action" className="copy-message" maxLength={180} placeholder="Action and direction"
+                        value={videoContinuity.action} onChange={(event) => setVideoContinuity((current) => ({ ...current, action: event.target.value }))} />
+                      <input aria-label="Continuity camera movement" className="copy-message" maxLength={180} placeholder="Camera position and movement"
+                        value={videoContinuity.camera} onChange={(event) => setVideoContinuity((current) => ({ ...current, camera: event.target.value }))} />
+                      <input aria-label="Video opening frame" className="copy-message" maxLength={180} placeholder="Opening frame"
+                        value={videoContinuity.openingFrame} onChange={(event) => setVideoContinuity((current) => ({ ...current, openingFrame: event.target.value }))} />
+                      <input aria-label="Video closing frame" className="copy-message" maxLength={180} placeholder="Closing frame"
+                        value={videoContinuity.closingFrame} onChange={(event) => setVideoContinuity((current) => ({ ...current, closingFrame: event.target.value }))} />
+                    </details>
                   </details>
                 </>
               )}
@@ -2024,6 +2063,31 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                   }} />
               </label>
               {imageFile && <span className="image-attach-name">{imageFile.name} <button type="button" onClick={() => setImageFile(null)}>Remove</button></span>}
+              <details className="video-advanced-settings">
+                <summary>Image framing</summary>
+                <select aria-label="Image aspect ratio" value={imageAspectRatio} onChange={(event) => setImageAspectRatio(event.target.value)} className="copy-message">
+                  <option value="auto">Automatic from prompt</option>
+                  <option value="1:1">Square 1:1</option>
+                  <option value="3:4">Portrait 3:4</option>
+                  <option value="4:3">Landscape 4:3</option>
+                  <option value="16:9">Widescreen 16:9</option>
+                </select>
+              </details>
+              <details className="video-advanced-settings">
+                <summary>Image series consistency (optional)</summary>
+                <input aria-label="Series subject identity" className="copy-message" maxLength={180} placeholder="Same subject identity and defining traits"
+                  value={imageSeries.subject} onChange={(event) => setImageSeries((current) => ({ ...current, subject: event.target.value }))} />
+                <input aria-label="Series wardrobe" className="copy-message" maxLength={180} placeholder="Consistent wardrobe and accessories"
+                  value={imageSeries.wardrobe} onChange={(event) => setImageSeries((current) => ({ ...current, wardrobe: event.target.value }))} />
+                <input aria-label="Series color palette" className="copy-message" maxLength={180} placeholder="Locked color palette"
+                  value={imageSeries.palette} onChange={(event) => setImageSeries((current) => ({ ...current, palette: event.target.value }))} />
+                <input aria-label="Series visual style" className="copy-message" maxLength={180} placeholder="Locked visual style and medium"
+                  value={imageSeries.style} onChange={(event) => setImageSeries((current) => ({ ...current, style: event.target.value }))} />
+                <input aria-label="Current image scene" className="copy-message" maxLength={180} placeholder="What happens in this scene?"
+                  value={imageSeries.scene} onChange={(event) => setImageSeries((current) => ({ ...current, scene: event.target.value }))} />
+                <input aria-label="Image series scene number" className="copy-message" type="number" min="1" max="12" placeholder="Scene number (1–12)"
+                  value={imageSeries.sceneNumber} onChange={(event) => setImageSeries((current) => ({ ...current, sceneNumber: event.target.value }))} />
+              </details>
               <button className="copy-message" type="button" onClick={generateImage}
                 disabled={!prompt.trim() || imageGenerating || busy || Boolean(imageFile)}>
                 {imageGenerating ? "Creating image…" : "Generate image"}
