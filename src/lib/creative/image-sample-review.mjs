@@ -42,7 +42,7 @@ export function validateImageSampleReviews(reviews) {
     throw new TypeError("Provide at least one image sample review.");
   }
 
-  const seenSamples = new Set();
+  const seenReviewPairs = new Set();
   return reviews.map((raw, index) => {
     const label = `Review ${index + 1}`;
     if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
@@ -53,9 +53,6 @@ export function validateImageSampleReviews(reviews) {
     if (!/^[A-Za-z0-9][A-Za-z0-9._-]{2,79}$/.test(sampleId)) {
       throw new TypeError(`${label} sampleId must be an opaque identifier, not a path or URL.`);
     }
-    if (seenSamples.has(sampleId)) throw new Error(`Duplicate image sampleId: ${sampleId}.`);
-    seenSamples.add(sampleId);
-
     const caseId = requireText(raw.caseId, "caseId", 20);
     const benchmarkCase = CASE_BY_ID.get(caseId);
     if (!benchmarkCase) throw new RangeError(`${label} references an unknown benchmark case: ${caseId}.`);
@@ -69,6 +66,11 @@ export function validateImageSampleReviews(reviews) {
     if (!/^[A-Za-z0-9][A-Za-z0-9._-]{1,39}$/.test(reviewer)) {
       throw new TypeError(`${label} reviewer must be a non-identifying reviewer label, not a name or email address.`);
     }
+    const reviewPair = `${sampleId}::${reviewer}`;
+    if (seenReviewPairs.has(reviewPair)) {
+      throw new Error(`Duplicate review from ${reviewer} for sample ${sampleId}.`);
+    }
+    seenReviewPairs.add(reviewPair);
     const reviewedAt = validateTimestamp(raw.reviewedAt);
     if (!raw.scores || typeof raw.scores !== "object" || Array.isArray(raw.scores)) {
       throw new TypeError(`${label} needs a complete five-dimension scores object.`);
@@ -119,17 +121,38 @@ export function summarizeImageSampleReviews(reviews) {
     byModel.get(review.model).push(review);
   }
 
-  return [...byModel.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([model, entries]) => ({
-    model,
-    reviewedSamples: entries.length,
-    distinctCases: new Set(entries.map((entry) => entry.caseId)).size,
-    dimensions: Object.fromEntries(DIMENSIONS.map((dimension) => [
-      dimension,
-      mean(entries.map((entry) => entry.scores[dimension])),
-    ])),
-    averageOutputQuality: mean(entries.flatMap((entry) => DIMENSIONS.map((dimension) => entry.scores[dimension]))),
-    reviewers: [...new Set(entries.map((entry) => entry.reviewer))].sort(),
-  }));
+  return [...byModel.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([model, entries]) => {
+    const bySample = new Map();
+    for (const entry of entries) {
+      if (!bySample.has(entry.sampleId)) bySample.set(entry.sampleId, []);
+      bySample.get(entry.sampleId).push(entry);
+    }
+    const pairedSamples = [...bySample.values()].filter((sampleReviews) => sampleReviews.length > 1);
+    const reviewerSpread = Object.fromEntries(DIMENSIONS.map((dimension) => {
+      const spreads = pairedSamples.map((sampleReviews) => {
+        const values = sampleReviews.map((entry) => entry.scores[dimension]);
+        return Math.max(...values) - Math.min(...values);
+      });
+      return [dimension, spreads.length ? mean(spreads) : null];
+    }));
+    const availableSpreads = Object.values(reviewerSpread).filter((value) => value !== null);
+    return {
+      model,
+      reviewCount: entries.length,
+      distinctSamples: bySample.size,
+      multiReviewedSamples: pairedSamples.length,
+      distinctCases: new Set(entries.map((entry) => entry.caseId)).size,
+      dimensions: Object.fromEntries(DIMENSIONS.map((dimension) => [
+        dimension,
+        mean(entries.map((entry) => entry.scores[dimension])),
+      ])),
+      averageOutputQuality: mean(entries.flatMap((entry) => DIMENSIONS.map((dimension) => entry.scores[dimension]))),
+      reviewerSpread,
+      averageReviewerSpread: availableSpreads.length ? mean(availableSpreads) : null,
+      reviewers: [...new Set(entries.map((entry) => entry.reviewer))].sort(),
+      reviewerCount: new Set(entries.map((entry) => entry.reviewer)).size,
+    };
+  });
 }
 
 export const IMAGE_SAMPLE_REVIEW_DIMENSIONS = DIMENSIONS;
