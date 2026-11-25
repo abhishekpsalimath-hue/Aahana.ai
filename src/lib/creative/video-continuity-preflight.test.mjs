@@ -22,7 +22,7 @@ test("flags identity, wardrobe, prop, axis, direction and temporal drift",()=>{
  }
 });
 test("checks required prop continuity and motivated camera-axis changes",()=>{
- const good=[0,1,2].map((n)=>({shotNumber:n+1,subjectId:"bottle-01",propIds:["cap-01","label-01"],cameraSide:n===1?"left":"right",actionProgress:n,axisChangeMotivated:n===1}));
+ const good=[0,1,2].map((n)=>({shotNumber:n+1,subjectId:"bottle-01",propIds:["cap-01","label-01"],cameraSide:n===1?"left":"right",actionProgress:n,axisChangeMotivated:n>0}));
  const result=evaluateVideoContinuityPlan({caseId:"VID-002",shots:good});
  assert.equal(result.issues.some((issue)=>issue.code==="unmotivated-axis-change"),false);
  const broken=good.map((shot)=>({...shot,propIds:["cap-01"]}));
