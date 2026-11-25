@@ -7,10 +7,15 @@ const worlds = [
   { id: "galaxies", name: "Galaxies", note: "Vast island universes, each holding billions of stars.", color: "#c7a7ff" },
   { id: "stars", name: "Stars", note: "Stellar nurseries, brilliant suns and the light between them.", color: "#ffe2ad" },
   { id: "planets", name: "Planets", note: "Worlds with their own colour, atmosphere and character.", color: "#8db9ff" },
-  { id: "black-holes", name: "Black holes", note: "Gravity bending the paths of light and matter.", color: "#d6b5ff" },
-  { id: "nebulae", name: "Nebulae", note: "Cosmic clouds where new stars are born.", color: "#ff9fd7" },
-  { id: "comets", name: "Comets", note: "Icy travellers tracing luminous paths through space.", color: "#9fe9e4" },
-  { id: "cosmic-energy", name: "Cosmic energy", note: "The unseen forces shaping the universe at its largest scales.", color: "#b7c6ff" },
+  { id: "moons", name: "Moons", note: "Natural satellites orbiting planets, from icy worlds to cratered landscapes.", color: "#d9d4ff" },
+  { id: "solar-systems", name: "Solar systems", note: "Stars and the families of planets, moons, rings and smaller bodies around them.", color: "#ffc98c" },
+  { id: "black-holes", name: "Black holes", note: "Regions where gravity bends space-time so intensely that not even light escapes beyond the event horizon.", color: "#d6b5ff" },
+  { id: "nebulae", name: "Nebulae", note: "Cosmic clouds of gas and dust, including stellar nurseries where new stars form.", color: "#ff9fd7" },
+  { id: "asteroids-comets", name: "Asteroids & comets", note: "Rocky and icy travellers moving through planetary space.", color: "#9fe9e4" },
+  { id: "space-time", name: "Space & time", note: "The four-dimensional fabric in which every cosmic event takes place.", color: "#a8c4ff" },
+  { id: "matter-energy", name: "Matter & energy", note: "The physical ingredients and processes that make the cosmos dynamic.", color: "#ffdb9e" },
+  { id: "dark-matter", name: "Dark matter", note: "Invisible matter inferred from its gravitational influence on galaxies and cosmic structure.", color: "#9b8bff" },
+  { id: "dark-energy", name: "Dark energy", note: "The name for the unknown cause of the universe's accelerated expansion.", color: "#88c9ff" },
 ];
 
 function Starfield({ pointerRef, animate }) {
