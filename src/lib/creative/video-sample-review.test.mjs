@@ -26,6 +26,9 @@ test("aggregates sequence coverage, shot scores and reviewer disagreement", () =
   assert.equal(summary.perShot[1].reviews, 2);
   assert.equal(summary.dimensions.identityContinuity, 4.33);
   assert.equal(summary.reviewerSpread.identityContinuity, 2);
+  assert.equal(summary.reviewerSpread.cameraContinuity, 0);
+  assert.equal(summary.multiReviewedShots, 1);
+  assert.equal(summary.averageReviewerSpread, 0.4);
 });
 
 test("reports missing shots rather than silently treating sequence as complete", () => {
@@ -44,6 +47,22 @@ test("rejects paths, URLs, identifying reviewer labels and incomplete score rubr
   assert.throws(() => validateVideoSampleReviews([review({ sampleId: "../private.mp4" }), review({ sampleId: "clip-sample-02", shotNumber: 2 })]), /opaque identifier/);
   assert.throws(() => validateVideoSampleReviews([review({ reviewer: "person@example.com" }), review({ sampleId: "clip-sample-02", shotNumber: 2 })]), /non-identifying label/);
   assert.throws(() => validateVideoSampleReviews([review({ scores: { identityContinuity: 5 } }), review({ sampleId: "clip-sample-02", shotNumber: 2 })]), /motionContinuity/);
+});
+
+test("requires stable sample-to-shot mapping and rejects impossible calendar dates", () => {
+  assert.throws(() => validateVideoSampleReviews([
+    review(),
+    review({ sampleId: "clip-sample-02", shotNumber: 1, reviewer: "reviewer-b" }),
+    review({ sampleId: "clip-sample-03", shotNumber: 2 }),
+  ]), /multiple sample IDs/);
+  assert.throws(() => validateVideoSampleReviews([
+    review(),
+    review({ sampleId: "clip-sample-02", shotNumber: 2 }),
+  ]), /reused across different shots/);
+  assert.throws(() => validateVideoSampleReviews([
+    review({ reviewedAt: "2026-02-30T12:00:00Z" }),
+    review({ sampleId: "clip-sample-02", shotNumber: 2 }),
+  ]), /valid timezone-qualified ISO timestamp/);
 });
 
 test("rejects malformed timestamps, unsupported dimensions and out-of-range scores", () => {
