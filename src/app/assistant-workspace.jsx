@@ -1759,6 +1759,12 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
               <i className="depth-stars-mid" />
               <i className="depth-stars-near" />
             </div>
+            <div className="universe-galaxy" aria-hidden="true">
+              <span className="galaxy-core" />
+              <i className="galaxy-arm galaxy-arm-one" />
+              <i className="galaxy-arm galaxy-arm-two" />
+              <i className="galaxy-arm galaxy-arm-three" />
+            </div>
             <div className="universe-particles">
               {Array.from({ length: 64 }, (_, index) => (
                 <i
