@@ -16,7 +16,7 @@ test("aggregates sequence coverage, shot scores and reviewer disagreement", () =
   const summary = summarizeVideoSampleReviews([
     review(),
     review({ sampleId: "clip-sample-02", shotNumber: 2, reviewer: "reviewer-b", scores: { ...scores, identityContinuity: 3 } }),
-    review({ sampleId: "clip-sample-03", shotNumber: 2, reviewer: "reviewer-a" }),
+    review({ sampleId: "clip-sample-02", shotNumber: 2, reviewer: "reviewer-a" }),
   ])[0];
   assert.equal(summary.reviewedShots, 2);
   assert.deepEqual(summary.shotNumbers, [1, 2]);
@@ -57,7 +57,7 @@ test("requires stable sample-to-shot mapping and rejects impossible calendar dat
   ]), /multiple sample IDs/);
   assert.throws(() => validateVideoSampleReviews([
     review(),
-    review({ sampleId: "clip-sample-02", shotNumber: 2 }),
+    review({ sampleId: "clip-sample-01", shotNumber: 2 }),
   ]), /reused across different shots/);
   assert.throws(() => validateVideoSampleReviews([
     review({ reviewedAt: "2026-02-30T12:00:00Z" }),
