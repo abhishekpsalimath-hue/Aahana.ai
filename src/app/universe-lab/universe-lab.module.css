@@ -316,3 +316,45 @@
 @media(max-width:600px){.knowledgeProject{padding:15px 12px}.knowledgePickerTop{align-items:flex-start;flex-direction:column}.knowledgePickerTop span:last-child{text-align:left}.knowledgeActions{align-items:stretch;flex-direction:column}.knowledgeActions button{width:100%;min-height:45px}.knowledgeChips button{min-height:39px}}
 
 .knowledgeChips button:disabled{opacity:.38;cursor:not-allowed}
+
+
+/* Project Intelligence workspace: inspectable structure and session-only evidence tracking. */
+.blueprintLaunch{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:14px;padding:13px;border:1px solid #a98bd833;border-radius:12px;background:linear-gradient(100deg,#21182e99,#12101b99)}
+.blueprintLaunch>div{display:grid;gap:4px;min-width:0}
+.blueprintLaunch strong{color:#e9dcff;font-size:11px}
+.blueprintLaunch span{color:#9f93b0;font-size:9px;line-height:1.6}
+.blueprintLaunch button,.blueprintTop>button{flex:0 0 auto;min-height:40px;padding:9px 13px;border:1px solid #a98bd8;border-radius:999px;background:#281d39;color:#f1e8ff;font-size:9px;cursor:pointer}
+.blueprintLaunch button:hover,.blueprintTop>button:hover{background:#39274f}
+.blueprintLaunch button:disabled{opacity:.4;cursor:not-allowed}
+.blueprintLaunch button:focus-visible,.blueprintTop>button:focus-visible{outline:2px solid #e8dfff;outline-offset:3px}
+.blueprintWorkspace{display:grid;gap:15px;margin-top:15px;padding:15px;border:1px solid #b99aff35;border-radius:14px;background:#09081199}
+.blueprintTop{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.blueprintTop h3{margin:6px 0 4px;color:#f3ebff;font-size:17px;letter-spacing:-.4px}
+.blueprintTop p{margin:0;color:#9388a5;font-size:9px}
+.blueprintLabel{display:block;color:#bca6df;font-size:8px;letter-spacing:1.5px}
+.blueprintMap{padding:12px;border:1px solid #ffffff13;border-radius:10px;background:#ffffff04}
+.blueprintNodes{display:flex;align-items:stretch;gap:7px;overflow-x:auto;padding:12px 0 5px}
+.blueprintNode{display:grid;align-content:center;gap:5px;flex:1 0 105px;min-height:62px;padding:9px;border:1px solid #a98bd844;border-radius:9px;background:linear-gradient(145deg,#9d7bc51b,#ffffff04)}
+.blueprintNode span{color:#a994c8;font-size:7px;letter-spacing:1px}
+.blueprintNode strong{color:#eee5ff;font-size:10px}
+.blueprintMap>p{margin:7px 0 0;color:#81768f;font-size:9px;line-height:1.6}
+.blueprintChapters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.blueprintChapters>.blueprintLabel{grid-column:1/-1}
+.blueprintChapters article{min-width:0;padding:11px;border:1px solid #ffffff14;border-radius:9px;background:#ffffff04}
+.blueprintChapters article>span{color:#9c89bb;font-size:7px;letter-spacing:1.2px}
+.blueprintChapters h4{margin:5px 0;color:#eee5ff;font-size:12px}
+.blueprintChapters p{margin:0;color:#a99db9;font-size:9px;line-height:1.6}
+.blueprintChapters em{display:block;margin-top:8px;color:#c7b3e3;font-size:9px;font-style:normal;line-height:1.6}
+.blueprintEvidence{display:grid;gap:9px;padding:12px;border:1px solid #ffffff14;border-radius:10px;background:#ffffff04}
+.blueprintEvidenceHead{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.blueprintEvidenceHead strong{color:#d9c7f3;font-size:9px;font-variant-numeric:tabular-nums}
+.blueprintProgress{height:4px;overflow:hidden;border-radius:9px;background:#ffffff12}
+.blueprintProgress span{display:block;height:100%;border-radius:9px;background:linear-gradient(90deg,#9474c8,#cbb0ff);transition:width .2s}
+.blueprintEvidence label{display:flex;align-items:flex-start;gap:9px;color:#b9afc8;font-size:10px;line-height:1.5;cursor:pointer}
+.blueprintEvidence input{flex:0 0 auto;width:14px;height:14px;margin:1px 0 0;accent-color:#b99aff}
+.blueprintEvidence input:focus-visible{outline:2px solid #e8dfff;outline-offset:3px}
+.blueprintDeliverable{padding:12px;border-left:2px solid #a98bd877;border-radius:0 9px 9px 0;background:#ffffff05}
+.blueprintDeliverable p{margin:7px 0 0;color:#c3b6d5;font-size:10px;line-height:1.7}
+.blueprintStatus{margin:0;color:#c8afea;font-size:9px;line-height:1.5}
+@media(max-width:600px){.blueprintLaunch,.blueprintTop{align-items:stretch;flex-direction:column}.blueprintLaunch button,.blueprintTop>button{width:100%;min-height:44px}.blueprintChapters{grid-template-columns:1fr}.blueprintEvidenceHead{align-items:flex-start;flex-direction:column}.blueprintWorkspace{padding:11px}}
+@media(prefers-reduced-motion:reduce){.blueprintProgress span{transition:none}}
