@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readBoundedRequestBody } from "./bounded-request-body.mjs";
+import { readBoundedRequestBody, readBoundedResponseJson } from "./bounded-request-body.mjs";
 
 function makeRequest(chunks, { contentLength, fail = false } = {}) {
   let index = 0;
@@ -53,4 +53,32 @@ test("rejects invalid byte limits", async () => {
   for (const limit of [0, -1, 1.5, "10", null]) {
     await assert.rejects(() => readBoundedRequestBody({ headers: new Headers(), body: null }, limit), TypeError);
   }
+});
+
+
+test("reads valid provider JSON within the response byte budget", async () => {
+  const response = new Response(JSON.stringify({ state: "Completed", result: { video: "https://example.test/video.mp4" } }));
+  const result = await readBoundedResponseJson(response, 1024);
+  assert.equal(result.ok, true);
+  assert.equal(result.value.state, "Completed");
+});
+
+test("rejects oversized provider responses from both declared and streamed lengths", async () => {
+  const declared = new Response("{}", { headers: { "content-length": "2048" } });
+  assert.deepEqual(await readBoundedResponseJson(declared, 10), { ok: false, reason: "too-large" });
+
+  const streamed = new Response(new ReadableStream({
+    start(controller) {
+      controller.enqueue(new Uint8Array(8));
+      controller.enqueue(new Uint8Array(8));
+      controller.close();
+    },
+  }));
+  assert.deepEqual(await readBoundedResponseJson(streamed, 10), { ok: false, reason: "too-large" });
+});
+
+test("rejects malformed or non-object provider JSON", async () => {
+  assert.deepEqual(await readBoundedResponseJson(new Response("{bad"), 100), { ok: false, reason: "invalid" });
+  assert.deepEqual(await readBoundedResponseJson(new Response("[]"), 100), { ok: false, reason: "invalid" });
+  await assert.rejects(() => readBoundedResponseJson(new Response("{}"), 0), TypeError);
 });
