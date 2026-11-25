@@ -23,6 +23,9 @@ on:
       - "src/app/globals.css"
       - "src/lib/build/**"
       - "src/lib/creative/**"
+      - "src/lib/learning/**"
+      - "src/app/learn/**"
+      - "src/app/api/learning-journey/**"
       - ".github/workflows/experience-lab-checks.yml"
       - "package.json"
   push:
@@ -47,6 +50,9 @@ on:
       - "src/app/assistant-workspace.jsx"
       - "src/lib/build/**"
       - "src/lib/creative/**"
+      - "src/lib/learning/**"
+      - "src/app/learn/**"
+      - "src/app/api/learning-journey/**"
       - ".github/workflows/experience-lab-checks.yml"
       - "package.json"
 
