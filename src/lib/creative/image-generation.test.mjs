@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { parseImageGenerationInput, parseImageEditInput, MAX_IMAGE_EDIT_BYTES, MAX_IMAGE_EDIT_PROMPT_LENGTH, getReferenceImageDimensions, isReferenceImageWithinProviderBounds, inferImageAspectRatio } from "./image-generation.mjs";
+import { parseImageGenerationInput, parseImageEditInput, MAX_IMAGE_EDIT_BYTES, MAX_IMAGE_EDIT_PROMPT_LENGTH, getReferenceImageDimensions, isReferenceImageWithinProviderBounds, inferImageAspectRatio, getGeneratedImageFileMetadata } from "./image-generation.mjs";
 
 test("defaults to automatic masterpiece image direction without asking the user to choose settings", () => {
   assert.deepEqual(parseImageGenerationInput({ prompt: "A moonlit forest" }), {
@@ -143,4 +143,13 @@ test("accepts explicit supported framing and rejects unsupported dimensions", ()
   const wide = parseImageGenerationInput({ prompt: "A city", aspectRatio: "16:9" });
   assert.deepEqual([wide.width, wide.height], [1024, 576]);
   assert.equal(parseImageGenerationInput({ prompt: "A city", aspectRatio: "9:16" }).ok, false);
+});
+
+
+test("maps generated PNG, JPEG and WebP data URLs to matching file metadata", () => {
+  assert.deepEqual(getGeneratedImageFileMetadata("data:image/png;base64,AAAA", "image/png"), { mimeType: "image/png", extension: "png" });
+  assert.deepEqual(getGeneratedImageFileMetadata("data:image/jpeg;base64,AAAA", "image/jpeg"), { mimeType: "image/jpeg", extension: "jpg" });
+  assert.deepEqual(getGeneratedImageFileMetadata("data:image/webp;base64,AAAA", "image/webp"), { mimeType: "image/webp", extension: "webp" });
+  assert.equal(getGeneratedImageFileMetadata("data:image/webp;base64,AAAA", "image/jpeg"), null);
+  assert.equal(getGeneratedImageFileMetadata("https://example.test/image.png", "image/png"), null);
 });
