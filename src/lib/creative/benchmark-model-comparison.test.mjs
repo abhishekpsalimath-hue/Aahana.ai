@@ -23,6 +23,8 @@ test("compares model snapshots on the same benchmark and exact case set",()=>{
  assert.equal(result.models[0].changeSincePrevious.averageStructuralScore,10);
  assert.deepEqual(result.comparison.rankedByAverageStructuralScore,["model-a","model-b"]);
  assert.equal(result.models[0].latest.evaluatedCases,2);
+ assert.equal(result.recommendation.status,"insufficient-evidence");
+ assert.equal(result.models[0].evidence.eligibleForRecommendation,false);
 });
 
 test("reports per-category metrics without mixing categories",()=>{
@@ -62,4 +64,23 @@ test("rejects category remapping between models",()=>{
   {caseId:"VID-002",category:"character",structuralScore:85,passed:true},
  ]});
  assert.throws(()=>compareBenchmarkModels([first,second]),/identical case categories/);
+});
+
+test("requires sufficient case coverage and repeated runs before a recommendation",()=>{
+ const snapshots=[];
+ for(const model of ["model-a","model-b"]) {
+  snapshots.push(make(model,"2026-11-25T10:00:00Z",90));
+  snapshots.push(make(model,"2026-11-25T11:00:00Z",91));
+ }
+ const result=compareBenchmarkModels(snapshots,{minimumCasesForRecommendation:2,minimumRunsPerModel:2});
+ assert.equal(result.recommendation.status,"eligible-for-human-review");
+ assert.equal(result.recommendation.modelLabel,"model-a");
+ assert.equal(result.models.every((item)=>item.evidence.eligibleForRecommendation),true);
+});
+test("rejects out-of-range scores and invalid evidence thresholds",()=>{
+ const a=make("model-a","2026-11-25T10:00:00Z",90);
+ const b=make("model-b","2026-11-25T11:00:00Z",90);
+ const invalid=make("model-c","2026-11-25T12:00:00Z",90,{results:[{caseId:"VID-001",category:"character",structuralScore:101,passed:true},{caseId:"VID-002",category:"product",structuralScore:95,passed:true}]});
+ assert.throws(()=>compareBenchmarkModels([a,b,invalid]),/invalid benchmark result rows/);
+ assert.throws(()=>compareBenchmarkModels([a,b],{minimumCasesForRecommendation:0}),/positive integers/);
 });
