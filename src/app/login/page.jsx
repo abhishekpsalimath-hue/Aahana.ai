@@ -130,7 +130,7 @@ export default function LoginPage() {
       if (error) {
         setMessage(explainAuthError(error, "We couldn't create your account. Please try again."));
       } else if (!data.session) {
-        setOtpType("signup");
+        setOtpPurpose("signup");
         setStep("verify");
         setOtp("");
         setOtpCooldown(60);
@@ -257,7 +257,7 @@ export default function LoginPage() {
         {!isVerifying && (
           <p className="auth-switch">
             {mode === "signin" ? "New to Aahana?" : "Already have an account?"}{" "}
-            <button type="button" onClick={() => { setMode(mode === "signin" ? "signup" : "signin"); setAuthMethod("otp"); setOtpType("email"); setStep("credentials"); setMessage(""); setOtp(""); setPassword(""); setShowPassword(false); }}>
+            <button type="button" onClick={() => { setMode(mode === "signin" ? "signup" : "signin"); setAuthMethod("otp"); setOtpPurpose("signin"); setStep("credentials"); setMessage(""); setOtp(""); setPassword(""); setShowPassword(false); }}>
               {mode === "signin" ? "Create account" : "Sign in"}
             </button>
           </p>
