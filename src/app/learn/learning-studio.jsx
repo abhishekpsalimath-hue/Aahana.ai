@@ -65,9 +65,8 @@ function InteractiveQuiz({ quiz, profile, memoryEnabled, onSaveProgress }) {
   const firstTryCorrect = quiz.questions.reduce((total, item, index) => total + ((attempts[index] || 0) === 1 && answers[index] === item.correctIndex ? 1 : 0), 0);
   const reviewQuestions = quiz.questions.filter((item, index) => (attempts[index] || 0) > 1);
   const item = quiz.questions[currentIndex];
-  const selected = answers[currentIndex];
   const selectedOption = selectedOptions[currentIndex];
-  const solved = selected === item?.correctIndex;
+  const solved = answers[currentIndex] === item?.correctIndex;
   const hasAnswered = Number.isInteger(selectedOption);
 
   function choose(index, optionIndex) {
@@ -85,11 +84,9 @@ function InteractiveQuiz({ quiz, profile, memoryEnabled, onSaveProgress }) {
     }]);
     if (correct) setAnswers((current) => ({ ...current, [index]: optionIndex }));
   }
-
   function retry(index) {
     setSelectedOptions((current) => ({ ...current, [index]: null }));
   }
-
   function restart() {
     setAnswers({});
     setSelectedOptions({});
@@ -170,7 +167,7 @@ export default function LearningStudio({ userEmail = "" }) {
   const categorySubjects = learningCategories.find((item) => item.name === category)?.subjects || learningCategories[0].subjects;
   const [curriculum, setCurriculum] = useState("Not specified");
   const [language, setLanguage] = useState("Use my language");
-  const [learningMode, setLearningMode] = useState("adventure");
+  const [learningMode, setLearningMode] = useState("talk");
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState([]);
   const [conversationId, setConversationId] = useState(null);
@@ -238,7 +235,7 @@ export default function LearningStudio({ userEmail = "" }) {
       await loadLearningMemory();
       setMemoryNotice(action === "enable"
         ? "Private learning memory is on. You choose which completed journeys to save."
-        : "Private learning memory is off. Existing saved journeys remain available until you delete them.");
+        : "Private learning memory is off. Existing records are kept but hidden; turn memory back on to review or delete them.");
     } catch (err) {
       setMemoryError(err.message || "Could not update private memory.");
     } finally {
@@ -429,15 +426,52 @@ export default function LearningStudio({ userEmail = "" }) {
 
       <section className="learning-hero student-welcome">
         <div className="learning-kicker">YOUR LEARNING FRIEND</div>
-        <h1>Every question opens<br /><em>a new adventure.</em></h1>
-        <p>Explore stories, animated worlds, missions, conversations and experiments. Follow your curiosity. We’ll learn one discovery at a time.</p>
+        <h1>Hi, curious mind!<br /><em>I'm Aahana.</em></h1>
+        <p>Tell me what you're learning or what feels confusing. We'll figure it out together, one small step at a time.</p>
       </section>
 
-
-      <Interactive3DWorld selectedPlanet={selectedPlanet} onSelectedPlanetChange={setSelectedPlanet} />
-
+      <section className="learning-session">
+        <div className="learning-section-heading"><div><span>LET’S BEGIN</span><h2>Your learning conversation</h2></div><span className="learning-session-status">{busy ? "Aahana is thinking…" : "Ready when you are"}</span></div>
+        {messages.length > 0 && <div className="learning-conversation" aria-live="polite">
+          {messages.map((item, index) => {
+            const messageMode = item.learningMode || learningMode;
+            return <article className={item.role === "user" ? "learning-message learner" : "learning-message tutor"} key={index}>
+              <small>{item.role === "user" ? "YOU" : "AAHANA"}</small>
+              {item.content ? (messageMode === "play" && item.role === "assistant" && readQuizPayload(item.content)
+                ? <InteractiveQuiz
+                    quiz={readQuizPayload(item.content)}
+                    profile={item.profile || { gradeBand, subject, curriculum, language }}
+                    memoryEnabled={learningMemory.enabled}
+                    onSaveProgress={saveQuizProgress}
+                  />
+                : item.role === "assistant" && busy && index === messages.length - 1
+                  ? <div className="learning-thinking"><i /><i /><i /> {messageMode === "play" ? "Building your quiz" : "Building your interactive lesson"}</div>
+                  : item.role === "assistant" && messageMode === "play" && looksLikeIncompleteQuizPayload(item.content)
+                    ? <div className="learning-quiz-feedback encouraging" role="status">
+                        <strong>I couldn’t build a complete quiz this time.</strong>
+                        <p>Your quiz needs at least 10 valid questions. Nothing incomplete will be shown as a finished quiz.</p>
+                        <button type="button" disabled={busy} onClick={() => {
+                          const previousQuestion = messages.slice(0, index).reverse().find((message) => message.role === "user")?.content;
+                          if (previousQuestion) startLearning(null, previousQuestion, false, item.profile || { gradeBand, subject, curriculum, language, learningMode: messageMode });
+                        }}>Try generating the quiz again</button>
+                      </div>
+                  : item.role === "assistant" && messageMode !== "play"
+                    ? <AnimatedLesson
+                        content={item.content}
+                        topic={messages.slice(0, index).reverse().find((message) => message.role === "user")?.content || ""}
+                        memoryEnabled={learningMemory.enabled}
+                        onSaveJourney={(journey) => saveLearningJourney(journey, item.profile)}
+                        onRetry={() => {
+                          const previousQuestion = messages.slice(0, index).reverse().find((message) => message.role === "user")?.content;
+                          if (previousQuestion) startLearning(null, previousQuestion, false, item.profile || { gradeBand, subject, curriculum, language, learningMode: messageMode });
+                        }}
+                      />
+                    : <p>{item.content}</p>) : <div className="learning-thinking"><i /><i /><i /> Preparing your lesson</div>}
+            </article>;
+          })}
+        </div>}
         <section className="learning-discovery" aria-label="Choose a learning topic and mode">
-          <div className="learning-discovery-heading"><span>CHOOSE YOUR PATH</span><h3>How would you like to explore?</h3><p>Pick a learning adventure. Follow a story, step into an animated world, solve a challenge, talk it through or try an experiment.</p></div>
+          <div className="learning-discovery-heading"><span>EXPLORE MORE</span><h3>What would you like to discover?</h3><p>Choose from a wide range of subjects, then learn through a conversation, visual lesson or quiz.</p></div>
           <div className="learning-discovery-selects">
             <label>Subject area
               <select value={category} onChange={(event) => {
@@ -461,55 +495,10 @@ export default function LearningStudio({ userEmail = "" }) {
             </button>)}
           </div>
           <div className="learning-topic-actions">
-            <button type="button" disabled={busy} onClick={() => startLearning(null, learningMode === "play"
-              ? "Create a fresh 10-question Play & Solve journey about " + subject + ". Ask one challenge at a time, include a relevant visual, adapt gently to my answers, and explain each idea after I solve it."
-              : "Take me on a " + learningModes.find((mode) => mode.id === learningMode)?.title + " learning journey about " + subject + ". Make it joyful, visual and interactive, with small discoveries and one meaningful learner action at a time.", true, { gradeBand, schoolGrade, subject, curriculum, language, learningMode })}>
-              {learningMode === "play" ? "Start a 10-question challenge" : "Begin my " + (learningModes.find((mode) => mode.id === learningMode)?.title || "adventure")}
-            </button>
+            <button type="button" disabled={busy} onClick={() => startLearning(null, "Teach me " + subject + " with an engaging, level-appropriate lesson. Start with the foundations and build toward a useful real-world example.", true, { gradeBand, schoolGrade, subject, curriculum, language, learningMode: learningMode === "play" ? "talk" : learningMode })}>Explore {subject}</button>
+            <button type="button" disabled={busy} onClick={() => startLearning(null, "Create a fresh 20-question Play & Solve quiz about " + subject + ". Vary the concepts and difficulty for my level, use accurate explanations and relevant visuals, and do not repeat questions from earlier in this conversation.", true, { gradeBand, schoolGrade, subject, curriculum, language, learningMode: "play" })}>Start a 20-question quiz</button>
           </div>
         </section>
-
-      <section className="learning-session">
-        {messages.length > 0 && <div className="learning-section-heading"><div><span>YOUR JOURNEY</span><h2>Keep exploring with Aahana</h2></div><span className="learning-session-status">{busy ? "Aahana is creating your next discovery…" : "Your adventure is underway"}</span></div> }
-        {messages.length > 0 && <div className="learning-conversation" aria-live="polite">
-          {messages.map((item, index) => {
-            const messageMode = item.learningMode || learningMode;
-            return <article className={item.role === "user" ? "learning-message learner" : "learning-message tutor"} key={index}>
-              <small>{item.role === "user" ? "YOU" : "AAHANA"}</small>
-              {item.content ? (messageMode === "play" && item.role === "assistant" && readQuizPayload(item.content)
-                ? <InteractiveQuiz
-                    quiz={readQuizPayload(item.content)}
-                    profile={item.profile || { gradeBand, subject, curriculum, language }}
-                    memoryEnabled={learningMemory.enabled}
-                    onSaveProgress={saveQuizProgress}
-                  />
-                : item.role === "assistant" && busy && index === messages.length - 1
-                  ? <div className="learning-thinking"><i /><i /><i /> {messageMode === "play" ? "Building your quiz" : "Building your interactive lesson"}</div>
-                  : item.role === "assistant" && messageMode === "play" && looksLikeIncompleteQuizPayload(item.content)
-                    ? <div className="learning-quiz-feedback encouraging" role="status">
-                        <strong>I couldn’t build a complete quiz this time.</strong>
-                        <p>Your quiz needs at least 10 valid questions. Nothing incomplete will be shown as a finished quiz.</p>
-                        <button type="button" disabled={busy} onClick={() => {
-                          const previousQuestion = messages.slice(0, index).reverse().find((message) => message.role === "user")?.content;
-                          if (previousQuestion) startLearning(null, `Regenerate a complete Play & Solve quiz for this exact topic: ${previousQuestion}. The previous response was incomplete. Return exactly 10 complete, distinct questions in the required aahana_quiz_v1 JSON format. Include four distinct options, one correct answer, a concise explanation, one hint and a relevant visual for every question. Do not return a partial quiz.`, false, item.profile || { gradeBand, subject, curriculum, language, learningMode: messageMode });
-                        }}>Try generating the quiz again</button>
-                      </div>
-                  : item.role === "assistant" && messageMode !== "play"
-                    ? <AnimatedLesson
-                        content={item.content}
-                        topic={messages.slice(0, index).reverse().find((message) => message.role === "user")?.content || ""}
-                        memoryEnabled={learningMemory.enabled}
-                        onSaveJourney={(journey) => saveLearningJourney(journey, item.profile)}
-                        onRetry={() => {
-                          const previousQuestion = messages.slice(0, index).reverse().find((message) => message.role === "user")?.content;
-                          if (previousQuestion) startLearning(null, previousQuestion, false, item.profile || { gradeBand, subject, curriculum, language, learningMode: messageMode });
-                        }}
-                      />
-                    : <p>{item.content}</p>) : <div className="learning-thinking"><i /><i /><i /> Preparing your lesson</div>}
-            </article>;
-          })}
-        </div>}
-
         <form className="learning-composer" onSubmit={startLearning}>
           <label htmlFor="learning-question">Search or ask Aahana about any topic</label>
           <textarea id="learning-question" value={question} onChange={(event) => setQuestion(event.target.value)} rows={3} maxLength={8000} disabled={busy} placeholder="Search any topic or ask a question… Why does the Moon change shape? How do birds fly? How does AI work?" />
@@ -518,13 +507,14 @@ export default function LearningStudio({ userEmail = "" }) {
         {error && <p className="learning-error" role="alert">{error}</p>}
         <p className="learning-note">Explore beyond a fixed subject list: school subjects, advanced ideas, science, technology, history, arts, cultures and everyday questions. Aahana adapts the explanation to your level.</p>
       </section>
+      <Interactive3DWorld selectedPlanet={selectedPlanet} onSelectedPlanetChange={setSelectedPlanet} />
       <section className="learning-memory-panel" aria-labelledby="learning-memory-title">
         <div className="learning-section-heading"><div><span>YOUR CHOICE</span><h2 id="learning-memory-title">Private learning memory</h2></div>
           <button type="button" disabled={memoryLoading || memoryBusy} onClick={updateLearningMemoryConsent}>
             {memoryLoading ? "Loading…" : memoryBusy ? "Updating…" : learningMemory.enabled ? "Turn memory off" : "Turn memory on"}
           </button>
         </div>
-        <p>When enabled, Aahana can save a completed lesson or quiz only when you choose to save it. Turning memory off stops new saves; it does not delete existing records.</p>
+        <p>When enabled, Aahana can save a completed lesson or quiz only when you choose to save it. Turning memory off stops new saves and hides existing records without deleting them. Turn memory back on to review or delete saved records.</p>
         {memoryNotice && <p role="status">{memoryNotice}</p>}
         {memoryError && <p className="learning-error" role="alert">{memoryError}</p>}
         {(learningMemory.journeys.length > 0 || (learningMemory.quizProgress || []).length > 0) && <div className="learning-memory-list">

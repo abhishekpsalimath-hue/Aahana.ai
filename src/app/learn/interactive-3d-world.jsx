@@ -391,10 +391,9 @@ function createThreeScene(canvas,id,selectedPlanet=null) {
     || (navigator.hardwareConcurrency || 8) <= 4
     || window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
   let renderer;
-  try { renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: "high-performance", precision: constrainedDevice ? "mediump" : "highp" }); }
+  try { renderer = new THREE.WebGLRenderer({ canvas, antialias: !constrainedDevice, alpha: false, powerPreference: "high-performance", precision: constrainedDevice ? "mediump" : "highp" }); }
   catch { return null; }
-  // Render sharply on capable screens while keeping a safe mobile performance ceiling.
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, constrainedDevice ? 1.5 : 2));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, constrainedDevice ? 1.25 : 2));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.08;
@@ -423,13 +422,7 @@ function createThreeScene(canvas,id,selectedPlanet=null) {
   const group = new THREE.Group();
   scene.add(group);
   makeSceneModel(group, id, selectedPlanet);
-  // Real light/shadow response adds depth to solid models without affecting the fallback renderer.
-  group.traverse((object) => {
-    if (object.isMesh) {
-      object.castShadow = renderer.shadowMap.enabled;
-      object.receiveShadow = renderer.shadowMap.enabled;
-    }
-  });
+  group.traverse((object) => { if (object.isMesh) { object.castShadow = renderer.shadowMap.enabled; object.receiveShadow = renderer.shadowMap.enabled; } });
   const state = { renderer, scene, camera, group, id, selectedPlanet, stars, width: 0, height: 0 };
   threeScenes.set(canvas,state);return state;
 }
@@ -463,12 +456,7 @@ function renderThreeScene(canvas, id, yaw, pitch, zoom, time = 0, selectedPlanet
     state.id = id;
     state.selectedPlanet = selectedPlanet;
     makeSceneModel(state.group, id, selectedPlanet);
-    state.group.traverse((object) => {
-      if (object.isMesh) {
-        object.castShadow = state.renderer.shadowMap.enabled;
-        object.receiveShadow = state.renderer.shadowMap.enabled;
-      }
-    });
+    state.group.traverse((object) => { if (object.isMesh) { object.castShadow = state.renderer.shadowMap.enabled; object.receiveShadow = state.renderer.shadowMap.enabled; } });
   }
 
   const rect = canvas.getBoundingClientRect();
