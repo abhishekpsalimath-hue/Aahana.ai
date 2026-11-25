@@ -2,6 +2,10 @@ export const DEFAULT_IMAGE_MODEL = "@cf/black-forest-labs/flux-1-schnell";
 export const ENHANCED_IMAGE_MODEL = "@cf/black-forest-labs/flux-2-klein-4b";
 export const ACCURACY_IMAGE_MODEL = "@cf/black-forest-labs/flux-2-dev";
 
+export function supportsImageAspectRatio(model, aspectRatio) {
+  return model !== DEFAULT_IMAGE_MODEL || aspectRatio === "1:1";
+}
+
 export function getImageOutputMimeType(model) {
   return model === ENHANCED_IMAGE_MODEL || model === ACCURACY_IMAGE_MODEL ? "image/png" : "image/jpeg";
 }
@@ -28,9 +32,10 @@ export function detectImageMimeTypeFromBase64(value) {
 }
 
 export function resolveImageModel(value) {
+  if (value === undefined || value === null || value === "") return DEFAULT_IMAGE_MODEL;
   if (value === "flux-2-klein-4b") return ENHANCED_IMAGE_MODEL;
   if (value === "flux-2-dev") return ACCURACY_IMAGE_MODEL;
-  return DEFAULT_IMAGE_MODEL;
+  throw new Error("Unsupported Aahana image model selection. Choose flux-2-klein-4b or flux-2-dev, or leave it unset for the default model.");
 }
 
 export function buildImageProviderRequest({ model, prompt, steps = 8, seed, width = 1024, height = 1024 }) {
