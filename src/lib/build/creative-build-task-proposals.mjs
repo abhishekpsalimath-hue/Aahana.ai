@@ -67,7 +67,7 @@ export function createCreativeBuildTaskProposals({ improvementReport, targetPath
       source: typeof proposal.source === "string" ? proposal.source : "unspecified",
       evidence: Object.freeze({ ...proposal.evidence }),
     });
-    const identity = stableJson({ proposalId: proposal.id, sourceEvidence, targetPaths });
+    const identity = stableJson({ proposalId: proposal.id, title: proposal.title, priority: proposal.priority, action: proposal.action, sourceEvidence, targetPaths });
     const taskId = "creative-task-" + createHash("sha256").update(identity).digest("hex").slice(0, 20);
 
     return Object.freeze({
@@ -130,6 +130,9 @@ export function verifyCreativeBuildTaskProposal(task) {
         paths.some((path, index) => path !== [...paths].sort()[index])) return false;
     const identity = stableJson({
       proposalId: task.proposalId,
+      title: task.title,
+      priority: task.priority,
+      action: task.action,
       sourceEvidence: task.sourceEvidence,
       targetPaths: paths,
     });
