@@ -47,3 +47,16 @@ export function createBenchmarkSnapshot({benchmark, benchmarkVersion, commitSha,
   const digest = createHash("sha256").update(canonicalJson, "utf8").digest("hex");
   return deepFreeze({...payload, digest});
 }
+
+/** Verify snapshot integrity without mutating or trusting its supplied digest. */
+export function verifyBenchmarkSnapshot(snapshot) {
+  if (!snapshot || typeof snapshot !== "object" || typeof snapshot.digest !== "string") return false;
+  try {
+    const {digest, ...payload} = snapshot;
+    const canonicalJson = JSON.stringify(canonicalize(payload));
+    const expected = createHash("sha256").update(canonicalJson, "utf8").digest("hex");
+    return digest === expected && payload.schemaVersion === 1;
+  } catch {
+    return false;
+  }
+}
