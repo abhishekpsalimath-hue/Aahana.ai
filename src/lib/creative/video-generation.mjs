@@ -1,4 +1,5 @@
-import { buildVideoPrompt, VIDEO_DIRECTOR_PRESETS } from "./creative-director.mjs";
+import { buildVideoContinuityPrompt, buildVideoPrompt, VIDEO_DIRECTOR_PRESETS } from "./creative-director.mjs";
+import { getReferenceImageDimensions } from "./image-generation.mjs";
 export const VIDEO_MODEL = "xai/grok-imagine-video";
 export const MAX_VIDEO_PROMPT_LENGTH = 2000;
 export const MAX_VIDEO_DURATION_SECONDS = 15;
@@ -31,9 +32,27 @@ export function parseVideoGenerationInput(body) {
     return { ok: false, error: "Choose a supported video direction." };
   }
   const directedPrompt = buildVideoPrompt(prompt, director);
-  if (!directedPrompt || directedPrompt.length > MAX_VIDEO_PROMPT_LENGTH) {
+  const continuityPrompt = body?.continuity === undefined ? "" : buildVideoContinuityPrompt(body.continuity);
+  if (continuityPrompt === null) {
+    return { ok: false, error: "Check the video continuity fields and keep each to 180 characters or fewer." };
+  }
+  const finalPrompt = [directedPrompt, continuityPrompt].filter(Boolean).join("\n\n");
+  if (!directedPrompt || finalPrompt.length > MAX_VIDEO_PROMPT_LENGTH) {
     return { ok: false, error: "This video prompt is too long for the selected direction. Shorten it and try again." };
   }
 
-  return { ok: true, prompt: directedPrompt, duration, aspectRatio, resolution, director };
+  return { ok: true, prompt: finalPrompt, duration, aspectRatio, resolution, director };
+}
+
+
+export const MAX_VIDEO_REFERENCE_IMAGE_BYTES = 2 * 1024 * 1024;
+export const MAX_VIDEO_REFERENCE_IMAGE_DIMENSION = 4096;
+export const MAX_VIDEO_REFERENCE_IMAGE_PIXELS = 16777216;
+const VIDEO_REFERENCE_IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
+
+export function validateVideoReferenceImage({ bytes, imageType, imageSize } = {}) {
+  if (!VIDEO_REFERENCE_IMAGE_TYPES.has(imageType) || !(bytes instanceof Uint8Array) || !Number.isInteger(imageSize) || imageSize < 1 || imageSize > MAX_VIDEO_REFERENCE_IMAGE_BYTES || bytes.byteLength !== imageSize) return { ok: false, error: "Choose a valid PNG, JPEG or WebP reference image up to 2 MB." };
+  const dimensions = getReferenceImageDimensions(bytes, imageType);
+  if (!dimensions || !Number.isInteger(dimensions.width) || !Number.isInteger(dimensions.height) || dimensions.width < 1 || dimensions.height < 1 || dimensions.width > MAX_VIDEO_REFERENCE_IMAGE_DIMENSION || dimensions.height > MAX_VIDEO_REFERENCE_IMAGE_DIMENSION || dimensions.width * dimensions.height > MAX_VIDEO_REFERENCE_IMAGE_PIXELS) return { ok: false, error: "The reference image is invalid or exceeds the 4,096-pixel / 16-megapixel limit." };
+  return { ok: true, dimensions };
 }
