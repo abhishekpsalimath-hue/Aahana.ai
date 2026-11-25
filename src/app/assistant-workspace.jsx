@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getSourceFileMimeType, isSupportedSourceFile } from "@/lib/build/source-file-policy.mjs";
 import { isImageGenerationRequest, isImageEditRequest, isVideoGenerationRequest } from "@/lib/creative/creative-intent.mjs";
+import AahanaSelfBuildPanel from "@/app/experience-lab/self-build-panel.jsx";
 
 const modes = [
   { id: "solve", label: "Solve", hint: "Work through a problem" },
@@ -1873,9 +1874,10 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
           <div className="assistance-tool-launchers" role="group" aria-label="Assistance tools">
             <button type="button" onClick={() => { setMode("build"); setError(""); }}>Build workspace <span aria-hidden="true">↗</span></button>
             <button type="button" onClick={() => { setMode("create"); setError(""); }}>Creative tools <span aria-hidden="true">✧</span></button>
-            <button type="button" onClick={() => { setPrompt("Research this topic thoroughly, compare reliable sources and summarize the evidence: "); setError(""); }}>Research <span aria-hidden="true">⌕</span></button>
+            <button type="button" onClick={() => { setPrompt("Research this topic thoroughly, compare reliable sources and summarize the evidence: "); setError(""); document.getElementById("prompt")?.focus(); }}>Research <span aria-hidden="true">⌕</span></button>
             <button type="button" onClick={startVoiceInput} disabled={listening || busy}>{listening ? "Listening…" : "Voice"} <span aria-hidden="true">◖</span></button>
           </div>
+          <AahanaSelfBuildPanel />
 
           {messages.length > 0 && (
             <div className="conversation" aria-live="polite">
@@ -2044,7 +2046,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
               <div className="notice">{aiEnabled ? "Your workspace is ready. Send a prompt to begin." : "Your workspace is ready. AI activation is pending billing and connection checks. Prompts are not sent yet."}</div>
               <div className="starter-grid">
                 {starters.map((item, index) => (
-                  <button className="starter" type="button" key={item} onClick={() => setPrompt(item)}>
+                  <button className="starter" type="button" key={item} onClick={() => { setPrompt(item); document.getElementById("prompt")?.focus(); }}>
                     <span className="starter-icon">{["◇", "↗", "✎", "⌘"][index]}</span>
                     <span>{item}</span>
                     <span className="starter-arrow">↗</span>
