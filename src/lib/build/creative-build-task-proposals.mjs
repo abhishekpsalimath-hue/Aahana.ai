@@ -4,6 +4,10 @@ const ALLOWED_ROOTS = Object.freeze(["src/lib/creative/", "src/lib/build/"]);
 const BLOCKED_PATH = /(?:^|\/)(?:auth|student(?:-mode)?|supabase|migrations?|\.github|\.vercel|node_modules|vendor)(?:\/|$)|(?:^|\/)(?:package(?:-lock)?\.json|pnpm-lock\.yaml|yarn\.lock|\.env(?:\.|$))/i;
 const MAX_TASKS = 50;
 const MAX_PATHS_PER_TASK = 12;
+const MAX_TITLE_LENGTH = 160;
+const MAX_ACTION_LENGTH = 1000;
+const MAX_SOURCE_LENGTH = 80;
+const MAX_EVIDENCE_BYTES = 8192;
 
 function stableJson(value) {
   if (Array.isArray(value)) return "[" + value.map(stableJson).join(",") + "]";
@@ -48,7 +52,8 @@ export function createCreativeBuildTaskProposals({ improvementReport, targetPath
   const seen = new Set();
   const tasks = improvementReport.proposals.map((proposal) => {
     if (!proposal || typeof proposal.id !== "string" || !/^[a-z0-9-]{3,100}$/i.test(proposal.id) ||
-        typeof proposal.title !== "string" || typeof proposal.action !== "string" ||
+        typeof proposal.title !== "string" || !proposal.title.trim() || proposal.title.length > MAX_TITLE_LENGTH ||
+        typeof proposal.action !== "string" || !proposal.action.trim() || proposal.action.length > MAX_ACTION_LENGTH ||
         !["high", "medium", "low"].includes(proposal.priority) ||
         !proposal.evidence || typeof proposal.evidence !== "object" || Array.isArray(proposal.evidence)) {
       throw new TypeError("The improvement report contains a malformed proposal.");
@@ -63,8 +68,21 @@ export function createCreativeBuildTaskProposals({ improvementReport, targetPath
     const targetPaths = [...new Set(assigned.map(validateCreativeBuildTargetPath))].sort();
     if (targetPaths.length !== assigned.length) throw new Error("Build task target paths must be unique.");
 
+    let evidenceBytes;
+    try {
+      evidenceBytes = new TextEncoder().encode(JSON.stringify(proposal.evidence)).byteLength;
+    } catch {
+      throw new TypeError("Proposal evidence must be serializable JSON.");
+    }
+    if (evidenceBytes > MAX_EVIDENCE_BYTES) {
+      throw new Error("Proposal evidence exceeds the 8 KB task limit.");
+    }
+    const source = typeof proposal.source === "string" ? proposal.source : "unspecified";
+    if (!source.trim() || source.length > MAX_SOURCE_LENGTH) {
+      throw new TypeError("Proposal source must be a non-empty label of at most 80 characters.");
+    }
     const sourceEvidence = Object.freeze({
-      source: typeof proposal.source === "string" ? proposal.source : "unspecified",
+      source,
       evidence: Object.freeze({ ...proposal.evidence }),
     });
     const identity = stableJson({ proposalId: proposal.id, title: proposal.title, priority: proposal.priority, action: proposal.action, sourceEvidence, targetPaths });
