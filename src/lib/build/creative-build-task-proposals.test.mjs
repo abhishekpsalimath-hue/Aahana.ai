@@ -114,3 +114,21 @@ test("verifier enforces the exact draft-only schema and bounded JSON evidence", 
     unexpectedPermission: true,
   }), false);
 });
+
+
+test("canonicalizes and deep-freezes nested evidence without retaining caller-owned objects", () => {
+  const evidence = { scores: { subject: 2 }, labels: ["identity", "composition"] };
+  const nestedReport = {
+    proposalCount: 1,
+    proposals: [{ ...report.proposals[0], evidence }],
+  };
+  const [task] = createCreativeBuildTaskProposals({ improvementReport: nestedReport }).tasks;
+  evidence.scores.subject = 5;
+  evidence.labels.push("mutated");
+  assert.equal(task.sourceEvidence.evidence.scores.subject, 2);
+  assert.deepEqual(task.sourceEvidence.evidence.labels, ["identity", "composition"]);
+  assert.equal(Object.isFrozen(task.sourceEvidence.evidence), true);
+  assert.equal(Object.isFrozen(task.sourceEvidence.evidence.scores), true);
+  assert.equal(Object.isFrozen(task.sourceEvidence.evidence.labels), true);
+  assert.equal(verifyCreativeBuildTaskProposal(task), true);
+});
