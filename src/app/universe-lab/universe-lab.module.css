@@ -45,3 +45,12 @@
 @keyframes planet-float{from{translate:0 0}to{translate:0 -14px}}
 @keyframes hole-pulse{0%,100%{box-shadow:0 0 0 5px #ad8aff33,0 0 28px 9px #b48cff55}50%{box-shadow:0 0 0 8px #ad8aff22,0 0 42px 14px #b48cff88}}
 @media(prefers-reduced-motion:reduce){.universe[data-motion="true"] .galaxy,.universe[data-motion="true"] .planetOne,.universe[data-motion="true"] .planetTwo,.universe[data-motion="true"] .blackHole{animation:none}}
+
+.solarOrbit{position:absolute;left:50%;top:49%;width:285px;height:125px;border:1px solid #b9a3e82c;border-radius:50%;transform:translate(-50%,-50%) rotate(27deg)}
+.solarOrbit i{position:absolute;width:13px;height:13px;left:78%;top:7%;border-radius:50%;background:radial-gradient(circle at 30% 25%,#fff0cb,#d9a86d 52%,#654c42);box-shadow:0 0 15px #e4b87c88}
+.cometTrail{position:absolute;left:18%;top:66%;width:88px;height:2px;transform:rotate(-32deg);background:linear-gradient(90deg,transparent,#9fe9e4aa,#fff);filter:drop-shadow(0 0 6px #9fe9e4)}
+.cometTrail:after{content:"";position:absolute;right:-3px;top:-3px;width:8px;height:8px;border-radius:50%;background:#eaffff;box-shadow:0 0 12px #9fe9e4}
+.universe[data-motion="true"] .cometTrail{animation:comet-drift 9s ease-in-out infinite}
+@keyframes comet-drift{0%,100%{translate:0 0;opacity:.55}50%{translate:28px -12px;opacity:1}}
+@media(max-width:600px){.solarOrbit{width:220px;height:98px}.cometTrail{left:12%;top:67%;width:62px}}
+@media(prefers-reduced-motion:reduce){.universe[data-motion="true"] .cometTrail{animation:none}}
