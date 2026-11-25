@@ -58,7 +58,7 @@ export function buildImageProviderRequest({ model, prompt, steps = 8, seed, widt
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ prompt, steps, width, height }),
+    body: JSON.stringify({ prompt, steps }),
     cache: "no-store",
     signal: AbortSignal.timeout(55000),
   };
