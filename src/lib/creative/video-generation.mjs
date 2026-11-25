@@ -46,7 +46,7 @@ export const MAX_VIDEO_REFERENCE_IMAGE_PIXELS = 16777216;
 const VIDEO_REFERENCE_IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
 
 export function validateVideoReferenceImage({ bytes, imageType, imageSize } = {}) {
-  if (!VIDEO_REFERENCE_IMAGE_TYPES.has(imageType) || !Number.isInteger(imageSize) || imageSize < 1 || imageSize > MAX_VIDEO_REFERENCE_IMAGE_BYTES) return { ok: false, error: "Choose a valid PNG, JPEG or WebP reference image up to 2 MB." };
+  if (!VIDEO_REFERENCE_IMAGE_TYPES.has(imageType) || !(bytes instanceof Uint8Array) || !Number.isInteger(imageSize) || imageSize < 1 || imageSize > MAX_VIDEO_REFERENCE_IMAGE_BYTES || bytes.byteLength !== imageSize) return { ok: false, error: "Choose a valid PNG, JPEG or WebP reference image up to 2 MB." };
   const dimensions = getReferenceImageDimensions(bytes, imageType);
   if (!dimensions || !Number.isInteger(dimensions.width) || !Number.isInteger(dimensions.height) || dimensions.width < 1 || dimensions.height < 1 || dimensions.width > MAX_VIDEO_REFERENCE_IMAGE_DIMENSION || dimensions.height > MAX_VIDEO_REFERENCE_IMAGE_DIMENSION || dimensions.width * dimensions.height > MAX_VIDEO_REFERENCE_IMAGE_PIXELS) return { ok: false, error: "The reference image is invalid or exceeds the 4,096-pixel / 16-megapixel limit." };
   return { ok: true, dimensions };
