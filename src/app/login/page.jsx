@@ -12,7 +12,7 @@ export default function LoginPage() {
   const [mode, setMode] = useState("signin");
   const [authMethod, setAuthMethod] = useState("otp");
   const [step, setStep] = useState("credentials");
-  const [otpType, setOtpType] = useState("email");
+  const [otpPurpose, setOtpPurpose] = useState("signin");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [otpCooldown, setOtpCooldown] = useState(0);
@@ -55,7 +55,7 @@ export default function LoginPage() {
         const { error } = await supabase.auth.verifyOtp({
           email: normalizedEmail,
           token: otp,
-          type: otpType,
+          type: "email",
         });
 
         if (error) {
@@ -86,7 +86,7 @@ export default function LoginPage() {
             if (resend.error) {
               setMessage(explainAuthError(resend.error, "This account still needs email verification. We couldn't send a new code yet; please wait and try again."));
             } else {
-              setOtpType("signup");
+              setOtpPurpose("signup");
               setStep("verify");
               setOtp("");
               setOtpCooldown(60);
@@ -96,7 +96,7 @@ export default function LoginPage() {
             setMessage(explainAuthError(error, "We couldn't send your sign-in code. Please try again."));
           }
         } else {
-          setOtpType("email");
+          setOtpPurpose("signin");
           setStep("verify");
           setOtp("");
           setOtpCooldown(60);
@@ -152,7 +152,7 @@ export default function LoginPage() {
     try {
       const supabase = createClient();
       const normalizedEmail = email.trim().toLowerCase();
-      const result = otpType === "signup"
+      const result = otpPurpose === "signup"
         ? await supabase.auth.resend({ type: "signup", email: normalizedEmail })
         : await supabase.auth.signInWithOtp({
             email: normalizedEmail,
