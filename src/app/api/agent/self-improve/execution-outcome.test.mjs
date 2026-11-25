@@ -8,7 +8,9 @@ test("reports a staged proposal without claiming acceptance checks ran", () => {
   const result = buildSelfImproveExecutionOutcome({ ...base, proposalCount: 1, successfulToolCalls: 3 });
   assert.equal(result.status, "proposal_ready");
   assert.equal(result.reasonCode, "PROPOSAL_STAGED_FOR_REVIEW");
-  assert.deepEqual(result.acceptanceChecks, { status: "not_run", passed: 0, total: null });
+  assert.deepEqual(result.acceptanceChecks, { status: "not_run", passed: 0, total: null, checks: [] });
+  const review = buildSelfImproveExecutionOutcome({ ...base, proposalCount: 1, acceptanceCheckLabels: ["Unit tests pass", "No auth changes"] });
+  assert.deepEqual(review.acceptanceChecks, { status: "review_required", passed: 0, total: 2, checks: [{ label: "Unit tests pass", status: "not_run" }, { label: "No auth changes", status: "not_run" }] });
 });
 
 test("reports partial when a proposal exists alongside tool failures", () => {
@@ -39,6 +41,7 @@ test("keeps planning outcomes distinct and validates counters", () => {
   assert.equal(buildSelfImproveExecutionOutcome({ phase: "plan", failedToolCalls: 1 }).status, "blocked");
   assert.throws(() => buildSelfImproveExecutionOutcome({ ...base, failedToolCalls: -1 }), /counters/);
   assert.throws(() => buildSelfImproveExecutionOutcome({ ...base, phase: "other" }), /phase/);
+  assert.throws(() => buildSelfImproveExecutionOutcome({ ...base, acceptanceCheckLabels: [""] }), /Acceptance check/);
 });
 
 
