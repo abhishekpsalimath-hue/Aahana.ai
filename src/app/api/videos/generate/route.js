@@ -115,7 +115,8 @@ export async function POST(request) {
       }
     );
 
-    const parsedProviderResponse = await readBoundedResponseJson(response);\n    const result = parsedProviderResponse.ok ? parsedProviderResponse.value : null;
+    const parsedProviderResponse = await readBoundedResponseJson(response);
+    const result = parsedProviderResponse.ok ? parsedProviderResponse.value : null;
     const videoUrl = result?.result?.video;
     if (!response.ok || result?.state === "Failed" || typeof videoUrl !== "string") {
       const providerStatus = response.status;
