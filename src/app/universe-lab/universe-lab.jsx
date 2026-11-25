@@ -199,12 +199,13 @@ export default function UniverseLab() {
 
       {selected === "black-holes" && <section className={styles.gravityLab} aria-label="Black-hole gravity experiment">
         <div className={styles.gravityHeader}><div><span className={styles.detailEyebrow}>INTERACTIVE PHYSICS · CONCEPTUAL MODEL</span><h2>Gravity Lab</h2><p>Change the black hole and the passing light ray. Watch how the path bends.</p></div><span className={styles.gravityTag}>LIGHT PATH</span></div>
-        <svg className={styles.gravityDiagram} viewBox="0 0 300 132" role="img" aria-label={`Conceptual light path bending around a black hole. Mass ${gravityMass} of 10, approach distance ${gravityDistance} of 10.`} data-run={rayRun}>
+        <svg key={rayRun} className={styles.gravityDiagram} viewBox="0 0 300 132" role="img" aria-label={`Conceptual light path bending around a black hole. Mass ${gravityMass} of 10, approach distance ${gravityDistance} of 10.`} data-run={rayRun}>
           <defs><radialGradient id="gravityGlow"><stop offset="0" stopColor="#b99aff" stopOpacity=".42"/><stop offset="1" stopColor="#b99aff" stopOpacity="0"/></radialGradient></defs>
           <ellipse cx="150" cy="78" rx="63" ry="44" fill="url(#gravityGlow)"/>
           <ellipse cx="150" cy="78" rx="35" ry="9" fill="none" stroke="#c6a8ff" strokeOpacity=".75" strokeWidth="2" transform="rotate(-17 150 78)"/>
-          <circle cx="150" cy="78" r="19" fill="#030207" stroke="#a98bd8" strokeOpacity=".8" strokeWidth="1.5"/>
           <path d={`M 8 22 Q 150 ${rayControlY.toFixed(1)} 292 22`} className={styles.rayPath} fill="none" stroke="#b8f4ff" strokeWidth="2.2" strokeLinecap="round"/>
+          <circle cx="150" cy="78" r="19" fill="#030207" stroke="#a98bd8" strokeOpacity=".8" strokeWidth="1.5"/>
+
           <circle cx="8" cy="22" r="3" fill="#e8fcff"/><circle cx="292" cy="22" r="3" fill="#e8fcff"/>
           <text x="8" y="12" fill="#a99bbd" fontSize="7">LIGHT IN</text><text x="292" y="12" fill="#a99bbd" fontSize="7" textAnchor="end">LIGHT OUT</text>
         </svg>
