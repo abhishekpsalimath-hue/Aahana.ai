@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { buildCreativeEvaluationReport } from "./creative-evaluation-report.mjs";
+import { VIDEO_BENCHMARK_CASES } from "./video-benchmark-cases.mjs";
 
 const imageReview={sampleId:"image-sample-01",caseId:"IMG-001",category:"people",model:"image-fixture",reviewer:"reviewer-a",reviewedAt:"2026-11-25T12:00:00Z",scores:{subjectFidelity:5,attributeFidelity:4,compositionFidelity:4,constraintFidelity:5,visualCoherence:4}};
 const videoReview=(shotNumber,sampleId)=>({seriesId:"video-series-01",sampleId,model:"video-fixture",reviewer:"reviewer-a",shotNumber,reviewedAt:"2026-11-25T12:00:00Z",scores:{identityContinuity:5,motionContinuity:4,cameraContinuity:4,transitionCoherence:5,temporalProgression:4}});
@@ -16,4 +17,14 @@ test("supports an empty report and rejects non-array input",()=>{
  assert.deepEqual(report.image.humanOutputReviews,[]);
  assert.deepEqual(report.video.humanShotReviews,[]);
  assert.throws(()=>buildCreativeEvaluationReport({videoReviews:{}}),/must be arrays/);
+});
+test("embeds a coverage-aware video structural benchmark separately from human ratings",()=>{
+ const item=VIDEO_BENCHMARK_CASES[0];
+ const plan={caseId:item.id,shots:Array.from({length:item.shotCount},(_,index)=>({shotNumber:index+1,subjectId:item.expected.subjectId,wardrobeId:item.expected.wardrobeId,cameraSide:item.expected.cameraSide,screenDirection:item.expected.screenDirection,actionProgress:index}))};
+ const report=buildCreativeEvaluationReport({videoContinuityPlans:[plan]});
+ assert.equal(report.video.structuralPreflight.evaluatedCases,1);
+ assert.equal(report.video.structuralPreflight.catalogueCases,12);
+ assert.equal(report.video.structuralPreflight.coverageRate,Number((1/12).toFixed(3)));
+ assert.equal(report.video.humanShotReviews.length,0);
+ assert.match(report.video.structuralPreflight.scope,/Metadata-only/);
 });
