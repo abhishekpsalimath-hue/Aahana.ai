@@ -525,7 +525,6 @@ h1,.brand,.composer-mode,.breadcrumb{font-family:"Space Grotesk","Manrope",sans-
 .starter:hover::before{transform:translateX(110%)}
 .composer{border-color:#bda5e83b;background:linear-gradient(145deg,#17141fef,#0f0e15f5);box-shadow:0 24px 70px #0007,inset 0 1px #ffffff0b}
 .composer:focus-within{border-color:#cbb5ff99;box-shadow:0 24px 70px #0008,0 0 0 3px #b99af51c,inset 0 1px #ffffff13}
-.space-background .universe-galaxy,.space-background .galaxy-core{display:none!important}
 .space-background .universe-webgl{opacity:.66}
 .space-background .universe-flight{opacity:.9}
 .space-background .universe-nebula{opacity:.16;filter:blur(48px)}
@@ -634,5 +633,52 @@ h1,.brand,.composer-mode,.breadcrumb{font-family:"Space Grotesk","Manrope",sans-
     animation-timing-function:linear!important;
     animation-delay:var(--comet-delay)!important;
     animation-iteration-count:infinite!important;
+  }
+}
+
+
+/* Restore Aahana's approaching spiral galaxy on desktop and compact devices.
+   Keep the mobile CSS fallback: the heavy WebGL scene is intentionally disabled on phones. */
+.space-background .universe-galaxy{
+  display:block!important;
+  position:absolute;
+  left:50%;
+  top:46%;
+  z-index:0;
+  width:min(86vw,760px);
+  height:min(86vw,760px);
+  min-width:260px;
+  min-height:260px;
+  opacity:.78!important;
+  transform-style:preserve-3d;
+  transform:translate3d(-50%,-50%,-460px) rotateX(68deg) rotateZ(-18deg) scale(.52);
+  animation:galaxy-approach-viewer 34s cubic-bezier(.2,.62,.34,1) infinite,galaxy-turn 78s linear infinite;
+  filter:drop-shadow(0 0 24px #9d78e955);
+  will-change:transform,opacity;
+}
+.space-background .universe-galaxy::before{opacity:.82!important;filter:blur(5px)}
+.space-background .galaxy-core{
+  display:block!important;
+  opacity:.92!important;
+  box-shadow:0 0 38px #c5a5ffbb,0 0 110px #9d78e988;
+}
+.space-background .galaxy-arm{opacity:.88;filter:drop-shadow(0 0 12px #b18dfb)}
+@keyframes galaxy-approach-viewer{
+  0%,100%{transform:translate3d(-50%,-50%,-460px) rotateX(68deg) rotateZ(-18deg) scale(.52);opacity:.42}
+  48%{transform:translate3d(-50%,-50%,-100px) rotateX(68deg) rotateZ(4deg) scale(1.08);opacity:.9}
+  72%{transform:translate3d(-50%,-50%,-42px) rotateX(68deg) rotateZ(11deg) scale(1.18);opacity:.96}
+}
+@media(max-width:760px){
+  .space-background .universe-galaxy{
+    width:min(92vw,520px);height:min(92vw,520px);
+    min-width:250px;min-height:250px;opacity:.72!important;
+  }
+  .space-background .universe-galaxy::before{opacity:.72!important}
+  .space-background .galaxy-core{opacity:.88!important}
+}
+@media(prefers-reduced-motion:reduce){
+  .space-background .universe-galaxy{
+    animation:galaxy-turn 120s linear infinite!important;
+    opacity:.58!important;
   }
 }
