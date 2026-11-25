@@ -50,6 +50,7 @@ export function buildCreativeEvaluationReport({
       humanOutputReviews:imageHumanReviews,
       promptBenchmark:imageBenchmarkResults.length ? summarizeImageBenchmark(imageBenchmarkResults) : [],
     },
+    improvementProposals,
     video:{
       humanShotReviews:videoHumanReviews,
       structuralPreflight,
@@ -57,7 +58,6 @@ export function buildCreativeEvaluationReport({
       reproducibleSnapshot:snapshot,
       snapshotHistory,
       modelComparison,
-      improvementProposals,
     },
     comparisonPolicy:"Do not compare image and video averages, acceptance rates, or reviewer spreads as if they shared one rubric.",
   });
