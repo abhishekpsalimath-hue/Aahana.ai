@@ -54,3 +54,12 @@ test("requires two snapshots and chronological runs within each model",()=>{
   make("model-a","2026-11-25T10:00:00Z",91),
  ]),/strictly chronological/);
 });
+
+test("rejects category remapping between models",()=>{
+ const first=make("model-a","2026-11-25T10:00:00Z",90);
+ const second=make("model-b","2026-11-25T11:00:00Z",90,{results:[
+  {caseId:"VID-001",category:"product",structuralScore:90,passed:true},
+  {caseId:"VID-002",category:"character",structuralScore:85,passed:true},
+ ]});
+ assert.throws(()=>compareBenchmarkModels([first,second]),/identical case categories/);
+});
