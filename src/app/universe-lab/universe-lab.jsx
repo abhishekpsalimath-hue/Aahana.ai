@@ -136,6 +136,12 @@ export default function UniverseLab() {
   const [comparisonQuestion, setComparisonQuestion] = useState("How are these two cosmic ideas connected, and where do they differ?");
   const [comparisonStatus, setComparisonStatus] = useState("");
   const [comparisonPreview, setComparisonPreview] = useState("");
+  const [projectTitle, setProjectTitle] = useState("A journey through the hidden architecture of the universe");
+  const [projectSubjects, setProjectSubjects] = useState(["galaxies", "stars", "dark-matter"]);
+  const [projectFormat, setProjectFormat] = useState("learning");
+  const [projectDirection, setProjectDirection] = useState("");
+  const [projectStatus, setProjectStatus] = useState("");
+  const [projectPreview, setProjectPreview] = useState("");
   const [gravityMass, setGravityMass] = useState(5);
   const [gravityDistance, setGravityDistance] = useState(5);
   const [rayRun, setRayRun] = useState(0);
@@ -210,6 +216,46 @@ export default function UniverseLab() {
     } catch {
       setComparisonPreview(prompt);
       setComparisonStatus("Clipboard unavailable. Your comparison brief is shown below for manual copying.");
+    }
+  };
+  const toggleProjectSubject = (id) => {
+    setProjectSubjects((current) => current.includes(id)
+      ? current.filter((item) => item !== id)
+      : current.length < 6 ? [...current, id] : current);
+    setProjectStatus("");
+    setProjectPreview("");
+  };
+  const copyKnowledgeProject = async () => {
+    const chosenWorlds = worlds.filter((world) => projectSubjects.includes(world.id));
+    if (chosenWorlds.length < 2 || !projectTitle.trim()) return;
+    const sourceNotes = chosenWorlds.map((world, index) =>
+      `SOURCE ${index + 1} — ${world.name}\nContext: ${world.note}\nScientific anchor: ${world.fact}\nExplorer's field note: ${world.guide}`
+    ).join("\n\n");
+    const formatInstructions = {
+      learning: "Build a coherent learning project with a clear learning goal, an accessible sequence of sections, key concepts, cross-links, reflection questions and a concise synthesis.",
+      creative: "Build a coherent creative project with a central concept, narrative arc, visual language, scene or chapter structure, and science-grounded creative choices.",
+      research: "Build a research project with a central question, sub-questions, established evidence, competing explanations where relevant, uncertainties, a structured outline and suggested observations. Do not fabricate sources or findings.",
+      presentation: "Build a presentation plan with a compelling opening, logical slide sequence, concise key messages, suggested diagrams, transitions and a closing synthesis.",
+    };
+    const prompt = `Aahana, help me assemble a connected project from these discoveries.
+
+PROJECT TITLE: ${projectTitle.trim()}
+PROJECT TYPE: ${projectFormat}
+USER DIRECTION: ${projectDirection.trim() || "Create a clear, engaging project for a curious general audience."}
+
+SELECTED DISCOVERIES (${chosenWorlds.length}):
+${sourceNotes}
+
+PROJECT INSTRUCTIONS:
+${formatInstructions[projectFormat]}
+Connect the selected subjects through defensible scientific relationships. Do not imply that every subject has a direct causal link. Separate established facts, useful analogies and open questions. Preserve the individual identity of each subject while building a meaningful overall structure. End with a short synthesis explaining what the discoveries reveal together and identify the most valuable next question.`;
+    try {
+      await navigator.clipboard.writeText(prompt);
+      setProjectPreview("");
+      setProjectStatus("Project brief copied. Paste it into Aahana to build the full project.");
+    } catch {
+      setProjectPreview(prompt);
+      setProjectStatus("Clipboard unavailable. Your complete project brief is shown below for manual copying.");
     }
   };
   const moveJourney = (direction) => {
@@ -342,6 +388,36 @@ export default function UniverseLab() {
         <div className={styles.creationActions}><span role="status" aria-live="polite">{comparisonStatus}</span><button type="button" onClick={copyComparisonBrief} disabled={!comparisonQuestion.trim()}>Prepare comparison ↗</button></div>
         {comparisonPreview && <label className={styles.creationField}>Your prepared comparison brief<textarea readOnly value={comparisonPreview} rows={9} onFocus={(event) => event.target.select()} /></label>}
         <p className={styles.gravityCaution}>A guided synthesis prompt only. It does not claim a connection exists, perform research, send a message or change a conversation.</p>
+      </section>
+
+      <section className={styles.knowledgeProject} aria-label="Build a knowledge constellation project">
+        <div className={styles.knowledgeHeader}>
+          <div><span className={styles.detailEyebrow}>KNOWLEDGE CONSTELLATION · PROJECT BUILDER</span><h2>Bring your discoveries together.</h2><p>Choose two to six worlds and turn their discoveries into one connected learning, creative or research project.</p></div>
+          <span className={styles.knowledgeGlyph} aria-hidden="true">✧</span>
+        </div>
+        <label className={styles.creationField}>Project title
+          <input value={projectTitle} maxLength={100} onChange={(event) => { setProjectTitle(event.target.value); setProjectStatus(""); setProjectPreview(""); }} />
+        </label>
+        <div className={styles.knowledgePicker}>
+          <div className={styles.knowledgePickerTop}><span>ADD DISCOVERIES</span><span>{projectSubjects.length} / 6 selected · choose at least 2</span></div>
+          <div className={styles.knowledgeChips}>
+            {worlds.map((world) => <button type="button" key={world.id} onClick={() => toggleProjectSubject(world.id)} className={projectSubjects.includes(world.id) ? styles.knowledgeChipActive : ""} aria-pressed={projectSubjects.includes(world.id)}>{world.name}<span>{projectSubjects.includes(world.id) ? "✓" : "+"}</span></button>)}
+          </div>
+        </div>
+        <label className={styles.creationField}>Project format
+          <select value={projectFormat} onChange={(event) => { setProjectFormat(event.target.value); setProjectStatus(""); setProjectPreview(""); }}>
+            <option value="learning">Connected learning journey</option>
+            <option value="creative">Creative universe / story</option>
+            <option value="research">Research project outline</option>
+            <option value="presentation">Presentation structure</option>
+          </select>
+        </label>
+        <label className={styles.creationField}>Your project direction <span>Optional</span>
+          <textarea value={projectDirection} maxLength={400} rows={2} onChange={(event) => { setProjectDirection(event.target.value); setProjectStatus(""); setProjectPreview(""); }} placeholder="What should this project help someone understand, imagine or investigate?" />
+        </label>
+        <div className={styles.knowledgeActions}><span role="status" aria-live="polite">{projectStatus}</span><button type="button" onClick={copyKnowledgeProject} disabled={projectSubjects.length < 2 || !projectTitle.trim()}>Assemble project brief ↗</button></div>
+        {projectPreview && <label className={styles.creationField}>Your complete project brief<textarea readOnly value={projectPreview} rows={12} onFocus={(event) => event.target.select()} /></label>}
+        <p className={styles.gravityCaution}>Your project is assembled from the selected Universe Lab notes in this page session. It is not saved to an account, does not create a file, and does not send or generate anything automatically.</p>
       </section>
 
       <section className={styles.experiment} aria-label="Cosmic thought experiment">
