@@ -89,7 +89,7 @@ export function buildVideoContinuityPrompt(continuity) {
     "Continuity plan: treat the following details as a single coherent scene across the entire clip.",
     ...lines,
     "Keep subject identity, anatomy, scale, wardrobe, props, lighting direction, and spatial relationships stable from frame to frame. Make the stated action progress naturally; do not reset, teleport, duplicate, or redesign the subject. The closing frame should follow plausibly from the opening frame. Treat reference notes as preservation constraints, not permission to invent new details.",
-  ].join("\\n");
+  ].join("\n");
 }
 
 export function buildVideoPrompt(prompt, director = "cinematic") {
