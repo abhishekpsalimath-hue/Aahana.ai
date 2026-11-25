@@ -86,3 +86,31 @@ test("bounds proposal text and evidence payloads before creating review tasks", 
   assert.throws(() => createCreativeBuildTaskProposals({ improvementReport: oversizedEvidence }), /8 KB task limit/);
   assert.throws(() => createCreativeBuildTaskProposals({ improvementReport: invalidSource }), /non-empty label/);
 });
+
+
+test("verifier enforces the exact draft-only schema and bounded JSON evidence", () => {
+  const [task] = createCreativeBuildTaskProposals({
+    improvementReport: { proposalCount: 1, proposals: [report.proposals[0]] },
+    targetPathsByProposal: { "image-subjectFidelity": ["src/lib/creative/creative-director.mjs"] },
+  }).tasks;
+  assert.equal(verifyCreativeBuildTaskProposal(task), true);
+  assert.equal(verifyCreativeBuildTaskProposal({
+    ...task,
+    execution: { ...task.execution, providerCallsAllowed: true },
+  }), false);
+  assert.equal(verifyCreativeBuildTaskProposal({
+    ...task,
+    sourceEvidence: {
+      ...task.sourceEvidence,
+      evidence: { notes: "x".repeat(8192) },
+    },
+  }), false);
+  assert.equal(verifyCreativeBuildTaskProposal({
+    ...task,
+    title: "x".repeat(161),
+  }), false);
+  assert.equal(verifyCreativeBuildTaskProposal({
+    ...task,
+    unexpectedPermission: true,
+  }), false);
+});
