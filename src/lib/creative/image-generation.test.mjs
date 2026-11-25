@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { parseImageGenerationInput, parseImageEditInput, MAX_IMAGE_EDIT_BYTES, MAX_IMAGE_EDIT_PROMPT_LENGTH, getReferenceImageDimensions, isReferenceImageWithinProviderBounds, inferImageAspectRatio, getGeneratedImageFileMetadata } from "./image-generation.mjs";
+import { buildImageEditPrompt } from "./creative-director.mjs";
 
 test("defaults to automatic masterpiece image direction without asking the user to choose settings", () => {
   assert.deepEqual(parseImageGenerationInput({ prompt: "A moonlit forest" }), {
