@@ -131,6 +131,7 @@ export default function UniverseLab() {
   const [creationFormat, setCreationFormat] = useState("visual");
   const [creationDirection, setCreationDirection] = useState("");
   const [creationStatus, setCreationStatus] = useState("");
+  const [creationPreview, setCreationPreview] = useState("");
   const [gravityMass, setGravityMass] = useState(5);
   const [gravityDistance, setGravityDistance] = useState(5);
   const [rayRun, setRayRun] = useState(0);
@@ -171,9 +172,11 @@ export default function UniverseLab() {
       Keep established science distinct from speculation. Make the result engaging, specific and useful.`;
     try {
       await navigator.clipboard.writeText(prompt);
+      setCreationPreview("");
       setCreationStatus("Brief copied. Paste it into Aahana to continue with this creation.");
     } catch {
-      setCreationStatus("Clipboard access is unavailable. You can still select and copy your brief manually.");
+      setCreationPreview(prompt);
+      setCreationStatus("Clipboard unavailable. Your prepared brief is shown below for manual copying.");
     }
   };
   const moveJourney = (direction) => {
@@ -279,6 +282,7 @@ export default function UniverseLab() {
           <textarea value={creationDirection} maxLength={320} rows={2} onChange={(event) => { setCreationDirection(event.target.value); setCreationStatus(""); }} placeholder={`e.g. Show how ${active.name.toLowerCase()} shape the structure of the universe...`} />
         </label>
         <div className={styles.creationActions}><span role="status" aria-live="polite">{creationStatus}</span><button type="button" onClick={copyCreationBrief}>Prepare creation brief ↗</button></div>
+        {creationPreview && <label className={styles.creationField}>Your prepared brief<textarea readOnly value={creationPreview} rows={7} onFocus={(event) => event.target.select()} /></label>}
         <p className={styles.gravityCaution}>This prepares a context-rich brief only. It does not start image, video or research generation, call a provider, or alter an existing conversation.</p>
       </section>
 
