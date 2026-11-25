@@ -4,9 +4,9 @@ import { summarizeImageBenchmark, IMAGE_BENCHMARK_DIMENSIONS, IMAGE_CASE_ACCEPTA
 
 function result(overrides = {}) {
   return {
-    caseId: "01",
+    caseId: "IMG-001",
     model: "flux-test",
-    category: "portrait",
+    category: "people",
     subjectFidelity: 4,
     attributeFidelity: 5,
     compositionFidelity: 3,
@@ -21,8 +21,8 @@ function result(overrides = {}) {
 test("defines a strict case-level acceptance threshold", () => {
   assert.equal(IMAGE_CASE_ACCEPTANCE_THRESHOLD, 4);
   const summary = summarizeImageBenchmark([
-    result({ caseId: "pass", subjectFidelity: 4, attributeFidelity: 4, compositionFidelity: 4, constraintFidelity: 4, visualCoherence: 4 }),
-    result({ caseId: "fail", subjectFidelity: 5, attributeFidelity: 5, compositionFidelity: 5, constraintFidelity: 3, visualCoherence: 5 }),
+    result({ caseId: "IMG-001", subjectFidelity: 4, attributeFidelity: 4, compositionFidelity: 4, constraintFidelity: 4, visualCoherence: 4 }),
+    result({ caseId: "IMG-002", subjectFidelity: 5, attributeFidelity: 5, compositionFidelity: 5, constraintFidelity: 3, visualCoherence: 5 }),
   ])[0];
   assert.equal(summary.acceptedCases, 1);
   assert.equal(summary.caseAcceptanceRate, 0.5);
@@ -40,8 +40,8 @@ test("summarizes per-model dimensions, text pass rate, latency and categories", 
   const summaries = summarizeImageBenchmark([
     result(),
     result({
-      caseId: "02",
-      category: "product",
+      caseId: "IMG-011",
+      category: "products",
       subjectFidelity: 2,
       attributeFidelity: 3,
       compositionFidelity: 4,
@@ -67,8 +67,8 @@ test("summarizes per-model dimensions, text pass rate, latency and categories", 
   assert.equal(first.exactTextPassRate, 0.5);
   assert.equal(first.exactTextCases, 2);
   assert.equal(first.averageLatencySeconds, 3);
-  assert.equal(first.categoryScores.portrait.cases, 1);
-  assert.equal(first.categoryScores.product.averageScore, 3.2);
+  assert.equal(first.categoryScores.people.cases, 1);
+  assert.equal(first.categoryScores.products.averageScore, 3.2);
   const second = summaries.find((item) => item.model === "other-model");
   assert.equal(second.exactTextPassRate, null);
   assert.equal(second.averageLatencySeconds, null);
@@ -92,7 +92,7 @@ test("rejects empty input, missing identifiers and invalid scores", () => {
 
 test("rejects unknown case IDs and category mismatches against the synthetic case catalog", () => {
   assert.throws(() => summarizeImageBenchmark([result({ caseId: "IMG-999" })]), /unknown benchmark case/);
-  assert.throws(() => summarizeImageBenchmark([result({ caseId: "IMG-001", category: "product" })]), /category does not match/);
+  assert.throws(() => summarizeImageBenchmark([result({ caseId: "IMG-001", category: "products" })]), /category does not match/);
 });
 
 test("rejects duplicate model and case pairs and malformed optional metrics", () => {
