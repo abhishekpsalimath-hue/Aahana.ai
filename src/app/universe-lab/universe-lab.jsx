@@ -13,7 +13,7 @@ const worlds = [
   { id: "cosmic-energy", name: "Cosmic energy", note: "The unseen forces shaping the universe at its largest scales.", color: "#b7c6ff" },
 ];
 
-function Starfield({ pointer }) {
+function Starfield({ pointerRef, animate }) {
   const canvasRef = useRef(null);
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -44,28 +44,27 @@ function Starfield({ pointer }) {
       context.clearRect(0, 0, width, height);
       for (const star of stars) {
         const pulse = reduced ? 1 : 0.68 + Math.sin(time * star.speed + star.phase) * 0.26;
-        const px = star.x + (pointer.x - 0.5) * star.radius * 2.8;
-        const py = star.y + (pointer.y - 0.5) * star.radius * 2.8;
+        const px = star.x + (pointerRef.current.x - 0.5) * star.radius * 2.8;
+        const py = star.y + (pointerRef.current.y - 0.5) * star.radius * 2.8;
         context.beginPath();
         context.fillStyle = `rgba(231,220,255,${star.alpha * pulse})`;
         context.arc(px, py, star.radius, 0, Math.PI * 2);
         context.fill();
       }
-      if (!reduced) frame = requestAnimationFrame(draw);
+      if (!reduced && animate) frame = requestAnimationFrame(draw);
     };
     resize();
     draw();
     const observer = new ResizeObserver(resize);
     observer.observe(canvas);
-    if (!reduced) frame = requestAnimationFrame(draw);
     return () => { cancelAnimationFrame(frame); observer.disconnect(); };
-  }, [pointer.x, pointer.y]);
+  }, [animate, pointerRef]);
   return <canvas ref={canvasRef} className={styles.starfield} aria-hidden="true" />;
 }
 
 export default function UniverseLab() {
   const [selected, setSelected] = useState("galaxies");
-  const [pointer, setPointer] = useState({ x: 0.5, y: 0.5 });
+  const pointerRef = useRef({ x: 0.5, y: 0.5 });
   const [motion, setMotion] = useState(true);
   const active = worlds.find((world) => world.id === selected) || worlds[0];
 
@@ -74,12 +73,12 @@ export default function UniverseLab() {
   }, []);
 
   return (
-    <main className={styles.universe} onPointerMove={(event) => {
+    <main className={styles.universe} data-motion={motion ? "true" : "false"} onPointerMove={(event) => {
       if (event.pointerType !== "mouse") return;
       const rect = event.currentTarget.getBoundingClientRect();
-      setPointer({ x: (event.clientX - rect.left) / rect.width, y: (event.clientY - rect.top) / rect.height });
+      pointerRef.current = { x: (event.clientX - rect.left) / rect.width, y: (event.clientY - rect.top) / rect.height };
     }}>
-      <Starfield pointer={pointer} />
+      <Starfield pointerRef={pointerRef} animate={motion} />
       <div className={styles.nebula} aria-hidden="true" />
       <header className={styles.header}>
         <a className={styles.brand} href="/">Aahana <span>AI</span></a>
@@ -118,7 +117,7 @@ export default function UniverseLab() {
 
       <footer className={styles.footer}>
         <span>SPACE IS NOT A BACKGROUND. IT IS THE EXPERIENCE.</span>
-        <button onClick={() => setMotion((value) => !value)} aria-pressed={!motion}>{motion ? "Reduce motion" : "Motion paused"}</button>
+        <button onClick={() => setMotion((value) => !value)} aria-pressed={!motion}>{motion ? "Pause motion" : "Resume motion"}</button>
       </footer>
     </main>
   );
