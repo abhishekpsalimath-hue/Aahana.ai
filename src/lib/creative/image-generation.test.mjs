@@ -163,3 +163,24 @@ test("infers image framing from Kannada and Hindi prompts", () => {
   assert.equal(inferImageAspectRatio("क्षैतिज दृश्य में पहाड़"), "4:3");
   assert.equal(inferImageAspectRatio("वाइडस्क्रीन सिनेमाई दृश्य"), "16:9");
 });
+
+
+test("image edits preserve reference identity and change only the requested details", () => {
+  const prompt = buildImageEditPrompt(
+    "A woman with short curly hair, round glasses, a blue jacket, standing beside a red bicycle",
+    "Replace only the background with a quiet Kyoto street at dawn",
+  );
+  assert.match(prompt, /Original image brief: A woman with short curly hair/);
+  assert.match(prompt, /Requested refinement: Replace only the background/);
+  assert.match(prompt, /Preserve the exact main subject, identity, face, anatomy, pose, clothing/);
+  assert.match(prompt, /Make only the requested refinement/);
+  assert.match(prompt, /Do not replace, reinterpret, or redesign the subject/);
+});
+
+test("image edit prompt builder rejects an empty refinement and bounds copied source brief", () => {
+  assert.equal(buildImageEditPrompt("Original image", "  "), null);
+  const prompt = buildImageEditPrompt("x".repeat(1400), "Change only the lighting");
+  assert.ok(prompt.length < 3000);
+  assert.match(prompt, /x{1200}/);
+  assert.doesNotMatch(prompt, /x{1201}/);
+});
