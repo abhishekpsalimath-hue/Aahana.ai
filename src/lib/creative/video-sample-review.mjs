@@ -14,8 +14,17 @@ function label(value, field, max = 100) {
 }
 
 function timestamp(value) {
-  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?(?:Z|[+-]\d{2}:\d{2})$/.test(value) || !Number.isFinite(Date.parse(value))) {
-    throw new TypeError("Video review reviewedAt must be a timezone-qualified ISO timestamp.");
+  const match = typeof value === "string" &&
+    /^(\\d{4})-(\\d{2})-(\\d{2})T(\\d{2}):(\\d{2}):(\\d{2})(?:\\.\\d{1,3})?(Z|[+-](\\d{2}):(\\d{2}))$/.exec(value);
+  if (!match || !Number.isFinite(Date.parse(value))) {
+    throw new TypeError("Video review reviewedAt must be a valid timezone-qualified ISO timestamp.");
+  }
+  const [, year, month, day, hour, minute, second, , offsetHour, offsetMinute] = match;
+  const date = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
+  if (date.getUTCFullYear() !== Number(year) || date.getUTCMonth() !== Number(month) - 1 ||
+      date.getUTCDate() !== Number(day) || Number(hour) > 23 || Number(minute) > 59 ||
+      Number(second) > 59 || (offsetHour !== undefined && (Number(offsetHour) > 23 || Number(offsetMinute) > 59))) {
+    throw new TypeError("Video review reviewedAt must be a valid timezone-qualified ISO timestamp.");
   }
   return value;
 }
@@ -26,6 +35,8 @@ export function validateVideoSampleReviews(reviews) {
     throw new TypeError("Provide at least two shot reviews for a video sequence.");
   }
   const seen = new Set();
+  const sampleByShot = new Map();
+  const shotBySample = new Map();
   const validated = reviews.map((raw, index) => {
     const prefix = `Video review ${index + 1}`;
     if (!raw || typeof raw !== "object" || Array.isArray(raw)) throw new TypeError(`${prefix} must be an object.`);
@@ -37,6 +48,17 @@ export function validateVideoSampleReviews(reviews) {
     const reviewer = label(raw.reviewer, "reviewer", 40);
     if (!/^[A-Za-z0-9][A-Za-z0-9._-]{1,39}$/.test(reviewer)) throw new TypeError(`${prefix} reviewer must be a non-identifying label.`);
     if (!Number.isInteger(raw.shotNumber) || raw.shotNumber < 1 || raw.shotNumber > 12) throw new RangeError(`${prefix} shotNumber must be an integer from 1 to 12.`);
+    const sequenceKey = `${model}::${seriesId}`;
+    const shotKey = `${sequenceKey}::shot-${raw.shotNumber}`;
+    const sampleKey = `${sequenceKey}::sample-${sampleId}`;
+    if (sampleByShot.has(shotKey) && sampleByShot.get(shotKey) !== sampleId) {
+      throw new Error(`Video shot ${shotKey} cannot reference multiple sample IDs.`);
+    }
+    if (shotBySample.has(sampleKey) && shotBySample.get(sampleKey) !== raw.shotNumber) {
+      throw new Error(`Video sample ${sampleId} cannot be reused across different shots.`);
+    }
+    sampleByShot.set(shotKey, sampleId);
+    shotBySample.set(sampleKey, raw.shotNumber);
     const key = [seriesId, model, raw.shotNumber, reviewer].join("::");
     if (seen.has(key)) throw new Error(`Duplicate reviewer submission for video shot: ${key}.`);
     seen.add(key);
@@ -66,10 +88,10 @@ export function validateVideoSampleReviews(reviews) {
 }
 
 function mean(values) {
-  return Number((values.reduce((sum, value) => sum + value, 0) / values.length).toFixed(2));
+  return values.length ? Number((values.reduce((sum, value) => sum + value, 0) / values.length).toFixed(2)) : null;
 }
 
-/** Summarize reviewer judgments, shot coverage and disagreement for a video sequence. */
+/** Summarize reviewer judgments, shot coverage and within-shot reviewer disagreement. */
 export function summarizeVideoSampleReviews(reviews) {
   const validated = validateVideoSampleReviews(reviews);
   const groups = new Map();
@@ -84,19 +106,25 @@ export function summarizeVideoSampleReviews(reviews) {
     const dimensions = Object.fromEntries(DIMENSIONS.map((dimension) => [dimension, mean(entries.map((entry) => entry.scores[dimension]))]));
     const perShot = shotNumbers.map((shotNumber) => {
       const shot = entries.filter((entry) => entry.shotNumber === shotNumber);
-      return { shotNumber, reviews: shot.length, averageScore: mean(shot.flatMap((entry) => DIMENSIONS.map((dimension) => entry.scores[dimension]))) };
+      return { shotNumber, sampleId: shot[0].sampleId, reviews: shot.length, averageScore: mean(shot.flatMap((entry) => DIMENSIONS.map((dimension) => entry.scores[dimension]))) };
     });
+    const pairedShots = shotNumbers.map((shotNumber) => entries.filter((entry) => entry.shotNumber === shotNumber)).filter((shot) => shot.length > 1);
     const reviewerSpread = Object.fromEntries(DIMENSIONS.map((dimension) => {
-      const values = entries.map((entry) => entry.scores[dimension]);
-      return [dimension, Number((Math.max(...values) - Math.min(...values)).toFixed(2))];
+      const spreads = pairedShots.map((shot) => {
+        const values = shot.map((entry) => entry.scores[dimension]);
+        return Math.max(...values) - Math.min(...values);
+      });
+      return [dimension, mean(spreads)];
     }));
+    const availableSpreads = Object.values(reviewerSpread).filter((value) => value !== null);
     return {
       seriesId: entries[0].seriesId, model: entries[0].model,
       reviewedShots: shotNumbers.length, shotNumbers,
       missingShotNumbers: Array.from({ length: Math.max(...shotNumbers) }, (_, index) => index + 1).filter((number) => !shotNumbers.includes(number)),
       reviewCount: entries.length, reviewerCount: reviewers.length, reviewers,
       dimensions, averageQuality: mean(Object.values(dimensions)), reviewerSpread,
-      perShot,
+      averageReviewerSpread: availableSpreads.length ? mean(availableSpreads) : null,
+      multiReviewedShots: pairedShots.length, perShot,
     };
   }).sort((a, b) => a.model.localeCompare(b.model) || a.seriesId.localeCompare(b.seriesId));
 }
