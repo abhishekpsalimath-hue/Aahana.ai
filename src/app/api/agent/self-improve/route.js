@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createApprovalToken, verifyApprovalToken } from "./approval-token.mjs";
+import { validateAgentToolCalls } from "./tool-call-guard.mjs";
 import { createClient } from "@/lib/supabase/server";
 import { getSelfBuildConfig, isSelfBuildOwner, isAllowedSelfBuildPath, validateSelfBuildChangeSet } from "@/lib/build/self-build-policy.mjs";
 import { getSelfBuildRepository, getSelfBuildFile } from "@/lib/build/github-app.mjs";
@@ -293,13 +294,20 @@ export async function POST(request) {
         break;
       }
 
+      const guardedCalls = validateAgentToolCalls(requestedCalls, { phase });
+      if (!guardedCalls.ok) {
+        return NextResponse.json({ error: guardedCalls.error }, { status: 502 });
+      }
+      const safeCalls = guardedCalls.calls;
       messages.push({
         role: "assistant",
         content: typeof message.content === "string" ? message.content : null,
-        tool_calls: requestedCalls,
+        tool_calls: safeCalls.map(({ id, name, args }) => ({
+          id, type: "function", function: { name, arguments: JSON.stringify(args) },
+        })),
       });
 
-      for (const call of requestedCalls) {
+      for (const call of safeCalls) {
         if (getAgentRequestTimeoutMs(agentStartedAt) <= 0) {
           throw new Error("Aahana reached its runtime safety budget. No repository changes were committed.");
         }
@@ -307,15 +315,11 @@ export async function POST(request) {
         if (toolCallsExecuted > MAX_TOOL_CALLS) {
           return NextResponse.json({ error: "Aahana reached the safe tool-call limit for this task. Narrow the request and try again." }, { status: 422 });
         }
-        const name = call?.function?.name;
-        let args;
-        try { args = JSON.parse(call?.function?.arguments || "{}"); }
-        catch { args = null; }
+        const name = call.name;
+        const args = call.args;
 
         let result;
         try {
-          if (!args || typeof args !== "object" || Array.isArray(args)) throw new Error("Tool arguments must be a JSON object.");
-
           if (name === "list_approved_source_files") {
             inventoryListed = true;
             result = {
