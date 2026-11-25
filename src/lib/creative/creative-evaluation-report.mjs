@@ -6,6 +6,7 @@ import { compareVideoBenchmarkRuns } from "./benchmark-regression.mjs";
 import { createBenchmarkSnapshot } from "./benchmark-snapshot.mjs";
 import { analyzeBenchmarkHistory } from "./benchmark-history.mjs";
 import { compareBenchmarkModels } from "./benchmark-model-comparison.mjs";
+import { buildCreativeImprovementProposals } from "./creative-improvement-proposals.mjs";
 
 /**
  * Unified envelope for independent evidence streams. Image and video metrics
@@ -34,6 +35,9 @@ export function buildCreativeEvaluationReport({
   const regression=videoBaselineRun ? compareVideoBenchmarkRuns({baseline:videoBaselineRun,candidate:structuralPreflight}) : null;
   const snapshotHistory=videoSnapshotHistory.length ? analyzeBenchmarkHistory(videoSnapshotHistory) : null;
   const modelComparison=videoModelSnapshots.length ? compareBenchmarkModels(videoModelSnapshots) : null;
+  const imageHumanReviews=imageReviews.length ? summarizeImageSampleReviews(imageReviews) : [];
+  const videoHumanReviews=videoReviews.length ? summarizeVideoSampleReviews(videoReviews) : [];
+  const improvementProposals=buildCreativeImprovementProposals({imageReviews,videoReviews,videoRegression:regression,videoSnapshotHistory:snapshotHistory,videoModelComparison:modelComparison});
   const snapshot=snapshotProvenance ? createBenchmarkSnapshot({
     ...snapshotProvenance,
     benchmark:structuralPreflight.benchmark,
@@ -43,16 +47,17 @@ export function buildCreativeEvaluationReport({
     generatedAt: new Date().toISOString(),
     evidenceScope:"Offline summaries of supplied metadata and human ratings; no provider calls or media inspection.",
     image:{
-      humanOutputReviews:imageReviews.length ? summarizeImageSampleReviews(imageReviews) : [],
+      humanOutputReviews:imageHumanReviews,
       promptBenchmark:imageBenchmarkResults.length ? summarizeImageBenchmark(imageBenchmarkResults) : [],
     },
     video:{
-      humanShotReviews:videoReviews.length ? summarizeVideoSampleReviews(videoReviews) : [],
+      humanShotReviews:videoHumanReviews,
       structuralPreflight,
       regression,
       reproducibleSnapshot:snapshot,
       snapshotHistory,
       modelComparison,
+      improvementProposals,
     },
     comparisonPolicy:"Do not compare image and video averages, acceptance rates, or reviewer spreads as if they shared one rubric.",
   });
