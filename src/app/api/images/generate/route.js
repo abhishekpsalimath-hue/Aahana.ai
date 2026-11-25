@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { parseImageGenerationInput } from "@/lib/creative/image-generation.mjs";
-import { readBoundedImageGenerationJson } from "@/lib/creative/bounded-image-generation-json.mjs";
+import { readBoundedImageGenerationJson, readBoundedImageProviderJson } from "@/lib/creative/bounded-image-generation-json.mjs";
 import { resolveImageModel, ACCURACY_IMAGE_MODEL, ENHANCED_IMAGE_MODEL, buildImageProviderRequest, detectImageMimeTypeFromBase64 } from "@/lib/creative/image-provider.mjs";
 
 export const runtime = "nodejs";
@@ -48,7 +48,8 @@ export async function POST(request) {
       }
     );
 
-    const result = await response.json().catch(() => null);
+    const parsedProviderResponse = await readBoundedImageProviderJson(response);
+    const result = parsedProviderResponse.ok ? parsedProviderResponse.value : null;
     const image = result?.result?.image;
     const imageMimeType = detectImageMimeTypeFromBase64(image);
     if (!response.ok || !imageMimeType) {
