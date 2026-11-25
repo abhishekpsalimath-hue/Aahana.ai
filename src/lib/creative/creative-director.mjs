@@ -123,6 +123,45 @@ export function buildImageEditPrompt(referencePrompt, editPrompt) {
   return buildImagePrompt(brief, "masterpiece");
 }
 
+
+
+const IMAGE_SERIES_FIELDS = Object.freeze({
+  subject: "LOCKED SUBJECT IDENTITY",
+  wardrobe: "LOCKED WARDROBE AND DISTINCTIVE FEATURES",
+  palette: "LOCKED COLOR PALETTE",
+  style: "LOCKED VISUAL STYLE AND MEDIUM",
+  scene: "CURRENT SCENE",
+  continuityNotes: "ADDITIONAL CONTINUITY CONSTRAINTS",
+});
+const MAX_IMAGE_SERIES_FIELD_LENGTH = 180;
+
+export function buildImageSeriesPrompt(prompt, series) {
+  if (series === undefined || series === null) return prompt;
+  if (!series || typeof series !== "object" || Array.isArray(series)) return null;
+  const allowedKeys = new Set([...Object.keys(IMAGE_SERIES_FIELDS), "sceneNumber"]);
+  if (Object.keys(series).some((key) => !allowedKeys.has(key))) return null;
+
+  const sceneNumber = series.sceneNumber;
+  if (sceneNumber !== undefined && (!Number.isInteger(sceneNumber) || sceneNumber < 1 || sceneNumber > 12)) return null;
+
+  const lines = [];
+  for (const [key, value] of Object.entries(series)) {
+    if (key === "sceneNumber") continue;
+    if (typeof value !== "string" || value.length > MAX_IMAGE_SERIES_FIELD_LENGTH) return null;
+    const normalized = value.trim();
+    if (normalized) lines.push(`${IMAGE_SERIES_FIELDS[key]}: ${normalized}`);
+  }
+  if (lines.length === 0 && sceneNumber === undefined) return prompt;
+  if (sceneNumber !== undefined) lines.unshift(`SCENE NUMBER: ${sceneNumber} of 12`);
+  return [
+    "IMAGE SERIES CONTINUITY: This image belongs to a connected visual series. Treat every LOCKED field as invariant across the series.",
+    ...lines,
+    "Preserve the same recognizable subject identity, facial structure, age cues, proportions, wardrobe details, accessories, palette, and rendering style in every scene. Change only what the CURRENT SCENE and the user's main prompt explicitly require. Do not reinterpret, recast, redesign, age, duplicate, or silently replace the subject. Keep lighting and perspective physically coherent with the described scene.",
+    "CURRENT IMAGE REQUEST:",
+    prompt,
+  ].join("\n\n");
+}
+
 export function buildVideoPrompt(prompt, director = "cinematic") {
   if (director === "none") return prompt;
   const direction = VIDEO_DIRECTIONS[director];
