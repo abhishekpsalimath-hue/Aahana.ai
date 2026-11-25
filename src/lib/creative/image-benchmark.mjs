@@ -1,3 +1,7 @@
+import { IMAGE_BENCHMARK_CASES } from "./image-benchmark-cases.mjs";
+
+const BENCHMARK_CASE_BY_ID = new Map(IMAGE_BENCHMARK_CASES.map((item) => [item.id, item]));
+
 const DIMENSIONS = Object.freeze([
   "subjectFidelity",
   "attributeFidelity",
@@ -30,6 +34,13 @@ function validateResult(result, index) {
   }
   if (typeof result.category !== "string" || !result.category.trim()) {
     throw new TypeError(`Result ${index + 1} needs a category.`);
+  }
+  const benchmarkCase = BENCHMARK_CASE_BY_ID.get(result.caseId.trim());
+  if (!benchmarkCase) {
+    throw new RangeError(`Result ${index + 1} references an unknown benchmark case: ${result.caseId}.`);
+  }
+  if (benchmarkCase.category !== result.category.trim()) {
+    throw new RangeError(`Result ${index + 1} category does not match benchmark case ${result.caseId}.`);
   }
   for (const dimension of DIMENSIONS) {
     if (!isScore(result[dimension])) {
