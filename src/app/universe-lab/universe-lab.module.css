@@ -358,3 +358,33 @@
 .blueprintStatus{margin:0;color:#c8afea;font-size:9px;line-height:1.5}
 @media(max-width:600px){.blueprintLaunch,.blueprintTop{align-items:stretch;flex-direction:column}.blueprintLaunch button,.blueprintTop>button{width:100%;min-height:44px}.blueprintChapters{grid-template-columns:1fr}.blueprintEvidenceHead{align-items:flex-start;flex-direction:column}.blueprintWorkspace{padding:11px}}
 @media(prefers-reduced-motion:reduce){.blueprintProgress span{transition:none}}
+
+
+.projectWorkspaceEditor { margin-top: 22px; padding: 22px; border: 1px solid rgba(190, 163, 255, .2); border-radius: 20px; background: rgba(13, 10, 25, .72); }
+.projectWorkspaceHead, .projectWorkspaceChapterTop, .projectWorkspaceSummary { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.projectWorkspaceHead h4 { margin: 8px 0 6px; color: #f1eaff; font-size: 1.15rem; }
+.projectWorkspaceHead p { margin: 0; color: #a99dbd; line-height: 1.6; font-size: .88rem; }
+.projectWorkspaceHead > button, .projectWorkspaceChapter button, .projectSourceEditor > button { border: 1px solid rgba(199, 167, 255, .35); border-radius: 999px; padding: 9px 13px; color: #e7d9ff; background: rgba(173, 135, 255, .1); cursor: pointer; }
+.projectWorkspaceSummary { justify-content: flex-start; flex-wrap: wrap; margin: 18px 0; }
+.projectWorkspaceSummary span { padding: 7px 10px; border-radius: 999px; color: #d7c6f4; background: rgba(181, 148, 255, .1); font-size: .78rem; }
+.projectWorkspaceChapters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.projectWorkspaceChapter { min-width: 0; padding: 16px; border: 1px solid rgba(189, 164, 232, .16); border-radius: 15px; background: rgba(255, 255, 255, .025); }
+.projectWorkspaceChapterTop { margin-bottom: 12px; color: #bba6e5; font-size: .72rem; letter-spacing: .12em; }
+.projectWorkspaceChapterTop > div { display: flex; gap: 6px; }
+.projectWorkspaceChapterTop button { min-width: 34px; padding: 5px 9px; }
+.projectWorkspaceChapter button:disabled { opacity: .3; cursor: not-allowed; }
+.projectWorkspaceChapter label, .projectSourceEditor label { display: grid; gap: 6px; margin: 12px 0; color: #c9bddb; font-size: .78rem; }
+.projectWorkspaceChapter input, .projectWorkspaceChapter textarea, .projectWorkspaceChapter select, .projectSourceEditor input, .projectSourceEditor textarea { width: 100%; min-width: 0; padding: 10px 11px; border: 1px solid rgba(194, 170, 234, .22); border-radius: 10px; color: #eee6fa; background: rgba(5, 4, 12, .7); font: inherit; font-size: .86rem; }
+.projectWorkspaceChapter select[multiple] { min-height: 76px; }
+.projectSourceEditor { margin-top: 16px; padding-top: 14px; border-top: 1px solid rgba(189, 164, 232, .15); }
+.projectSourceEditor > strong { display: block; color: #e5d9f7; font-size: .83rem; }
+.projectSourceItem { display: grid; gap: 5px; margin-top: 10px; padding: 10px; border-radius: 10px; background: rgba(181, 148, 255, .07); }
+.projectSourceItem a { color: #cdb5ff; overflow-wrap: anywhere; font-size: .82rem; }
+.projectSourceItem span { color: #a99dbd; font-size: .76rem; }
+.projectSourceItem button { justify-self: start; padding: 5px 9px; font-size: .72rem; }
+.projectWorkspaceStatus { min-height: 1.3em; color: #cbb8ef; font-size: .82rem; }
+@media (max-width: 680px) {
+  .projectWorkspaceEditor { padding: 15px; }
+  .projectWorkspaceHead { align-items: flex-start; flex-direction: column; }
+  .projectWorkspaceChapters { grid-template-columns: minmax(0, 1fr); }
+}
