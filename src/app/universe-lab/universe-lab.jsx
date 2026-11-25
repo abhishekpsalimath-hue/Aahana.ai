@@ -44,11 +44,12 @@ function Starfield({ pointerRef, animate }) {
         radius: Math.random() * 1.25 + 0.2, alpha: Math.random() * 0.62 + 0.16,
         phase: Math.random() * Math.PI * 2, speed: Math.random() * 0.006 + 0.0015,
       }));
+      draw();
     };
     const draw = (time = 0) => {
       context.clearRect(0, 0, width, height);
       for (const star of stars) {
-        const pulse = reduced ? 1 : 0.68 + Math.sin(time * star.speed + star.phase) * 0.26;
+        const pulse = reduced || !animate ? 1 : 0.68 + Math.sin(time * star.speed + star.phase) * 0.26;
         const px = star.x + (pointerRef.current.x - 0.5) * star.radius * 2.8;
         const py = star.y + (pointerRef.current.y - 0.5) * star.radius * 2.8;
         context.beginPath();
@@ -59,7 +60,6 @@ function Starfield({ pointerRef, animate }) {
       if (!reduced && animate) frame = requestAnimationFrame(draw);
     };
     resize();
-    draw();
     const observer = new ResizeObserver(resize);
     observer.observe(canvas);
     return () => { cancelAnimationFrame(frame); observer.disconnect(); };
@@ -72,6 +72,13 @@ export default function UniverseLab() {
   const pointerRef = useRef({ x: 0.5, y: 0.5 });
   const [motion, setMotion] = useState(true);
   const active = worlds.find((world) => world.id === selected) || worlds[0];
+  const choose = (id) => setSelected(id);
+  const sceneTarget = (id, className, label, children) => (
+    <button type="button" className={`${className} ${selected === id ? styles.sceneChosen : ""}`}
+      onClick={() => choose(id)} aria-label={`Explore ${label}`} aria-pressed={selected === id}>
+      {children}
+    </button>
+  );
 
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) setMotion(false);
@@ -98,33 +105,39 @@ export default function UniverseLab() {
 
       <section className={styles.orbitStage} aria-label="Interactive universe">
         <div className={styles.halo} aria-hidden="true" />
-        <div className={styles.galaxy} aria-hidden="true"><i /><i /><i /></div>
-        <div className={`${styles.planet} ${styles.planetOne}`} aria-hidden="true" />
-        <div className={`${styles.planet} ${styles.planetTwo}`} aria-hidden="true" />
-        <div className={styles.solarOrbit} aria-hidden="true"><i /></div>
-        <div className={styles.cometTrail} aria-hidden="true" />
-        <div className={styles.blackHole} aria-hidden="true"><i /></div>
-        <button className={`${styles.world} ${styles.worldGalaxy} ${selected === "galaxies" ? styles.chosen : ""}`} onClick={() => setSelected("galaxies")} aria-pressed={selected === "galaxies"}>Galaxies</button>
-        <button className={`${styles.world} ${styles.worldStar} ${selected === "stars" ? styles.chosen : ""}`} onClick={() => setSelected("stars")} aria-pressed={selected === "stars"}>Stars</button>
-        <button className={`${styles.world} ${styles.worldPlanet} ${selected === "planets" ? styles.chosen : ""}`} onClick={() => setSelected("planets")} aria-pressed={selected === "planets"}>Planets</button>
-        <button className={`${styles.world} ${styles.worldHole} ${selected === "black-holes" ? styles.chosen : ""}`} onClick={() => setSelected("black-holes")} aria-pressed={selected === "black-holes"}>Black holes</button>
-        <button className={`${styles.world} ${styles.worldNebula} ${selected === "nebulae" ? styles.chosen : ""}`} onClick={() => setSelected("nebulae")} aria-pressed={selected === "nebulae"}>Nebulae</button>
-        <button className={`${styles.world} ${styles.worldComet} ${selected === "asteroids-comets" ? styles.chosen : ""}`} onClick={() => setSelected("asteroids-comets")} aria-pressed={selected === "asteroids-comets"}>Asteroids &amp; comets</button>
-        <button className={`${styles.world} ${styles.worldEnergy} ${selected === "matter-energy" ? styles.chosen : ""}`} onClick={() => setSelected("matter-energy")} aria-pressed={selected === "matter-energy"}>Matter &amp; energy</button>
+        {sceneTarget("galaxies", `${styles.galaxy} ${styles.sceneGalaxy}`, "galaxies", <><i /><i /><i /></>)}
+        {sceneTarget("planets", `${styles.planet} ${styles.planetOne}`, "a planet")}
+        {sceneTarget("moons", `${styles.planet} ${styles.planetMoon}`, "a moon")}
+        {sceneTarget("planets", `${styles.planet} ${styles.planetTwo}`, "a blue planet")}
+        {sceneTarget("solar-systems", styles.solarOrbit, "a solar system", <i />)}
+        {sceneTarget("asteroids-comets", styles.cometTrail, "a passing comet")}
+        {sceneTarget("black-holes", styles.blackHole, "a black hole", <i />)}
+        {sceneTarget("stars", styles.starObject, "a star")}
+        {sceneTarget("nebulae", styles.nebulaObject, "a nebula")}
+        {sceneTarget("dark-matter", styles.darkMatterLens, "dark matter")}
+        {sceneTarget("dark-energy", styles.darkEnergyWave, "dark energy")}
+        {sceneTarget("space-time", styles.spaceTimeGrid, "space-time")}
+        <button className={`${styles.world} ${styles.worldGalaxy} ${selected === "galaxies" ? styles.chosen : ""}`} onClick={() => choose("galaxies")} aria-pressed={selected === "galaxies"}>Galaxies</button>
+        <button className={`${styles.world} ${styles.worldStar} ${selected === "stars" ? styles.chosen : ""}`} onClick={() => choose("stars")} aria-pressed={selected === "stars"}>Stars</button>
+        <button className={`${styles.world} ${styles.worldPlanet} ${selected === "planets" ? styles.chosen : ""}`} onClick={() => choose("planets")} aria-pressed={selected === "planets"}>Planets</button>
+        <button className={`${styles.world} ${styles.worldHole} ${selected === "black-holes" ? styles.chosen : ""}`} onClick={() => choose("black-holes")} aria-pressed={selected === "black-holes"}>Black holes</button>
+        <button className={`${styles.world} ${styles.worldNebula} ${selected === "nebulae" ? styles.chosen : ""}`} onClick={() => choose("nebulae")} aria-pressed={selected === "nebulae"}>Nebulae</button>
+        <button className={`${styles.world} ${styles.worldComet} ${selected === "asteroids-comets" ? styles.chosen : ""}`} onClick={() => choose("asteroids-comets")} aria-pressed={selected === "asteroids-comets"}>Asteroids &amp; comets</button>
+        <button className={`${styles.world} ${styles.worldEnergy} ${selected === "matter-energy" ? styles.chosen : ""}`} onClick={() => choose("matter-energy")} aria-pressed={selected === "matter-energy"}>Matter &amp; energy</button>
       </section>
 
-      <section className={styles.detail} aria-live="polite">
+      <section className={styles.detail} aria-live="polite" aria-atomic="true">
         <div><span className={styles.detailEyebrow}>NOW EXPLORING</span><h2>{active.name}</h2><p>{active.note}</p></div>
         <div className={styles.detailMark} style={{ "--world-color": active.color }} aria-hidden="true" />
       </section>
 
       <nav className={styles.worldList} aria-label="Choose a cosmic element">
-        {worlds.map((world) => <button key={world.id} onClick={() => setSelected(world.id)} className={selected === world.id ? styles.activeWorld : ""} aria-pressed={selected === world.id}>{world.name}</button>)}
+        {worlds.map((world) => <button type="button" key={world.id} onClick={() => choose(world.id)} className={selected === world.id ? styles.activeWorld : ""} aria-pressed={selected === world.id}>{world.name}</button>)}
       </nav>
 
       <footer className={styles.footer}>
         <span>SPACE IS NOT A BACKGROUND. IT IS THE EXPERIENCE.</span>
-        <button onClick={() => setMotion((value) => !value)} aria-pressed={!motion}>{motion ? "Pause motion" : "Resume motion"}</button>
+        <button type="button" onClick={() => setMotion((value) => !value)} aria-pressed={!motion}>{motion ? "Pause motion" : "Resume motion"}</button>
       </footer>
     </main>
   );
