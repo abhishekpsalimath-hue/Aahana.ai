@@ -44,18 +44,26 @@ function validSchedule(schedule) {
 }
 
 function firstInstantForLocalTime(formatter, year, month, day, hour, minute) {
-  // Search a bounded UTC window around the local date. Choosing the first
-  // matching instant makes a repeated DST wall-clock time fire only once.
-  const approximateMidnight = Date.UTC(year, month - 1, day);
-  const start = approximateMidnight - 18 * 60 * 60_000;
-  const end = approximateMidnight + 30 * 60 * 60_000;
-  for (let timestamp = start; timestamp <= end; timestamp += 60_000) {
-    const parts = localParts(formatter, new Date(timestamp));
-    if (parts.year === year && parts.month === month && parts.day === day &&
-        parts.hour === hour && parts.minute === minute) return new Date(timestamp);
+  // Sample the surrounding offsets, then verify candidate instants against
+  // the zone formatter. During fall-back, choose the earlier matching instant.
+  const targetWallTime = Date.UTC(year, month - 1, day, hour, minute);
+  const offsets = new Set();
+  for (let delta = -18 * 60 * 60_000; delta <= 18 * 60 * 60_000; delta += 6 * 60 * 60_000) {
+    const sample = targetWallTime + delta;
+    const parts = localParts(formatter, new Date(sample));
+    const represented = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute);
+    offsets.add(represented - sample);
   }
-  // A spring-forward gap has no instant for the requested local wall time.
-  return null;
+  const candidates = [...offsets]
+    .map((offset) => new Date(targetWallTime - offset))
+    .filter((candidate) => {
+      const parts = localParts(formatter, candidate);
+      return parts.year === year && parts.month === month && parts.day === day &&
+        parts.hour === hour && parts.minute === minute;
+    })
+    .sort((a, b) => a.getTime() - b.getTime());
+  // A spring-forward gap has no matching instant for the requested wall time.
+  return candidates[0] || null;
 }
 
 /**
@@ -72,7 +80,8 @@ export function previewScheduleOccurrences(schedule, after, count = 5) {
   const cursor = new Date(Date.UTC(localStart.year, localStart.month - 1, localStart.day));
   const occurrences = [];
   // Weekly schedules may need up to three weeks to fill a 20-item preview.
-  for (let offset = 0; offset < 22 && occurrences.length < count; offset += 1) {
+  const searchDays = schedule.frequency === "weekly" ? count * 7 + 7 : count + 7;
+  for (let offset = 0; offset < searchDays && occurrences.length < count; offset += 1) {
     const date = new Date(cursor.getTime() + offset * 86_400_000);
     const year = date.getUTCFullYear();
     const month = date.getUTCMonth() + 1;
