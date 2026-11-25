@@ -29,12 +29,7 @@ function UniverseScene() {
     const canvas = canvasRef.current;
     if (!canvas) return undefined;
     const compact = window.matchMedia?.("(max-width: 760px)").matches === true;
-    // Keep the workspace usable on phones with constrained WebGL/GPU memory.
-    // The CSS space scene remains visible as a lightweight fallback.
-    if (compact) {
-      canvas.dataset.webglFallback = "true";
-      return undefined;
-    }
+    // Mobile uses a lower-cost WebGL profile rather than falling back to a flat backdrop.
     let renderer, raf = 0, active = true, inView = true, observer, contextAvailable = true;
     const motionQuery = window.matchMedia?.("(prefers-reduced-motion: reduce)");
     let reduced = motionQuery?.matches === true;
@@ -389,6 +384,103 @@ function UniverseScene() {
     addPlanet(5.2, 1.1, -5.1, 0.64, 0x7782bd, [0x4c527b, 0x858bb7, 0xc6b8df], true, 5.3);
     addPlanet(2.6, -3.1, 0.1, 0.34, 0xb57d9f, [0x583c65, 0xa76f91, 0xe4b7ca], false, 8.1);
 
+    // Living travellers: astronauts and friendly alien explorers move through
+    // the same 3D scene on independent, gently varied trajectories.
+    const travellers = [];
+    const astronautSuit = new THREE.MeshStandardMaterial({ color: 0xe8e4f2, roughness: 0.58, metalness: 0.12 });
+    const astronautTrim = new THREE.MeshStandardMaterial({ color: 0x9b82ca, roughness: 0.42, metalness: 0.35, emissive: 0x24153e });
+    const visorMaterial = new THREE.MeshPhysicalMaterial({ color: 0x18233c, metalness: 0.72, roughness: 0.16, clearcoat: 1, clearcoatRoughness: 0.08, emissive: 0x243e70, emissiveIntensity: 0.32 });
+    const createAstronaut = (scale = 1) => {
+      const g = new THREE.Group();
+      const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.19, 0.34, 5, 10), astronautSuit);
+      torso.position.y = -0.03; g.add(torso);
+      const helmet = new THREE.Mesh(new THREE.SphereGeometry(0.19, 24, 18), astronautSuit);
+      helmet.position.set(0, 0.31, 0.015); g.add(helmet);
+      const visor = new THREE.Mesh(new THREE.SphereGeometry(0.145, 24, 16), visorMaterial);
+      visor.scale.set(1, 0.78, 0.48); visor.position.set(0, 0.32, 0.145); g.add(visor);
+      const pack = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.29, 0.13), astronautTrim);
+      pack.position.set(0, -0.03, -0.19); g.add(pack);
+      for (const side of [-1, 1]) {
+        const arm = new THREE.Mesh(new THREE.CapsuleGeometry(0.055, 0.22, 4, 8), astronautSuit);
+        arm.position.set(side * 0.23, 0.02, 0); arm.rotation.z = side * -0.48; g.add(arm);
+        const leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.065, 0.2, 4, 8), astronautSuit);
+        leg.position.set(side * 0.09, -0.34, 0.015); leg.rotation.z = side * 0.08; g.add(leg);
+        const boot = new THREE.Mesh(new THREE.SphereGeometry(0.075, 12, 10), astronautTrim);
+        boot.scale.set(1, 0.65, 1.25); boot.position.set(side * 0.09, -0.49, 0.045); g.add(boot);
+      }
+      const shoulderLight = new THREE.PointLight(0xbca0ff, 0.55, 1.8);
+      shoulderLight.position.set(0, 0.12, 0.2); g.add(shoulderLight);
+      g.scale.setScalar(scale);
+      return g;
+    };
+    const createFriendlyAlien = (scale = 1) => {
+      const g = new THREE.Group();
+      const skin = new THREE.MeshStandardMaterial({ color: 0x8ec9bd, roughness: 0.48, metalness: 0.04, emissive: 0x173d3a, emissiveIntensity: 0.12 });
+      const dark = new THREE.MeshPhysicalMaterial({ color: 0x10182b, roughness: 0.12, metalness: 0.22, clearcoat: 1 });
+      const body = new THREE.Mesh(new THREE.SphereGeometry(0.15, 20, 16), skin);
+      body.scale.set(0.82, 1.2, 0.72); body.position.y = -0.12; g.add(body);
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.23, 24, 18), skin);
+      head.scale.set(0.92, 1.18, 0.78); head.position.y = 0.18; g.add(head);
+      for (const side of [-1, 1]) {
+        const eye = new THREE.Mesh(new THREE.SphereGeometry(0.055, 16, 12), dark);
+        eye.scale.set(0.78, 1.15, 0.42); eye.position.set(side * 0.085, 0.2, 0.174); g.add(eye);
+        const glint = new THREE.Mesh(new THREE.SphereGeometry(0.012, 8, 8), new THREE.MeshBasicMaterial({ color: 0xd9f5ff }));
+        glint.position.set(side * 0.085 - 0.012, 0.22, 0.197); g.add(glint);
+        const arm = new THREE.Mesh(new THREE.CapsuleGeometry(0.035, 0.15, 4, 8), skin);
+        arm.position.set(side * 0.17, -0.1, 0); arm.rotation.z = side * -0.55; g.add(arm);
+      }
+      const antenna = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.012, 0.12, 8), skin);
+      antenna.position.set(0, 0.46, 0); g.add(antenna);
+      const tip = new THREE.Mesh(new THREE.SphereGeometry(0.035, 12, 10), new THREE.MeshBasicMaterial({ color: 0xb9f5e9 }));
+      tip.position.set(0, 0.53, 0); g.add(tip);
+      g.scale.setScalar(scale);
+      return g;
+    };
+    const addTraveller = (object, config) => {
+      object.position.set(config.x, config.y, config.z);
+      object.rotation.set(config.rx || 0, config.ry || 0, config.rz || 0);
+      world.add(object);
+      travellers.push({ object, ...config, phase: Math.random() * Math.PI * 2, speed: config.speed || 0.006 });
+    };
+    addTraveller(createAstronaut(compact ? 0.62 : 0.82), { x: -3.6, y: -0.8, z: 1.6, speed: 0.0036, rangeX: 1.8, rangeY: 0.9, rangeZ: 12, rz: 0.22 });
+    addTraveller(createAstronaut(compact ? 0.48 : 0.64), { x: 4.3, y: 2.3, z: -7.5, speed: 0.0028, rangeX: 1.4, rangeY: 1.1, rangeZ: 15, rz: -0.35 });
+    addTraveller(createFriendlyAlien(compact ? 0.56 : 0.72), { x: 2.4, y: -1.5, z: -4.8, speed: 0.0024, rangeX: 1.2, rangeY: 0.8, rangeZ: 13, ry: -0.3 });
+    addTraveller(createFriendlyAlien(compact ? 0.46 : 0.58), { x: -4.8, y: 2.5, z: -12, speed: 0.0019, rangeX: 1.5, rangeY: 0.7, rangeZ: 16, ry: 0.5 });
+
+    // A distant black hole with a luminous accretion disc adds a second
+    // large-scale landmark; its core remains dark rather than a glowing ball.
+    const blackHole = new THREE.Group();
+    blackHole.position.set(6.8, -3.8, -20);
+    const singularity = new THREE.Mesh(new THREE.SphereGeometry(1.08, 40, 32), new THREE.MeshBasicMaterial({ color: 0x020106 }));
+    blackHole.add(singularity);
+    const disk = new THREE.Mesh(
+      new THREE.TorusGeometry(1.62, 0.24, 12, 100),
+      new THREE.MeshBasicMaterial({ color: 0xb58aff, transparent: true, opacity: 0.58, blending: THREE.AdditiveBlending })
+    );
+    disk.rotation.x = 1.12; disk.rotation.y = 0.18; blackHole.add(disk);
+    const diskInner = new THREE.Mesh(
+      new THREE.TorusGeometry(1.28, 0.07, 10, 100),
+      new THREE.MeshBasicMaterial({ color: 0xf1c5ff, transparent: true, opacity: 0.72, blending: THREE.AdditiveBlending })
+    );
+    diskInner.rotation.x = 1.12; diskInner.rotation.y = 0.18; blackHole.add(diskInner);
+    world.add(blackHole);
+
+    // A stream of near-field stars travels towards the viewer, creating
+    // genuine forward movement rather than rotating a static star dome.
+    const nearStarCount = compact ? 180 : 360;
+    const nearStarPositions = new Float32Array(nearStarCount * 3);
+    const nearStarSpeeds = new Float32Array(nearStarCount);
+    for (let i = 0; i < nearStarCount; i++) {
+      nearStarPositions[i * 3] = (Math.random() - 0.5) * 26;
+      nearStarPositions[i * 3 + 1] = (Math.random() - 0.5) * 17;
+      nearStarPositions[i * 3 + 2] = -Math.random() * 65;
+      nearStarSpeeds[i] = 0.025 + Math.random() * 0.075;
+    }
+    const nearStarGeometry = new THREE.BufferGeometry();
+    nearStarGeometry.setAttribute("position", new THREE.BufferAttribute(nearStarPositions, 3));
+    const nearStars = new THREE.Points(nearStarGeometry, new THREE.PointsMaterial({ color: 0xdccfff, size: compact ? 0.045 : 0.06, transparent: true, opacity: 0.68, blending: THREE.AdditiveBlending, depthWrite: false }));
+    scene.add(nearStars);
+
     // Reuse scratch objects and initialize shader lighting before the first
     // render, including the reduced-motion path where the animation loop is idle.
     const keyLightWorldPosition = new THREE.Vector3();
@@ -456,6 +548,28 @@ function UniverseScene() {
         stars.rotation.x += 0.000012 * delta;
         planets.forEach((planet, i) => { planet.rotation.y += (i === 0 ? 0.00055 : 0.0008) * delta; planet.rotation.x += 0.00008 * delta; });
         cloudLayers.forEach((cloud) => { cloud.rotation.y += 0.00068 * delta; cloud.rotation.x += 0.000035 * delta; });
+        travellers.forEach((traveller) => {
+          const { object, phase, x, y, z, rangeX, rangeY, rangeZ, speed } = traveller;
+          const t = time * speed + phase;
+          object.position.x = x + Math.sin(t * 0.72) * rangeX;
+          object.position.y = y + Math.sin(t * 1.13) * rangeY;
+          object.position.z = z + ((t * 0.42) % rangeZ);
+          if (object.position.z > 5) object.position.z -= rangeZ;
+          object.rotation.y += 0.0018 * delta;
+          object.rotation.z += Math.sin(t * 0.8) * 0.0007 * delta;
+        });
+        blackHole.rotation.z += 0.00018 * delta;
+        const nearPositions = nearStarGeometry.attributes.position.array;
+        for (let i = 0; i < nearStarCount; i++) {
+          const offset = i * 3;
+          nearPositions[offset + 2] += nearStarSpeeds[i] * delta;
+          if (nearPositions[offset + 2] > 9) {
+            nearPositions[offset] = (Math.random() - 0.5) * 26;
+            nearPositions[offset + 1] = (Math.random() - 0.5) * 17;
+            nearPositions[offset + 2] = -65 - Math.random() * 12;
+          }
+        }
+        nearStarGeometry.attributes.position.needsUpdate = true;
         updatePlanetLightDirections();
         const easing = 1 - Math.pow(1 - 0.012, delta);
         camera.position.x += (pointer.x * 0.28 - camera.position.x) * easing;
