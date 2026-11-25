@@ -270,3 +270,21 @@
 .creationActions button:hover{background:#39274f}
 .creationActions button:focus-visible{outline:2px solid #e8dfff;outline-offset:3px}
 @media(max-width:600px){.creationBridge{padding:15px 12px}.creationActions{align-items:stretch;flex-direction:column}.creationActions button{width:100%;min-height:44px}}
+
+
+/* Cross-universe comparison: make relationships inspectable before synthesis. */
+.comparisonLab{width:min(650px,100%);margin:18px auto 0;padding:19px;border:1px solid #8da8e83a;border-radius:17px;background:linear-gradient(145deg,#121729ed,#0b0a13f5);box-shadow:0 18px 65px #0004}
+.comparisonHeader{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:16px}
+.comparisonHeader h2{margin:7px 0 5px;color:#f1efff;font-size:clamp(18px,3vw,23px);font-weight:600;letter-spacing:-.7px}
+.comparisonHeader p{max-width:470px;margin:0;color:#a5a8bf;font-size:11px;line-height:1.65}
+.comparisonGlyph{display:grid;place-items:center;flex:0 0 36px;width:36px;height:36px;border:1px solid #9bb7ff55;border-radius:50%;color:#d7e2ff;background:radial-gradient(circle,#718fd955,transparent 70%);box-shadow:0 0 25px #829eff2b;font-size:19px}
+.comparisonPair{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.comparisonWorld{display:grid;align-content:start;gap:8px;min-width:0;padding:12px;border:1px solid #ffffff16;border-radius:11px;background:#ffffff06;color:#aeb6d0;font-size:8px;letter-spacing:1.1px}
+.comparisonWorld strong{color:#f2edff;font-size:15px;letter-spacing:-.2px}
+.comparisonWorld select{width:100%;min-height:38px;padding:8px;border:1px solid #ffffff20;border-radius:7px;background:#090b16;color:#f2edff;color-scheme:dark;font:inherit;font-size:11px;letter-spacing:0}
+.comparisonWorld select:focus-visible{outline:2px solid #c7d3ff;outline-offset:2px}
+.comparisonFacts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.comparisonFacts p{margin:0;padding:11px;border-left:2px solid #9a9fdf66;border-radius:0 8px 8px 0;background:#ffffff05;color:#b5b5ca;font-size:10px;line-height:1.65}
+.comparisonFacts strong{display:block;margin-bottom:5px;color:#c8c7ef;font-size:9px;letter-spacing:.4px}
+.comparisonLab .creationActions button:disabled{opacity:.4;cursor:not-allowed}
+@media(max-width:600px){.comparisonLab{padding:15px 12px}.comparisonPair,.comparisonFacts{grid-template-columns:1fr}.comparisonWorld strong{font-size:14px}.comparisonFacts p{font-size:10px}}
