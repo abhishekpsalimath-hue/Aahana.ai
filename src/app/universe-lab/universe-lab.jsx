@@ -114,7 +114,7 @@ export default function UniverseLab() {
         {sceneTarget("planets", `${styles.planet} ${styles.planetOne}`, "a planet")}
         {sceneTarget("moons", `${styles.planet} ${styles.planetMoon}`, "a moon")}
         {sceneTarget("planets", `${styles.planet} ${styles.planetTwo}`, "a blue planet")}
-        {sceneTarget("solar-systems", styles.solarOrbit, "a solar system", <i />)}
+        {sceneTarget("solar-systems", styles.solarOrbit, "a solar system", <><i /><i /><i /></>)}
         {sceneTarget("asteroids-comets", styles.cometTrail, "a passing comet")}
         {sceneTarget("black-holes", styles.blackHole, "a black hole", <i />)}
         {sceneTarget("stars", styles.starObject, "a star")}
