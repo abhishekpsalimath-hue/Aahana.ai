@@ -9,6 +9,7 @@ export function buildSelfImproveExecutionOutcome({
   finalResponse = "",
   roundsUsed = 0,
   roundLimitReached = false,
+  failureDetails = [],
 }) {
   if (!VALID_PHASES.has(phase)) throw new TypeError("Invalid self-improvement phase.");
   for (const value of [proposalCount, successfulToolCalls, failedToolCalls, roundsUsed]) {
@@ -47,5 +48,6 @@ export function buildSelfImproveExecutionOutcome({
     roundsUsed,
     acceptanceChecks: Object.freeze({ status: "not_run", passed: 0, total: null }),
     completionClaim: status === "completed" ? "agent_turn_finished_no_change_proposed" : "not_claimed",
+    failures: Object.freeze(failureDetails.slice(0, 8)),
   });
 }
