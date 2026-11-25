@@ -3,7 +3,8 @@ import assert from "node:assert/strict";
 import { classifySelfBuildToolFailure, summarizeSelfBuildFailures } from "./failure-classifier.mjs";
 
 test("classifies transient upstream and runtime failures as retryable with bounded recovery advice", () => {
-  assert.deepEqual(classifySelfBuildToolFailure("GitHub fetch failed: 503"), { code: "RUNTIME_BUDGET", retryable: true, recoveryAction: "RESTART_WITH_A_SMALLER_TASK" });
+  assert.deepEqual(classifySelfBuildToolFailure("GitHub fetch failed: 503"), { code: "UPSTREAM_UNAVAILABLE", retryable: true, recoveryAction: "RETRY_AFTER_BACKOFF" });
+  assert.equal(classifySelfBuildToolFailure("Aahana reached its runtime safety budget").code, "RUNTIME_BUDGET");
   assert.deepEqual(classifySelfBuildToolFailure("upstream returned 429"), { code: "UPSTREAM_UNAVAILABLE", retryable: true, recoveryAction: "RETRY_AFTER_BACKOFF" });
 });
 
