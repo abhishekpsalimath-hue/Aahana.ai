@@ -56,3 +56,9 @@ export function validateVideoReferenceImage({ bytes, imageType, imageSize } = {}
   if (!dimensions || !Number.isInteger(dimensions.width) || !Number.isInteger(dimensions.height) || dimensions.width < 1 || dimensions.height < 1 || dimensions.width > MAX_VIDEO_REFERENCE_IMAGE_DIMENSION || dimensions.height > MAX_VIDEO_REFERENCE_IMAGE_DIMENSION || dimensions.width * dimensions.height > MAX_VIDEO_REFERENCE_IMAGE_PIXELS) return { ok: false, error: "The reference image is invalid or exceeds the 4,096-pixel / 16-megapixel limit." };
   return { ok: true, dimensions };
 }
+
+export function hasCompletedVideoProviderResult(value) {
+  return Boolean(value && typeof value === "object" && !Array.isArray(value) &&
+    value.state === "Completed" && value.result && typeof value.result === "object" &&
+    !Array.isArray(value.result) && typeof value.result.video === "string" && value.result.video.trim());
+}
