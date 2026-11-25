@@ -7,15 +7,27 @@ import {
   getImageOutputMimeType,
   detectImageMimeTypeFromBase64,
   resolveImageModel,
+  supportsImageAspectRatio,
   buildImageProviderRequest,
 } from "./image-provider.mjs";
 
 test("keeps FLUX.1 Schnell as the safe default unless enhanced model is explicitly selected", () => {
   assert.equal(resolveImageModel(undefined), DEFAULT_IMAGE_MODEL);
+  assert.equal(resolveImageModel(null), DEFAULT_IMAGE_MODEL);
   assert.equal(resolveImageModel(""), DEFAULT_IMAGE_MODEL);
-  assert.equal(resolveImageModel("unknown-model"), DEFAULT_IMAGE_MODEL);
+  assert.throws(() => resolveImageModel("unknown-model"), /Unsupported Aahana image model selection/);
+  assert.throws(() => resolveImageModel("flux-2-klein-4b-typo"), /Unsupported Aahana image model selection/);
+  assert.throws(() => resolveImageModel(" "), /Unsupported Aahana image model selection/);
   assert.equal(resolveImageModel("flux-2-klein-4b"), ENHANCED_IMAGE_MODEL);
   assert.equal(resolveImageModel("flux-2-dev"), ACCURACY_IMAGE_MODEL);
+});
+
+test("accepts square output on Schnell and portrait or landscape output on FLUX.2", () => {
+  assert.equal(supportsImageAspectRatio(DEFAULT_IMAGE_MODEL, "1:1"), true);
+  assert.equal(supportsImageAspectRatio(DEFAULT_IMAGE_MODEL, "3:4"), false);
+  assert.equal(supportsImageAspectRatio(DEFAULT_IMAGE_MODEL, "16:9"), false);
+  assert.equal(supportsImageAspectRatio(ENHANCED_IMAGE_MODEL, "3:4"), true);
+  assert.equal(supportsImageAspectRatio(ACCURACY_IMAGE_MODEL, "16:9"), true);
 });
 
 test("builds an opt-in FLUX.2 Dev accuracy request with explicit quality controls", () => {
@@ -53,11 +65,13 @@ test("builds the required multipart request for FLUX.2 Klein 4B without unsuppor
   assert.equal(request.body.get("steps"), null);
 });
 
-test("preserves the existing JSON request contract for FLUX.1 Schnell", async () => {
+test("preserves the JSON request contract for FLUX.1 Schnell without unsupported dimensions", async () => {
   const request = buildImageProviderRequest({
     model: DEFAULT_IMAGE_MODEL,
     prompt: "A moonlit forest",
     steps: 8,
+    width: 768,
+    height: 1024,
   });
   assert.equal(request.method, "POST");
   assert.equal(request.headers["Content-Type"], "application/json");
@@ -86,4 +100,12 @@ test("rejects malformed, unsupported, and oversized provider image payloads", ()
   assert.equal(detectImageMimeTypeFromBase64(Buffer.from("GIF89a000000", "ascii").toString("base64")), null);
   assert.equal(detectImageMimeTypeFromBase64("A".repeat(24 * 1024 * 1024 + 4)), null);
   assert.equal(detectImageMimeTypeFromBase64(null), null);
+});
+
+test("passes portrait and widescreen dimensions to FLUX.2 Dev requests", () => {
+  const widescreen = buildImageProviderRequest({
+    model: ACCURACY_IMAGE_MODEL, prompt: "A film still", width: 1024, height: 576,
+  });
+  assert.equal(widescreen.body.get("width"), "1024");
+  assert.equal(widescreen.body.get("height"), "576");
 });
