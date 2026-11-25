@@ -17,9 +17,16 @@ function requireText(value, field, maxLength = 120) {
 }
 
 function validateTimestamp(value) {
-  if (typeof value !== "string" ||
-      !/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,3})?(?:Z|[+-]\\d{2}:\\d{2})$/.test(value) ||
-      !Number.isFinite(Date.parse(value))) {
+  const match = typeof value === "string" &&
+    /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d{1,3})?(Z|[+-](\d{2}):(\d{2}))$/.exec(value);
+  if (!match || !Number.isFinite(Date.parse(value))) {
+    throw new TypeError("Review reviewedAt must be a valid timezone-qualified ISO timestamp.");
+  }
+  const [, year, month, day, hour, minute, second, , offsetHour, offsetMinute] = match;
+  const date = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
+  if (date.getUTCFullYear() !== Number(year) || date.getUTCMonth() !== Number(month) - 1 ||
+      date.getUTCDate() !== Number(day) || Number(hour) > 23 || Number(minute) > 59 ||
+      Number(second) > 59 || (offsetHour !== undefined && (Number(offsetHour) > 23 || Number(offsetMinute) > 59))) {
     throw new TypeError("Review reviewedAt must be a valid timezone-qualified ISO timestamp.");
   }
   return value;
