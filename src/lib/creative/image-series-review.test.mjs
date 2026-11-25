@@ -56,6 +56,7 @@ test("rejects paths, URLs, invalid reviewer labels and incomplete score rubrics"
 
 test("rejects malformed timestamps, unknown dimensions and out-of-range scores", () => {
   assert.throws(() => validateImageSeriesReviews([review({ reviewedAt: "yesterday" }), review({ sampleId: "sample-002", sceneNumber: 2 })]), /ISO timestamp/);
+  assert.throws(() => validateImageSeriesReviews([review({ reviewedAt: "2026-02-30T12:00:00Z" }), review({ sampleId: "sample-002", sceneNumber: 2 })]), /valid timezone-qualified ISO timestamp/);
   assert.throws(() => validateImageSeriesReviews([review({ scores: { ...scores, realism: 5 } }), review({ sampleId: "sample-002", sceneNumber: 2 })]), /unsupported dimensions/);
   assert.throws(() => validateImageSeriesReviews([review({ scores: { ...scores, styleContinuity: 6 } }), review({ sampleId: "sample-002", sceneNumber: 2 })]), /integer from 1 to 5/);
 });
