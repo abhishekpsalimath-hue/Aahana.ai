@@ -636,3 +636,77 @@ h1,.brand,.composer-mode,.breadcrumb{font-family:"Space Grotesk","Manrope",sans-
     animation-iteration-count:infinite!important;
   }
 }
+
+
+/* Assistance motion pass: one calm entrance sequence, then responsive feedback. */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes assistance-arrive {
+    from { opacity: 0; translate: 0 14px; }
+    to { opacity: 1; translate: 0 0; }
+  }
+  .welcome > .eyebrow,
+  .welcome > h1,
+  .welcome > p,
+  .welcome > .founder-signature,
+  .welcome > .assistance-context,
+  .welcome > .assistance-tool-launchers,
+  .welcome > .conversation,
+  .welcome > .composer,
+  .welcome > .notice,
+  .welcome > .starter-grid {
+    animation: assistance-arrive .72s cubic-bezier(.2,.72,.24,1) both;
+  }
+  .welcome > .eyebrow { animation-delay: .04s; }
+  .welcome > h1 { animation-delay: .12s; }
+  .welcome > p { animation-delay: .2s; }
+  .welcome > .founder-signature { animation-delay: .26s; }
+  .welcome > .assistance-context { animation-delay: .3s; }
+  .welcome > .assistance-tool-launchers { animation-delay: .38s; }
+  .welcome > .conversation { animation-delay: .12s; }
+  .welcome > .composer { animation-delay: .44s; }
+  .welcome > .notice { animation-delay: .5s; }
+  .welcome > .starter-grid { animation-delay: .56s; }
+  .assistance-tool-launchers button {
+    transition: transform .26s cubic-bezier(.2,.8,.2,1),
+      border-color .26s ease, background-color .26s ease,
+      box-shadow .26s ease, color .26s ease;
+  }
+  .conversation .chat-message {
+    animation: assistance-arrive .42s cubic-bezier(.2,.72,.24,1) both;
+  }
+  .conversation .chat-message:nth-child(2) { animation-delay: .045s; }
+  .conversation .chat-message:nth-child(3) { animation-delay: .09s; }
+  .conversation .chat-message:nth-child(4) { animation-delay: .135s; }
+  .conversation .chat-message:nth-child(n+5) { animation-delay: .18s; }
+  .composer:focus-within {
+    border-color: #9f82d1;
+    box-shadow: 0 0 0 3px #b99af51c, 0 18px 52px #0007;
+  }
+  .send-orb:not(:disabled) {
+    transition: transform .22s cubic-bezier(.2,.8,.2,1), box-shadow .22s ease;
+  }
+  .send-orb:not(:disabled):hover {
+    transform: translateY(-2px) scale(1.055);
+    box-shadow: 0 0 0 5px #c4a7ff18, 0 0 28px #a98af066;
+  }
+  .send-orb:not(:disabled):active {
+    transform: translateY(1px) scale(.94);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .welcome > .eyebrow,
+  .welcome > h1,
+  .welcome > p,
+  .welcome > .founder-signature,
+  .welcome > .assistance-context,
+  .welcome > .assistance-tool-launchers,
+  .welcome > .conversation,
+  .welcome > .composer,
+  .welcome > .notice,
+  .welcome > .starter-grid,
+  .conversation .chat-message {
+    animation: none !important;
+    translate: none !important;
+    opacity: 1 !important;
+  }
+}
