@@ -226,3 +226,26 @@
 .orbitReadout strong small{color:#a89bb8;font-size:9px;font-weight:400;letter-spacing:0}
 .orbitReadout em{color:#9c91aa;font-size:9px;font-style:normal;line-height:1.5}
 @media(max-width:600px){.orbitLab{padding:14px 12px}.orbitReadout strong{font-size:21px}}
+
+
+/* Aahana's context-aware exploration companion. */
+.companion{width:min(650px,100%);margin:28px auto 0;padding:19px;border:1px solid #b99aff35;border-radius:17px;background:linear-gradient(145deg,#171123eF,#0c0a13f2);box-shadow:0 18px 65px #0004}
+.companionTop{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+.companionTop h2{margin:7px 0 5px;color:#f4edff;font-size:clamp(18px,3vw,23px);font-weight:600;letter-spacing:-.7px}
+.companionTop p{max-width:470px;margin:0;color:#a79bb8;font-size:11px;line-height:1.65}
+.companionOrb{display:grid;place-items:center;flex:0 0 36px;width:36px;height:36px;border:1px solid #c4a6ff55;border-radius:50%;color:#e5d4ff;background:radial-gradient(circle,#9b70d955,transparent 70%);box-shadow:0 0 25px #a77bff33}
+.companionQuestions{display:grid;grid-template-columns:1fr;gap:7px;margin:17px 0}
+.companionQuestions button{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:42px;padding:10px 12px;border:1px solid #ffffff16;border-radius:9px;background:#ffffff06;color:#d5cce2;text-align:left;font-size:10px;line-height:1.5;cursor:pointer;transition:border-color .18s,background .18s}
+.companionQuestions button span{flex:0 0 auto;color:#a98bd8}
+.companionQuestions button:hover,.companionQuestions button:focus-visible,.companionQuestions .companionQuestionActive{border-color:#b99aff88;background:#b99aff12;color:#fff;outline:none}
+.companionCustom{display:grid;gap:7px;color:#a99bbd;font-size:9px;letter-spacing:.3px}
+.companionCustom textarea{width:100%;resize:vertical;min-height:58px;padding:10px 11px;border:1px solid #ffffff1d;border-radius:9px;background:#090711;color:#f5efff;font:inherit;font-size:11px;line-height:1.5;letter-spacing:0}
+.companionCustom textarea::placeholder{color:#746b82}
+.companionCustom textarea:focus-visible{outline:2px solid #cbb3ff;outline-offset:2px}
+.companionActions{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:11px}
+.companionActions span{color:#bda7e4;font-size:9px;line-height:1.5}
+.companionActions button{flex:0 0 auto;min-height:40px;padding:9px 15px;border:1px solid #a98bd8;border-radius:999px;background:#281d39;color:#f1e8ff;font-size:10px;cursor:pointer}
+.companionActions button:disabled{opacity:.4;cursor:not-allowed}
+.companionActions button:not(:disabled):hover{background:#39274f}
+.companionActions button:focus-visible{outline:2px solid #e8dfff;outline-offset:3px}
+@media(max-width:600px){.companion{padding:15px 12px}.companionActions{align-items:flex-start;flex-direction:column}.companionActions button{width:100%}}
