@@ -1170,7 +1170,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt: imagePrompt, steps: 8, quality: "masterpiece", ...(imageAspectRatio === "auto" ? {} : { aspectRatio: imageAspectRatio }),
-          ...(Object.values(imageSeries).some((value) => String(value).trim()) ? { series: { ...imageSeries, sceneNumber: imageSeries.sceneNumber.trim() ? Number(imageSeries.sceneNumber) : undefined } } : {}), ...(() => { const series = Object.fromEntries(Object.entries(imageSeries).filter(([key, value]) => value !== "" && (key !== "sceneNumber" || Number.isInteger(Number(value)))).map(([key, value]) => [key, key === "sceneNumber" ? Number(value) : value.trim()])); return Object.keys(series).length ? { series } : {}; })() }),
+          ...(Object.values(imageSeries).some((value) => String(value).trim()) ? { series: { ...Object.fromEntries(Object.entries(imageSeries).filter(([key, value]) => key !== "sceneNumber" && value.trim()).map(([key, value]) => [key, value.trim()])), ...(imageSeries.sceneNumber.trim() ? { sceneNumber: Number(imageSeries.sceneNumber) } : {}) } } : {}) }),
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || "Could not generate the image.");
