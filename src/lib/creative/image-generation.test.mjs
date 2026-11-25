@@ -1,10 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { parseImageGenerationInput, parseImageEditInput, MAX_IMAGE_EDIT_BYTES, MAX_IMAGE_EDIT_PROMPT_LENGTH, getReferenceImageDimensions, isReferenceImageWithinProviderBounds } from "./image-generation.mjs";
+import { parseImageGenerationInput, parseImageEditInput, MAX_IMAGE_EDIT_BYTES, MAX_IMAGE_EDIT_PROMPT_LENGTH, getReferenceImageDimensions, isReferenceImageWithinProviderBounds, inferImageAspectRatio, getGeneratedImageFileMetadata } from "./image-generation.mjs";
+import { buildImageEditPrompt, buildImageSeriesPrompt } from "./creative-director.mjs";
 
 test("defaults to automatic masterpiece image direction without asking the user to choose settings", () => {
   assert.deepEqual(parseImageGenerationInput({ prompt: "A moonlit forest" }), {
-    ok: true, prompt: "A moonlit forest\n\nCreative direction: produce a premium, portfolio-worthy hero image. Establish one unmistakable focal subject and a deliberate visual hierarchy. Use intentional composition, believable perspective, rich but controlled color, nuanced lighting, dimensional depth, tactile material detail, and crisp subject separation. Make fine details coherent and purposeful; avoid visual clutter, accidental text, malformed anatomy, duplicate objects, plastic-looking textures, and oversharpening. Preserve the subject and specific details requested by the user. Do not add logos, words, or extra objects unless requested.", steps: 8, style: "none", quality: "masterpiece",
+    ok: true, prompt: "A moonlit forest\n\nCreative direction: produce a premium, portfolio-worthy hero image. Establish one unmistakable focal subject and a deliberate visual hierarchy. Use intentional composition, believable perspective, rich but controlled color, nuanced lighting, dimensional depth, tactile material detail, and crisp subject separation. Make fine details coherent and purposeful; avoid visual clutter, accidental text, malformed anatomy, duplicate objects, plastic-looking textures, and oversharpening. Treat the user prompt as a specification, not loose inspiration. Preserve the exact requested subject identity, number of subjects and objects, defining attributes, left/right placement, pose, setting, materials, palette, and framing. Resolve conflicts in favor of the user's explicit requirements; never replace a named subject with a visually similar generic subject. Interpret the request in the language it was written in; preserve proper names and any exact visible wording, and never invent text. Do not add logos, words, or extra objects unless requested.", steps: 8, style: "none", quality: "masterpiece", aspectRatio: "1:1", width: 1024, height: 1024,
   });
 });
 
@@ -119,4 +120,103 @@ test("parses JPEG and WebP reference dimensions without trusting client metadata
   webp[24] = 0xfe;
   webp[27] = 0xdf;
   assert.deepEqual(getReferenceImageDimensions(webp, "image/webp"), { width: 255, height: 224 });
+});
+
+
+test("infers portrait, landscape, and widescreen framing from natural language", () => {
+  assert.equal(inferImageAspectRatio("A vertical portrait of a dancer"), "3:4");
+  assert.equal(inferImageAspectRatio("A landscape of the mountains"), "4:3");
+  assert.equal(inferImageAspectRatio("A cinematic widescreen desert scene"), "16:9");
+  assert.equal(inferImageAspectRatio("A beautiful flower"), "1:1");
+});
+
+test("explicit numeric aspect ratios outrank conflicting descriptive words", () => {
+  assert.equal(inferImageAspectRatio("A wide landscape composition, exact ratio 4:3"), "4:3");
+  assert.equal(inferImageAspectRatio("A portrait subject in a 16:9 frame"), "16:9");
+  assert.equal(inferImageAspectRatio("A horizontal scene, exact ratio 3:4"), "3:4");
+});
+
+test("accepts explicit supported framing and rejects unsupported dimensions", () => {
+  const portrait = parseImageGenerationInput({ prompt: "A dancer", aspectRatio: "3:4" });
+  assert.equal(portrait.ok, true);
+  assert.deepEqual([portrait.width, portrait.height], [768, 1024]);
+  assert.equal(portrait.aspectRatio, "3:4");
+  const wide = parseImageGenerationInput({ prompt: "A city", aspectRatio: "16:9" });
+  assert.deepEqual([wide.width, wide.height], [1024, 576]);
+  assert.equal(parseImageGenerationInput({ prompt: "A city", aspectRatio: "9:16" }).ok, false);
+});
+
+
+test("maps generated PNG, JPEG and WebP data URLs to matching file metadata", () => {
+  assert.deepEqual(getGeneratedImageFileMetadata("data:image/png;base64,AAAA", "image/png"), { mimeType: "image/png", extension: "png" });
+  assert.deepEqual(getGeneratedImageFileMetadata("data:image/jpeg;base64,AAAA", "image/jpeg"), { mimeType: "image/jpeg", extension: "jpg" });
+  assert.deepEqual(getGeneratedImageFileMetadata("data:image/webp;base64,AAAA", "image/webp"), { mimeType: "image/webp", extension: "webp" });
+  assert.equal(getGeneratedImageFileMetadata("data:image/webp;base64,AAAA", "image/jpeg"), null);
+  assert.equal(getGeneratedImageFileMetadata("https://example.test/image.png", "image/png"), null);
+});
+
+
+test("infers image framing from Kannada and Hindi prompts", () => {
+  assert.equal(inferImageAspectRatio("ಲಂಬ ಚಿತ್ರದಲ್ಲಿ ಒಂದು ಹೂವು"), "3:4");
+  assert.equal(inferImageAspectRatio("ಅಡ್ಡ ಚಿತ್ರದಲ್ಲಿ ಪರ್ವತಗಳು"), "4:3");
+  assert.equal(inferImageAspectRatio("ವೈಡ್‌ಸ್ಕ್ರೀನ್ ಸಿನೆಮಾಟಿಕ್ ದೃಶ್ಯ"), "16:9");
+  assert.equal(inferImageAspectRatio("ऊर्ध्वाधर चित्र में एक फूल"), "3:4");
+  assert.equal(inferImageAspectRatio("क्षैतिज दृश्य में पहाड़"), "4:3");
+  assert.equal(inferImageAspectRatio("वाइडस्क्रीन सिनेमाई दृश्य"), "16:9");
+});
+
+
+test("image edits preserve reference identity and change only the requested details", () => {
+  const prompt = buildImageEditPrompt(
+    "A woman with short curly hair, round glasses, a blue jacket, standing beside a red bicycle",
+    "Replace only the background with a quiet Kyoto street at dawn",
+  );
+  assert.match(prompt, /Original image brief: A woman with short curly hair/);
+  assert.match(prompt, /Requested refinement: Replace only the background/);
+  assert.match(prompt, /Preserve the exact main subject, identity, face, anatomy, pose, clothing/);
+  assert.match(prompt, /Make only the requested refinement/);
+  assert.match(prompt, /Do not replace, reinterpret, or redesign the subject/);
+});
+
+test("image edit prompt builder rejects an empty refinement and bounds copied source brief", () => {
+  assert.equal(buildImageEditPrompt("Original image", "  "), null);
+  const prompt = buildImageEditPrompt("x".repeat(1400), "Change only the lighting");
+  assert.ok(prompt.length < 3000);
+  assert.match(prompt, /x{1200}/);
+  assert.doesNotMatch(prompt, /x{1201}/);
+});
+
+
+test("image series compiler locks subject, wardrobe, palette and style across scenes", () => {
+  const result = parseImageGenerationInput({
+    prompt: "Show the character discovering an ancient observatory",
+    series: {
+      subject: "Mira, short silver hair, green eyes, small star-shaped scar",
+      wardrobe: "Same navy flight jacket with copper fasteners",
+      palette: "Midnight navy, copper, muted teal",
+      style: "Painterly cinematic 3D with soft atmospheric lighting",
+      scene: "Mira enters the observatory and looks toward the telescope",
+      sceneNumber: 3,
+    },
+  });
+  assert.equal(result.ok, true);
+  assert.match(result.prompt, /IMAGE SERIES CONTINUITY/);
+  assert.match(result.prompt, /LOCKED SUBJECT IDENTITY: Mira/);
+  assert.match(result.prompt, /LOCKED WARDROBE AND DISTINCTIVE FEATURES: Same navy flight jacket/);
+  assert.match(result.prompt, /SCENE NUMBER: 3 of 12/);
+  assert.match(result.prompt, /Change only what the CURRENT SCENE/);
+});
+
+test("image series compiler leaves ordinary image requests unchanged", () => {
+  const prompt = "A lighthouse at sunset";
+  assert.equal(buildImageSeriesPrompt(prompt, undefined), prompt);
+  assert.equal(buildImageSeriesPrompt(prompt, {}), prompt);
+});
+
+test("image series compiler rejects unknown fields, invalid scene numbers and oversized values", () => {
+  assert.equal(buildImageSeriesPrompt("A scene", { surprise: "extra" }), null);
+  assert.equal(buildImageSeriesPrompt("A scene", { sceneNumber: 0 }), null);
+  assert.equal(buildImageSeriesPrompt("A scene", { sceneNumber: 13 }), null);
+  assert.equal(buildImageSeriesPrompt("A scene", { subject: "x".repeat(181) }), null);
+  assert.equal(parseImageGenerationInput({ prompt: "A scene", series: { sceneNumber: "3" } }).ok, false);
 });
