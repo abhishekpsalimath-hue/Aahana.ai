@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createSseContentParser } from "@/lib/chat/sse-content-parser.mjs";
 import { readBoundedJson } from "@/lib/chat/bounded-json.mjs";
 import { getLanguageGuidance } from "@/lib/chat/language-guidance.mjs";
+import { createStudentTeachingBrief } from "@/lib/learning/student-mode-policy.mjs";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -77,6 +78,32 @@ export async function POST(request) {
 
   if (!prompt || prompt.length > MAX_PROMPT_LENGTH) {
     return NextResponse.json({ error: `Your message must be between 1 and ${MAX_PROMPT_LENGTH} characters.` }, { status: 400 });
+  }
+
+  let studentTeachingBrief = null;
+  if (mode === "learn") {
+    const learningProfile = body?.learningProfile && typeof body.learningProfile === "object"
+      ? body.learningProfile
+      : {};
+    const grade = typeof learningProfile.schoolGrade === "string" && /^([1-9]|10)$/.test(learningProfile.schoolGrade)
+      ? Number(learningProfile.schoolGrade)
+      : Number.NaN;
+    studentTeachingBrief = createStudentTeachingBrief({
+      profile: {
+        grade,
+        language: typeof learningProfile.language === "string" && learningProfile.language.trim()
+          ? learningProfile.language
+          : "Use my language",
+        curriculum: typeof learningProfile.curriculum === "string" && learningProfile.curriculum.trim()
+          ? learningProfile.curriculum
+          : "Not specified",
+      },
+      topic: prompt,
+      preferredPath: learningProfile.learningMode,
+    });
+    if (!studentTeachingBrief) {
+      return NextResponse.json({ error: "Choose a school grade from 1 to 10 and a supported learning path before starting Student Mode." }, { status: 400 });
+    }
   }
 
   let projectId = requestedProjectId;
@@ -190,6 +217,11 @@ export async function POST(request) {
     getLanguageGuidance(prompt),
     "Support multilingual conversations as a core capability. Understand and answer in the language the user actually uses, including Kannada, Hindi, Tamil, Telugu, Malayalam and other regional or international languages, to the extent the selected model can reliably generate them. Never require English or ask the user to translate. Preserve the user's chosen writing system, including regional scripts and Latin-script transliteration (for example, Kannada or Hindi typed using English letters); do not silently convert scripts. Understand natural code-switching and mixed-language messages, keeping technical terms and names as written when useful. For short follow-ups such as yes, no, continue, or this one, use the established language and context of the conversation rather than treating the message as a new language. Users may switch languages at any point; follow their latest clear preference. If the intended language is genuinely ambiguous and it materially affects the answer, ask one short clarification rather than guessing.",
     `The selected mode is: ${mode}. Match your response to this mode: solve, create, write, build, improve or learn (Student Mode).`,
+    ...(studentTeachingBrief ? [
+      `STUDENT MODE PROFILE: Grade ${studentTeachingBrief.grade}; language preference: ${studentTeachingBrief.language}; curriculum: ${studentTeachingBrief.curriculum}. Selected path: ${studentTeachingBrief.pathTitle}. ${studentTeachingBrief.pathGoal} ${studentTeachingBrief.teachingGuidance}`,
+      studentTeachingBrief.safetyGuidance,
+      "In Student Mode, keep the learner's selected path and grade level consistent throughout the session. Use one meaningful learning action at a time, check understanding kindly, never shame a learner for an incorrect answer, and do not ask for identifying or private information.",
+    ] : []),
     "Answer style: begin with the useful answer, not a canned greeting or a restatement of the question. Avoid unnecessary prefixes, suffixes, repeated summaries, generic sign-offs, self-congratulation, decorative labels, and headings that add no information. Use natural, direct language. Keep simple answers short; use structure only when it improves clarity. Do not append an unsolicited offer or a generic next-step line to every answer.",
     "Software engineering: treat coding, debugging, and website-building requests as real engineering work. Understand the requested outcome, preserve stated constraints, and produce coherent, runnable code rather than disconnected snippets when a complete solution is requested. Include accurate file paths, required dependencies, setup/run instructions, responsive and accessible UI, secure handling of secrets and user data, validation, loading/empty/error states, and practical tests where relevant. Never invent project files, APIs, test results, integrations, or deployments. When context or source code is provided, inspect it before proposing edits and make the smallest safe change.",
     ...(mode === "build" ? [
