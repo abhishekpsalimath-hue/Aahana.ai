@@ -361,6 +361,11 @@ export default function LearningStudio({ userEmail = "" }) {
     const requestText = (retryText || question).trim();
     if (!requestText || busy) return;
     const profile = retryProfile || { gradeBand, schoolGrade, subject, curriculum, language, learningMode };
+    const selectedGrade = Number(profile.schoolGrade);
+    if (!Number.isInteger(selectedGrade) || selectedGrade < 1 || selectedGrade > 10) {
+      setError("Choose a school grade from 1 to 10 before starting Student Mode.");
+      return;
+    }
     if (!retryText) setQuestion("");
     setError("");
     setBusy(true);
@@ -454,6 +459,14 @@ export default function LearningStudio({ userEmail = "" }) {
                 {categorySubjects.map((item) => <option key={item} value={item}>{item}</option>)}
               </select>
             </label>
+            <label>School grade
+              <select value={schoolGrade} disabled={busy} onChange={(event) => setSchoolGrade(event.target.value)} required>
+                <option value="">Choose grade (1–10)</option>
+                {Array.from({ length: 10 }, (_, index) => String(index + 1)).map((grade) => (
+                  <option key={grade} value={grade}>Grade {grade}</option>
+                ))}
+              </select>
+            </label>
           </div>
           <div className="learning-mode-picker" role="group" aria-label="Choose how to learn">
             {learningModes.map((mode) => <button type="button" key={mode.id} className={learningMode === mode.id ? "active" : ""} aria-pressed={learningMode === mode.id} onClick={() => setLearningMode(mode.id)}>
@@ -461,7 +474,7 @@ export default function LearningStudio({ userEmail = "" }) {
             </button>)}
           </div>
           <div className="learning-topic-actions">
-            <button type="button" disabled={busy} onClick={() => startLearning(null, learningMode === "play"
+            <button type="button" disabled={busy || !schoolGrade} onClick={() => startLearning(null, learningMode === "play"
               ? "Create a fresh 10-question Play & Solve journey about " + subject + ". Ask one challenge at a time, include a relevant visual, adapt gently to my answers, and explain each idea after I solve it."
               : "Take me on a " + learningModes.find((mode) => mode.id === learningMode)?.title + " learning journey about " + subject + ". Make it joyful, visual and interactive, with small discoveries and one meaningful learner action at a time.", true, { gradeBand, schoolGrade, subject, curriculum, language, learningMode })}>
               {learningMode === "play" ? "Start a 10-question challenge" : "Begin my " + (learningModes.find((mode) => mode.id === learningMode)?.title || "adventure")}
@@ -513,7 +526,7 @@ export default function LearningStudio({ userEmail = "" }) {
         <form className="learning-composer" onSubmit={startLearning}>
           <label htmlFor="learning-question">Search or ask Aahana about any topic</label>
           <textarea id="learning-question" value={question} onChange={(event) => setQuestion(event.target.value)} rows={3} maxLength={8000} disabled={busy} placeholder="Search any topic or ask a question… Why does the Moon change shape? How do birds fly? How does AI work?" />
-          <div><span>Aahana will choose the best way to explain it.</span><button type="submit" disabled={!question.trim() || busy}>{busy ? "Learning…" : "Start learning"}</button></div>
+          <div><span>{schoolGrade ? "Personalized for Grade " + schoolGrade + "." : "Choose your school grade (1–10) to begin."}</span><button type="submit" disabled={!question.trim() || busy || !schoolGrade}>{busy ? "Learning…" : "Start learning"}</button></div>
         </form>
         {error && <p className="learning-error" role="alert">{error}</p>}
         <p className="learning-note">Explore beyond a fixed subject list: school subjects, advanced ideas, science, technology, history, arts, cultures and everyday questions. Aahana adapts the explanation to your level.</p>
