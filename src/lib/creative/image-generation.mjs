@@ -24,9 +24,9 @@ export function inferImageAspectRatio(prompt) {
   if (/\b16\s*:\s*9\b/.test(text)) return "16:9";
   if (/\b4\s*:\s*3\b/.test(text)) return "4:3";
   if (/\b3\s*:\s*4\b/.test(text)) return "3:4";
-  if (/\b(widescreen|wide\s+landscape|cinematic\s+landscape)\b/.test(text)) return "16:9";
-  if (/\b(landscape|horizontal)\b/.test(text)) return "4:3";
-  if (/\b(portrait|vertical|phone\s+wallpaper)\b/.test(text)) return "3:4";
+  if (/\b(widescreen|wide\s+landscape|cinematic\s+landscape)\b|वाइडस्क्रीन|चौड़ी\s+स्क्रीन|ವೈಡ್‌ಸ್ಕ್ರೀನ್|ವಿಶಾಲ\s+ಪರದೆ/u.test(text)) return "16:9";
+  if (/\b(landscape|horizontal)\b|क्षैतिज|आड़ा\s+दृश्य|ಅಡ್ಡ(?:ವಾದ|ವಾಗಿ)?(?:\s*ಚಿತ್ರ)?/u.test(text)) return "4:3";
+  if (/\b(portrait|vertical|phone\s+wallpaper)\b|लंबवत|ऊर्ध्वाधर|वर्टिकल|फोन\s+वॉलपेपर|ಲಂಬ(?:ವಾದ|ವಾಗಿ)?(?:\s*ಚಿತ್ರ)?|ಮೊಬೈಲ್\s+ವಾಲ್‌ಪೇಪರ್/u.test(text)) return "3:4";
   return "1:1";
 }
 
