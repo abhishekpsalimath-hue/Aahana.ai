@@ -50,9 +50,8 @@ export function compareBenchmarkModels(snapshots=[]) {
     models.get(snapshot.modelLabel).push({runAt:snapshot.runAt,commitSha:snapshot.commitSha,digest:snapshot.digest,summary});
   }
   const modelResults=[...models.entries()].sort(([a],[b])=>a.localeCompare(b)).map(([modelLabel,runs])=>{
-    runs.sort((a,b)=>Date.parse(a.runAt)-Date.parse(b.runAt));
     for (let index=1;index<runs.length;index++) {
-      if (Date.parse(runs[index].runAt)<=Date.parse(runs[index-1].runAt)) throw new Error("Snapshots for each model must be strictly chronological.");
+      if (Date.parse(runs[index].runAt)<=Date.parse(runs[index-1].runAt)) throw new Error("Snapshots for each model must be supplied in strictly chronological order.");
     }
     const latest=runs[runs.length-1];
     const previous=runs.length>1?runs[runs.length-2]:null;
