@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createApprovalToken, verifyApprovalToken } from "./approval-token.mjs";
 import { validateAgentToolCalls } from "./tool-call-guard.mjs";
+import { readBoundedUpstreamJson } from "./bounded-upstream-json.mjs";
 import { createClient } from "@/lib/supabase/server";
 import { getSelfBuildConfig, isSelfBuildOwner, isAllowedSelfBuildPath, validateSelfBuildChangeSet } from "@/lib/build/self-build-policy.mjs";
 import { getSelfBuildRepository, getSelfBuildFile } from "@/lib/build/github-app.mjs";
@@ -279,7 +280,13 @@ export async function POST(request) {
         }),
         signal: AbortSignal.any([request.signal, AbortSignal.timeout(remainingRuntimeMs)]),
       });
-      const payload = await upstream.json().catch(() => ({}));
+      let payload;
+      try {
+        payload = await readBoundedUpstreamJson(upstream);
+      } catch (error) {
+        console.error("Aahana self-improvement upstream response was rejected:", error?.code || "READ_FAILED");
+        return NextResponse.json({ error: "Aahana's agent service returned an invalid or oversized response. Please try again." }, { status: 502 });
+      }
       if (!upstream.ok) {
         console.error("Aahana self-improvement model request failed:", { status: upstream.status });
         return NextResponse.json({ error: "Aahana's agent service could not complete this task. Please try again." }, { status: upstream.status === 429 ? 429 : 502 });
