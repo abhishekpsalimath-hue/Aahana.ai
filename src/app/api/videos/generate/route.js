@@ -46,9 +46,9 @@ export async function POST(request) {
     const form = await new Response(boundedBody.bytes, { headers: { "content-type": contentType } }).formData();
     input = parseVideoGenerationInput({
       prompt: form.get("prompt"),
-      duration: Number(form.get("duration")),
-      aspectRatio: form.get("aspectRatio"),
-      resolution: form.get("resolution"),
+      duration: form.get("duration") === null ? undefined : Number(form.get("duration")),
+      aspectRatio: form.get("aspectRatio") ?? undefined,
+      resolution: form.get("resolution") ?? undefined,
       director: form.get("director") ?? undefined,
     });
     imageFile = form.get("image");
