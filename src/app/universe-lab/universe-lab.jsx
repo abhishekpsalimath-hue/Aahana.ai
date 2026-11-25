@@ -128,6 +128,9 @@ export default function UniverseLab() {
   const [experimentOpen, setExperimentOpen] = useState(false);
   const [companionQuestion, setCompanionQuestion] = useState("");
   const [companionStatus, setCompanionStatus] = useState("");
+  const [creationFormat, setCreationFormat] = useState("visual");
+  const [creationDirection, setCreationDirection] = useState("");
+  const [creationStatus, setCreationStatus] = useState("");
   const [gravityMass, setGravityMass] = useState(5);
   const [gravityDistance, setGravityDistance] = useState(5);
   const [rayRun, setRayRun] = useState(0);
@@ -149,6 +152,28 @@ export default function UniverseLab() {
       setCompanionStatus("Question copied. Paste it into Aahana's assistant to continue.");
     } catch {
       setCompanionStatus("Clipboard access is unavailable here. Select and copy the question manually.");
+    }
+  };
+  const copyCreationBrief = async () => {
+    const formats = {
+      visual: "Create a richly art-directed visual concept. Describe composition, palette, lighting, scale, atmosphere and the key scientific details to preserve.",
+      diagram: "Create a clear educational infographic or labelled diagram. Organize the idea into a logical visual hierarchy, explain relationships and include concise labels.",
+      story: "Create an imaginative but scientifically grounded scene or short narrative that helps someone feel the scale and wonder of this subject.",
+      research: "Create a structured research outline with key questions, established evidence, open uncertainties and reliable directions for further investigation.",
+    };
+    const direction = creationDirection.trim();
+    const prompt = `Aahana, turn this discovery into a ${creationFormat} creation about ${active.name}.
+      Cosmic context: ${active.note}
+      Scientific anchor: ${active.fact}
+      Explorer's field note: ${active.guide}
+      Creative brief: ${formats[creationFormat]}
+      Additional direction: ${direction || "Choose a compelling direction suitable for a curious general audience."}
+      Keep established science distinct from speculation. Make the result engaging, specific and useful.`;
+    try {
+      await navigator.clipboard.writeText(prompt);
+      setCreationStatus("Brief copied. Paste it into Aahana to continue with this creation.");
+    } catch {
+      setCreationStatus("Clipboard access is unavailable. You can still select and copy your brief manually.");
     }
   };
   const moveJourney = (direction) => {
@@ -235,6 +260,26 @@ export default function UniverseLab() {
         </label>
         <div className={styles.companionActions}><span role="status" aria-live="polite">{companionStatus}</span><button type="button" onClick={copyCompanionPrompt} disabled={!companionQuestion.trim()}>Ask Aahana ↗</button></div>
         <p className={styles.gravityCaution}>This prepares a context-rich question for the existing assistant. It does not send a message or change your conversation until you paste and send it.</p>
+      </section>
+
+      <section className={styles.creationBridge} aria-label="Turn a discovery into a creation">
+        <div className={styles.creationHeader}>
+          <div><span className={styles.detailEyebrow}>DISCOVERY → CREATION</span><h2>Give this idea another form.</h2><p>Turn what you have explored into a visual, a learning diagram, a story or a research path.</p></div>
+          <span className={styles.creationGlyph} aria-hidden="true">✧</span>
+        </div>
+        <label className={styles.creationField}>Choose what Aahana should prepare
+          <select value={creationFormat} onChange={(event) => { setCreationFormat(event.target.value); setCreationStatus(""); }}>
+            <option value="visual">Visual concept</option>
+            <option value="diagram">Infographic / diagram</option>
+            <option value="story">Creative scene / story</option>
+            <option value="research">Research outline</option>
+          </select>
+        </label>
+        <label className={styles.creationField}>Your creative direction <span>Optional</span>
+          <textarea value={creationDirection} maxLength={320} rows={2} onChange={(event) => { setCreationDirection(event.target.value); setCreationStatus(""); }} placeholder={`e.g. Show how ${active.name.toLowerCase()} shape the structure of the universe...`} />
+        </label>
+        <div className={styles.creationActions}><span role="status" aria-live="polite">{creationStatus}</span><button type="button" onClick={copyCreationBrief}>Prepare creation brief ↗</button></div>
+        <p className={styles.gravityCaution}>This prepares a context-rich brief only. It does not start image, video or research generation, call a provider, or alter an existing conversation.</p>
       </section>
 
       <section className={styles.experiment} aria-label="Cosmic thought experiment">
