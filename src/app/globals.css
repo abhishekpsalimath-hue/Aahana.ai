@@ -682,3 +682,28 @@ h1,.brand,.composer-mode,.breadcrumb{font-family:"Space Grotesk","Manrope",sans-
     opacity:.58!important;
   }
 }
+
+
+/* The universe is Aahana's environment, including the sign-in entry point. */
+.auth-shell{position:relative;isolation:isolate;overflow:hidden;background:#07060d}
+.auth-card{position:relative;z-index:2;background:#111017f2;border-color:#66518466;box-shadow:0 28px 90px #000a,0 0 65px #8f6acb16}
+.auth-universe{position:absolute;z-index:0;inset:0;overflow:hidden;pointer-events:none;perspective:1100px;background:radial-gradient(ellipse at 50% 48%,#171126 0%,#0b0912 48%,#06050a 100%)}
+.auth-universe::before{content:"";position:absolute;inset:-20%;background-image:radial-gradient(1px 1px at 8% 16%,#fff 98%,transparent),radial-gradient(1px 1px at 23% 72%,#d8c5ff 98%,transparent),radial-gradient(2px 2px at 42% 28%,#fff 98%,transparent),radial-gradient(1px 1px at 67% 18%,#cbb5ff 98%,transparent),radial-gradient(1px 1px at 83% 63%,#fff 98%,transparent),radial-gradient(1px 1px at 91% 34%,#d8c5ff 98%,transparent);background-size:310px 270px,370px 330px,440px 390px,290px 340px,410px 300px,350px 420px;opacity:.62;animation:auth-star-drift 95s linear infinite}
+.auth-universe::after{content:"";position:absolute;left:50%;top:50%;width:min(95vw,900px);height:min(95vw,900px);border-radius:50%;transform:translate3d(calc(-50% + var(--auth-pointer-x,0px)*.7),calc(-50% + var(--auth-pointer-y,0px)*.7),-260px) rotateX(67deg) rotateZ(-24deg);background:repeating-conic-gradient(from 12deg,#fff0 0deg,#cbb5ff20 5deg,#fff0 12deg,#9f8cdd16 20deg,#fff0 31deg);mask-image:radial-gradient(ellipse,transparent 0%,#000 24%,#000 49%,transparent 74%);filter:blur(7px) drop-shadow(0 0 32px #a98be844);opacity:.64;animation:auth-galaxy-turn 110s linear infinite}
+.auth-nebula{position:absolute;display:block;width:65vw;height:45vw;min-width:320px;min-height:240px;border-radius:50%;filter:blur(55px);mix-blend-mode:screen;opacity:.28;will-change:transform}
+.auth-nebula-one{left:-12%;top:12%;background:radial-gradient(ellipse,#7752b7 0%,#3d2b69a6 32%,transparent 70%);animation:auth-nebula-drift 31s ease-in-out infinite alternate}
+.auth-nebula-two{right:-16%;bottom:4%;background:radial-gradient(ellipse,#5369b2 0%,#4b397a88 34%,transparent 72%);animation:auth-nebula-drift 39s ease-in-out -11s infinite alternate-reverse}
+.auth-galaxy{position:absolute;left:50%;top:49%;width:min(52vw,520px);height:min(52vw,520px);border-radius:50%;transform:translate3d(calc(-50% + var(--auth-pointer-x,0px)),calc(-50% + var(--auth-pointer-y,0px)),-180px) rotateX(66deg) rotateZ(-18deg);border:1px solid #d8c5ff22;box-shadow:0 0 50px #a98be822,inset 0 0 40px #8e70c522;animation:auth-galaxy-turn 84s linear infinite}
+.auth-orbit{position:absolute;left:50%;top:49%;display:block;border:1px solid #d8c5ff35;border-radius:50%;transform-style:preserve-3d;pointer-events:none}
+.auth-orbit-one{width:min(74vw,760px);height:min(27vw,250px);transform:translate3d(-50%,-50%,-100px) rotateX(68deg) rotateZ(-16deg);animation:auth-orbit-spin 46s linear infinite}
+.auth-orbit-two{width:min(88vw,920px);height:min(38vw,360px);transform:translate3d(-50%,-50%,-300px) rotateX(73deg) rotateZ(36deg);border-color:#a9baff22;animation:auth-orbit-spin 68s linear infinite reverse}
+.auth-planet{position:absolute;display:block;border-radius:50%;transform-style:preserve-3d;box-shadow:inset -20px -16px 28px #05040cbb,0 0 42px #a98be855}
+.auth-planet-one{width:clamp(58px,8vw,104px);height:clamp(58px,8vw,104px);left:13%;top:22%;background:radial-gradient(circle at 30% 24%,#f5eaff 0%,#b9a0e7 19%,#65528e 54%,#211b38 82%);animation:auth-planet-float 13s ease-in-out infinite}
+.auth-planet-two{width:clamp(28px,4vw,52px);height:clamp(28px,4vw,52px);right:13%;bottom:18%;background:radial-gradient(circle at 28% 22%,#fff 0%,#b3b8ed 22%,#59608e 58%,#171a30 85%);animation:auth-planet-float 17s ease-in-out -5s infinite reverse}
+@keyframes auth-star-drift{from{transform:translate3d(0,0,0)}to{transform:translate3d(-3%,2%,0)}}
+@keyframes auth-galaxy-turn{from{rotate:0deg}to{rotate:360deg}}
+@keyframes auth-orbit-spin{from{rotate:0deg}to{rotate:360deg}}
+@keyframes auth-nebula-drift{0%{translate:-3% 2%;scale:.94}100%{translate:5% -4%;scale:1.08}}
+@keyframes auth-planet-float{0%,100%{translate:0 0}50%{translate:14px -20px}}
+@media(max-width:600px){.auth-universe::after{width:125vw;height:125vw;opacity:.48}.auth-galaxy{width:86vw;height:86vw;opacity:.5}.auth-nebula{filter:blur(34px);opacity:.22}.auth-planet-one{left:5%;top:12%}.auth-planet-two{right:5%;bottom:10%}.auth-card{background:#111017f7}}
+@media(prefers-reduced-motion:reduce){.auth-universe::before,.auth-universe::after,.auth-nebula,.auth-orbit,.auth-planet{animation-duration:120s}.auth-card{transition:none}}
