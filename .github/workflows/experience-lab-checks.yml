@@ -37,6 +37,7 @@ on:
       - feat/assistance-live-preview
       - feat/creative-image-video-foundation
       - feat/creative-director-multimodel-foundation
+      - fix/creative-image-fidelity-current-main
       - release/assistance-creative-mainline
     paths:
       - "src/app/experience-lab/**"
