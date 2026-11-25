@@ -363,6 +363,7 @@ export default function UniverseScene() {
     addPlanet(-5.6, 1.7, -2.4, 0.92, 0x8d73bc, [0x2e294e, 0x8170a6, 0xd0b8e8], false, 2.7);
     addPlanet(5.2, 1.1, -5.1, 0.64, 0x7782bd, [0x4c527b, 0x858bb7, 0xc6b8df], true, 5.3);
     addPlanet(2.6, -3.1, 0.1, 0.34, 0xb57d9f, [0x583c65, 0xa76f91, 0xe4b7ca], false, 8.1);
+    addPlanet(-7.2, -3.2, -15.5, 1.85, 0x8b78a8, [0x302b4b, 0x7c6c9e, 0xd4c0e5], true, 11.7);
 
     // Small moons orbit their parent worlds, making the planetary system feel lived-in.
     const moonOrbits = [];
@@ -463,6 +464,12 @@ export default function UniverseScene() {
     // This is an artistic real-time approximation, not a ray-traced GR solver.
     const photonRing = new THREE.Mesh(new THREE.TorusGeometry(1.13, 0.035, 10, 120), new THREE.MeshBasicMaterial({ color: 0xf2e5ff, transparent: true, opacity: 0.86, blending: THREE.AdditiveBlending }));
     photonRing.rotation.x = 1.12; photonRing.rotation.y = 0.18; blackHole.add(photonRing);
+    // Split the outer disc into a brighter approaching side and a dimmer
+    // receding side: a stylized Doppler-beaming cue from black-hole imagery.
+    const diskBrightSide = new THREE.Mesh(new THREE.TorusGeometry(1.62, 0.24, 10, 64, Math.PI), new THREE.MeshBasicMaterial({ color: 0xe6d8ff, transparent: true, opacity: 0.62, blending: THREE.AdditiveBlending }));
+    diskBrightSide.rotation.x = 1.12; diskBrightSide.rotation.y = 0.18; blackHole.add(diskBrightSide);
+    const diskDimSide = new THREE.Mesh(new THREE.TorusGeometry(1.62, 0.24, 10, 64, Math.PI), new THREE.MeshBasicMaterial({ color: 0x7356a9, transparent: true, opacity: 0.28, blending: THREE.AdditiveBlending }));
+    diskDimSide.rotation.x = 1.12; diskDimSide.rotation.y = 0.18; diskDimSide.rotation.z = Math.PI; blackHole.add(diskDimSide);
     const lensingHalo = new THREE.Mesh(new THREE.TorusGeometry(1.92, 0.095, 8, 120), new THREE.MeshBasicMaterial({ color: 0x9275d8, transparent: true, opacity: 0.16, blending: THREE.AdditiveBlending }));
     lensingHalo.rotation.x = 1.12; lensingHalo.rotation.y = 0.18; blackHole.add(lensingHalo);
     const plasmaMaterial = new THREE.MeshBasicMaterial({ color: 0xffd6ff, transparent: true, opacity: 0.82, blending: THREE.AdditiveBlending });
@@ -547,6 +554,23 @@ export default function UniverseScene() {
       wormholeRings.push(ring);
     });
     world.add(wormhole);
+
+    // A distant supernova remnant: a bright stellar core with expanding,
+    // fading shockwave shells to add a rare event in the background.
+    const supernova = new THREE.Group();
+    supernova.position.set(7.6, -4.2, -28);
+    const supernovaCore = new THREE.Mesh(new THREE.SphereGeometry(0.24, 20, 16), new THREE.MeshBasicMaterial({ color: 0xffe5ff }));
+    supernova.add(supernovaCore);
+    const supernovaGlow = new THREE.Mesh(new THREE.SphereGeometry(0.62, 20, 16), new THREE.MeshBasicMaterial({ color: 0xb99aff, transparent: true, opacity: 0.16, blending: THREE.AdditiveBlending, depthWrite: false }));
+    supernova.add(supernovaGlow);
+    const supernovaRings = [];
+    [0, 0.34, 0.68].forEach((phase, i) => {
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.72, 0.018, 6, 96), new THREE.MeshBasicMaterial({ color: i === 1 ? 0xe9d7ff : 0x9c85df, transparent: true, opacity: 0.28, blending: THREE.AdditiveBlending, depthWrite: false }));
+      ring.rotation.set(0.55 + i * 0.22, 0.18 - i * 0.16, i * 0.4);
+      supernova.add(ring);
+      supernovaRings.push({ ring, phase });
+    });
+    world.add(supernova);
 
     // Meteor particles use a compact point buffer and recycle after each pass.
     const meteorCount = compact ? 18 : 36;
@@ -679,6 +703,14 @@ export default function UniverseScene() {
         comet.rotation.z = Math.sin(time * 0.00008) * 0.12;
         wormhole.rotation.z += 0.00013 * delta;
         wormholeRings.forEach((ring, i) => { ring.rotation.z += (i % 2 ? -1 : 1) * 0.00024 * delta; });
+        supernova.rotation.y += 0.00008 * delta;
+        supernovaGlow.material.opacity = 0.12 + (Math.sin(time * 0.0012) + 1) * 0.035;
+        supernovaRings.forEach(({ ring, phase }) => {
+          const pulse = (time * 0.000075 + phase) % 1;
+          const scale = 0.72 + pulse * 1.75;
+          ring.scale.setScalar(scale);
+          ring.material.opacity = (1 - pulse) * 0.28;
+        });
         const meteorArray = meteorGeometry.attributes.position.array;
         for (let i = 0; i < meteorCount; i++) {
           const o = i * 3;
