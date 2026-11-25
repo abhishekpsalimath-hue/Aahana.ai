@@ -102,3 +102,30 @@ test("surfaces regression follow-up proposals alongside the regression evidence"
  assert.equal(report.video.regression.status,"regression-detected");
  assert.ok(report.improvementProposals.proposals.some((item)=>item.id==="video-regression-follow-up"));
 });
+
+test("connects improvement evidence to owner-gated build tasks without authorizing execution",()=> {
+ const weakImage={...imageReview,scores:{subjectFidelity:2,attributeFidelity:4,compositionFidelity:4,constraintFidelity:4,visualCoherence:4}};
+ const report=buildCreativeEvaluationReport({
+  imageReviews:[weakImage],
+  buildTaskTargetPaths:{"image-subjectFidelity":["src/lib/creative/creative-director.mjs"]},
+ });
+ assert.equal(report.improvementProposals.proposalCount,1);
+ assert.equal(report.buildTaskProposals.taskCount,1);
+ const task=report.buildTaskProposals.tasks[0];
+ assert.equal(task.proposalId,"image-subjectFidelity");
+ assert.equal(task.sourceEvidence.source,"human-review");
+ assert.deepEqual(task.targetPaths,["src/lib/creative/creative-director.mjs"]);
+ assert.equal(task.status,"awaiting-owner-review");
+ assert.equal(task.approval.status,"pending");
+ assert.equal(task.execution.mode,"draft-only");
+ assert.equal(task.execution.writesAllowed,false);
+ assert.equal(task.execution.automaticAcceptance,false);
+ assert.equal(task.execution.mergeAllowed,false);
+ assert.equal(task.execution.deploymentAllowed,false);
+});
+
+test("keeps task proposals empty and non-executable when no creative evidence exists",()=> {
+ const report=buildCreativeEvaluationReport();
+ assert.equal(report.buildTaskProposals.taskCount,0);
+ assert.deepEqual(report.buildTaskProposals.tasks,[]);
+});
