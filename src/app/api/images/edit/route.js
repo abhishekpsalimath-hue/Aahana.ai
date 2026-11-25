@@ -26,8 +26,17 @@ export async function POST(request) {
     return NextResponse.json({ error: "Image editing is not connected in the private server settings." }, { status: 503 });
   }
 
-  const contentLength = Number(request.headers.get("content-length"));
-  if (Number.isFinite(contentLength) && contentLength > MAX_IMAGE_EDIT_REQUEST_BYTES) {
+  const contentType = request.headers.get("content-type") || "";
+  if (!/^multipart\\/form-data;\\s*boundary=(?:"[^"]+"|[^;]+)$/i.test(contentType)) {
+    return NextResponse.json({ error: "Invalid image-edit request." }, { status: 400 });
+  }
+
+  const declaredLength = request.headers.get("content-length");
+  if (declaredLength !== null && !/^\\d+$/.test(declaredLength)) {
+    return NextResponse.json({ error: "Invalid image-edit request." }, { status: 400 });
+  }
+  const contentLength = declaredLength === null ? null : Number(declaredLength);
+  if (contentLength !== null && contentLength > MAX_IMAGE_EDIT_REQUEST_BYTES) {
     return NextResponse.json({ error: "The image-edit request is too large. Attach an image smaller than 2 MB." }, { status: 413 });
   }
 
