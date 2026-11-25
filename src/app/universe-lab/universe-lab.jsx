@@ -38,7 +38,7 @@ function Starfield({ pointerRef, animate }) {
       canvas.width = Math.round(width * dpr);
       canvas.height = Math.round(height * dpr);
       context.setTransform(dpr, 0, 0, dpr, 0, 0);
-      const count = Math.min(260, Math.max(90, Math.round(width * height / 5200)));
+      const count = Math.min(850, Math.max(180, Math.round(width * height / 2200)));
       stars = Array.from({ length: count }, () => ({
         x: Math.random() * width, y: Math.random() * height,
         radius: Math.random() * 1.25 + 0.2, alpha: Math.random() * 0.62 + 0.16,
@@ -101,6 +101,8 @@ export default function UniverseLab() {
         <div className={styles.galaxy} aria-hidden="true"><i /><i /><i /></div>
         <div className={styles.planet planetOne} aria-hidden="true" />
         <div className={styles.planet planetTwo} aria-hidden="true" />
+        <div className={styles.solarOrbit} aria-hidden="true"><i /></div>
+        <div className={styles.cometTrail} aria-hidden="true" />
         <div className={styles.blackHole} aria-hidden="true"><i /></div>
         <button className={`${styles.world} ${styles.worldGalaxy} ${selected === "galaxies" ? styles.chosen : ""}`} onClick={() => setSelected("galaxies")} aria-pressed={selected === "galaxies"}>Galaxies</button>
         <button className={`${styles.world} ${styles.worldStar} ${selected === "stars" ? styles.chosen : ""}`} onClick={() => setSelected("stars")} aria-pressed={selected === "stars"}>Stars</button>
