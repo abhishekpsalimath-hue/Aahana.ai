@@ -35,6 +35,7 @@ test("reports missing shots rather than silently treating sequence as complete",
 
 test("rejects one-shot sequences, duplicate reviewer-shot entries and invalid shot numbers", () => {
   assert.throws(() => validateVideoSampleReviews([review()]), /at least two/);
+  assert.throws(() => validateVideoSampleReviews([review(), review({ reviewer: "reviewer-b" })]), /at least two distinct shots/);
   assert.throws(() => validateVideoSampleReviews([review(), review()]), /Duplicate reviewer submission/);
   assert.throws(() => validateVideoSampleReviews([review(), review({ sampleId: "clip-sample-13", shotNumber: 13 })]), /shotNumber/);
 });
