@@ -475,7 +475,7 @@ export async function POST(request) {
   if (phase === "plan" && planReady && changePlan) {
     return NextResponse.json({
       status: "plan_ready",
-      execution: buildSelfImproveExecutionOutcome({ phase, planReady: true, successfulToolCalls, failedToolCalls, roundsUsed: Math.min(rounds + 1, MAX_TOOL_ROUNDS), failureDetails: summarizeSelfBuildFailures(toolFailures), executionSteps: summarizeSelfBuildExecutionJournal(executionJournal) }),
+      execution: buildSelfImproveExecutionOutcome({ phase, planReady: true, successfulToolCalls, failedToolCalls, roundsUsed: Math.min(rounds + 1, MAX_TOOL_ROUNDS), failureDetails: summarizeSelfBuildFailures(toolFailures), executionSteps: summarizeSelfBuildExecutionJournal(executionJournal), acceptanceCheckLabels: changePlan?.acceptanceChecks || [] }),
       repository: { name: repository.repository, branch: repository.branch, baseSha: repository.baseSha },
       finalResponse: "Plan ready for your review. No source files were read and no changes were proposed.",
       changePlan,
@@ -507,6 +507,7 @@ export async function POST(request) {
     roundLimitReached: rounds >= MAX_TOOL_ROUNDS,
     failureDetails: summarizeSelfBuildFailures(toolFailures),
     executionSteps: summarizeSelfBuildExecutionJournal(executionJournal),
+    acceptanceCheckLabels: changePlan?.acceptanceChecks || [],
   });
 
   return NextResponse.json({
