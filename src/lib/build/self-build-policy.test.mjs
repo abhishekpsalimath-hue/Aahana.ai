@@ -63,6 +63,9 @@ test("rejects traversal, encoded paths, absolute paths, and unusual separators",
     "/src/app/experience-lab/page.jsx",
     "src\\app\\experience-lab\\page.jsx",
     "src/app/experience-lab/./page.jsx",
+    "src⁄app/experience-lab/page.jsx",
+    "src∕app/experience-lab/page.jsx",
+    "src／app/experience-lab/page.jsx",
   ]) assert.equal(isAllowedSelfBuildPath(path), false, path);
 });
 
