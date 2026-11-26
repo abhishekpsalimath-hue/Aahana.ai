@@ -358,9 +358,10 @@ export async function POST(request) {
           ...context,
         ],
       }),
-      signal: AbortSignal.timeout(45000),
+      signal: AbortSignal.any([request.signal, AbortSignal.timeout(45000)]),
     });
   } catch {
+    if (request.signal.aborted) return new Response(null, { status: 499 });
     return NextResponse.json({ error: "Aahana could not connect to the AI service. Please try again." }, { status: 502 });
   }
 
@@ -448,6 +449,7 @@ export async function POST(request) {
   const decoder = new TextDecoder();
   const reader = upstream.body.getReader();
   let fullReply = "";
+  let clientCancelled = false;
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -465,6 +467,7 @@ export async function POST(request) {
         }
         parser.push(decoder.decode());
         parser.finish();
+        if (clientCancelled || request.signal.aborted) return;
         finished = true;
 
         if (fullReply.trim()) {
@@ -477,13 +480,16 @@ export async function POST(request) {
         }
         controller.close();
       } catch (error) {
-        console.error("Aahana stream failed:", error?.message || "unknown error");
-        if (!finished) controller.error(error);
+        if (!clientCancelled && !request.signal.aborted) {
+          console.error("Aahana stream failed:", error?.message || "unknown error");
+          if (!finished) controller.error(error);
+        }
       } finally {
         reader.releaseLock();
       }
     },
     async cancel() {
+      clientCancelled = true;
       await reader.cancel().catch(() => {});
     },
   });
