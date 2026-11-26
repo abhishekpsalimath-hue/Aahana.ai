@@ -72,3 +72,11 @@ test("image generation rejects malformed and overlong briefs", () => {
   assert.equal(parseImageGenerationInput({ prompt: "x".repeat(2049) }).ok, false);
   assert.equal(parseImageGenerationInput({ prompt: "A landscape", steps: 99 }).ok, false);
 });
+
+test("accepts the maximum user brief after adding bounded art direction", () => {
+  const prompt = "x".repeat(2048);
+  const result = parseImageGenerationInput({ prompt, quality: "masterpiece", steps: 8 });
+  assert.equal(result.ok, true, result.error);
+  assert.ok(result.prompt.length <= 2048 + 4600);
+  assert.ok(result.prompt.includes(prompt));
+});
