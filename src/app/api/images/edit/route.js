@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { buildImageEditPrompt } from "@/lib/creative/creative-director.mjs";
-import { getReferenceImageDimensions, isReferenceImageWithinProviderBounds, parseImageEditInput } from "@/lib/creative/image-generation.mjs";
+import { getReferenceImageDimensions, isReferenceImageWithinProviderBounds } from "@/lib/creative/image-generation.mjs";
 import { detectImageMimeTypeFromBase64 } from "@/lib/creative/image-provider.mjs";
 import { readBoundedImageEditRequest } from "@/lib/creative/bounded-image-edit-request.mjs";
 import { readBoundedImageProviderJson } from "@/lib/creative/bounded-image-generation-json.mjs";
