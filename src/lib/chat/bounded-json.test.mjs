@@ -50,3 +50,17 @@ test("rejects invalid limits instead of silently disabling the bound", async () 
   await assert.rejects(readBoundedJson(request, 0), TypeError);
   await assert.rejects(readBoundedJson(request, 1.5), TypeError);
 });
+
+
+test("rejects malformed UTF-8 instead of silently replacing invalid bytes", async () => {
+  let cancelled = false;
+  const request = {
+    headers: { get: () => null },
+    body: new ReadableStream({
+      start(controller) { controller.enqueue(new Uint8Array([0xc3, 0x28])); },
+      cancel() { cancelled = true; },
+    }),
+  };
+  await assert.rejects(readBoundedJson(request, 16), { status: 400 });
+  assert.equal(cancelled, true);
+});
