@@ -36,9 +36,9 @@ export function inferSpeechLanguage(value, fallback = "en-IN") {
   if (best.count > 0) return best.language;
   if (/[ăâđêôơưạ-ỹ]/iu.test(text)) return "vi-VN";
   if (/[¿¡ñáéíóú]/iu.test(text)) return "es-ES";
-  if (/[àâçéèêëîïôûùüÿœ]/iu.test(text)) return "fr-FR";
   if (/[äöüß]/iu.test(text)) return "de-DE";
   if (/[ãõ]/iu.test(text)) return "pt-BR";
   if (/[ğışİç]/u.test(text)) return "tr-TR";
+  if (/[àâçéèêëîïôûùÿœ]/iu.test(text)) return "fr-FR";
   return safeFallback;
 }
