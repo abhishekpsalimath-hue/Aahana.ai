@@ -67,6 +67,55 @@ function repositoryPath(path) {
   return path.split("/").map(encodeURIComponent).join("/");
 }
 
+function gitBlobSha(content) {
+  const bytes = Buffer.from(content, "utf8");
+  return createHash("sha1")
+    .update("blob " + bytes.length + "\0")
+    .update(bytes)
+    .digest("hex");
+}
+
+async function findVerifiedProposalBranch({ prefix, branch, baseSha, baseTreeSha, files, token, fetchImpl }) {
+  let ref;
+  try {
+    ref = await githubRequest(prefix + "/git/ref/heads/" + encodeURIComponent(branch), token, { fetchImpl });
+  } catch (error) {
+    if (error.status === 404) return null;
+    throw error;
+  }
+  const commitSha = ref.object?.sha;
+  if (typeof commitSha !== "string" || !commitSha) {
+    throw new Error("An interrupted proposal branch could not be verified safely.");
+  }
+  const commit = await githubRequest(prefix + "/git/commits/" + encodeURIComponent(commitSha), token, { fetchImpl });
+  if (commit.parents?.length !== 1 || commit.parents[0]?.sha !== baseSha) {
+    throw new Error("An existing proposal branch does not match the pinned base commit.");
+  }
+  const [baseTree, proposalTree] = await Promise.all([
+    githubRequest(prefix + "/git/trees/" + encodeURIComponent(baseTreeSha) + "?recursive=1", token, { fetchImpl }),
+    githubRequest(prefix + "/git/trees/" + encodeURIComponent(commit.tree?.sha || "") + "?recursive=1", token, { fetchImpl }),
+  ]);
+  if (baseTree.truncated || proposalTree.truncated) {
+    throw new Error("An existing proposal branch is too large to verify safely.");
+  }
+  const baseFiles = new Map((baseTree.tree || []).filter((entry) => entry.type === "blob").map((entry) => [entry.path, entry.sha]));
+  const proposalFiles = new Map((proposalTree.tree || []).filter((entry) => entry.type === "blob").map((entry) => [entry.path, entry.sha]));
+  const changedPaths = new Set([...baseFiles.keys(), ...proposalFiles.keys()]);
+  for (const path of changedPaths) {
+    if (baseFiles.get(path) === proposalFiles.get(path)) changedPaths.delete(path);
+  }
+  const expectedPaths = new Set(files.map((file) => file.path));
+  if (changedPaths.size !== expectedPaths.size || [...changedPaths].some((path) => !expectedPaths.has(path))) {
+    throw new Error("An existing proposal branch contains changes outside the approved file set.");
+  }
+  for (const file of files) {
+    if (proposalFiles.get(file.path) !== gitBlobSha(file.content)) {
+      throw new Error("An existing proposal branch does not match the exact approved file contents.");
+    }
+  }
+  return { sha: commitSha };
+}
+
 export async function getSelfBuildRepository({ env = process.env, fetchImpl = fetch } = {}) {
   const config = getSelfBuildConfig(env);
   if (!config.enabled) throw new Error("Aahana self-build is not configured.");
@@ -163,30 +212,47 @@ export async function createSelfBuildPullRequest({
   }
 
   const baseCommit = await githubRequest(prefix + "/git/commits/" + changeSet.baseSha, token, { fetchImpl });
-  const treeEntries = [];
-  for (const file of changeSet.files) {
-    const blob = await githubRequest(prefix + "/git/blobs", token, {
+  let proposalCommit = await findVerifiedProposalBranch({
+    prefix, branch, baseSha: changeSet.baseSha, baseTreeSha: baseCommit.tree.sha,
+    files: changeSet.files, token, fetchImpl,
+  });
+  if (!proposalCommit) {
+    const treeEntries = [];
+    for (const file of changeSet.files) {
+      const blob = await githubRequest(prefix + "/git/blobs", token, {
+        fetchImpl, method: "POST",
+        body: { content: Buffer.from(file.content, "utf8").toString("base64"), encoding: "base64" },
+      });
+      treeEntries.push({ path: file.path, mode: "100644", type: "blob", sha: blob.sha });
+    }
+    const tree = await githubRequest(prefix + "/git/trees", token, {
       fetchImpl, method: "POST",
-      body: { content: Buffer.from(file.content, "utf8").toString("base64"), encoding: "base64" },
+      body: { base_tree: baseCommit.tree.sha, tree: treeEntries },
     });
-    treeEntries.push({ path: file.path, mode: "100644", type: "blob", sha: blob.sha });
+    const commit = await githubRequest(prefix + "/git/commits", token, {
+      fetchImpl, method: "POST",
+      body: {
+        message: "Aahana self-build: " + title.trim(),
+        tree: tree.sha,
+        parents: [changeSet.baseSha],
+      },
+    });
+    try {
+      await githubRequest(prefix + "/git/refs", token, {
+        fetchImpl, method: "POST",
+        body: { ref: "refs/heads/" + branch, sha: commit.sha },
+      });
+      proposalCommit = { sha: commit.sha };
+    } catch (error) {
+      // A concurrent retry may have created the deterministic branch first.
+      if (error.status !== 422) throw error;
+      proposalCommit = await findVerifiedProposalBranch({
+        prefix, branch, baseSha: changeSet.baseSha, baseTreeSha: baseCommit.tree.sha,
+        files: changeSet.files, token, fetchImpl,
+      });
+      if (!proposalCommit) throw error;
+    }
   }
-  const tree = await githubRequest(prefix + "/git/trees", token, {
-    fetchImpl, method: "POST",
-    body: { base_tree: baseCommit.tree.sha, tree: treeEntries },
-  });
-  const commit = await githubRequest(prefix + "/git/commits", token, {
-    fetchImpl, method: "POST",
-    body: {
-      message: "Aahana self-build: " + title.trim(),
-      tree: tree.sha,
-      parents: [changeSet.baseSha],
-    },
-  });
-  await githubRequest(prefix + "/git/refs", token, {
-    fetchImpl, method: "POST",
-    body: { ref: "refs/heads/" + branch, sha: commit.sha },
-  });
   const pullRequest = await githubRequest(prefix + "/pulls", token, {
     fetchImpl, method: "POST",
     body: {
@@ -210,7 +276,7 @@ export async function createSelfBuildPullRequest({
     branch,
     baseBranch,
     baseSha: changeSet.baseSha,
-    headSha: commit.sha,
+    headSha: proposalCommit.sha,
     changedFiles: changeSet.files.length,
   };
 }
