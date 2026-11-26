@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createSseContentParser } from "@/lib/chat/sse-content-parser.mjs";
 import { readBoundedJson } from "@/lib/chat/bounded-json.mjs";
-import { detectImageMimeTypeFromBase64 } from "@/lib/creative/image-provider.mjs";
+import { getValidatedImageDataUrlMimeType } from "@/lib/creative/image-provider.mjs";
 import { getLanguageGuidance } from "@/lib/chat/language-guidance.mjs";
 import { shouldSearchWeb, getResearchTopic } from "@/lib/chat/research-intent.mjs";
 
@@ -60,9 +60,8 @@ export async function POST(request) {
   const prompt = typeof body?.message === "string" ? body.message.trim() : "";
   const image = body?.image && typeof body.image === "object" ? body.image : null;
   const imageDataUrl = typeof image?.dataUrl === "string" ? image.dataUrl : "";
-  const imageMatch = imageDataUrl.match(/^data:(image\/(?:png|jpeg|webp));base64,([A-Za-z0-9+/=]+)$/);
-  const detectedImageMime = imageMatch ? detectImageMimeTypeFromBase64(imageMatch[2]) : null;
-  if (image && (!imageMatch || imageDataUrl.length > 2_850_000 || detectedImageMime !== imageMatch[1])) {
+  const imageMimeType = getValidatedImageDataUrlMimeType(imageDataUrl, 2_850_000);
+  if (image && !imageMimeType) {
     return NextResponse.json({ error: "Please attach one valid PNG, JPEG or WebP image under 2 MB." }, { status: 400 });
   }
   const mode = ["solve", "create", "write", "build", "improve", "learn"].includes(body?.mode) ? body.mode : "solve";
@@ -119,7 +118,7 @@ export async function POST(request) {
     user_id: user.id,
     conversation_id: conversationId,
     role: "user",
-    content: image ? `${prompt}\n[Image attached: ${imageMatch[1]}]` : prompt,
+    content: image ? `${prompt}\n[Image attached: ${imageMimeType}]` : prompt,
   }).select("id").single();
 
   if (messageError || !savedUserMessage) {
