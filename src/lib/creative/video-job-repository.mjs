@@ -1,3 +1,5 @@
+import { createVideoJob } from "./video-job-lifecycle.mjs";
+
 const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,99}$/;
 
 function requireId(value, label) {
@@ -48,6 +50,15 @@ export function createVideoJobRepository(adapter) {
       const ownerId = requireId(job.ownerId, "Owner id");
       const jobId = requireId(job.id, "Job id");
       const idempotencyKey = requireId(job.idempotencyKey, "Idempotency key");
+      const canonical = createVideoJob({
+        id: jobId, ownerId, idempotencyKey,
+        createdAt: job.createdAt, maxAttempts: job.maxAttempts,
+      });
+      const fields = Object.keys(canonical);
+      if (Object.keys(job).length !== fields.length ||
+          fields.some((field) => job[field] !== canonical[field])) {
+        throw new TypeError("Only a fresh, validated queued video job can be created.");
+      }
       const result = await adapter.insertIfAbsent({
         ownerId, idempotencyKey, job: Object.freeze({ ...job }), revision: 1,
       });
