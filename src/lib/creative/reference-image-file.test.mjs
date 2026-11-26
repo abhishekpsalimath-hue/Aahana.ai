@@ -40,9 +40,9 @@ test("resizes oversized references to the provider edge limit", async () => {
       return { drawImage(image, x, y, width, height) { drawn = { width, height }; } };
     },
     toBlob(callback, type, quality) {
-      assert.equal(type, "image/jpeg");
-      assert.equal(quality, 0.92);
-      callback(new Blob([new Uint8Array([9, 8, 7])], { type: "image/jpeg" }));
+      assert.equal(type, "image/png");
+      assert.equal(quality, undefined);
+      callback(new Blob([new Uint8Array([9, 8, 7])], { type: "image/png" }));
     },
   };
   const source = new Blob([new Uint8Array(32)], { type: "image/png" });
@@ -52,6 +52,31 @@ test("resizes oversized references to the provider edge limit", async () => {
     documentRef: { createElement: () => canvas },
   });
   assert.deepEqual(drawn, { width: MAX_REFERENCE_IMAGE_EDGE, height: 256 });
+  assert.equal(file.type, "image/png");
+  assert.equal(file.size, 3);
+});
+
+test("falls back to bounded JPEG only when lossless resized output exceeds the upload cap", async () => {
+  const requestedTypes = [];
+  const canvas = {
+    width: 0, height: 0,
+    getContext() { return { drawImage() {} }; },
+    toBlob(callback, type, quality) {
+      requestedTypes.push({ type, quality });
+      if (type === "image/png") callback(new Blob([new Uint8Array(MAX_REFERENCE_IMAGE_BYTES + 1)], { type }));
+      else callback(new Blob([new Uint8Array([1, 2, 3])], { type }));
+    },
+  };
+  const source = new Blob([new Uint8Array([1])], { type: "image/png" });
+  const file = await createReferenceImageFile("data:image/png;base64,AQ==", {
+    ImageCtor: fakeImage(1024, 1024),
+    fetchImpl: async () => new Response(source),
+    documentRef: { createElement: () => canvas },
+  });
+  assert.deepEqual(requestedTypes, [
+    { type: "image/png", quality: undefined },
+    { type: "image/jpeg", quality: 0.92 },
+  ]);
   assert.equal(file.type, "image/jpeg");
   assert.equal(file.size, 3);
 });
