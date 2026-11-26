@@ -1,7 +1,5 @@
 "use client";
 
-import UniverseScene from "@/components/universe-scene";
-
 import { useCallback, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
@@ -424,9 +422,8 @@ export default function LearningStudio({ userEmail = "" }) {
 
   return (
     <main className="learning-page">
-      <UniverseScene />
       <header className="learning-header">
-        <Link className="learning-brand" href="/">Aahana <span>AI</span></Link>
+        <Link className="learning-brand" href="/">Aahana <span>ai</span></Link>
         <nav><Link href="/">Assistant</Link><span className="learning-user">{userEmail || "Your workspace"}</span></nav>
       </header>
 
