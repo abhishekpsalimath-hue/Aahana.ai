@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { parseVideoGenerationInput, validateVideoReferenceImage, hasCompletedVideoProviderResult, VIDEO_MODEL } from "@/lib/creative/video-generation.mjs";
+import { parseVideoGenerationInput, validateVideoReferenceImage, hasCompletedVideoProviderResult } from "@/lib/creative/video-generation.mjs";
+import { resolveVideoProvider, validateVideoProviderRequest } from "@/lib/creative/video-provider-registry.mjs";
 import { readBoundedRequestBody, readBoundedResponseJson } from "@/lib/http/bounded-request-body.mjs";
 
 export const runtime = "nodejs";
@@ -63,6 +64,17 @@ export async function POST(request) {
   }
   if (!input.ok) return NextResponse.json({ error: input.error }, { status: 400 });
 
+  const providerResolution = resolveVideoProvider(process.env.AAHANA_VIDEO_PROVIDER);
+  if (!providerResolution.ok) {
+    return NextResponse.json({ error: "The configured video provider is unavailable." }, { status: 503 });
+  }
+  const provider = providerResolution.provider;
+  const capabilityCheck = validateVideoProviderRequest(provider, {
+    prompt: input.prompt, duration: input.duration, aspectRatio: input.aspectRatio,
+    resolution: input.resolution, hasReferenceImage: Boolean(imageFile),
+  });
+  if (!capabilityCheck.ok) return NextResponse.json({ error: capabilityCheck.error }, { status: 400 });
+
   if (imageFile && (typeof imageFile.arrayBuffer !== "function" ||
       !ALLOWED_IMAGE_TYPES.has(imageFile.type) || imageFile.size < 1 || imageFile.size > MAX_IMAGE_BYTES)) {
     return NextResponse.json({ error: "Choose a PNG, JPEG or WebP image up to 2 MB." }, { status: 400 });
@@ -109,7 +121,7 @@ export async function POST(request) {
           Authorization: `Bearer ${apiToken}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ model: VIDEO_MODEL, input: providerInput }),
+        body: JSON.stringify({ model: provider.model, input: providerInput }),
         cache: "no-store",
         signal: AbortSignal.timeout(160000),
       }
@@ -143,7 +155,7 @@ export async function POST(request) {
 
     return NextResponse.json({
       videoUrl: parsedUrl.toString(),
-      model: VIDEO_MODEL,
+      model: provider.model,
       duration: input.duration,
       aspectRatio: input.aspectRatio,
       resolution: input.resolution,
