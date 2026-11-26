@@ -14,19 +14,40 @@ export default function AstronautCompanion({ variant = "assistant" }) {
 
   useEffect(() => {
     const motion = window.matchMedia?.("(prefers-reduced-motion: reduce)");
-    if (motion?.matches) return undefined;
-    let previous = 0;
-    const timer = window.setInterval(() => {
-      setMoment((current) => {
-        let next = Math.floor(Math.random() * moments.length);
-        if (moments.length > 1) {
-          while (next === current || next === previous) next = Math.floor(Math.random() * moments.length);
-        }
-        previous = current;
-        return next;
-      });
-    }, 7600);
-    return () => window.clearInterval(timer);
+    let timer = null;
+
+    const stop = () => {
+      if (timer !== null) {
+        window.clearInterval(timer);
+        timer = null;
+      }
+    };
+    const start = () => {
+      if (timer !== null || document.hidden || motion?.matches) return;
+      timer = window.setInterval(() => {
+        setMoment((current) => (
+          current + 1 + Math.floor(Math.random() * (moments.length - 1))
+        ) % moments.length);
+      }, 7600);
+    };
+    const handleVisibility = () => {
+      if (document.hidden) stop();
+      else start();
+    };
+    const handleMotionPreference = () => {
+      if (motion?.matches) stop();
+      else start();
+    };
+
+    document.addEventListener("visibilitychange", handleVisibility);
+    motion?.addEventListener?.("change", handleMotionPreference);
+    start();
+
+    return () => {
+      stop();
+      document.removeEventListener("visibilitychange", handleVisibility);
+      motion?.removeEventListener?.("change", handleMotionPreference);
+    };
   }, []);
 
   const current = moments[moment];
