@@ -151,11 +151,10 @@ export default function UniverseScene() {
       const outerG = galaxyPalette[2].g + (galaxyPalette[3].g - galaxyPalette[2].g) * outerMix;
       const outerB = galaxyPalette[2].b + (galaxyPalette[3].b - galaxyPalette[2].b) * outerMix;
       const brightness = 0.68 + Math.random() * 0.32;
-      galaxyColors.set([
-        (innerR + (outerR - innerR) * colorMix) * brightness,
-        (innerG + (outerG - innerG) * colorMix) * brightness,
-        (innerB + (outerB - innerB) * colorMix) * brightness,
-      ], i * 3);
+      const colorOffset = i * 3;
+      galaxyColors[colorOffset] = (innerR + (outerR - innerR) * colorMix) * brightness;
+      galaxyColors[colorOffset + 1] = (innerG + (outerG - innerG) * colorMix) * brightness;
+      galaxyColors[colorOffset + 2] = (innerB + (outerB - innerB) * colorMix) * brightness;
     }
     const galaxyGeometry = new THREE.BufferGeometry();
     galaxyGeometry.setAttribute("position", new THREE.Float32BufferAttribute(galaxyPositions, 3));
