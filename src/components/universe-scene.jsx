@@ -60,12 +60,12 @@ export default function UniverseScene() {
           float filaments=fbm(q*9.0+clouds*1.8);
           float mask=smoothstep(0.47,0.79,clouds*0.72+filaments*0.38);
           float wisps=smoothstep(0.54,0.82,filaments)*mask;
-          vec3 violet=vec3(0.23,0.14,0.42);
-          vec3 lilac=vec3(0.48,0.34,0.72);
-          vec3 blue=vec3(0.20,0.29,0.53);
+          vec3 violet=vec3(0.055,0.13,0.20);
+          vec3 lilac=vec3(0.16,0.36,0.43);
+          vec3 blue=vec3(0.10,0.22,0.38);
           vec3 color=mix(violet,lilac,smoothstep(0.38,0.72,clouds));
           color=mix(color,blue,smoothstep(0.48,0.82,fbm(q*2.1+8.0))*0.62);
-          color+=vec3(0.25,0.18,0.38)*wisps*0.5;
+          color+=vec3(0.34,0.23,0.13)*wisps*0.42;
           float edge=1.0-smoothstep(0.38,0.88,length(p*vec2(0.82,1.12)));
           float alpha=mask*edge*0.34+wisps*edge*0.12;
           gl_FragColor=vec4(color,alpha);
@@ -79,18 +79,18 @@ export default function UniverseScene() {
     const world = new THREE.Group();
     world.position.z = -2.5;
     scene.add(world);
-    scene.add(new THREE.AmbientLight(0x9c8bbf, 0.72));
-    const keyLight = new THREE.PointLight(0xd8c4ff, 42, 38, 1.8);
+    scene.add(new THREE.AmbientLight(0x8999a8, 0.42));
+    const keyLight = new THREE.PointLight(0xffdfb4, 52, 42, 1.8);
     keyLight.position.set(-4, 5, 7);
     scene.add(keyLight);
-    const rimLight = new THREE.PointLight(0x7e8fe9, 24, 34, 1.7);
+    const rimLight = new THREE.PointLight(0x5fa9c8, 28, 38, 1.7);
     rimLight.position.set(7, -2, -3);
     scene.add(rimLight);
 
     const starCount = compact ? 5000 : 8000;
     const starPositions = new Float32Array(starCount * 3);
     const starColors = new Float32Array(starCount * 3);
-    const palette = [new THREE.Color(0xffffff), new THREE.Color(0xcbb8ff), new THREE.Color(0x9eafea)];
+    const palette = [new THREE.Color(0xffffff), new THREE.Color(0xffd9a3), new THREE.Color(0x9ed9e8)];
     for (let i = 0; i < starCount; i++) {
       const r = 18 + Math.random() * 48, theta = Math.random() * Math.PI * 2, phi = Math.acos(2 * Math.random() - 1);
       starPositions.set([r * Math.sin(phi) * Math.cos(theta), r * Math.sin(phi) * Math.sin(theta), r * Math.cos(phi) - 8], i * 3);
@@ -249,10 +249,10 @@ export default function UniverseScene() {
             float sunFacing = dot(normalize(vAtmospherePosition), normalize(uLightDirection));
             float daylight = smoothstep(-0.38, 0.48, sunFacing);
             float twilight = exp(-abs(sunFacing + 0.04) * 5.0);
-            vec3 dayColor = vec3(0.34, 0.48, 0.92);
-            vec3 nightColor = vec3(0.20, 0.13, 0.42);
+            vec3 dayColor = vec3(0.24, 0.53, 0.72);
+            vec3 nightColor = vec3(0.055, 0.12, 0.20);
             vec3 atmosphereColor = mix(nightColor, dayColor, daylight);
-            atmosphereColor += vec3(0.34, 0.20, 0.52) * twilight * 0.42;
+            atmosphereColor += vec3(0.88, 0.39, 0.16) * twilight * 0.34;
             float alpha = rim * (0.075 + daylight * 0.12);
             gl_FragColor = vec4(atmosphereColor, alpha);
           }
@@ -334,10 +334,10 @@ export default function UniverseScene() {
               float sunFacing = dot(normalize(vCloudPosition), normalize(uLightDirection));
               float daylight = smoothstep(-0.24, 0.52, sunFacing);
               float terminator = exp(-abs(sunFacing - 0.02) * 8.0);
-              vec3 shadowCloud = vec3(0.20, 0.19, 0.31);
-              vec3 sunlitCloud = vec3(0.88, 0.85, 1.0);
+              vec3 shadowCloud = vec3(0.20, 0.25, 0.29);
+              vec3 sunlitCloud = vec3(0.94, 0.89, 0.77);
               vec3 cloudColor = mix(shadowCloud, sunlitCloud, daylight);
-              cloudColor += vec3(0.19, 0.16, 0.31) * terminator * 0.24;
+              cloudColor += vec3(0.72, 0.34, 0.16) * terminator * 0.20;
               float alpha = cloud * (0.045 + daylight * 0.105 + limb * 0.075);
               gl_FragColor = vec4(cloudColor, alpha);
             }
@@ -351,7 +351,7 @@ export default function UniverseScene() {
       if (ring) {
         const rings = new THREE.Mesh(
           new THREE.RingGeometry(radius * 1.35, radius * 2.05, 128),
-          new THREE.MeshStandardMaterial({ color: 0xc8b4ee, roughness: 0.88, metalness: 0.12, transparent: true, opacity: 0.52, side: THREE.DoubleSide, depthWrite: false })
+          new THREE.MeshStandardMaterial({ color: 0xbca889, roughness: 0.88, metalness: 0.08, transparent: true, opacity: 0.52, side: THREE.DoubleSide, depthWrite: false })
         );
         rings.rotation.x = Math.PI / 2.35;
         rings.rotation.y = 0.18;
@@ -360,18 +360,18 @@ export default function UniverseScene() {
       world.add(group);
       planets.push(group);
     };
-    addPlanet(-5.6, 1.7, -2.4, 0.92, 0x8d73bc, [0x2e294e, 0x8170a6, 0xd0b8e8], false, 2.7);
-    addPlanet(5.2, 1.1, -5.1, 0.64, 0x7782bd, [0x4c527b, 0x858bb7, 0xc6b8df], true, 5.3);
-    addPlanet(2.6, -3.1, 0.1, 0.34, 0xb57d9f, [0x583c65, 0xa76f91, 0xe4b7ca], false, 8.1);
-    addPlanet(-7.2, -3.2, -15.5, 1.85, 0x8b78a8, [0x302b4b, 0x7c6c9e, 0xd4c0e5], true, 11.7);
+    addPlanet(-5.6, 1.7, -2.4, 0.92, 0x5d9fba, [0x153f5c, 0x478e9c, 0xb4a17a], false, 2.7);
+    addPlanet(5.2, 1.1, -5.1, 0.64, 0xc18a55, [0x6d4933, 0xb9794b, 0xe3c89c], true, 5.3);
+    addPlanet(2.6, -3.1, 0.1, 0.34, 0xa95e43, [0x59352b, 0xa85e43, 0xd4a17a], false, 8.1);
+    addPlanet(-7.2, -3.2, -15.5, 1.85, 0x7b9fb0, [0x334c61, 0x7897a1, 0xd5c7a5], true, 11.7);
 
     // Small moons orbit their parent worlds, making the planetary system feel lived-in.
     const moonOrbits = [];
     const addMoon = (parent, distance, size, color, speed) => {
       const orbit = new THREE.Group();
-      const path = new THREE.Mesh(new THREE.TorusGeometry(distance, 0.006, 5, 72), new THREE.MeshBasicMaterial({ color: 0xbba9e8, transparent: true, opacity: 0.22 }));
+      const path = new THREE.Mesh(new THREE.TorusGeometry(distance, 0.006, 5, 72), new THREE.MeshBasicMaterial({ color: 0x91b9c5, transparent: true, opacity: 0.15 }));
       orbit.add(path);
-      const moon = new THREE.Mesh(new THREE.IcosahedronGeometry(size, 2), new THREE.MeshStandardMaterial({ color, roughness: 0.9, metalness: 0.02 }));
+      const moon = new THREE.Mesh(new THREE.SphereGeometry(size, 20, 16), new THREE.MeshStandardMaterial({ color, roughness: 0.9, metalness: 0.02 }));
       moon.position.x = distance;
       orbit.add(moon);
       parent.add(orbit);
@@ -383,8 +383,8 @@ export default function UniverseScene() {
     // Living travellers: astronauts and friendly alien explorers move through
     // the same 3D scene on independent, gently varied trajectories.
     const travellers = [];
-    const astronautSuit = new THREE.MeshStandardMaterial({ color: 0xe8e4f2, roughness: 0.58, metalness: 0.12 });
-    const astronautTrim = new THREE.MeshStandardMaterial({ color: 0x9b82ca, roughness: 0.42, metalness: 0.35, emissive: 0x24153e });
+    const astronautSuit = new THREE.MeshStandardMaterial({ color: 0xe7e1d2, roughness: 0.72, metalness: 0.12 });
+    const astronautTrim = new THREE.MeshStandardMaterial({ color: 0x3d7180, roughness: 0.48, metalness: 0.28, emissive: 0x10262c });
     const visorMaterial = new THREE.MeshPhysicalMaterial({ color: 0x18233c, metalness: 0.72, roughness: 0.16, clearcoat: 1, clearcoatRoughness: 0.08, emissive: 0x243e70, emissiveIntensity: 0.32 });
     const createAstronaut = (scale = 1) => {
       const g = new THREE.Group();
@@ -404,7 +404,7 @@ export default function UniverseScene() {
         const boot = new THREE.Mesh(new THREE.SphereGeometry(0.075, 12, 10), astronautTrim);
         boot.scale.set(1, 0.65, 1.25); boot.position.set(side * 0.09, -0.49, 0.045); g.add(boot);
       }
-      const shoulderLight = new THREE.PointLight(0xbca0ff, 0.55, 1.8);
+      const shoulderLight = new THREE.PointLight(0x8ed4e4, 0.38, 1.8);
       shoulderLight.position.set(0, 0.12, 0.2); g.add(shoulderLight);
       g.scale.setScalar(scale);
       return g;
@@ -451,28 +451,28 @@ export default function UniverseScene() {
     blackHole.add(singularity);
     const disk = new THREE.Mesh(
       new THREE.TorusGeometry(1.62, 0.24, 12, 100),
-      new THREE.MeshBasicMaterial({ color: 0xb58aff, transparent: true, opacity: 0.58, blending: THREE.AdditiveBlending })
+      new THREE.MeshBasicMaterial({ color: 0xff9b4a, transparent: true, opacity: 0.62, blending: THREE.AdditiveBlending })
     );
     disk.rotation.x = 1.12; disk.rotation.y = 0.18; blackHole.add(disk);
     const diskInner = new THREE.Mesh(
       new THREE.TorusGeometry(1.28, 0.07, 10, 100),
-      new THREE.MeshBasicMaterial({ color: 0xf1c5ff, transparent: true, opacity: 0.72, blending: THREE.AdditiveBlending })
+      new THREE.MeshBasicMaterial({ color: 0xffd38a, transparent: true, opacity: 0.78, blending: THREE.AdditiveBlending })
     );
     diskInner.rotation.x = 1.12; diskInner.rotation.y = 0.18; blackHole.add(diskInner);
     world.add(blackHole);
     // A thin photon-ring cue and faint outer lensing halo frame the shadow.
     // This is an artistic real-time approximation, not a ray-traced GR solver.
-    const photonRing = new THREE.Mesh(new THREE.TorusGeometry(1.13, 0.035, 10, 120), new THREE.MeshBasicMaterial({ color: 0xf2e5ff, transparent: true, opacity: 0.86, blending: THREE.AdditiveBlending }));
+    const photonRing = new THREE.Mesh(new THREE.TorusGeometry(1.13, 0.035, 10, 120), new THREE.MeshBasicMaterial({ color: 0xffedcf, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending }));
     photonRing.rotation.x = 1.12; photonRing.rotation.y = 0.18; blackHole.add(photonRing);
     // Split the outer disc into a brighter approaching side and a dimmer
     // receding side: a stylized Doppler-beaming cue from black-hole imagery.
-    const diskBrightSide = new THREE.Mesh(new THREE.TorusGeometry(1.62, 0.24, 10, 64, Math.PI), new THREE.MeshBasicMaterial({ color: 0xe6d8ff, transparent: true, opacity: 0.62, blending: THREE.AdditiveBlending }));
+    const diskBrightSide = new THREE.Mesh(new THREE.TorusGeometry(1.62, 0.24, 10, 64, Math.PI), new THREE.MeshBasicMaterial({ color: 0xffc16c, transparent: true, opacity: 0.72, blending: THREE.AdditiveBlending }));
     diskBrightSide.rotation.x = 1.12; diskBrightSide.rotation.y = 0.18; blackHole.add(diskBrightSide);
-    const diskDimSide = new THREE.Mesh(new THREE.TorusGeometry(1.62, 0.24, 10, 64, Math.PI), new THREE.MeshBasicMaterial({ color: 0x7356a9, transparent: true, opacity: 0.28, blending: THREE.AdditiveBlending }));
+    const diskDimSide = new THREE.Mesh(new THREE.TorusGeometry(1.62, 0.24, 10, 64, Math.PI), new THREE.MeshBasicMaterial({ color: 0x8a4e31, transparent: true, opacity: 0.32, blending: THREE.AdditiveBlending }));
     diskDimSide.rotation.x = 1.12; diskDimSide.rotation.y = 0.18; diskDimSide.rotation.z = Math.PI; blackHole.add(diskDimSide);
-    const lensingHalo = new THREE.Mesh(new THREE.TorusGeometry(1.92, 0.095, 8, 120), new THREE.MeshBasicMaterial({ color: 0x9275d8, transparent: true, opacity: 0.16, blending: THREE.AdditiveBlending }));
+    const lensingHalo = new THREE.Mesh(new THREE.TorusGeometry(1.92, 0.095, 8, 120), new THREE.MeshBasicMaterial({ color: 0x86b6c8, transparent: true, opacity: 0.19, blending: THREE.AdditiveBlending }));
     lensingHalo.rotation.x = 1.12; lensingHalo.rotation.y = 0.18; blackHole.add(lensingHalo);
-    const plasmaMaterial = new THREE.MeshBasicMaterial({ color: 0xffd6ff, transparent: true, opacity: 0.82, blending: THREE.AdditiveBlending });
+    const plasmaMaterial = new THREE.MeshBasicMaterial({ color: 0xffe0a6, transparent: true, opacity: 0.88, blending: THREE.AdditiveBlending });
     const plasmaKnots = [];
     for (let i = 0; i < 5; i++) {
       const knot = new THREE.Mesh(new THREE.SphereGeometry(0.055 + (i % 2) * 0.025, 10, 8), plasmaMaterial);
@@ -485,8 +485,8 @@ export default function UniverseScene() {
     const asteroidBelt = new THREE.Group();
     asteroidBelt.position.set(-0.5, 0.2, -10.5);
     const asteroidCount = compact ? 52 : 104;
-    const asteroidGeometry = new THREE.DodecahedronGeometry(0.12, 0);
-    const asteroidMaterial = new THREE.MeshStandardMaterial({ color: 0x8c829b, roughness: 0.96, metalness: 0.03 });
+    const asteroidGeometry = new THREE.IcosahedronGeometry(0.12, 1);
+    const asteroidMaterial = new THREE.MeshStandardMaterial({ color: 0x777d7c, roughness: 0.98, metalness: 0.03 });
     const asteroids = new THREE.InstancedMesh(asteroidGeometry, asteroidMaterial, asteroidCount);
     const asteroidDummy = new THREE.Object3D();
     for (let i = 0; i < asteroidCount; i++) {
@@ -512,10 +512,10 @@ export default function UniverseScene() {
     const sunHalo = new THREE.Mesh(new THREE.SphereGeometry(0.68, 24, 18), new THREE.MeshBasicMaterial({ color: 0xffb76c, transparent: true, opacity: 0.12, blending: THREE.AdditiveBlending, depthWrite: false }));
     miniatureSystem.add(sunHalo);
     const systemOrbits = [];
-    const systemPlanetColors = [0xb8a6e8, 0x6f9bc4, 0xc68c76, 0x9c91bd];
+    const systemPlanetColors = [0xc6a36d, 0x4f8fa9, 0xb66f4e, 0x9caeb5];
     [1.0, 1.55, 2.25, 3.0].forEach((distance, i) => {
       const orbit = new THREE.Group();
-      const track = new THREE.Mesh(new THREE.TorusGeometry(distance, 0.006, 5, 80), new THREE.MeshBasicMaterial({ color: 0xc5b2ed, transparent: true, opacity: 0.2 }));
+      const track = new THREE.Mesh(new THREE.TorusGeometry(distance, 0.006, 5, 80), new THREE.MeshBasicMaterial({ color: 0x91b5c0, transparent: true, opacity: 0.15 }));
       orbit.add(track);
       const planet = new THREE.Mesh(new THREE.SphereGeometry(0.09 + i * 0.025, 16, 12), new THREE.MeshStandardMaterial({ color: systemPlanetColors[i], roughness: 0.8, metalness: 0.04 }));
       planet.position.x = distance;
@@ -527,13 +527,13 @@ export default function UniverseScene() {
 
     // A comet crosses the scene on a long elliptical path with a layered tail.
     const comet = new THREE.Group();
-    const cometHead = new THREE.Mesh(new THREE.IcosahedronGeometry(0.16, 2), new THREE.MeshStandardMaterial({ color: 0xd9e8ff, emissive: 0x7896d8, emissiveIntensity: 1.2, roughness: 0.35 }));
+    const cometHead = new THREE.Mesh(new THREE.IcosahedronGeometry(0.16, 2), new THREE.MeshStandardMaterial({ color: 0xd8f0f2, emissive: 0x3f8fa7, emissiveIntensity: 1.2, roughness: 0.35 }));
     comet.add(cometHead);
-    const cometTail = new THREE.Mesh(new THREE.ConeGeometry(0.3, 3.6, 18, 1, true), new THREE.MeshBasicMaterial({ color: 0x8fb8ff, transparent: true, opacity: 0.19, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, depthWrite: false }));
+    const cometTail = new THREE.Mesh(new THREE.ConeGeometry(0.3, 3.6, 18, 1, true), new THREE.MeshBasicMaterial({ color: 0x5caec4, transparent: true, opacity: 0.22, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, depthWrite: false }));
     cometTail.rotation.z = Math.PI / 2;
     cometTail.position.x = 1.82;
     comet.add(cometTail);
-    const cometInnerTail = new THREE.Mesh(new THREE.ConeGeometry(0.12, 2.6, 14, 1, true), new THREE.MeshBasicMaterial({ color: 0xd8c9ff, transparent: true, opacity: 0.22, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, depthWrite: false }));
+    const cometInnerTail = new THREE.Mesh(new THREE.ConeGeometry(0.12, 2.6, 14, 1, true), new THREE.MeshBasicMaterial({ color: 0xd4e9dc, transparent: true, opacity: 0.25, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, depthWrite: false }));
     cometInnerTail.rotation.z = Math.PI / 2;
     cometInnerTail.position.x = 1.3;
     comet.add(cometInnerTail);
@@ -548,7 +548,7 @@ export default function UniverseScene() {
     wormhole.add(wormholeCore);
     const wormholeRings = [];
     [1.12, 1.38, 1.68].forEach((radius, i) => {
-      const ring = new THREE.Mesh(new THREE.TorusGeometry(radius, i === 1 ? 0.045 : 0.022, 8, 96), new THREE.MeshBasicMaterial({ color: i === 1 ? 0xa9b8ff : 0xb99aff, transparent: true, opacity: 0.42 - i * 0.07, blending: THREE.AdditiveBlending }));
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(radius, i === 1 ? 0.045 : 0.022, 8, 96), new THREE.MeshBasicMaterial({ color: i === 1 ? 0x8dd6df : 0xb6c9c9, transparent: true, opacity: 0.42 - i * 0.07, blending: THREE.AdditiveBlending }));
       ring.rotation.set(0.42 + i * 0.24, 0.2 - i * 0.18, i * 0.36);
       wormhole.add(ring);
       wormholeRings.push(ring);
@@ -561,11 +561,11 @@ export default function UniverseScene() {
     supernova.position.set(7.6, -4.2, -28);
     const supernovaCore = new THREE.Mesh(new THREE.SphereGeometry(0.24, 20, 16), new THREE.MeshBasicMaterial({ color: 0xffe5ff }));
     supernova.add(supernovaCore);
-    const supernovaGlow = new THREE.Mesh(new THREE.SphereGeometry(0.62, 20, 16), new THREE.MeshBasicMaterial({ color: 0xb99aff, transparent: true, opacity: 0.16, blending: THREE.AdditiveBlending, depthWrite: false }));
+    const supernovaGlow = new THREE.Mesh(new THREE.SphereGeometry(0.62, 20, 16), new THREE.MeshBasicMaterial({ color: 0xffc17b, transparent: true, opacity: 0.16, blending: THREE.AdditiveBlending, depthWrite: false }));
     supernova.add(supernovaGlow);
     const supernovaRings = [];
     [0, 0.34, 0.68].forEach((phase, i) => {
-      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.72, 0.018, 6, 96), new THREE.MeshBasicMaterial({ color: i === 1 ? 0xe9d7ff : 0x9c85df, transparent: true, opacity: 0.28, blending: THREE.AdditiveBlending, depthWrite: false }));
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.72, 0.018, 6, 96), new THREE.MeshBasicMaterial({ color: i === 1 ? 0xffe0a3 : 0xc27d56, transparent: true, opacity: 0.28, blending: THREE.AdditiveBlending, depthWrite: false }));
       ring.rotation.set(0.55 + i * 0.22, 0.18 - i * 0.16, i * 0.4);
       supernova.add(ring);
       supernovaRings.push({ ring, phase });
@@ -587,12 +587,12 @@ export default function UniverseScene() {
     }
     const meteorGeometry = new THREE.BufferGeometry();
     meteorGeometry.setAttribute("position", new THREE.BufferAttribute(meteorPositions, 3));
-    const meteors = new THREE.Points(meteorGeometry, new THREE.PointsMaterial({ color: 0xc8baff, size: compact ? 0.065 : 0.085, transparent: true, opacity: 0.72, blending: THREE.AdditiveBlending, depthWrite: false }));
+    const meteors = new THREE.Points(meteorGeometry, new THREE.PointsMaterial({ color: 0xc5dce1, size: compact ? 0.065 : 0.085, transparent: true, opacity: 0.72, blending: THREE.AdditiveBlending, depthWrite: false }));
     scene.add(meteors);
     const meteorTrailPositions = new Float32Array(meteorCount * 6);
     const meteorTrailGeometry = new THREE.BufferGeometry();
     meteorTrailGeometry.setAttribute("position", new THREE.BufferAttribute(meteorTrailPositions, 3));
-    const meteorTrails = new THREE.LineSegments(meteorTrailGeometry, new THREE.LineBasicMaterial({ color: 0xb9a7ff, transparent: true, opacity: 0.34, blending: THREE.AdditiveBlending, depthWrite: false }));
+    const meteorTrails = new THREE.LineSegments(meteorTrailGeometry, new THREE.LineBasicMaterial({ color: 0x9bcbd5, transparent: true, opacity: 0.34, blending: THREE.AdditiveBlending, depthWrite: false }));
     scene.add(meteorTrails);
 
     // A stream of near-field stars travels towards the viewer, creating
@@ -609,7 +609,7 @@ export default function UniverseScene() {
     }
     const nearStarGeometry = new THREE.BufferGeometry();
     nearStarGeometry.setAttribute("position", new THREE.BufferAttribute(nearStarPositions, 3));
-    const nearStars = new THREE.Points(nearStarGeometry, new THREE.PointsMaterial({ color: 0xdccfff, size: compact ? 0.045 : 0.06, transparent: true, opacity: 0.68, blending: THREE.AdditiveBlending, depthWrite: false }));
+    const nearStars = new THREE.Points(nearStarGeometry, new THREE.PointsMaterial({ color: 0xe4dfcf, size: compact ? 0.045 : 0.06, transparent: true, opacity: 0.68, blending: THREE.AdditiveBlending, depthWrite: false }));
     scene.add(nearStars);
 
     // Reuse scratch objects and initialize shader lighting before the first
