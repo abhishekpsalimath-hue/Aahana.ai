@@ -847,6 +847,14 @@ export default function UniverseScene() {
     const stop = () => { if (raf) window.cancelAnimationFrame(raf); raf = 0; };
     const onMotionPreferenceChange = (event) => {
       reduced = event.matches;
+      if (reduced) {
+        // Freeze the scene in its neutral camera position, not wherever pointer
+        // parallax happened to leave it when the accessibility setting changed.
+        pointer.x = 0;
+        pointer.y = 0;
+        camera.position.set(0, 0, 15.5);
+        camera.lookAt(0, 0, -2.6);
+      }
       if (reduced && pointerListening) {
         window.removeEventListener("pointermove", onPointer);
         pointerListening = false;
