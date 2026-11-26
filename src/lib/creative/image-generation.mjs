@@ -149,6 +149,25 @@ export function isReferenceImageWithinProviderBounds(dimensions) {
 }
 
 
+export function getReferenceImageOutputDimensions(dimensions) {
+  if (!dimensions || !Number.isInteger(dimensions.width) || !Number.isInteger(dimensions.height) ||
+      dimensions.width < 1 || dimensions.height < 1) return null;
+
+  const longest = Math.max(dimensions.width, dimensions.height);
+  const shortest = Math.min(dimensions.width, dimensions.height);
+  // FLUX.2 Klein accepts output edges from 256px to 1920px. Aim for a
+  // 1024px long edge, but enlarge narrow references enough to meet the
+  // provider minimum without changing their aspect ratio.
+  let scale = 1024 / longest;
+  if (shortest * scale < 256) scale = 256 / shortest;
+  if (longest * scale > 1920) return null;
+
+  return {
+    width: Math.max(256, Math.min(1920, Math.round(dimensions.width * scale))),
+    height: Math.max(256, Math.min(1920, Math.round(dimensions.height * scale))),
+  };
+}
+
 export function getGeneratedImageFileMetadata(dataUrl, blobType) {
   const match = typeof dataUrl === "string" ? dataUrl.match(/^data:(image\/(?:jpeg|png|webp));base64,/i) : null;
   const mimeType = match?.[1]?.toLowerCase();
