@@ -1,5 +1,6 @@
-import { createReferenceImageFile } from "@/lib/creative/reference-image-file.mjs";
 "use client";
+
+import { createReferenceImageFile } from "@/lib/creative/reference-image-file.mjs";
 
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
