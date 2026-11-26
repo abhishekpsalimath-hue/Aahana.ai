@@ -13,7 +13,8 @@ test("prefers exact regional language over a local voice in a different region",
 test("normalizes underscore locale tags and ranks same-language fallbacks", () => {
   const fallback = voice("Kannada", "kn_IN");
   assert.equal(selectSpeechVoice([fallback], "kn-IN"), fallback);
-  assert.equal(selectSpeechVoice([voice("Hindi", "hi-IN")], "hi"), null);
+  const hindi = voice("Hindi", "hi-IN");
+  assert.equal(selectSpeechVoice([hindi], "hi"), hindi);
 });
 
 test("uses local/default voice only as a tie-breaker within the requested language", () => {
