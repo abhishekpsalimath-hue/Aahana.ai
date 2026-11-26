@@ -134,11 +134,15 @@ test("does not request an installation token when self-build configuration is ab
 test("reuses an existing draft when the exact pinned Self-Build change is retried", async () => {
   const calls = [];
   let existingPullRequest = null;
+  let baseRefReads = 0;
   const fetchImpl = async (url, options) => {
     const body = options.body ? JSON.parse(options.body) : null;
     calls.push({ url, method: options.method || "GET", body });
     if (url.endsWith("/access_tokens")) return mockResponse({ token: "installation-token" });
-    if (url.includes("/git/ref/heads/main")) return mockResponse({ object: { sha: baseSha } });
+    if (url.includes("/git/ref/heads/main")) {
+      baseRefReads += 1;
+      return mockResponse({ object: { sha: baseRefReads === 1 ? baseSha : "b".repeat(40) } });
+    }
     if (url.includes("/pulls?state=all")) return mockResponse(existingPullRequest ? [existingPullRequest] : []);
     if (url.includes("/git/commits/" + baseSha)) return mockResponse({ tree: { sha: "e".repeat(40) } });
     if (url.endsWith("/git/blobs")) return mockResponse({ sha: "f".repeat(40) });
@@ -172,5 +176,6 @@ test("reuses an existing draft when the exact pinned Self-Build change is retrie
   assert.equal(second.number, 23);
   assert.equal(second.reused, true);
   assert.equal(second.branch, first.branch);
+  assert.equal(baseRefReads, 1, "a retry reuses its existing draft even if main has since moved");
   assert.equal(writesAfterSecond, writesAfterFirst);
 });
