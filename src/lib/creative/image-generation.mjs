@@ -61,7 +61,7 @@ export function parseImageGenerationInput(body) {
   const seriesPrompt = buildImageSeriesPrompt(qualityPrompt, body?.series);
   if (seriesPrompt === null) return { ok: false, error: "Check the image-series fields: use text up to 180 characters and a scene number from 1 to 12." };
   const styledPrompt = style === "none" ? seriesPrompt : `${seriesPrompt}\n\nArt direction: ${IMAGE_STYLE_PROMPTS[style]}`;
-  if (styledPrompt.length > MAX_IMAGE_PROMPT_LENGTH + 1400) {
+  if (styledPrompt.length > MAX_IMAGE_PROMPT_LENGTH + 4600) {
     return { ok: false, error: "This prompt is too long for the selected style. Shorten it and try again." };
   }
 

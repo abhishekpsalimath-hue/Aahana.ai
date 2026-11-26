@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createSseContentParser } from "@/lib/chat/sse-content-parser.mjs";
 import { readBoundedJson } from "@/lib/chat/bounded-json.mjs";
 import { getLanguageGuidance } from "@/lib/chat/language-guidance.mjs";
+import { shouldSearchWeb, getResearchTopic } from "@/lib/chat/research-intent.mjs";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -16,15 +17,6 @@ function gatewayError(status, provider) {
   return "Aahana could not reach the AI service. Please try again.";
 }
 
-function shouldSearchWeb(prompt, image) {
-  if (image) return false;
-  const text = String(prompt || "");
-  const explicitFreshness = /\b(?:latest|currently|current|today|tonight|yesterday|this week|this month|recent|breaking|news|as of 20\d{2}|right now|live update|search the web|web search|research|find sources|with sources|cite sources|citations|latest price|current price|new rules|recent studies|new research|developments|announcements|breakthroughs|what happened|what's new)\b/i.test(text);
-  const datedRequest = /\b(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+20\d{2}\b/i.test(text)
-    || /\b20\d{2}[-/](?:0?[1-9]|1[0-2])(?:[-/](?:0?[1-9]|[12]\d|3[01]))?\b/.test(text);
-  const regionalFreshness = /ಇತ್ತೀಚಿನ|ಇಂದು|ಪ್ರಸ್ತುತ|ಸುದ್ದಿ|ಸಂಶೋಧನೆ|ಮೂಲಗಳೊಂದಿಗೆ|ವೆಬ್ ಹುಡುಕು|ताज़ा|आज|वर्तमान|समाचार|शोध|स्रोतों के साथ|वेब पर खोज|சமீபத்திய|இன்று|தற்போதைய|செய்தி|ஆராய்ச்சி|తాజా|నేడు|ప్రస్తుత|వార్తలు|పరిశోధన|ഏറ്റവും പുതിയ|ഇന്ന്|നിലവിലെ|വാർത്ത|ഗവേഷണം/i.test(text);
-  return explicitFreshness || datedRequest || regionalFreshness;
-}
 
 export async function POST(request) {
   const supabase = await createClient();
@@ -245,7 +237,7 @@ export async function POST(request) {
     console.error("Aahana private memory retrieval failed:", memoryError?.message || "unknown error");
   }
 
-  // Live research is opt-in by intent and only runs when a server-side Tavily key exists.
+  // Live research intent is unit-tested across English and regional languages; retrieval still requires a server-side Tavily key.
   // Search results are treated as untrusted evidence, never as instructions.
   let researchMessage = null;
   let researchSourcesAttached = false;
@@ -268,7 +260,7 @@ export async function POST(request) {
             max_results: 10,
             include_answer: false,
             include_raw_content: false,
-            topic: /\b(?:news|breaking|today|yesterday|this week|this month|developments|announcements|breakthroughs|release|launched|November|December|October|September|August|July|June|May|April|March|February|January)\b/i.test(prompt) ? "news" : "general",
+            topic: getResearchTopic(prompt),
           }),
           signal: AbortSignal.timeout(10000),
         });
