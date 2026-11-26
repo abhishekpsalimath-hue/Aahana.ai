@@ -1,5 +1,5 @@
 import { readBoundedRequestBody } from "../http/bounded-request-body.mjs";
-import { parseImageEditInput, MAX_IMAGE_EDIT_BYTES } from "./image-generation.mjs";
+import { parseImageEditInput, MAX_IMAGE_EDIT_BYTES, getReferenceImageDimensions, isReferenceImageWithinProviderBounds } from "./image-generation.mjs";
 
 export const MAX_IMAGE_EDIT_REQUEST_BYTES = MAX_IMAGE_EDIT_BYTES + 64 * 1024;
 const ALLOWED_FIELDS = new Set(["image", "prompt", "referencePrompt"]);
@@ -74,10 +74,21 @@ export async function readBoundedImageEditRequest(request) {
   if (!input.ok || !image || typeof image.arrayBuffer !== "function") {
     return { ok: false, status: 400, error: input.error || "Attach a valid reference image." };
   }
+  const imageBytes = new Uint8Array(await image.arrayBuffer());
+  const dimensions = getReferenceImageDimensions(imageBytes, image.type);
+  if (!isReferenceImageWithinProviderBounds(dimensions)) {
+    return {
+      ok: false,
+      status: 400,
+      error: "The reference image is invalid or must be smaller than 512 × 512 pixels.",
+    };
+  }
 
   return {
     ok: true,
     image,
+    imageBytes,
+    dimensions,
     prompt: input.prompt,
     referencePrompt: referencePrompt || "",
   };
