@@ -147,8 +147,8 @@ test("rejects a mismatched idempotency key and owner in the returned database ro
   const client = fakeClient();
   const adapter = createSupabaseVideoJobAdapter(client);
   await adapter.insertIfAbsent({ ownerId: job.ownerId, idempotencyKey: job.idempotencyKey, job, revision: 1 });
-  client.rows[0].owner_id = "another-owner";
-  await assert.rejects(adapter.getOwned(job.ownerId, job.id), /invalid fields|identity/);
+  client.rows[0].idempotency_key = "another-key";
+  await assert.rejects(adapter.getOwned(job.ownerId, job.id), /mismatched identity/);
 });
 
 test("allows queued cancellation before a worker starts", async () => {
