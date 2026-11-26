@@ -14,10 +14,19 @@ export default function UniverseScene() {
     const motionQuery = window.matchMedia?.("(prefers-reduced-motion: reduce)");
     let reduced = motionQuery?.matches === true;
     // Pointer movement also receives touch-drag PointerEvents on phones.
+    const setWebGLFallback = (enabled) => {
+      if (enabled) {
+        canvas.dataset.webglFallback = "true";
+        canvas.parentElement?.classList.add("universe-webgl-fallback");
+      } else {
+        delete canvas.dataset.webglFallback;
+        canvas.parentElement?.classList.remove("universe-webgl-fallback");
+      }
+    };
     try {
       renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: !compact, powerPreference: "high-performance", stencil: false });
     } catch {
-      canvas.dataset.webglFallback = "true";
+      setWebGLFallback(true);
       return undefined;
     }
     const scene = new THREE.Scene();
@@ -720,12 +729,12 @@ export default function UniverseScene() {
     const onContextLost = (event) => {
       event.preventDefault();
       contextAvailable = false;
-      canvas.dataset.webglFallback = "true";
+      setWebGLFallback(true);
       stop();
     };
     const onContextRestored = () => {
       contextAvailable = true;
-      delete canvas.dataset.webglFallback;
+      setWebGLFallback(false);
       resize();
       start();
     };
@@ -858,6 +867,7 @@ export default function UniverseScene() {
     start();
     return () => {
       active = false; stop();
+      setWebGLFallback(false);
       document.removeEventListener("visibilitychange", onVisibility);
       motionQuery?.removeEventListener?.("change", onMotionPreferenceChange);
       canvas.removeEventListener("webglcontextlost", onContextLost, false);
