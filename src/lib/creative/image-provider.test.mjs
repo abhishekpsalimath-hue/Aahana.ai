@@ -6,6 +6,7 @@ import {
   ACCURACY_IMAGE_MODEL,
   getImageOutputMimeType,
   detectImageMimeTypeFromBase64,
+  getValidatedImageDataUrlMimeType,
   resolveImageModel,
   supportsImageAspectRatio,
   buildImageProviderRequest,
@@ -108,4 +109,15 @@ test("passes portrait and widescreen dimensions to FLUX.2 Dev requests", () => {
   });
   assert.equal(widescreen.body.get("width"), "1024");
   assert.equal(widescreen.body.get("height"), "576");
+});
+
+test("validates chat image data URLs against their actual file signatures and size bound", () => {
+  const png = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d]).toString("base64");
+  const jpeg = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01]).toString("base64");
+  assert.equal(getValidatedImageDataUrlMimeType(`data:image/png;base64,${png}`), "image/png");
+  assert.equal(getValidatedImageDataUrlMimeType(`data:image/jpeg;base64,${jpeg}`), "image/jpeg");
+  assert.equal(getValidatedImageDataUrlMimeType(`data:image/jpeg;base64,${png}`), null);
+  assert.equal(getValidatedImageDataUrlMimeType("data:image/png;base64,not-base64"), null);
+  assert.equal(getValidatedImageDataUrlMimeType(`data:image/png;base64,${png}`, 10), null);
+  assert.equal(getValidatedImageDataUrlMimeType(null), null);
 });
