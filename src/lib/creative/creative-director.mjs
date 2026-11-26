@@ -2,7 +2,7 @@ export const IMAGE_QUALITY_PRESETS = Object.freeze(["standard", "masterpiece"]);
 export const VIDEO_DIRECTOR_PRESETS = Object.freeze(["cinematic", "commercial", "documentary", "anime", "none"]);
 
 const IMAGE_MASTERPIECE_DIRECTION = [
-  "Creative direction: produce a carefully art-directed, production-quality image that follows the user's brief exactly. Do not optimize for a generic beautiful image at the expense of the requested result.",
+  "Creative direction: produce a premium, portfolio-worthy hero image with careful art direction and production-quality execution that follows the user's brief exactly. Do not optimize for a generic beautiful image at the expense of the requested result.",
   "Establish one unmistakable focal subject and a deliberate visual hierarchy.",
   "Use intentional composition, believable perspective, rich but controlled color, nuanced lighting, dimensional depth, tactile material detail, and crisp subject separation.",
   "Treat the user prompt as a specification, not loose inspiration.",
