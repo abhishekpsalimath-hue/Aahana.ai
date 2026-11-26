@@ -740,3 +740,17 @@ h1,.brand,.composer-mode,.breadcrumb{font-family:"Space Grotesk","Manrope",sans-
   .auth-universe .universe-webgl,
   .learning-page>.universe-webgl{opacity:.92!important}
 }
+
+/* If WebGL cannot start (or its context is lost), restore the CSS universe
+   instead of leaving sign-in and Assistance with a nearly empty backdrop. */
+.space-background.universe-webgl-fallback .universe-flight{opacity:1!important}
+.space-background.universe-webgl-fallback .universe-depth-stars{opacity:.72!important}
+.space-background.universe-webgl-fallback .universe-nebula{opacity:.48!important}
+.space-background.universe-webgl-fallback .universe-galaxy,
+.space-background.universe-webgl-fallback .universe-particles,
+.space-background.universe-webgl-fallback .universe-comets{display:block!important;opacity:1!important}
+.auth-universe.universe-webgl-fallback::before,
+.auth-universe.universe-webgl-fallback::after,
+.auth-universe.universe-webgl-fallback>span{display:block!important}
+.auth-universe.universe-webgl-fallback::before{opacity:.62}
+.auth-universe.universe-webgl-fallback::after{opacity:.5}
