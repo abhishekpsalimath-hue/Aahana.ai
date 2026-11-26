@@ -112,3 +112,18 @@ test("detects concurrent compare-and-swap races rather than overwriting newer pr
   assert.equal(contenders.filter((item) => item.status === "updated").length, 1);
   assert.equal(contenders.filter((item) => item.status === "conflict").length, 1);
 });
+
+
+test("rejects malformed or already-started snapshots at the create boundary", async () => {
+  const repository = createVideoJobRepository(makeAdapter());
+  const invalid = [
+    { ...makeJob(), state: "running" },
+    { ...makeJob(), progress: 10 },
+    { ...makeJob(), attempt: 1 },
+    { ...makeJob(), retryable: true },
+    { ...makeJob(), unexpected: "field" },
+  ];
+  for (const job of invalid) {
+    await assert.rejects(repository.createOrGet(job), /fresh, validated queued video job/);
+  }
+});
