@@ -8,6 +8,7 @@ import { detectImageMimeTypeFromBase64 } from "@/lib/creative/image-provider.mjs
 import { getReferenceImageDimensions, isImageWithinPixelBounds } from "@/lib/creative/image-generation.mjs";
 import { getLanguageGuidance } from "@/lib/chat/language-guidance.mjs";
 import { prepareAssistantReplyForPersistence } from "@/lib/chat/reply-persistence.mjs";
+import { takeLastWithinUtf16Limit } from "@/lib/chat/safe-text-boundaries.mjs";
 import { shouldSearchWeb, getResearchTopic } from "@/lib/chat/research-intent.mjs";
 
 export const runtime = "nodejs";
@@ -195,7 +196,7 @@ export async function POST(request) {
   let contextCharacters = 0;
   for (const item of history) {
     if (contextCharacters >= 24000) break;
-    const content = String(item.content || "").slice(-Math.max(0, 24000 - contextCharacters));
+    const content = takeLastWithinUtf16Limit(String(item.content || ""), Math.max(0, 24000 - contextCharacters));
     if (content) {
       const isCurrentImageMessage = Boolean(image && item.id === savedUserMessage.id);
       context.push({
