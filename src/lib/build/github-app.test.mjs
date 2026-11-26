@@ -128,7 +128,7 @@ test("refuses to write when the main branch moved after inspection", async () =>
 test("recovers an interrupted proposal branch only when its exact pinned diff matches", async () => {
   const source = "export default function Page() {}";
   const bytes = Buffer.from(source, "utf8");
-  const expectedBlobSha = createHash("sha1").update("blob " + bytes.length + "\\0").update(bytes).digest("hex");
+  const expectedBlobSha = createHash("sha1").update("blob " + bytes.length + "\0").update(bytes).digest("hex");
   const existingCommitSha = "9".repeat(40);
   const proposalTreeSha = "8".repeat(40);
   const calls = [];
@@ -172,7 +172,7 @@ test("recovers an interrupted proposal branch only when its exact pinned diff ma
 test("refuses to reuse an interrupted branch that contains an unapproved file", async () => {
   const source = "export default function Page() {}";
   const bytes = Buffer.from(source, "utf8");
-  const expectedBlobSha = createHash("sha1").update("blob " + bytes.length + "\\0").update(bytes).digest("hex");
+  const expectedBlobSha = createHash("sha1").update("blob " + bytes.length + "\0").update(bytes).digest("hex");
   const existingCommitSha = "9".repeat(40);
   const proposalTreeSha = "8".repeat(40);
   const fetchImpl = async (url) => {
