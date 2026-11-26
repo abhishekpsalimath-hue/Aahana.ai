@@ -1597,19 +1597,6 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     setPrompt("");
     setError("");
     setBusy(true);
-    let imageDataUrl = null;
-    if (imageFile) {
-      imageDataUrl = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(String(reader.result || ""));
-        reader.onerror = () => reject(new Error("Could not read the selected image."));
-        reader.readAsDataURL(imageFile);
-      }).catch((err) => {
-        setError(err.message || "Could not read the selected image.");
-        return null;
-      });
-      if (!imageDataUrl) { setBusy(false); return; }
-    }
     const userMessage = { role: "user", content: imageFile ? `${text || "Please identify this image."}\n[Image attached: ${imageFile.name}]` : text };
     const assistantMessage = { role: "assistant", content: "" };
     setMessages((current) => [...current, userMessage, assistantMessage]);
@@ -1627,10 +1614,24 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     };
 
     try {
+      let requestBody;
+      let requestHeaders;
+      if (imageFile) {
+        const form = new FormData();
+        form.set("message", text || "Please identify and describe this image in detail.");
+        form.set("mode", mode);
+        if (conversationId) form.set("conversationId", conversationId);
+        if (selectedProjectId) form.set("projectId", selectedProjectId);
+        form.set("image", imageFile, imageFile.name);
+        requestBody = form;
+      } else {
+        requestHeaders = { "Content-Type": "application/json" };
+        requestBody = JSON.stringify({ message: text, image: null, mode, conversationId, projectId: selectedProjectId });
+      }
       const response = await fetch("/api/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text || "Please identify and describe this image in detail.", image: imageDataUrl ? { dataUrl: imageDataUrl } : null, mode, conversationId, projectId: selectedProjectId }),
+        ...(requestHeaders ? { headers: requestHeaders } : {}),
+        body: requestBody,
       });
 
       if (!response.ok) {
