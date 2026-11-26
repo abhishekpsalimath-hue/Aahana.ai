@@ -142,11 +142,20 @@ export default function UniverseScene() {
       galaxyPositions[i * 3 + 1] = (Math.random() - 0.5) * (0.10 + radius * 0.055);
       galaxyPositions[i * 3 + 2] = Math.sin(angle) * radius + clump;
       const colorMix = Math.min(1, radius / 5.2);
-      const inner = galaxyPalette[0].clone().lerp(galaxyPalette[1], Math.min(1, radius / 1.8));
-      const outer = galaxyPalette[2].clone().lerp(galaxyPalette[3], Math.random() * 0.55);
-      const color = inner.lerp(outer, colorMix);
+      const innerMix = Math.min(1, radius / 1.8);
+      const outerMix = Math.random() * 0.55;
+      const innerR = galaxyPalette[0].r + (galaxyPalette[1].r - galaxyPalette[0].r) * innerMix;
+      const innerG = galaxyPalette[0].g + (galaxyPalette[1].g - galaxyPalette[0].g) * innerMix;
+      const innerB = galaxyPalette[0].b + (galaxyPalette[1].b - galaxyPalette[0].b) * innerMix;
+      const outerR = galaxyPalette[2].r + (galaxyPalette[3].r - galaxyPalette[2].r) * outerMix;
+      const outerG = galaxyPalette[2].g + (galaxyPalette[3].g - galaxyPalette[2].g) * outerMix;
+      const outerB = galaxyPalette[2].b + (galaxyPalette[3].b - galaxyPalette[2].b) * outerMix;
       const brightness = 0.68 + Math.random() * 0.32;
-      galaxyColors.set([color.r * brightness, color.g * brightness, color.b * brightness], i * 3);
+      galaxyColors.set([
+        (innerR + (outerR - innerR) * colorMix) * brightness,
+        (innerG + (outerG - innerG) * colorMix) * brightness,
+        (innerB + (outerB - innerB) * colorMix) * brightness,
+      ], i * 3);
     }
     const galaxyGeometry = new THREE.BufferGeometry();
     galaxyGeometry.setAttribute("position", new THREE.Float32BufferAttribute(galaxyPositions, 3));
