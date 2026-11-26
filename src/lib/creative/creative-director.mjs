@@ -67,25 +67,48 @@ export function buildImagePrompt(prompt, quality = "masterpiece") {
   return [prompt, subject?.direction, direction].filter(Boolean).join("\n\n");
 }
 
+export function classifyImageEditIntent(editPrompt) {
+  if (typeof editPrompt !== "string" || !editPrompt.trim()) return null;
+  const text = editPrompt.toLowerCase();
+  const intents = [];
+  if (/\\b(enhance|upscale|restore|denoise|sharpen|improve quality|increase resolution|fix blur|colour correct|color correct|retouch)\\b/.test(text)) intents.push("enhance");
+  if (/\\b(change|改|alter|adjust|modify|different|new)\\b.{0,32}\\b(pose|posture|stance|position|gesture)\\b|\\b(pose|posture|stance|gesture)\\b/.test(text)) intents.push("pose");
+  if (/\\b(change|改|alter|adjust|modify|replace|wearing|dress|outfit|clothes|clothing|costume|suit|shirt|saree|sari|jacket)\\b/.test(text)) intents.push("outfit");
+  if (/\\b(poster|banner|flyer|thumbnail|cover art|advertisement|ad creative|invitation|brochure)\\b/.test(text)) intents.push("design");
+  if (/\\b(background|backdrop|scenery|environment)\\b/.test(text)) intents.push("background");
+  return intents.length ? [...new Set(intents)] : ["targeted"];
+}
+
+const IMAGE_EDIT_INTENT_DIRECTIONS = Object.freeze({
+  enhance: "ENHANCEMENT MODE: Improve fidelity of the existing photograph only: recover natural detail, reduce noise and compression, correct exposure and white balance conservatively, improve clarity and resolution without inventing texture. Preserve the exact person, face, expression, age, skin texture, hair, pose, outfit, accessories, background, crop and composition. Do not beautify, reshape, relight dramatically or replace any content.",
+  pose: "POSE-CHANGE MODE: Change only the requested pose, posture, gesture or body orientation. Preserve the same person's recognizable identity and facial geometry, eyes, nose, lips, jaw, skin tone, age cues, hairstyle and expression unless explicitly requested otherwise. Preserve the outfit, accessories, setting, camera perspective and overall composition as much as the new pose allows. Rebuild anatomy plausibly: coherent shoulders, spine, joints, hands, fingers, limbs, contact points, fabric folds and shadows. Do not create a lookalike or alter the face to make the pose easier.",
+  outfit: "OUTFIT-CHANGE MODE: Replace or modify only the requested clothing or accessories. Preserve the same person's face, identity, skin tone, age cues, hairstyle, body proportions, expression and pose. Keep the original scene, camera, lighting and composition. Make the new garment physically wearable, correctly fitted to the existing body and pose, with believable seams, fabric texture, folds, layering, occlusion and shadows. Do not change body shape or facial appearance.",
+  design: "POSTER-AND-BANNER MODE: Treat the task as a designed graphic composition using the supplied image as the reference. Preserve the recognizable identity and natural facial features of every depicted person; do not redraw faces as generic models. Follow the requested dimensions, orientation, hierarchy, brand colors, layout, typography style and placement. Use only exact wording supplied in the user's request or clearly legible existing reference text; preserve spelling, script, punctuation and line breaks where requested. Never invent dates, phone numbers, addresses, prices, names, logos, claims or event details. Keep text clear, aligned, high-contrast and safely inside the canvas. If wording is not specified, leave a deliberate clean text area rather than fabricating copy.",
+  background: "BACKGROUND-CHANGE MODE: Replace or edit only the requested background or environment. Preserve the same subject identity, facial features, hair, body proportions, pose, clothing, accessories and foreground objects. Match perspective, scale, depth of field, edge detail, ambient light, contact shadows and reflections so the subject belongs naturally in the new setting. Do not alter the person to fit the background.",
+  targeted: "TARGETED EDIT MODE: Change only the explicitly requested element. Preserve all unmentioned identity, anatomy, pose, clothing, objects, text, lighting, framing and scene relationships."
+});
+
 export function buildImageEditPrompt(referencePrompt, editPrompt) {
   const original = typeof referencePrompt === "string" ? referencePrompt.trim().slice(0, 1200) : "";
   const refinement = typeof editPrompt === "string" ? editPrompt.trim() : "";
   if (!refinement) return null;
+  const intents = classifyImageEditIntent(refinement) || ["targeted"];
+  const directions = intents.map((intent) => IMAGE_EDIT_INTENT_DIRECTIONS[intent]);
 
   const brief = [
     original ? `Original image brief: ${original}` : "",
     `Requested refinement: ${refinement}`,
-    "REFERENCE-LOCKED EDIT: The supplied image is the canonical source. Treat this as a constrained edit of that exact image, not a new image-generation request.",
-    "CHANGE SCOPE: Modify only the specific region or attribute explicitly named in the requested refinement. Keep every unmentioned region unchanged. Do not apply a global restyle, global relighting, beauty filter, color grade, sharpening pass, or composition redesign.",
-    "IDENTITY LOCK: Preserve the same people and their exact recognizable identity: facial geometry, eye shape and spacing, nose, lips, jawline, skin tone and texture, hairline, hairstyle, age cues, expression, body proportions, pose, clothing, accessories and relative positions. Do not beautify, retouch, age, de-age, slim, reshape, or reinterpret them unless the user explicitly requests that exact change.",
-    "SCENE LOCK: Preserve the original camera viewpoint, perspective, crop, aspect ratio, subject scale, framing, background elements, object count, object geometry, text, logos and spatial relationships except where the requested edit directly applies. Do not add, remove, duplicate, or move anything outside the requested change.",
-    "EDIT BOUNDARY: Keep transitions at the edited region natural and physically consistent with the unchanged source. Match existing light direction, shadows, reflections, depth of field, grain, sharpness and color temperature. Do not let the edit bleed onto protected faces, bodies, products, or other untouched objects.",
-    "If the request explicitly asks to change a protected feature, change only that named feature and preserve all other identity and scene attributes. If the requested change is ambiguous, make the smallest plausible edit rather than inventing a new interpretation.",
-    "Do not add captions, watermarks, signatures, decorative elements, extra people, extra limbs, or unrequested visual effects."
+    "REFERENCE-LOCKED EDIT: The supplied image is the canonical source. This is an edit of that exact image, not permission to generate a substitute or reinterpret the reference.",
+    "IDENTITY PRESERVATION: Preserve every person's recognizable identity, facial geometry, eye shape and spacing, nose, lips, jawline, skin tone and texture, hairline, hairstyle and age cues. Do not beautify, de-age, slim, reshape or replace a person. If a person is present, their identity is a protected invariant even when pose, clothing or surroundings are changed.",
+    ...directions,
+    "CHANGE BOUNDARY: Apply all requested changes and no unrelated changes. Preserve every attribute not explicitly named. Where requested changes conflict, prioritize the user's exact instruction and preserve identity. Make the smallest plausible edit where details are ambiguous.",
+    "PHYSICAL CONSISTENCY: Maintain coherent anatomy, hands, fingers, joints, object geometry, perspective, occlusion, material response, light direction, contact shadows, reflections and edge transitions. Do not allow edits to bleed into protected faces, people, products or untouched objects.",
+    "TEXT AND BRAND SAFETY: Do not fabricate text, names, dates, contact details, logos, prices, endorsements or claims. Keep source text unchanged unless the user explicitly requests a wording change. Reproduce requested copy exactly; if reliable rendering is not possible, preserve a clean editable-looking text area rather than gibberish.",
+    "Do not add extra people, duplicated objects, watermarks, signatures, decorative elements or unrequested effects."
   ].filter(Boolean).join("\n\n");
 
-  // Use standard subject recognition only. The full-image-generation art
-  // direction can encourage a provider to repaint the whole reference.
+  // Standard subject recognition only: full-image art direction can cause
+  // the provider to repaint the reference instead of performing a local edit.
   return buildImagePrompt(brief, "standard");
 }
 
