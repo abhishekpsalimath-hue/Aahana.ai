@@ -57,7 +57,7 @@ export function parseVideoGenerationInput(body) {
     return { ok: false, error: "This video prompt is too long for the selected direction. Shorten it and try again." };
   }
 
-  return { ok: true, prompt: finalPrompt, duration, aspectRatio, resolution, director, storyboard: storyboardPlan };
+  return { ok: true, prompt: finalPrompt, duration, aspectRatio, resolution, director, ...(storyboardPlan ? { storyboard: storyboardPlan } : {}) };
 }
 
 
