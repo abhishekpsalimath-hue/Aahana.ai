@@ -17,7 +17,6 @@ on:
     paths:
       - "src/app/experience-lab/**"
       - "src/app/universe-lab/**"
-      - "src/app/learn/**"
       - "src/app/assistant-workspace.jsx"
       - "src/components/universe-scene.jsx"
       - "src/app/login/**"
