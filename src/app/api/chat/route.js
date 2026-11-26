@@ -262,7 +262,7 @@ export async function POST(request) {
             include_raw_content: false,
             topic: getResearchTopic(prompt),
           }),
-          signal: AbortSignal.timeout(10000),
+          signal: AbortSignal.any([request.signal, AbortSignal.timeout(10000)]),
         });
         if (searchResponse.ok) {
           const searchData = await searchResponse.json();
@@ -309,9 +309,12 @@ export async function POST(request) {
           console.error("Aahana live research provider returned:", searchResponse.status);
         }
       } catch (researchError) {
-        console.error("Aahana live research failed:", researchError?.message || "unknown error");
+        if (!request.signal.aborted) {
+          console.error("Aahana live research failed:", researchError?.message || "unknown error");
+        }
       }
     }
+    if (request.signal.aborted) return new Response(null, { status: 499 });
     if (!researchMessage) {
       researchMessage = {
         role: "system",
