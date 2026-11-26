@@ -1,0 +1,418 @@
+.universe{--lilac:#cbb3ff;position:relative;isolation:isolate;min-height:100svh;overflow:hidden;background:#07060d;color:#f5f0ff;padding:0 clamp(20px,5vw,76px) 24px;font-family:var(--font-sans,"DM Sans",Arial,sans-serif)}
+.starfield,.nebula{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:-2}
+.nebula{z-index:-1;background:radial-gradient(ellipse at 48% 43%,#38214c88 0%,transparent 39%),radial-gradient(ellipse at 78% 57%,#202b5380 0%,transparent 32%),radial-gradient(ellipse at 18% 70%,#4b214555 0%,transparent 34%);filter:blur(22px)}
+.header{height:76px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #ffffff14}
+.brand{color:#fff;text-decoration:none;font-size:20px;font-weight:800;letter-spacing:-1px}.brand span{color:var(--lilac)}
+.headerRight,.kicker,.detailEyebrow{font-size:9px;letter-spacing:2px;color:#a69ab9}
+.liveDot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#bca0ff;box-shadow:0 0 14px #bca0ff;margin-right:9px}
+.hero{width:min(680px,100%);margin:clamp(44px,7vh,82px) auto 0;text-align:center}
+.kicker{color:#c5aaff}
+.hero h1{font-size:clamp(42px,7vw,76px);line-height:1.02;letter-spacing:-.065em;margin:18px 0 16px;font-weight:600}
+.hero h1 em{font-style:normal;color:#c9adff;text-shadow:0 0 36px #a77bff44}
+.intro{max-width:510px;margin:0 auto;color:#a8a0b7;font-size:14px;line-height:1.8}
+.orbitStage{position:relative;width:min(760px,100%);height:clamp(300px,43vw,480px);margin:12px auto 0;perspective:900px}
+.halo{position:absolute;width:66%;height:58%;left:17%;top:22%;border:1px solid #c5aaff24;border-radius:50%;transform:rotate(-17deg);box-shadow:0 0 70px #8b61d51c,inset 0 0 50px #8b61d511}
+.galaxy{position:absolute;left:50%;top:48%;width:210px;height:130px;transform:translate(-50%,-50%) rotate(-23deg);border-radius:50%;background:radial-gradient(ellipse,#fff 0%,#e9d5ff 2%,#b58cff 8%,#8b5acb44 23%,#603b9240 44%,transparent 70%);filter:drop-shadow(0 0 32px #a875ff88)}
+.galaxy i{position:absolute;inset:15% -12%;border:2px solid #c7a6ff36;border-radius:50%;transform:rotate(18deg) scaleY(.38)}
+.galaxy i:nth-child(2){transform:rotate(-32deg) scaleY(.3);border-color:#8ca9ff36}
+.galaxy i:nth-child(3){transform:rotate(68deg) scaleY(.22);border-color:#f0baff2a}
+.planet{position:absolute;border-radius:50%;box-shadow:inset -12px -9px 18px #08071199,0 0 35px #8c70ff33}
+.planetOne{width:58px;height:58px;left:22%;top:24%;background:radial-gradient(circle at 32% 28%,#f4d7ff,#b17ad5 40%,#47315e 75%)}
+.planetTwo{width:34px;height:34px;right:21%;bottom:24%;background:radial-gradient(circle at 30% 25%,#d4e7ff,#6e91c9 46%,#29324d 78%)}
+.blackHole{position:absolute;left:70%;top:25%;width:64px;height:64px;border-radius:50%;background:#030207;box-shadow:0 0 0 5px #ad8aff33,0 0 28px 9px #b48cff66}
+.blackHole i{position:absolute;left:-23px;top:19px;width:110px;height:25px;border:4px solid #d6b7ffb5;border-left-color:#7c5ac9;border-right-color:#e2caff;border-radius:50%;transform:rotate(-22deg);filter:blur(.5px)}
+.world{position:absolute;border:1px solid #ffffff22;border-radius:999px;background:#0e0b18c9;color:#c9bfd9;padding:8px 12px;font-size:11px;backdrop-filter:blur(8px);transition:transform .2s,border-color .2s,color .2s,box-shadow .2s}
+.world:hover,.world:focus-visible,.chosen{border-color:#c6a9ff;color:#fff;box-shadow:0 0 22px #a77bff38;outline:none}
+.worldGalaxy{left:7%;top:49%}.worldStar{left:31%;top:8%}.worldPlanet{right:8%;top:48%}.worldHole{right:9%;top:8%}.worldNebula{left:11%;bottom:15%}.worldComet{right:20%;bottom:9%}.worldEnergy{left:43%;bottom:1%}
+.detail{width:min(590px,100%);margin:-4px auto 0;border-top:1px solid #ffffff19;border-bottom:1px solid #ffffff19;padding:18px 4px;display:flex;align-items:center;justify-content:space-between;gap:20px}
+.detailEyebrow{font-size:8px;color:#a995c5}
+.detail h2{margin:5px 0 4px;font-size:19px;font-weight:600;letter-spacing:-.5px}
+.detail p{margin:0;color:#a49bb2;font-size:12px;line-height:1.6}
+.detailMark{flex:0 0 26px;width:26px;height:26px;border-radius:50%;background:var(--world-color);box-shadow:0 0 28px var(--world-color);opacity:.9}
+.worldList{width:min(700px,100%);display:flex;justify-content:center;flex-wrap:wrap;gap:7px;margin:18px auto}
+.worldList button{border:1px solid transparent;border-radius:999px;background:transparent;color:#938ba1;padding:7px 11px;font-size:10px}
+.worldList button:hover,.worldList .activeWorld{border-color:#6e598b;background:#21192e;color:#e7d9ff}
+.footer{max-width:900px;margin:22px auto 0;padding-top:14px;border-top:1px solid #ffffff10;display:flex;align-items:center;justify-content:space-between;gap:15px;color:#766e82;font-size:8px;letter-spacing:1.4px}
+.footer button{border:1px solid #40344f;border-radius:999px;background:#14101d;color:#b8a9d0;padding:7px 10px;font-size:10px;letter-spacing:0}
+@media(max-width:600px){.header{height:62px}.headerRight{font-size:7px;letter-spacing:1.2px}.hero{margin-top:54px}.intro{font-size:13px}.orbitStage{height:320px;margin-top:18px}.galaxy{width:155px;height:100px}.planetOne{left:15%;top:26%;width:43px;height:43px}.planetTwo{right:14%;bottom:23%;width:28px;height:28px}.blackHole{left:68%;top:25%;width:47px;height:47px}.blackHole i{width:84px;left:-19px;top:13px}.world{font-size:9px;padding:7px 9px}.worldGalaxy{left:0;top:50%}.worldPlanet{right:0;top:48%}.worldHole{right:0;top:7%}.worldStar{left:29%;top:4%}.worldNebula{left:0;bottom:12%}.worldComet{right:7%;bottom:8%}.worldEnergy{left:37%;bottom:0}.detail{margin-top:0}.footer{font-size:7px;letter-spacing:.8px}.footer button{white-space:nowrap}}
+@media(prefers-reduced-motion:reduce){.world{transition:none}}
+
+.universe[data-motion="true"] .galaxy{animation:galaxy-drift 22s ease-in-out infinite alternate}
+.universe[data-motion="true"] .planetOne{animation:planet-float 13s ease-in-out infinite alternate}
+.universe[data-motion="true"] .planetTwo{animation:planet-float 17s ease-in-out infinite alternate-reverse}
+.universe[data-motion="true"] .blackHole{animation:hole-pulse 8s ease-in-out infinite}
+@keyframes galaxy-drift{from{transform:translate(-50%,-50%) rotate(-23deg) scale(.96)}to{transform:translate(-50%,-50%) rotate(-15deg) scale(1.05)}}
+@keyframes planet-float{from{translate:0 0}to{translate:0 -14px}}
+@keyframes hole-pulse{0%,100%{box-shadow:0 0 0 5px #ad8aff33,0 0 28px 9px #b48cff55}50%{box-shadow:0 0 0 8px #ad8aff22,0 0 42px 14px #b48cff88}}
+@media(prefers-reduced-motion:reduce){.universe[data-motion="true"] .galaxy,.universe[data-motion="true"] .planetOne,.universe[data-motion="true"] .planetTwo,.universe[data-motion="true"] .blackHole{animation:none}}
+
+.solarOrbit{position:absolute;left:50%;top:49%;width:285px;height:125px;border:1px solid #b9a3e82c;border-radius:50%;transform:translate(-50%,-50%) rotate(27deg)}
+.solarOrbit i{position:absolute;width:13px;height:13px;left:78%;top:7%;border-radius:50%;background:radial-gradient(circle at 30% 25%,#fff0cb,#d9a86d 52%,#654c42);box-shadow:0 0 15px #e4b87c88}
+.cometTrail{position:absolute;left:18%;top:66%;width:88px;height:2px;transform:rotate(-32deg);background:linear-gradient(90deg,transparent,#9fe9e4aa,#fff);filter:drop-shadow(0 0 6px #9fe9e4)}
+.cometTrail:after{content:"";position:absolute;right:-3px;top:-3px;width:8px;height:8px;border-radius:50%;background:#eaffff;box-shadow:0 0 12px #9fe9e4}
+.universe[data-motion="true"] .cometTrail{animation:comet-drift 9s ease-in-out infinite}
+@keyframes comet-drift{0%,100%{translate:0 0;opacity:.55}50%{translate:28px -12px;opacity:1}}
+@media(max-width:600px){.solarOrbit{width:220px;height:98px}.cometTrail{left:12%;top:67%;width:62px}}
+@media(prefers-reduced-motion:reduce){.universe[data-motion="true"] .cometTrail{animation:none}}
+
+
+/* Scene objects are controls, not decoration: each one selects its matching world. */
+.orbitStage button{appearance:none;cursor:pointer;padding:0;color:inherit;font:inherit}
+.orbitStage button:focus-visible{outline:2px solid #e5d6ff;outline-offset:7px}
+.sceneChosen{filter:brightness(1.45) drop-shadow(0 0 16px #c9adffbb)!important}
+.sceneGalaxy{border:0;background:transparent}
+.planetMoon{position:absolute;width:19px;height:19px;left:32%;bottom:25%;background:radial-gradient(circle at 30% 25%,#fff,#c7c6d8 48%,#64647c 82%);box-shadow:inset -5px -4px 7px #08071199,0 0 20px #c8c5ff55}
+.starObject{position:absolute;left:41%;top:24%;width:13px;height:13px;border:0;background:#fff4d1;border-radius:50%;box-shadow:0 0 8px 3px #ffe8b5,0 0 25px 10px #ffd88a88}
+.starObject:after{content:"";position:absolute;inset:-12px;background:radial-gradient(circle,#fff8 0%,transparent 68%);border-radius:50%}
+.nebulaObject{position:absolute;left:10%;top:27%;width:105px;height:64px;border:0;border-radius:50%;background:radial-gradient(ellipse at 40% 55%,#f5a9e777,#b78aff66 34%,#526ac344 58%,transparent 76%);filter:blur(5px);opacity:.72}
+.darkMatterLens{position:absolute;right:8%;top:64%;width:78px;height:78px;border:1px solid #a18bff55;border-radius:50%;background:radial-gradient(circle,transparent 28%,#7f69c522 48%,transparent 70%);box-shadow:0 0 34px #8069c555,inset 0 0 24px #8069c533}
+.darkMatterLens:before,.darkMatterLens:after{content:"";position:absolute;inset:10px -8px;border:1px solid #b9a3ff44;border-radius:50%;transform:rotate(38deg)}
+.darkMatterLens:after{transform:rotate(-38deg)}
+.darkEnergyWave{position:absolute;left:50%;top:49%;width:410px;height:240px;border:1px solid #8ecbff20;border-radius:50%;transform:translate(-50%,-50%) scale(1.12);background:radial-gradient(ellipse,transparent 48%,#82caff0b 62%,transparent 72%)}
+.spaceTimeGrid{position:absolute;left:50%;top:49%;width:330px;height:150px;border:1px dashed #9ab9ff35;border-radius:50%;transform:translate(-50%,-50%) rotate(-18deg);background:repeating-radial-gradient(ellipse at center,transparent 0 17px,#9ab9ff12 18px 19px,transparent 20px 35px)}
+.universe[data-motion="true"] .starObject{animation:star-breathe 5s ease-in-out infinite}
+.universe[data-motion="true"] .nebulaObject{animation:nebula-flow 16s ease-in-out infinite alternate}
+.universe[data-motion="true"] .darkMatterLens{animation:lens-turn 24s linear infinite}
+.universe[data-motion="true"] .darkEnergyWave{animation:expansion-wave 12s ease-in-out infinite alternate}
+@keyframes star-breathe{0%,100%{scale:.9;opacity:.75}50%{scale:1.25;opacity:1}}
+@keyframes nebula-flow{from{translate:-8px 5px;scale:.92}to{translate:12px -7px;scale:1.08}}
+@keyframes lens-turn{to{rotate:360deg}}
+@keyframes expansion-wave{from{scale:.92;opacity:.4}to{scale:1.14;opacity:.9}}
+@media(max-width:600px){
+  .planetMoon{left:28%;bottom:23%;width:15px;height:15px}
+  .starObject{left:39%;top:21%;width:10px;height:10px}
+  .nebulaObject{left:7%;top:29%;width:70px;height:46px}
+  .darkMatterLens{right:3%;top:67%;width:52px;height:52px}
+  .darkEnergyWave{width:280px;height:180px}
+  .spaceTimeGrid{width:245px;height:118px}
+}
+@media(prefers-reduced-motion:reduce){
+  .universe[data-motion="true"] .starObject,.universe[data-motion="true"] .nebulaObject,
+  .universe[data-motion="true"] .darkMatterLens,.universe[data-motion="true"] .darkEnergyWave{animation:none}
+}
+
+
+/* Guided discovery layer */
+.detailCopy{min-width:0;max-width:520px}
+.fact{margin-top:10px!important;color:#c9b8e4!important;font-size:11px!important}
+.fact strong{display:block;margin-bottom:4px;color:#a98bd8;font-size:8px;letter-spacing:1.7px}
+.journeyControls{width:min(590px,100%);margin:12px auto 0;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.journeyControls span{color:#776d89;font-size:8px;letter-spacing:1.4px;text-align:center}
+.journeyControls button{border:1px solid #463858;border-radius:999px;background:#120e1b;color:#cdbbe9;padding:9px 13px;font-size:10px;cursor:pointer;transition:background .2s,border-color .2s,transform .2s}
+.journeyControls button:hover{background:#21182f;border-color:#a98bd8;transform:translateY(-1px)}
+.journeyControls button:focus-visible{outline:2px solid #e5d6ff;outline-offset:3px}
+.energyField{position:absolute;left:50%;top:50%;width:135px;height:135px;border:1px solid #ffd99a55;border-radius:50%;transform:translate(-50%,-50%);background:radial-gradient(circle,#fff0c933 0%,#ffc87516 26%,transparent 68%);box-shadow:0 0 38px #ffc87533,inset 0 0 28px #ffc87522}
+.energyField:before,.energyField:after{content:"";position:absolute;inset:20px -25px;border:1px solid #ffdb9a55;border-radius:50%;transform:rotate(36deg)}
+.energyField:after{transform:rotate(-36deg);border-color:#c3a7ff55}
+.orbitStage[data-world="matter-energy"] .energyField{filter:brightness(1.6) drop-shadow(0 0 20px #ffcf88)}
+.orbitStage[data-world="dark-matter"] .darkMatterLens,.orbitStage[data-world="dark-energy"] .darkEnergyWave,
+.orbitStage[data-world="space-time"] .spaceTimeGrid{filter:brightness(1.7) drop-shadow(0 0 14px #bda4ff)}
+.orbitStage[data-world="galaxies"] .sceneGalaxy,.orbitStage[data-world="stars"] .starObject,
+.orbitStage[data-world="planets"] .planet,.orbitStage[data-world="moons"] .planetMoon,
+.orbitStage[data-world="solar-systems"] .solarOrbit,.orbitStage[data-world="asteroids-comets"] .cometTrail,
+.orbitStage[data-world="black-holes"] .blackHole,.orbitStage[data-world="nebulae"] .nebulaObject{filter:brightness(1.45) drop-shadow(0 0 14px #c7a7ff88)}
+@media(max-width:600px){
+ .journeyControls{gap:6px}
+ .journeyControls button{padding:8px 10px;font-size:9px;white-space:nowrap}
+ .journeyControls span{font-size:7px;letter-spacing:.8px}
+ .fact{font-size:10px!important}
+ .energyField{width:100px;height:100px}
+}
+@media(prefers-reduced-motion:reduce){.journeyControls button{transition:none}}
+
+
+/* A small planetary system with distinct, pause-aware orbital periods. */
+.solarOrbit i{left:calc(50% - 6.5px);top:calc(50% - 6.5px);--orbit-radius:102px;transform:rotate(0deg) translateX(var(--orbit-radius));transform-origin:6.5px 6.5px;animation:planetary-revolution 18s linear infinite}
+.solarOrbit i:nth-child(2){width:8px;height:8px;left:calc(50% - 4px);top:calc(50% - 4px);--orbit-radius:73px;background:radial-gradient(circle at 30% 25%,#e5f2ff,#759acb 58%,#344263);box-shadow:0 0 10px #9bc5ff88;transform-origin:4px 4px;animation-duration:11s}
+.solarOrbit i:nth-child(3){width:5px;height:5px;left:calc(50% - 2.5px);top:calc(50% - 2.5px);--orbit-radius:43px;background:#e8c8ff;box-shadow:0 0 8px #d9b5ff;transform-origin:2.5px 2.5px;animation-duration:7s}
+@keyframes planetary-revolution{from{transform:rotate(0deg) translateX(var(--orbit-radius))}to{transform:rotate(360deg) translateX(var(--orbit-radius))}}
+.universe[data-motion="false"] .solarOrbit i{animation:none}
+@media(prefers-reduced-motion:reduce){.solarOrbit i{animation:none!important}}
+
+
+/* Pointer parallax adds depth without changing the scene's layout geometry. */
+.halo{translate:var(--parallax-x,0px) var(--parallax-y,0px);transition:translate .18s ease-out}
+.galaxy,.planetOne,.planetTwo,.blackHole,.nebulaObject,.darkMatterLens{translate:var(--parallax-x-soft,0px) var(--parallax-y-soft,0px)}
+.nebula{translate:var(--parallax-x,0px) var(--parallax-y,0px);transition:translate .28s ease-out}
+@media(prefers-reduced-motion:reduce){.halo,.nebula{transition:none}}
+
+
+/* Touch-first controls: keep the spatial scene discoverable without tiny tap targets. */
+@media (hover: none) and (pointer: coarse) {
+  .world {
+    min-height: 40px;
+    padding: 10px 13px;
+    background: #100c1dcc;
+    backdrop-filter: none;
+  }
+  .worldList {
+    gap: 9px;
+    padding-inline: 2px;
+  }
+  .worldList button {
+    min-height: 40px;
+    padding: 10px 13px;
+    background: #100c1d88;
+  }
+  .journeyControls button,
+  .footer button {
+    min-height: 42px;
+    padding-inline: 14px;
+  }
+  .orbitStage button:focus-visible {
+    outline-offset: 5px;
+  }
+}
+@media (max-width: 380px) {
+  .worldGalaxy { left: -2%; }
+  .worldPlanet { right: -2%; }
+  .worldHole { right: -2%; }
+  .worldComet { right: 1%; }
+  .worldEnergy { left: 34%; }
+  .orbitStage { height: 300px; }
+  .journeyControls span { max-width: 94px; line-height: 1.4; }
+}
+
+.guide{margin-top:9px!important;color:#b9a9d1!important;font-size:11px!important;max-width:510px}
+.guide strong{display:block;margin-bottom:4px;color:#c5aaff;font-size:8px;letter-spacing:1.7px}
+@media(max-width:600px){.guide{font-size:10px!important}}
+
+/* Interactive reflection prompt: a quiet pause between observing and understanding. */
+.experiment{width:min(590px,100%);margin:15px auto 0;padding:12px 14px;border:1px solid #8e75b52b;border-radius:13px;background:linear-gradient(110deg,#171020a8,#0d0b15a8)}
+.experimentHeading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.experimentHeading>span{font-size:8px;letter-spacing:1.7px;color:#a995c5}
+.experimentHeading button{border:1px solid #665184;border-radius:999px;background:#21182f;color:#e1d2ff;padding:8px 12px;font-size:10px;cursor:pointer}
+.experimentHeading button:hover{border-color:#c6a9ff;background:#2a1e3c}
+.experimentHeading button:focus-visible{outline:2px solid #e5d6ff;outline-offset:3px}
+.experimentPrompt{padding-top:12px;animation:experiment-in .22s ease-out}
+.experimentPrompt p{margin:0;color:#eee5ff;font-size:13px;line-height:1.7}
+.experimentPrompt span{display:block;margin-top:7px;color:#9388a5;font-size:10px;line-height:1.6}
+@keyframes experiment-in{from{opacity:0;translate:0 5px}to{opacity:1;translate:0 0}}
+@media(max-width:600px){.experiment{padding:11px}.experimentPrompt p{font-size:12px}.experimentHeading>span{font-size:7px;letter-spacing:1px}.experimentHeading button{padding:9px 11px;min-height:40px}}
+@media(prefers-reduced-motion:reduce){.experimentPrompt{animation:none}}
+
+
+/* Black-hole Gravity Lab: responsive controls and a replayable light trace. */
+.gravityLab{width:min(590px,100%);margin:18px auto 0;padding:17px 18px 14px;border:1px solid #a98bd833;border-radius:16px;background:linear-gradient(135deg,#1b1428dd,#0d0b15ed);box-shadow:0 18px 60px #0005}
+.gravityHeader{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.gravityHeader h2{margin:5px 0 4px;font-size:21px;letter-spacing:-.6px;font-weight:600}
+.gravityHeader p{margin:0;color:#a79bb8;font-size:11px;line-height:1.6}
+.gravityTag{flex:0 0 auto;border:1px solid #8068a955;border-radius:999px;padding:6px 9px;color:#cdb7f4;font-size:7px;letter-spacing:1.3px}
+.gravityDiagram{display:block;width:100%;height:auto;max-height:210px;margin:10px auto 2px;overflow:visible}
+.rayPath{stroke-dasharray:5 5;filter:drop-shadow(0 0 5px #a6edff);animation:ray-trace 1.25s ease-out both}
+.gravityDiagram[data-run="0"] .rayPath{animation:none;stroke-dasharray:none}
+@keyframes ray-trace{from{stroke-dashoffset:170;opacity:.35}to{stroke-dashoffset:0;opacity:1}}
+.gravityControls{display:grid;grid-template-columns:1fr 1fr;gap:17px;margin-top:5px}
+.gravityControls label{display:grid;grid-template-columns:1fr auto;gap:9px;align-items:center;color:#d8cce8;font-size:10px}
+.gravityControls output{color:#c7aaff;font-variant-numeric:tabular-nums;font-size:9px}
+.gravityControls input{grid-column:1/-1;width:100%;accent-color:#c4a5ff;cursor:pointer}
+.gravityControls input:focus-visible{outline:2px solid #e5d6ff;outline-offset:4px}
+.gravityFooter{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px}
+.gravityFooter span{max-width:330px;color:#9388a5;font-size:9px;line-height:1.6}
+.gravityFooter button{flex:0 0 auto;border:1px solid #8b70b5;border-radius:999px;background:#261b37;color:#eadfff;padding:9px 13px;font-size:9px;cursor:pointer}
+.gravityFooter button:hover{background:#332448;border-color:#cbb3ff}
+.gravityFooter button:focus-visible{outline:2px solid #e5d6ff;outline-offset:3px}
+.gravityCaution{margin:11px 0 0;color:#746b82;font-size:8px;line-height:1.6}
+@media(max-width:600px){.gravityLab{padding:14px 12px}.gravityControls{grid-template-columns:1fr;gap:13px}.gravityFooter{align-items:flex-start;flex-direction:column}.gravityFooter button{min-height:40px}.gravityHeader h2{font-size:19px}}
+@media(prefers-reduced-motion:reduce){.rayPath{animation:none!important}}
+
+
+/* Orbit Lab visualizes Kepler's proportional relationship with relative units. */
+.orbitLab{width:min(590px,100%);margin:18px auto 0;padding:17px 18px 14px;border:1px solid #a98bd833;border-radius:16px;background:linear-gradient(135deg,#19182bdd,#0d0b15ed);box-shadow:0 18px 60px #0005}
+.orbitDiagram{display:block;width:100%;height:auto;max-height:200px;margin:8px auto 0;overflow:visible}
+.orbitReadout{display:grid;gap:4px;padding:11px 13px;border:1px solid #8e75b52b;border-radius:10px;background:#120e1c99}
+.orbitReadout>span{color:#a995c5;font-size:7px;letter-spacing:1.6px}
+.orbitReadout strong{color:#f0e6ff;font-size:23px;letter-spacing:-.7px;font-variant-numeric:tabular-nums}
+.orbitReadout strong small{color:#a89bb8;font-size:9px;font-weight:400;letter-spacing:0}
+.orbitReadout em{color:#9c91aa;font-size:9px;font-style:normal;line-height:1.5}
+@media(max-width:600px){.orbitLab{padding:14px 12px}.orbitReadout strong{font-size:21px}}
+
+
+/* Aahana's context-aware exploration companion. */
+.companion{width:min(650px,100%);margin:28px auto 0;padding:19px;border:1px solid #b99aff35;border-radius:17px;background:linear-gradient(145deg,#171123eF,#0c0a13f2);box-shadow:0 18px 65px #0004}
+.companionTop{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+.companionTop h2{margin:7px 0 5px;color:#f4edff;font-size:clamp(18px,3vw,23px);font-weight:600;letter-spacing:-.7px}
+.companionTop p{max-width:470px;margin:0;color:#a79bb8;font-size:11px;line-height:1.65}
+.companionOrb{display:grid;place-items:center;flex:0 0 36px;width:36px;height:36px;border:1px solid #c4a6ff55;border-radius:50%;color:#e5d4ff;background:radial-gradient(circle,#9b70d955,transparent 70%);box-shadow:0 0 25px #a77bff33}
+.companionQuestions{display:grid;grid-template-columns:1fr;gap:7px;margin:17px 0}
+.companionQuestions button{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:42px;padding:10px 12px;border:1px solid #ffffff16;border-radius:9px;background:#ffffff06;color:#d5cce2;text-align:left;font-size:10px;line-height:1.5;cursor:pointer;transition:border-color .18s,background .18s}
+.companionQuestions button span{flex:0 0 auto;color:#a98bd8}
+.companionQuestions button:hover,.companionQuestions button:focus-visible,.companionQuestions .companionQuestionActive{border-color:#b99aff88;background:#b99aff12;color:#fff;outline:none}
+.companionCustom{display:grid;gap:7px;color:#a99bbd;font-size:9px;letter-spacing:.3px}
+.companionCustom textarea{width:100%;resize:vertical;min-height:58px;padding:10px 11px;border:1px solid #ffffff1d;border-radius:9px;background:#090711;color:#f5efff;font:inherit;font-size:11px;line-height:1.5;letter-spacing:0}
+.companionCustom textarea::placeholder{color:#746b82}
+.companionCustom textarea:focus-visible{outline:2px solid #cbb3ff;outline-offset:2px}
+.companionActions{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:11px}
+.companionActions span{color:#bda7e4;font-size:9px;line-height:1.5}
+.companionActions button{flex:0 0 auto;min-height:40px;padding:9px 15px;border:1px solid #a98bd8;border-radius:999px;background:#281d39;color:#f1e8ff;font-size:10px;cursor:pointer}
+.companionActions button:disabled{opacity:.4;cursor:not-allowed}
+.companionActions button:not(:disabled):hover{background:#39274f}
+.companionActions button:focus-visible{outline:2px solid #e8dfff;outline-offset:3px}
+@media(max-width:600px){.companion{padding:15px 12px}.companionActions{align-items:flex-start;flex-direction:column}.companionActions button{width:100%}}
+
+
+/* Discovery-to-creation bridge: a local brief builder, not a provider trigger. */
+.creationBridge{width:min(650px,100%);margin:18px auto 0;padding:19px;border:1px solid #9f85cb3d;border-radius:17px;background:linear-gradient(145deg,#171321ed,#0b0a13f5);box-shadow:0 18px 65px #0004}
+.creationHeader{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:16px}
+.creationHeader h2{margin:7px 0 5px;color:#f4edff;font-size:clamp(18px,3vw,23px);font-weight:600;letter-spacing:-.7px}
+.creationHeader p{max-width:470px;margin:0;color:#a79bb8;font-size:11px;line-height:1.65}
+.creationGlyph{display:grid;place-items:center;flex:0 0 36px;width:36px;height:36px;border:1px solid #c4a6ff55;border-radius:50%;color:#e5d4ff;background:radial-gradient(circle,#9b70d955,transparent 70%);box-shadow:0 0 25px #a77bff33;font-size:19px}
+.creationField{display:grid;gap:7px;margin-top:12px;color:#b9a9cc;font-size:9px;letter-spacing:.3px}
+.creationField>span{display:inline;color:#81768f;font-size:8px}
+.creationField select,.creationField textarea{width:100%;min-height:43px;padding:10px 11px;border:1px solid #ffffff1d;border-radius:9px;background:#090711;color:#f5efff;font:inherit;font-size:11px;line-height:1.5;letter-spacing:0}
+.creationField select{color-scheme:dark;cursor:pointer}
+.creationField textarea{resize:vertical;min-height:66px}
+.creationField textarea::placeholder{color:#746b82}
+.creationField select:focus-visible,.creationField textarea:focus-visible{outline:2px solid #cbb3ff;outline-offset:2px}
+.creationActions{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:13px}
+.creationActions span{color:#bda7e4;font-size:9px;line-height:1.5}
+.creationActions button{flex:0 0 auto;min-height:42px;padding:9px 15px;border:1px solid #a98bd8;border-radius:999px;background:#281d39;color:#f1e8ff;font-size:10px;cursor:pointer}
+.creationActions button:hover{background:#39274f}
+.creationActions button:focus-visible{outline:2px solid #e8dfff;outline-offset:3px}
+@media(max-width:600px){.creationBridge{padding:15px 12px}.creationActions{align-items:stretch;flex-direction:column}.creationActions button{width:100%;min-height:44px}}
+
+
+/* Cross-universe comparison: make relationships inspectable before synthesis. */
+.comparisonLab{width:min(650px,100%);margin:18px auto 0;padding:19px;border:1px solid #8da8e83a;border-radius:17px;background:linear-gradient(145deg,#121729ed,#0b0a13f5);box-shadow:0 18px 65px #0004}
+.comparisonHeader{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:16px}
+.comparisonHeader h2{margin:7px 0 5px;color:#f1efff;font-size:clamp(18px,3vw,23px);font-weight:600;letter-spacing:-.7px}
+.comparisonHeader p{max-width:470px;margin:0;color:#a5a8bf;font-size:11px;line-height:1.65}
+.comparisonGlyph{display:grid;place-items:center;flex:0 0 36px;width:36px;height:36px;border:1px solid #9bb7ff55;border-radius:50%;color:#d7e2ff;background:radial-gradient(circle,#718fd955,transparent 70%);box-shadow:0 0 25px #829eff2b;font-size:19px}
+.comparisonPair{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.comparisonWorld{display:grid;align-content:start;gap:8px;min-width:0;padding:12px;border:1px solid #ffffff16;border-radius:11px;background:#ffffff06;color:#aeb6d0;font-size:8px;letter-spacing:1.1px}
+.comparisonWorld strong{color:#f2edff;font-size:15px;letter-spacing:-.2px}
+.comparisonWorld select{width:100%;min-height:38px;padding:8px;border:1px solid #ffffff20;border-radius:7px;background:#090b16;color:#f2edff;color-scheme:dark;font:inherit;font-size:11px;letter-spacing:0}
+.comparisonWorld select:focus-visible{outline:2px solid #c7d3ff;outline-offset:2px}
+.comparisonFacts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.comparisonFacts p{margin:0;padding:11px;border-left:2px solid #9a9fdf66;border-radius:0 8px 8px 0;background:#ffffff05;color:#b5b5ca;font-size:10px;line-height:1.65}
+.comparisonFacts strong{display:block;margin-bottom:5px;color:#c8c7ef;font-size:9px;letter-spacing:.4px}
+.comparisonLab .creationActions button:disabled{opacity:.4;cursor:not-allowed}
+@media(max-width:600px){.comparisonLab{padding:15px 12px}.comparisonPair,.comparisonFacts{grid-template-columns:1fr}.comparisonWorld strong{font-size:14px}.comparisonFacts p{font-size:10px}}
+
+
+/* Knowledge Constellation: assemble a multi-subject project without persistence. */
+.knowledgeProject{width:min(680px,100%);margin:20px auto 0;padding:20px;border:1px solid #a88bd844;border-radius:18px;background:linear-gradient(145deg,#191326f2,#0b0a13f7);box-shadow:0 20px 70px #0005}
+.knowledgeHeader{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:15px}
+.knowledgeHeader h2{margin:7px 0 5px;color:#f4edff;font-size:clamp(19px,3vw,24px);font-weight:600;letter-spacing:-.8px}
+.knowledgeHeader p{max-width:480px;margin:0;color:#aaa0bd;font-size:11px;line-height:1.7}
+.knowledgeGlyph{display:grid;place-items:center;flex:0 0 38px;width:38px;height:38px;border:1px solid #c4a6ff66;border-radius:50%;color:#e7d9ff;background:radial-gradient(circle,#9b70d955,transparent 70%);box-shadow:0 0 27px #a77bff38;font-size:20px}
+.knowledgeProject .creationField input{width:100%;min-height:43px;padding:10px 11px;border:1px solid #ffffff1d;border-radius:9px;background:#090711;color:#f5efff;font:inherit;font-size:11px;line-height:1.5;letter-spacing:0}
+.knowledgeProject .creationField input:focus-visible{outline:2px solid #cbb3ff;outline-offset:2px}
+.knowledgePicker{margin-top:15px;padding:12px;border:1px solid #ffffff14;border-radius:12px;background:#ffffff04}
+.knowledgePickerTop{display:flex;justify-content:space-between;gap:10px;margin-bottom:10px;color:#a995c5;font-size:8px;letter-spacing:1.2px}
+.knowledgePickerTop span:last-child{color:#8e849e;letter-spacing:.2px;text-align:right}
+.knowledgeChips{display:flex;flex-wrap:wrap;gap:7px}
+.knowledgeChips button{display:inline-flex;align-items:center;gap:8px;min-height:35px;padding:7px 10px;border:1px solid #ffffff1c;border-radius:999px;background:#0e0b17;color:#bdb2cc;font-size:9px;cursor:pointer;transition:border-color .16s,background .16s,color .16s}
+.knowledgeChips button span{color:#9b8eac}
+.knowledgeChips button:hover,.knowledgeChips button:focus-visible{border-color:#c5a6ff99;outline:none}
+.knowledgeChips button.knowledgeChipActive{border-color:#b99aff99;background:#b99aff18;color:#f2eaff}
+.knowledgeChips button.knowledgeChipActive span{color:#dfcaff}
+.knowledgeActions{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:13px}
+.knowledgeActions span{color:#bda7e4;font-size:9px;line-height:1.55}
+.knowledgeActions button{flex:0 0 auto;min-height:43px;padding:9px 15px;border:1px solid #a98bd8;border-radius:999px;background:#281d39;color:#f1e8ff;font-size:10px;cursor:pointer}
+.knowledgeActions button:hover:not(:disabled){background:#39274f}
+.knowledgeActions button:disabled{opacity:.4;cursor:not-allowed}
+.knowledgeActions button:focus-visible{outline:2px solid #e8dfff;outline-offset:3px}
+@media(max-width:600px){.knowledgeProject{padding:15px 12px}.knowledgePickerTop{align-items:flex-start;flex-direction:column}.knowledgePickerTop span:last-child{text-align:left}.knowledgeActions{align-items:stretch;flex-direction:column}.knowledgeActions button{width:100%;min-height:45px}.knowledgeChips button{min-height:39px}}
+
+.knowledgeChips button:disabled{opacity:.38;cursor:not-allowed}
+
+
+/* Project Intelligence workspace: inspectable structure and session-only evidence tracking. */
+.blueprintLaunch{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:14px;padding:13px;border:1px solid #a98bd833;border-radius:12px;background:linear-gradient(100deg,#21182e99,#12101b99)}
+.blueprintLaunch>div{display:grid;gap:4px;min-width:0}
+.blueprintLaunch strong{color:#e9dcff;font-size:11px}
+.blueprintLaunch span{color:#9f93b0;font-size:9px;line-height:1.6}
+.blueprintLaunch button,.blueprintTop>button{flex:0 0 auto;min-height:40px;padding:9px 13px;border:1px solid #a98bd8;border-radius:999px;background:#281d39;color:#f1e8ff;font-size:9px;cursor:pointer}
+.blueprintLaunch button:hover,.blueprintTop>button:hover{background:#39274f}
+.blueprintLaunch button:disabled{opacity:.4;cursor:not-allowed}
+.blueprintLaunch button:focus-visible,.blueprintTop>button:focus-visible{outline:2px solid #e8dfff;outline-offset:3px}
+.blueprintWorkspace{display:grid;gap:15px;margin-top:15px;padding:15px;border:1px solid #b99aff35;border-radius:14px;background:#09081199}
+.blueprintTop{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.blueprintTop h3{margin:6px 0 4px;color:#f3ebff;font-size:17px;letter-spacing:-.4px}
+.blueprintTop p{margin:0;color:#9388a5;font-size:9px}
+.blueprintLabel{display:block;color:#bca6df;font-size:8px;letter-spacing:1.5px}
+.blueprintMap{padding:12px;border:1px solid #ffffff13;border-radius:10px;background:#ffffff04}
+.blueprintNodes{display:flex;align-items:stretch;gap:7px;overflow-x:auto;padding:12px 0 5px}
+.blueprintNode{display:grid;align-content:center;gap:5px;flex:1 0 105px;min-height:62px;padding:9px;border:1px solid #a98bd844;border-radius:9px;background:linear-gradient(145deg,#9d7bc51b,#ffffff04)}
+.blueprintNode span{color:#a994c8;font-size:7px;letter-spacing:1px}
+.blueprintNode strong{color:#eee5ff;font-size:10px}
+.blueprintMap>p{margin:7px 0 0;color:#81768f;font-size:9px;line-height:1.6}
+.blueprintChapters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.blueprintChapters>.blueprintLabel{grid-column:1/-1}
+.blueprintChapters article{min-width:0;padding:11px;border:1px solid #ffffff14;border-radius:9px;background:#ffffff04}
+.blueprintChapters article>span{color:#9c89bb;font-size:7px;letter-spacing:1.2px}
+.blueprintChapters h4{margin:5px 0;color:#eee5ff;font-size:12px}
+.blueprintChapters p{margin:0;color:#a99db9;font-size:9px;line-height:1.6}
+.blueprintChapters em{display:block;margin-top:8px;color:#c7b3e3;font-size:9px;font-style:normal;line-height:1.6}
+.blueprintEvidence{display:grid;gap:9px;padding:12px;border:1px solid #ffffff14;border-radius:10px;background:#ffffff04}
+.blueprintEvidenceHead{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.blueprintEvidenceHead strong{color:#d9c7f3;font-size:9px;font-variant-numeric:tabular-nums}
+.blueprintProgress{height:4px;overflow:hidden;border-radius:9px;background:#ffffff12}
+.blueprintProgress span{display:block;height:100%;border-radius:9px;background:linear-gradient(90deg,#9474c8,#cbb0ff);transition:width .2s}
+.blueprintEvidence label{display:flex;align-items:flex-start;gap:9px;color:#b9afc8;font-size:10px;line-height:1.5;cursor:pointer}
+.blueprintEvidence input{flex:0 0 auto;width:14px;height:14px;margin:1px 0 0;accent-color:#b99aff}
+.blueprintEvidence input:focus-visible{outline:2px solid #e8dfff;outline-offset:3px}
+.blueprintDeliverable{padding:12px;border-left:2px solid #a98bd877;border-radius:0 9px 9px 0;background:#ffffff05}
+.blueprintDeliverable p{margin:7px 0 0;color:#c3b6d5;font-size:10px;line-height:1.7}
+.blueprintStatus{margin:0;color:#c8afea;font-size:9px;line-height:1.5}
+@media(max-width:600px){.blueprintLaunch,.blueprintTop{align-items:stretch;flex-direction:column}.blueprintLaunch button,.blueprintTop>button{width:100%;min-height:44px}.blueprintChapters{grid-template-columns:1fr}.blueprintEvidenceHead{align-items:flex-start;flex-direction:column}.blueprintWorkspace{padding:11px}}
+@media(prefers-reduced-motion:reduce){.blueprintProgress span{transition:none}}
+
+
+.projectWorkspaceEditor { margin-top: 22px; padding: 22px; border: 1px solid rgba(190, 163, 255, .2); border-radius: 20px; background: rgba(13, 10, 25, .72); }
+.projectWorkspaceHead, .projectWorkspaceChapterTop, .projectWorkspaceSummary { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.projectWorkspaceHead h4 { margin: 8px 0 6px; color: #f1eaff; font-size: 1.15rem; }
+.projectWorkspaceHead p { margin: 0; color: #a99dbd; line-height: 1.6; font-size: .88rem; }
+.projectWorkspaceHead > button, .projectWorkspaceChapter button, .projectSourceEditor > button { border: 1px solid rgba(199, 167, 255, .35); border-radius: 999px; padding: 9px 13px; color: #e7d9ff; background: rgba(173, 135, 255, .1); cursor: pointer; }
+.projectWorkspaceSummary { justify-content: flex-start; flex-wrap: wrap; margin: 18px 0; }
+.projectWorkspaceSummary span { padding: 7px 10px; border-radius: 999px; color: #d7c6f4; background: rgba(181, 148, 255, .1); font-size: .78rem; }
+.projectWorkspaceChapters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.projectWorkspaceChapter { min-width: 0; padding: 16px; border: 1px solid rgba(189, 164, 232, .16); border-radius: 15px; background: rgba(255, 255, 255, .025); }
+.projectWorkspaceChapterTop { margin-bottom: 12px; color: #bba6e5; font-size: .72rem; letter-spacing: .12em; }
+.projectWorkspaceChapterTop > div { display: flex; gap: 6px; }
+.projectWorkspaceChapterTop button { min-width: 34px; padding: 5px 9px; }
+.projectWorkspaceChapter button:disabled { opacity: .3; cursor: not-allowed; }
+.projectWorkspaceChapter label, .projectSourceEditor label { display: grid; gap: 6px; margin: 12px 0; color: #c9bddb; font-size: .78rem; }
+.projectWorkspaceChapter input, .projectWorkspaceChapter textarea, .projectWorkspaceChapter select, .projectSourceEditor input, .projectSourceEditor textarea { width: 100%; min-width: 0; padding: 10px 11px; border: 1px solid rgba(194, 170, 234, .22); border-radius: 10px; color: #eee6fa; background: rgba(5, 4, 12, .7); font: inherit; font-size: .86rem; }
+.projectWorkspaceChapter select[multiple] { min-height: 76px; }
+.projectSourceEditor { margin-top: 16px; padding-top: 14px; border-top: 1px solid rgba(189, 164, 232, .15); }
+.projectSourceEditor > strong { display: block; color: #e5d9f7; font-size: .83rem; }
+.projectSourceItem { display: grid; gap: 5px; margin-top: 10px; padding: 10px; border-radius: 10px; background: rgba(181, 148, 255, .07); }
+.projectSourceItem a { color: #cdb5ff; overflow-wrap: anywhere; font-size: .82rem; }
+.projectSourceItem span { color: #a99dbd; font-size: .76rem; }
+.projectSourceItem button { justify-self: start; padding: 5px 9px; font-size: .72rem; }
+.projectWorkspaceStatus { min-height: 1.3em; color: #cbb8ef; font-size: .82rem; }
+@media (max-width: 680px) {
+  .projectWorkspaceEditor { padding: 15px; }
+  .projectWorkspaceHead { align-items: flex-start; flex-direction: column; }
+  .projectWorkspaceChapters { grid-template-columns: minmax(0, 1fr); }
+}
+
+.projectWorkspaceActions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.projectImportButton { display: inline-flex; align-items: center; justify-content: center; border: 1px solid rgba(199, 167, 255, .35); border-radius: 999px; padding: 9px 13px; color: #e7d9ff; background: rgba(173, 135, 255, .1); cursor: pointer; font-size: .82rem; }
+.projectImportButton input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+.projectImportButton:focus-within { outline: 2px solid #cdb5ff; outline-offset: 3px; }
+@media (max-width: 680px) {
+  .projectWorkspaceActions { justify-content: flex-start; }
+  .projectWorkspaceActions > button, .projectImportButton { min-height: 42px; }
+}
+
+.projectMilestonePanel { margin: 18px 0; padding: 18px; border: 1px solid rgba(190, 163, 255, .18); border-radius: 16px; background: rgba(255, 255, 255, .025); }
+.projectMilestoneHeading h5 { margin: 7px 0 4px; color: #f0e8fc; font-size: 1rem; }
+.projectMilestoneHeading p { margin: 0 0 14px; color: #ad9fc0; font-size: .82rem; }
+.projectMilestoneList { display: grid; gap: 9px; }
+.projectMilestone { display: grid; grid-template-columns: 34px minmax(130px, 1.5fr) minmax(110px, 1fr) minmax(100px, .8fr) auto; align-items: end; gap: 9px; padding: 10px; border: 1px solid rgba(189, 164, 232, .12); border-radius: 11px; }
+.projectMilestoneNumber { align-self: center; color: #bba6e5; font-size: .75rem; }
+.projectMilestone label { display: grid; gap: 5px; color: #c9bddb; font-size: .72rem; }
+.projectMilestone input, .projectMilestone select, .projectAddMilestone input { width: 100%; min-width: 0; padding: 9px; border: 1px solid rgba(194, 170, 234, .22); border-radius: 8px; color: #eee6fa; background: rgba(5, 4, 12, .7); font: inherit; font-size: .82rem; }
+.projectMilestone button, .projectAddMilestone button { border: 1px solid rgba(199, 167, 255, .3); border-radius: 999px; padding: 8px 11px; color: #e7d9ff; background: rgba(173, 135, 255, .1); cursor: pointer; font-size: .75rem; }
+.projectAddMilestone { display: flex; gap: 9px; margin-top: 12px; }
+.projectAddMilestone button:disabled { opacity: .4; cursor: not-allowed; }
+@media (max-width: 680px) {
+  .projectMilestone { grid-template-columns: 28px minmax(0, 1fr); }
+  .projectMilestoneNumber { grid-row: span 4; }
+  .projectMilestone button { justify-self: start; }
+  .projectAddMilestone { flex-direction: column; }
+  .projectAddMilestone button { min-height: 42px; }
+}

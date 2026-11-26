@@ -1754,11 +1754,18 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
 
       <section className="main-panel">
         <div className="space-background" aria-hidden="true">
+          <UniverseScene />
           <div className="universe-flight" data-speed="65 km/h">
             <div className="universe-depth-stars" aria-hidden="true">
               <i className="depth-stars-far" />
               <i className="depth-stars-mid" />
               <i className="depth-stars-near" />
+            </div>
+            <div className="universe-galaxy" aria-hidden="true">
+              <span className="galaxy-core" />
+              <i className="galaxy-arm galaxy-arm-one" />
+              <i className="galaxy-arm galaxy-arm-two" />
+              <i className="galaxy-arm galaxy-arm-three" />
             </div>
             <div className="universe-particles">
               {Array.from({ length: 64 }, (_, index) => (
