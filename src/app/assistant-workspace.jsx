@@ -1307,8 +1307,6 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
 
   async function generateVideo(videoPrompt = prompt.trim()) {
     if (!videoEnabled || !videoPrompt || videoGenerating || busy || imageGenerating || imageUpscaling) return false;
-    const controller = new AbortController();
-    videoAbortControllerRef.current = controller;
     const storyboardDuration = videoStoryboardShots.reduce((sum, shot) => sum + Number(shot.durationSeconds || 0), 0);
     if (videoStoryboardEnabled) {
       if (videoStoryboardShots.length < 2 || videoStoryboardShots.length > 6 || storyboardDuration > 15) {
@@ -1324,6 +1322,8 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         return false;
       }
     }
+    const controller = new AbortController();
+    videoAbortControllerRef.current = controller;
     setVideoGenerating(true);
     setError("");
     setGeneratedVideo(null);
