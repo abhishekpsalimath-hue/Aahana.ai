@@ -1,6 +1,6 @@
 -- Draft only: durable video-job persistence. Do not apply to production without explicit owner approval.
 create table if not exists public.aahana_video_jobs (
-  job_id uuid primary key,
+  job_id text primary key check (char_length(job_id) between 1 and 100),
   owner_id uuid not null references auth.users(id) on delete cascade,
   idempotency_key text not null check (char_length(idempotency_key) between 1 and 100),
   revision integer not null default 1 check (revision >= 1),
