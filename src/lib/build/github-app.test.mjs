@@ -231,6 +231,60 @@ test("refuses to reuse an interrupted branch that contains an unapproved file", 
   }), /outside the approved file set/);
 });
 
+test("reuses a concurrently created draft after verifying the exact proposal branch", async () => {
+  const source = "export default function Page() {}";
+  const bytes = Buffer.from(source, "utf8");
+  const expectedBlobSha = createHash("sha1").update("blob " + bytes.length + "\0").update(bytes).digest("hex");
+  const proposalSha = "2".repeat(40);
+  const branch = "aahana/self-build/";
+  const calls = [];
+  const fetchImpl = async (url, options) => {
+    const body = options.body ? JSON.parse(options.body) : null;
+    calls.push({ url, method: options.method || "GET", body });
+    if (url.endsWith("/access_tokens")) return mockResponse({ token: "installation-token" });
+    if (url.includes("/pulls?state=all")) return mockResponse([]);
+    if (url.includes("/git/ref/heads/main")) return mockResponse({ object: { sha: baseSha } });
+    if (url.includes("/git/ref/heads/aahana%2Fself-build%2F")) {
+      return calls.some((call) => call.url.endsWith("/git/refs") && call.method === "POST")
+        ? mockResponse({ object: { sha: proposalSha } })
+        : mockResponse({}, 404);
+    }
+    if (url.endsWith("/git/commits/" + baseSha)) return mockResponse({ tree: { sha: "e".repeat(40) } });
+    if (url.endsWith("/git/commits/" + proposalSha)) return mockResponse({
+      parents: [{ sha: baseSha }], tree: { sha: "1".repeat(40) },
+    });
+    if (url.includes("/git/trees/" + "e".repeat(40))) return mockResponse({ truncated: false, tree: [] });
+    if (url.includes("/git/trees/" + "1".repeat(40))) return mockResponse({ truncated: false, tree: [
+      { type: "blob", mode: "100644", path: "src/app/experience-lab/page.jsx", sha: expectedBlobSha },
+    ] });
+    if (url.endsWith("/git/blobs")) return mockResponse({ sha: expectedBlobSha });
+    if (url.endsWith("/git/trees")) return mockResponse({ sha: "1".repeat(40) });
+    if (url.endsWith("/git/commits")) return mockResponse({ sha: proposalSha });
+    if (url.endsWith("/git/refs")) return mockResponse({ ref: body.ref });
+    if (url.endsWith("/pulls")) return mockResponse({ message: "Validation Failed" }, 422);
+    if (url.includes("/pulls?state=open")) return mockResponse([{
+      number: 41,
+      state: "open",
+      html_url: "https://github.com/owner/Aahana.ai/pull/41",
+      head: { ref: body?.head || decodeURIComponent(new URL(url).searchParams.get("head").split(":")[1]), sha: proposalSha },
+      base: { ref: "main" },
+    }]);
+    throw new Error("Unexpected GitHub request: " + url);
+  };
+  const result = await createSelfBuildPullRequest({
+    baseSha,
+    files: [{ path: "src/app/experience-lab/page.jsx", content: source }],
+    title: "Concurrent retry",
+    summary: "Reuse the winner of a concurrent create.",
+    env,
+    fetchImpl,
+  });
+  assert.equal(result.number, 41);
+  assert.equal(result.reused, true);
+  assert.equal(result.headSha, proposalSha);
+  assert.equal(calls.filter((call) => call.url.endsWith("/pulls") && call.method === "POST").length, 1);
+});
+
 test("does not request an installation token when self-build configuration is absent", async () => {
   let called = false;
   await assert.rejects(() => getSelfBuildRepository({ env: {}, fetchImpl: async () => { called = true; } }), /not configured/);
