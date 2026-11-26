@@ -4,16 +4,12 @@ import { createClient } from "@/lib/supabase/server";
 import { readBoundedJson } from "@/lib/chat/bounded-json.mjs";
 import { executeBuildTask } from "@/lib/build/build-engine.mjs";
 import { validateWorkspaceFiles } from "@/lib/build/sandbox-policy.mjs";
+import { isSupportedSourceFile, isSafePrivateObjectPath } from "@/lib/build/source-file-policy.mjs";
 export const runtime = "nodejs";
 export const maxDuration = 180;
 const MAX_SOURCE_FILES = 100;
+const MAX_PROJECT_FILE_ROWS = 500;
 const MAX_SOURCE_BYTES = 3 * 1024 * 1024;
-const SOURCE_EXTENSIONS = /^(?:js|jsx|ts|tsx|mjs|cjs|css|html|htm|json|md|txt|py|toml|yaml|yml|sql)$/;
-const SOURCE_MIME_TYPES = new Set(["text/plain", "text/markdown", "text/x-python", "application/json", "text/javascript", "application/javascript", "text/css", "text/html"]);
-function isProjectSourceFile(file) {
-  const extension = String(file.original_filename || "").toLowerCase().split(".").pop();
-  return SOURCE_MIME_TYPES.has(file.mime_type) || SOURCE_EXTENSIONS.test(extension);
-}
 export async function POST(request) {
   const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -36,10 +32,24 @@ export async function POST(request) {
   if (!["build", "test"].includes(operation)) return NextResponse.json({ error: "Choose build or test." }, { status: 400 });
   const { data: project, error: projectError } = await supabase.from("projects").select("id").eq("id", projectId).eq("user_id", user.id).neq("status", "archived").maybeSingle();
   if (projectError || !project) return NextResponse.json({ error: "Project not found." }, { status: 404 });
-  const { data: rows, error: filesError } = await supabase.from("user_files").select("bucket_id, object_path, original_filename, mime_type, size_bytes").eq("user_id", user.id).eq("project_id", projectId).order("created_at", { ascending: false }).limit(MAX_SOURCE_FILES);
+  const { data: rows, error: filesError } = await supabase.from("user_files")
+    .select("bucket_id, object_path, original_filename, mime_type, size_bytes")
+    .eq("user_id", user.id).eq("project_id", projectId)
+    .order("created_at", { ascending: false }).limit(MAX_PROJECT_FILE_ROWS + 1);
   if (filesError) return NextResponse.json({ error: "Could not load this project’s files." }, { status: 500 });
-  const eligible = (rows || []).filter((file) => file.bucket_id === "aahana-private" && typeof file.object_path === "string" && file.object_path.startsWith(user.id + "/" + projectId + "/") && Number.isInteger(file.size_bytes) && file.size_bytes > 0 && file.size_bytes <= 1024 * 1024 && isProjectSourceFile(file));
-  if (!eligible.length) return NextResponse.json({ error: "Upload project source files first. A package.json file is required." }, { status: 400 });
+  if ((rows || []).length > MAX_PROJECT_FILE_ROWS) {
+    return NextResponse.json({ error: "This project has too many stored files to build safely." }, { status: 413 });
+  }
+  const sourceCandidates = (rows || []).filter((file) => isSupportedSourceFile(file.original_filename, file.mime_type));
+  if (!sourceCandidates.length || sourceCandidates.length > MAX_SOURCE_FILES) {
+    return NextResponse.json({ error: "Upload between 1 and 100 supported source files to this project first." }, { status: 400 });
+  }
+  if (sourceCandidates.some((file) => file.bucket_id !== "aahana-private" ||
+      !isSafePrivateObjectPath(file.object_path, user.id, projectId) ||
+      !Number.isInteger(file.size_bytes) || file.size_bytes <= 0 || file.size_bytes > 1024 * 1024) ||
+      sourceCandidates.reduce((sum, file) => sum + file.size_bytes, 0) > MAX_SOURCE_BYTES) {
+    return NextResponse.json({ error: "Project source files have invalid metadata or exceed the 3 MB build limit." }, { status: 413 });
+  }
   const lockToken = randomUUID();
   const { data: lockAcquired, error: lockError } = await supabase.rpc("acquire_aahana_build_lock", { p_project_id: projectId, p_lock_token: lockToken });
   if (lockError) { console.error("Aahana build lock could not be acquired:", lockError.message); return NextResponse.json({ error: "Build protection is not ready. Please try again later." }, { status: 503 }); }
@@ -48,17 +58,24 @@ export async function POST(request) {
     const workspace = [];
     let totalBytes = 0;
     const usedPaths = new Set();
-    for (const file of eligible) {
+    for (const file of sourceCandidates) {
       if (request.signal.aborted) return NextResponse.json({ error: "Build cancelled." }, { status: 499 });
-      if (workspace.length >= MAX_SOURCE_FILES) break;
       const filename = String(file.original_filename || "").replace(/[^a-zA-Z0-9._/-]/g, "_").replace(/^\/+/, "");
-      if (!filename || filename.split("/").some((part) => !part || part === "." || part === "..") || usedPaths.has(filename)) continue;
+      if (!filename || filename.split("/").some((part) => !part || part === "." || part === "..") || usedPaths.has(filename)) {
+        return NextResponse.json({ error: "Project files contain an invalid or duplicate workspace path." }, { status: 400 });
+      }
       const { data: blob, error: downloadError } = await supabase.storage.from("aahana-private").download(file.object_path);
-      if (downloadError || !blob) continue;
-      const content = await blob.text();
+      if (downloadError || !blob) {
+        return NextResponse.json({ error: "A project source file could not be downloaded." }, { status: 502 });
+      }
+      let content;
+      try { content = new TextDecoder("utf-8", { fatal: true }).decode(await blob.arrayBuffer()); }
+      catch { return NextResponse.json({ error: "A project source file is not valid UTF-8 text." }, { status: 400 }); }
       if (request.signal.aborted) return NextResponse.json({ error: "Build cancelled." }, { status: 499 });
       const bytes = new TextEncoder().encode(content).byteLength;
-      if (bytes < 1 || bytes > 1024 * 1024 || totalBytes + bytes > MAX_SOURCE_BYTES) continue;
+      if (bytes !== file.size_bytes || bytes < 1 || bytes > 1024 * 1024 || totalBytes + bytes > MAX_SOURCE_BYTES) {
+        return NextResponse.json({ error: "A source file changed or exceeds the build workspace limit. Reload the project." }, { status: 409 });
+      }
       workspace.push({ path: filename, content });
       usedPaths.add(filename);
       totalBytes += bytes;
