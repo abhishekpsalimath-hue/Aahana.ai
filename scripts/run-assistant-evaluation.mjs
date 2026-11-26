@@ -12,12 +12,34 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { ASSISTANT_EVALUATION_CASES, ASSISTANT_EVALUATION_RUBRIC, ASSISTANT_EVALUATION_VERSION, summarizeEvaluation } from "../src/lib/ai/assistant-evaluation.mjs";
 import { buildAahanaSystemPrompt } from "../src/lib/ai/system-prompt.mjs";
+import { resolveAssistantBenchmarkBudget, canStartAssistantBenchmarkCase } from "../src/lib/ai/assistant-benchmark-budget.mjs";
 
 const provider = (process.env.AAHANA_AI_PROVIDER || "groq").toLowerCase();
 const apiKey = process.env.GROQ_API_KEY;
 const model = process.env.AAHANA_MODEL || "openai/gpt-oss-120b";
-const dryRun = process.argv.includes("--dry-run");
-const outputArgument = process.argv.slice(2).find((argument) => argument !== "--dry-run");
+const args = process.argv.slice(2);
+const dryRun = args.includes("--dry-run");
+function readIntegerOption(name, fallback, maximum) {
+  const equals = args.find((argument) => argument.startsWith(name + "="));
+  const index = args.indexOf(name);
+  const raw = equals ? equals.slice(name.length + 1) : index >= 0 ? args[index + 1] : undefined;
+  if (raw === undefined) return fallback;
+  if (!/^\\d+$/.test(raw)) throw new Error(`Invalid ${name} value.`);
+  const value = Number(raw);
+  if (!Number.isSafeInteger(value) || value < (name === "--max-provider-requests" ? 0 : 1) || value > maximum) {
+    throw new Error(`${name} must be within its safe range.`);
+  }
+  return value;
+}
+const maxCases = readIntegerOption("--max-cases", 10, 100);
+const maxProviderRequests = readIntegerOption("--max-provider-requests", 20, 200);
+const budget = resolveAssistantBenchmarkBudget({
+  caseCount: ASSISTANT_EVALUATION_CASES.length, maxCases, maxProviderRequests,
+});
+const optionValueIndexes = new Set(["--max-cases", "--max-provider-requests"]
+  .map((name) => args.indexOf(name) + 1).filter((index) => index > 0));
+const outputArgument = args.find((argument, index) =>
+  argument !== "--dry-run" && !argument.startsWith("--") && !optionValueIndexes.has(index));
 const outputPath = resolve(outputArgument || `artifacts/aahana-evaluation-${new Date().toISOString().replaceAll(":", "-")}.json`);
 const dimensions = ASSISTANT_EVALUATION_RUBRIC.dimensions;
 const failureCodes = ASSISTANT_EVALUATION_RUBRIC.criticalFailures;
@@ -30,8 +52,13 @@ if (dryRun) {
     dryRun: true,
     provider,
     model,
-    cases: ASSISTANT_EVALUATION_CASES.length,
-    categories: [...new Set(ASSISTANT_EVALUATION_CASES.map((item) => item.category))],
+    availableCases: ASSISTANT_EVALUATION_CASES.length,
+    casesPlanned: budget.casesToRun,
+    maxCases: budget.maxCases,
+    maxProviderRequests: budget.maxProviderRequests,
+    estimatedProviderRequests: budget.estimatedProviderRequests,
+    retriesPerRequest: budget.retriesPerRequest,
+    categories: [...new Set(ASSISTANT_EVALUATION_CASES.slice(0, budget.casesToRun).map((item) => item.category))],
     dimensions,
     systemPromptCharacters: buildAahanaSystemPrompt("solve").length,
     networkRequests: 0,
@@ -152,7 +179,7 @@ for (let index = 0; index < ASSISTANT_EVALUATION_CASES.length; index += 1) {
       evaluationError: String(error?.message || error).slice(0, 500),
     });
     process.stderr.write(`[${index + 1}/${ASSISTANT_EVALUATION_CASES.length}] ${item.id}: ${String(error?.message || error)}\n`);
-    if ([401, 403, 429].includes(error?.status)) {
+    if (error?.code === "BUDGET_EXHAUSTED" || [401, 403, 429].includes(error?.status)) {
       stoppedEarly = true;
       break;
     }
