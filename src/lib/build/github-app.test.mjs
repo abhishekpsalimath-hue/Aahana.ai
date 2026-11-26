@@ -128,13 +128,16 @@ test("refuses to write when the main branch moved after inspection", async () =>
 test("does not report a previously closed proposal as an available draft", async () => {
   const fetchImpl = async (url) => {
     if (url.endsWith("/access_tokens")) return mockResponse({ token: "installation-token" });
-    if (url.includes("/pulls?state=all")) return mockResponse([{
+    if (url.includes("/pulls?state=all")) {
+      const branch = new URL(url).searchParams.get("head").split(":")[1];
+      return mockResponse([{
       number: 31,
       state: "closed",
       html_url: "https://github.com/owner/Aahana.ai/pull/31",
-      head: { ref: "aahana/self-build/closed", sha: "2".repeat(40) },
+      head: { ref: branch, sha: "2".repeat(40) },
       base: { ref: "main" },
     }]);
+    }
     throw new Error("A closed proposal must stop before any repository write: " + url);
   };
   await assert.rejects(() => createSelfBuildPullRequest({
