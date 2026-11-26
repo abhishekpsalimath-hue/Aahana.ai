@@ -27,7 +27,7 @@ const MAX_GITHUB_RESPONSE_BYTES = 2 * 1024 * 1024;
 async function readBoundedGitHubResponse(response, maxBytes = MAX_GITHUB_RESPONSE_BYTES) {
   const declaredLength = response.headers?.get?.("content-length");
   if (declaredLength != null) {
-    if (!/^\\d+$/.test(declaredLength.trim())) throw new Error("GitHub returned an invalid response length.");
+    if (!/^\d+$/.test(declaredLength.trim())) throw new Error("GitHub returned an invalid response length.");
     if (Number(declaredLength) > maxBytes) {
       try { await response.body?.cancel(); } catch {}
       throw new Error("GitHub response exceeded the safe size limit.");
