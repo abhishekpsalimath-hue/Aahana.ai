@@ -4,7 +4,7 @@ export async function readBoundedJson(streamingResponse, { maxBytes, label = "Re
   }
   const declared = streamingResponse.headers?.get?.("content-length");
   if (declared != null) {
-    if (!/^\\d+$/.test(declared.trim())) throw new Error(label + " has an invalid content length.");
+    if (!/^\d+$/.test(declared.trim())) throw new Error(label + " has an invalid content length.");
     if (Number(declared) > maxBytes) {
       try { await streamingResponse.body?.cancel(); } catch {}
       throw new Error(label + " exceeded the safe size limit.");
