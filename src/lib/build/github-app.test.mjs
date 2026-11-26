@@ -409,7 +409,7 @@ test("fails closed instead of silently truncating an oversized approved inventor
 test("reads only canonical base64 UTF-8 content whose bytes match GitHub's blob SHA", async () => {
   const source = "export const greeting = 'Aahana 💜';";
   const bytes = Buffer.from(source, "utf8");
-  const sha = createHash("sha1").update("blob " + bytes.length + "\\0").update(bytes).digest("hex");
+  const sha = createHash("sha1").update("blob " + bytes.length + "\0").update(bytes).digest("hex");
   const fetchImpl = async (url) => {
     if (url.endsWith("/access_tokens")) return mockResponse({ token: "installation-token" });
     if (url.includes("/contents/")) return mockResponse({ type: "file", encoding: "base64", content: bytes.toString("base64"), sha });
