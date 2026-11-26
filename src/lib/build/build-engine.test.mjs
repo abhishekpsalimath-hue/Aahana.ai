@@ -213,3 +213,79 @@ test("stops the sandbox when workspace upload fails before any command can run",
   assert.deepEqual(calls, ["create", "writeFiles", "update", "stop"]);
   assert.equal(calls.includes("runCommand"), false);
 });
+
+
+test("propagates request cancellation into sandbox creation and project commands", async () => {
+  const controller = new AbortController();
+  const fake = createFakeSandbox();
+  const result = await executeBuildTask({
+    files: [{ path: "src/main.js", content: "console.log('hello')" }],
+    operation: "run",
+    entrypoint: "src/main.js",
+    projectId: "prj_12345678",
+    sandboxName: "aahana-build-cancel-123",
+    SandboxClient: fake.SandboxClient,
+    signal: controller.signal,
+  });
+
+  assert.equal(result.status, "passed");
+  assert.equal(fake.calls[0].options.signal, controller.signal);
+  const command = fake.calls.find((call) => call.type === "runCommand");
+  assert.equal(command.options.signal, controller.signal);
+});
+
+test("does not create a sandbox for an already-cancelled build", async () => {
+  const controller = new AbortController();
+  controller.abort();
+  const fake = createFakeSandbox();
+
+  await assert.rejects(() => executeBuildTask({
+    files: [{ path: "src/main.js", content: "console.log('must not run')" }],
+    operation: "run",
+    entrypoint: "src/main.js",
+    projectId: "prj_12345678",
+    sandboxName: "aahana-build-cancel-456",
+    SandboxClient: fake.SandboxClient,
+    signal: controller.signal,
+  }), /Build cancelled/);
+
+  assert.equal(fake.calls.length, 0);
+});
+
+test("stops the sandbox and denies egress when a project command is cancelled", async () => {
+  const controller = new AbortController();
+  const calls = [];
+  const sandbox = {
+    async writeFiles() { calls.push("writeFiles"); },
+    async update(options) { calls.push({ type: "update", options }); },
+    async runCommand(options) {
+      calls.push({ type: "runCommand", options });
+      assert.equal(options.signal, controller.signal);
+      controller.abort();
+      return { exitCode: 0, async stdout() { return ""; }, async stderr() { return ""; } };
+    },
+    async stop() { calls.push("stop"); },
+  };
+  const SandboxClient = {
+    async create(options) {
+      calls.push({ type: "create", options });
+      assert.equal(options.signal, controller.signal);
+      return sandbox;
+    },
+  };
+
+  await assert.rejects(() => executeBuildTask({
+    files: [{ path: "src/main.js", content: "while(true){}" }],
+    operation: "run",
+    entrypoint: "src/main.js",
+    projectId: "prj_12345678",
+    sandboxName: "aahana-build-cancel-789",
+    SandboxClient,
+    signal: controller.signal,
+  }), /Build cancelled/);
+
+  assert.equal(calls.filter((call) => call.type === "runCommand").length, 1);
+  assert.equal(calls.filter((call) => call.type === "stop").length, 1);
+  assert.equal(calls.at(-1), "stop");
+  assert.equal(calls.filter((call) => call.type === "update").at(-1).options.networkPolicy, "deny-all");
+});
