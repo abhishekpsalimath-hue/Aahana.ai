@@ -99,7 +99,7 @@ test("resizes an already-small image if its source bytes exceed the upload cap",
 
 test("rejects unsupported formats, malformed URLs and invalid dimensions", async () => {
   await assert.rejects(createReferenceImageFile("https://example.test/image.png"), /Could not read/);
-  await assert.rejects(createReferenceImageFile("data:image/gif;base64,AA==", {
+  await assert.rejects(createReferenceImageFile("data:image/png;base64,AA==", {
     fetchImpl: async () => new Response(new Blob(["gif"], { type: "image/gif" })),
   }), /Attach a PNG, JPEG or WebP/);
   await assert.rejects(createReferenceImageFile("data:image/png;base64,AA==", {
