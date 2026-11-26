@@ -61,7 +61,7 @@ const cases = [
 test("image benchmark covers multiple visual domains and languages", () => {
   assert.ok(cases.length >= 50, "benchmark should cover a broad set of image domains, not one showcase prompt");
   const categories = new Set(cases.map(([category]) => category));
-  for (const category of ["person", "animal", "product", "architecture", "composition", "typography", "diagram", "science", "3d", "Kannada", "Hindi", "Tamil", "Telugu", "Spanish"]) {
+  for (const category of ["person", "people-count", "group-count", "hands", "animal", "product", "product-detail", "architecture", "landscape", "composition", "typography", "Kannada-typography", "Hindi-typography", "diagram", "diagram-detail", "science", "food", "fashion", "vehicle", "interior", "illustration", "3d", "cinematic", "macro", "night", "brand", "logo", "map", "accessibility", "material", "reflection", "sports", "historical", "Kannada", "Hindi", "Tamil", "Telugu", "Spanish", "Arabic", "Japanese"]) {
     assert.ok(categories.has(category), `missing benchmark category: ${category}`);
   }
 });
