@@ -98,8 +98,8 @@ async function findVerifiedProposalBranch({ prefix, branch, baseSha, baseTreeSha
   if (baseTree.truncated || proposalTree.truncated) {
     throw new Error("An existing proposal branch is too large to verify safely.");
   }
-  const baseFiles = new Map((baseTree.tree || []).filter((entry) => entry.type === "blob").map((entry) => [entry.path, entry.sha]));
-  const proposalFiles = new Map((proposalTree.tree || []).filter((entry) => entry.type === "blob").map((entry) => [entry.path, entry.sha]));
+  const baseFiles = new Map((baseTree.tree || []).filter((entry) => entry.type === "blob").map((entry) => [entry.path, entry.mode + ":" + entry.sha]));
+  const proposalFiles = new Map((proposalTree.tree || []).filter((entry) => entry.type === "blob").map((entry) => [entry.path, entry.mode + ":" + entry.sha]));
   const changedPaths = new Set([...baseFiles.keys(), ...proposalFiles.keys()]);
   for (const path of changedPaths) {
     if (baseFiles.get(path) === proposalFiles.get(path)) changedPaths.delete(path);
@@ -109,7 +109,7 @@ async function findVerifiedProposalBranch({ prefix, branch, baseSha, baseTreeSha
     throw new Error("An existing proposal branch contains changes outside the approved file set.");
   }
   for (const file of files) {
-    if (proposalFiles.get(file.path) !== gitBlobSha(file.content)) {
+    if (proposalFiles.get(file.path) !== "100644:" + gitBlobSha(file.content)) {
       throw new Error("An existing proposal branch does not match the exact approved file contents.");
     }
   }
