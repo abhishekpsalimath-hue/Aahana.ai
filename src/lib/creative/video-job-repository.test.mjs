@@ -127,3 +127,43 @@ test("rejects malformed or already-started snapshots at the create boundary", as
     await assert.rejects(repository.createOrGet(job), /fresh, validated queued video job/);
   }
 });
+
+
+test("rejects forged lifecycle snapshots and illegal state jumps", async () => {
+  const repository = createVideoJobRepository(makeAdapter());
+  await repository.createOrGet(makeJob());
+  const invalidTransitions = [
+    (job) => ({ ...job, state: "succeeded", progress: 100, completedAt: 120, updatedAt: 120 }),
+    (job) => ({ ...job, state: "running", attempt: 3, startedAt: 110, updatedAt: 110 }),
+    (job) => ({ ...job, state: "running", progress: 25, updatedAt: 110 }),
+    (job) => ({ ...job, createdAt: 99, state: "running", attempt: 1, startedAt: 110, updatedAt: 110 }),
+    (job) => ({ ...job, state: "cancelled", completedAt: 110, updatedAt: 110 }),
+  ];
+  for (const apply of invalidTransitions) {
+    await assert.rejects(repository.transition({
+      ownerId: "owner-1", jobId: "video-job-1", expectedRevision: 1, apply,
+    }), /canonical lifecycle/);
+  }
+  assert.equal((await repository.getOwned("owner-1", "video-job-1")).revision, 1);
+});
+
+test("allows valid retry and terminal transitions through canonical lifecycle helpers", async () => {
+  const repository = createVideoJobRepository(makeAdapter());
+  await repository.createOrGet(makeJob());
+  const started = await repository.transition({
+    ownerId: "owner-1", jobId: "video-job-1", expectedRevision: 1,
+    apply: (job) => startVideoJob(job, 110),
+  });
+  assert.equal(started.status, "updated");
+  const failed = await repository.transition({
+    ownerId: "owner-1", jobId: "video-job-1", expectedRevision: 2,
+    apply: (job) => failVideoJob(job, { now: 120, errorCode: "provider.timeout", retryable: true }),
+  });
+  assert.equal(failed.record.job.state, "failed");
+  const retried = await repository.transition({
+    ownerId: "owner-1", jobId: "video-job-1", expectedRevision: 3,
+    apply: (job) => retryVideoJob(job, 130),
+  });
+  assert.equal(retried.record.job.state, "queued");
+  assert.equal(retried.record.job.attempt, 1);
+});
