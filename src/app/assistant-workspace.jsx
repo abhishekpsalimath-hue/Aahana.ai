@@ -1577,32 +1577,8 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     setBusy(true);
     const controller = new AbortController();
     activeChatControllerRef.current = controller;
-    let imageDataUrl = null;
-    if (imageFile) {
-      imageDataUrl = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        const abortRead = () => reader.abort();
-        const removeAbortListener = () => controller.signal.removeEventListener("abort", abortRead);
-        reader.onload = () => { removeAbortListener(); resolve(String(reader.result || "")); };
-        reader.onerror = () => { removeAbortListener(); reject(new Error("Could not read the selected image.")); };
-        reader.onabort = () => { removeAbortListener(); reject(new DOMException("The request was stopped.", "AbortError")); };
-        controller.signal.addEventListener("abort", abortRead, { once: true });
-        if (controller.signal.aborted) abortRead();
-        else reader.readAsDataURL(imageFile);
-      }).catch((err) => {
-        if (err?.name !== "AbortError") setError(err.message || "Could not read the selected image.");
-        return null;
-      });
-      if (!imageDataUrl) {
-        if (controller.signal.aborted) setPrompt(text);
-        activeChatControllerRef.current = null;
-        setBusy(false);
-        return;
-      }
-    }
     const userMessage = { role: "user", content: imageFile ? `${text || "Please identify this image."}\n[Image attached: ${imageFile.name}]` : text };
     const assistantMessage = { role: "assistant", content: "" };
-    setImageFile(null);
     setMessages((current) => [...current, userMessage, assistantMessage]);
 
     let answer = "";
@@ -1618,10 +1594,24 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     };
 
     try {
+      let requestBody;
+      let requestHeaders;
+      if (imageFile) {
+        const form = new FormData();
+        form.set("message", text || "Please identify and describe this image in detail.");
+        form.set("mode", mode);
+        if (conversationId) form.set("conversationId", conversationId);
+        if (selectedProjectId) form.set("projectId", selectedProjectId);
+        form.set("image", imageFile, imageFile.name);
+        requestBody = form;
+      } else {
+        requestHeaders = { "Content-Type": "application/json" };
+        requestBody = JSON.stringify({ message: text, image: null, mode, conversationId, projectId: selectedProjectId });
+      }
       const response = await fetch("/api/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text || "Please identify and describe this image in detail.", image: imageDataUrl ? { dataUrl: imageDataUrl } : null, mode, conversationId, projectId: selectedProjectId }),
+        ...(requestHeaders ? { headers: requestHeaders } : {}),
+        body: requestBody,
         signal: controller.signal,
       });
 
@@ -1661,6 +1651,8 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         index === current.length - 1 ? { ...item, content: answer || "I couldn't generate a response. Please try again." } : item
       ));
       setHistory([]);
+      // Keep the selected upload available for retry until the response succeeds.
+      setImageFile(null);
     } catch (err) {
       if (answerUpdateTimer !== null) { window.clearTimeout(answerUpdateTimer); answerUpdateTimer = null; }
       setMessages((current) => {

@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createSseContentParser } from "@/lib/chat/sse-content-parser.mjs";
 import { readBoundedJson } from "@/lib/chat/bounded-json.mjs";
+import { readBoundedMultipartFormData } from "@/lib/chat/bounded-multipart.mjs";
+import { detectImageMimeTypeFromBase64 } from "@/lib/creative/image-provider.mjs";
+import { getReferenceImageDimensions, isImageWithinPixelBounds } from "@/lib/creative/image-generation.mjs";
 import { getLanguageGuidance } from "@/lib/chat/language-guidance.mjs";
 import { shouldSearchWeb, getResearchTopic } from "@/lib/chat/research-intent.mjs";
 
@@ -47,8 +50,61 @@ export async function POST(request) {
   }
 
   let body;
+  let image = null;
+  let imageDataUrl = "";
+  let imageMimeType = null;
+  let imageBytes = null;
+  const contentType = request.headers.get("content-type") || "";
   try {
-    body = await readBoundedJson(request, 3_200_000);
+    if (/^multipart\/form-data\s*;/i.test(contentType)) {
+      const form = await readBoundedMultipartFormData(request, 2_250_000);
+      const uploadedImages = form.getAll("image");
+      if (uploadedImages.length > 1) {
+        return NextResponse.json({ error: "Please attach one image at a time." }, { status: 400 });
+      }
+      const uploadedImage = uploadedImages[0] ?? null;
+      body = {
+        message: form.get("message"),
+        mode: form.get("mode"),
+        conversationId: form.get("conversationId"),
+        projectId: form.get("projectId"),
+      };
+      if (uploadedImage !== null) {
+        if (typeof uploadedImage?.arrayBuffer !== "function" ||
+            uploadedImage.size < 1 || uploadedImage.size > 2 * 1024 * 1024 ||
+            !["image/png", "image/jpeg", "image/webp"].includes(uploadedImage.type)) {
+          return NextResponse.json({ error: "Please attach one valid PNG, JPEG or WebP image under 2 MB." }, { status: 400 });
+        }
+        imageBytes = Buffer.from(await uploadedImage.arrayBuffer());
+        imageMimeType = detectImageMimeTypeFromBase64(imageBytes.toString("base64"));
+        if (imageMimeType !== uploadedImage.type) {
+          return NextResponse.json({ error: "The uploaded image content does not match its declared file type." }, { status: 400 });
+        }
+        imageDataUrl = `data:${imageMimeType};base64,${imageBytes.toString("base64")}`;
+        image = { dataUrl: imageDataUrl };
+      }
+    } else {
+      body = await readBoundedJson(request, 3_200_000);
+      image = body?.image && typeof body.image === "object" && !Array.isArray(body.image) ? body.image : null;
+      imageDataUrl = typeof image?.dataUrl === "string" ? image.dataUrl : "";
+      const imageMatch = imageDataUrl.match(/^data:(image\/(?:png|jpeg|webp));base64,([A-Za-z0-9+/=]+)$/);
+      if (image && (!imageMatch || imageDataUrl.length > 2_850_000)) {
+        return NextResponse.json({ error: "Please attach one valid PNG, JPEG or WebP image under 2 MB." }, { status: 400 });
+      }
+      if (image) {
+        imageBytes = Buffer.from(imageMatch[2], "base64");
+        imageMimeType = detectImageMimeTypeFromBase64(imageMatch[2]);
+        if (imageMimeType !== imageMatch[1]) {
+          return NextResponse.json({ error: "The uploaded image content does not match its declared file type." }, { status: 400 });
+        }
+      }
+    }
+    if (image) {
+      const dimensions = getReferenceImageDimensions(imageBytes, imageMimeType);
+      if (!isImageWithinPixelBounds(dimensions)) {
+        return NextResponse.json({ error: "This image has unsupported or excessive dimensions. Please use an image up to 40 megapixels and 12,000 pixels per edge." }, { status: 400 });
+      }
+    }
   } catch (error) {
     return NextResponse.json(
       { error: error?.status === 413 ? "Request body is too large." : "Invalid request." },
@@ -57,12 +113,6 @@ export async function POST(request) {
   }
 
   const prompt = typeof body?.message === "string" ? body.message.trim() : "";
-  const image = body?.image && typeof body.image === "object" ? body.image : null;
-  const imageDataUrl = typeof image?.dataUrl === "string" ? image.dataUrl : "";
-  const imageMatch = imageDataUrl.match(/^data:(image\/(?:png|jpeg|webp));base64,([A-Za-z0-9+/=]+)$/);
-  if (image && (!imageMatch || imageDataUrl.length > 2_850_000)) {
-    return NextResponse.json({ error: "Please attach one PNG, JPEG or WebP image under 2 MB." }, { status: 400 });
-  }
   const mode = ["solve", "create", "write", "build", "improve", "learn"].includes(body?.mode) ? body.mode : "solve";
   const requestedConversationId = typeof body?.conversationId === "string" ? body.conversationId : null;
   const requestedProjectId = typeof body?.projectId === "string" ? body.projectId : null;
@@ -117,7 +167,7 @@ export async function POST(request) {
     user_id: user.id,
     conversation_id: conversationId,
     role: "user",
-    content: image ? `${prompt}\n[Image attached: ${imageMatch[1]}]` : prompt,
+    content: image ? `${prompt}\n[Image attached: ${imageMimeType}]` : prompt,
   }).select("id").single();
 
   if (messageError || !savedUserMessage) {

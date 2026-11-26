@@ -168,3 +168,17 @@ export function getGeneratedImageFileMetadata(dataUrl, blobType) {
   if (!validBase64 || decodedBytes < 1 || decodedBytes > MAX_GENERATED_IMAGE_BYTES) return null;
   return { mimeType, extension };
 }
+
+
+export const MAX_CHAT_IMAGE_EDGE = 12000;
+export const MAX_CHAT_IMAGE_PIXELS = 40_000_000;
+
+/** Validate decoded image dimensions before sending image bytes to a model. */
+export function isImageWithinPixelBounds(dimensions) {
+  return Boolean(dimensions &&
+    Number.isInteger(dimensions.width) && Number.isInteger(dimensions.height) &&
+    dimensions.width > 0 && dimensions.height > 0 &&
+    dimensions.width <= MAX_CHAT_IMAGE_EDGE &&
+    dimensions.height <= MAX_CHAT_IMAGE_EDGE &&
+    dimensions.width * dimensions.height <= MAX_CHAT_IMAGE_PIXELS);
+}

@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { isImageWithinPixelBounds, MAX_CHAT_IMAGE_EDGE, MAX_CHAT_IMAGE_PIXELS } from "./image-generation.mjs";
 import { parseImageGenerationInput, parseImageEditInput, MAX_IMAGE_EDIT_BYTES, MAX_IMAGE_EDIT_PROMPT_LENGTH, getReferenceImageDimensions, isReferenceImageWithinProviderBounds, inferImageAspectRatio, getGeneratedImageFileMetadata } from "./image-generation.mjs";
 import { buildImageEditPrompt, buildImageSeriesPrompt } from "./creative-director.mjs";
 
@@ -237,4 +238,17 @@ test("rejects empty, malformed, and oversized generated image payloads before sa
   const oversized = "A".repeat(Math.ceil((MAX_GENERATED_IMAGE_BYTES + 1) / 3) * 4);
   assert.equal(getGeneratedImageFileMetadata("data:image/png;base64," + oversized, "image/png"), null);
   assert.deepEqual(getGeneratedImageFileMetadata("data:image/png;base64,AAAA", "image/png"), { mimeType: "image/png", extension: "png" });
+});
+
+
+test("bounds assistant image dimensions by edge and total pixel count", () => {
+  assert.equal(isImageWithinPixelBounds({ width: 12000, height: 1000 }), true);
+  assert.equal(isImageWithinPixelBounds({ width: 12001, height: 1000 }), false);
+  assert.equal(isImageWithinPixelBounds({ width: 8000, height: 5001 }), false);
+  assert.equal(isImageWithinPixelBounds({ width: 0, height: 100 }), false);
+  assert.equal(isImageWithinPixelBounds({ width: 100, height: -1 }), false);
+  assert.equal(isImageWithinPixelBounds({ width: 100.5, height: 100 }), false);
+  assert.equal(isImageWithinPixelBounds(null), false);
+  assert.equal(MAX_CHAT_IMAGE_EDGE, 12000);
+  assert.equal(MAX_CHAT_IMAGE_PIXELS, 40_000_000);
 });
