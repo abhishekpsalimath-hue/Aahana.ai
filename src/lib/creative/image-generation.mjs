@@ -158,10 +158,13 @@ export function getGeneratedImageFileMetadata(dataUrl, blobType) {
   const mimeType = match?.[1]?.toLowerCase();
   const encoded = match?.[2] || "";
   const extension = mimeType === "image/png" ? "png" : mimeType === "image/webp" ? "webp" : mimeType === "image/jpeg" ? "jpg" : null;
+  const maxEncodedLength = Math.ceil(MAX_GENERATED_IMAGE_BYTES / 3) * 4;
+  // Bound the string before running the Base64 regex: huge payloads must be
+  // rejected in constant time rather than stressing the regex engine.
+  if (!mimeType || !extension || blobType !== mimeType || encoded.length > maxEncodedLength) return null;
   const validBase64 = encoded.length % 4 === 0 &&
     /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(encoded);
   const decodedBytes = Math.floor(encoded.length * 3 / 4) - (encoded.endsWith("==") ? 2 : encoded.endsWith("=") ? 1 : 0);
-  if (!mimeType || !extension || blobType !== mimeType || !validBase64 ||
-      decodedBytes < 1 || decodedBytes > MAX_GENERATED_IMAGE_BYTES) return null;
+  if (!validBase64 || decodedBytes < 1 || decodedBytes > MAX_GENERATED_IMAGE_BYTES) return null;
   return { mimeType, extension };
 }
