@@ -4,7 +4,7 @@ const SUPPORTED_REFERENCE_TYPES = new Set(["image/png", "image/jpeg", "image/web
 
 export async function createReferenceImageFile(dataUrl, {
   ImageCtor = Image,
-  documentRef = document,
+  documentRef,
   fetchImpl = fetch,
   FileCtor = File,
 } = {}) {
@@ -32,7 +32,7 @@ export async function createReferenceImageFile(dataUrl, {
   }
 
   const scale = Math.min(1, MAX_REFERENCE_IMAGE_EDGE / Math.max(1, longestEdge));
-  const canvas = documentRef.createElement("canvas");
+  const canvas = (documentRef ?? document).createElement("canvas");
   canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
   canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
   const context = canvas.getContext("2d");
