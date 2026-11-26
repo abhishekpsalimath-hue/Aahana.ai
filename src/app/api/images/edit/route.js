@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { buildImageEditPrompt } from "@/lib/creative/creative-director.mjs";
-import { getReferenceImageDimensions, isReferenceImageWithinProviderBounds, parseImageEditInput } from "@/lib/creative/image-generation.mjs";
+import { getReferenceImageDimensions, getReferenceImageOutputDimensions, isReferenceImageWithinProviderBounds, parseImageEditInput } from "@/lib/creative/image-generation.mjs";
 import { detectImageMimeTypeFromBase64 } from "@/lib/creative/image-provider.mjs";
 
 export const runtime = "nodejs";
@@ -50,13 +50,17 @@ export async function POST(request) {
   if (!isReferenceImageWithinProviderBounds(dimensions)) {
     return NextResponse.json({ error: "The reference image must be smaller than 512 × 512 pixels. Please retry with a smaller image." }, { status: 400 });
   }
+  const outputDimensions = getReferenceImageOutputDimensions(dimensions);
+  if (!outputDimensions) {
+    return NextResponse.json({ error: "This image's aspect ratio is outside the editor's supported range. Please crop it slightly and retry." }, { status: 400 });
+  }
   const prompt = buildImageEditPrompt(referencePrompt || "", input.prompt);
   if (!prompt) return NextResponse.json({ error: "Describe the change you want to make." }, { status: 400 });
   const providerForm = new FormData();
   providerForm.set("prompt", prompt);
   providerForm.set("input_image_0", new Blob([imageBytes], { type: image.type }), "reference-image");
-  providerForm.set("width", "1024");
-  providerForm.set("height", "1024");
+  providerForm.set("width", String(outputDimensions.width));
+  providerForm.set("height", String(outputDimensions.height));
 
   try {
     const response = await fetch(
