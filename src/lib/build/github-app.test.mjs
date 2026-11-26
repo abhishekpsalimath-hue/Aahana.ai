@@ -80,6 +80,7 @@ test("creates a draft pull request from a pinned base and never merges or deploy
     calls.push({ url, method: options.method || "GET", body });
     if (url.endsWith("/access_tokens")) return mockResponse({ token: "installation-token" });
     if (url.includes("/git/ref/heads/main")) return mockResponse({ object: { sha: baseSha } });
+    if (url.includes("/git/ref/heads/aahana%2Fself-build%2F")) return mockResponse({}, 404);
     if (url.includes("/git/commits/" + baseSha)) return mockResponse({ tree: { sha: "e".repeat(40) } });
     if (url.endsWith("/git/blobs")) return mockResponse({ sha: "f".repeat(40) });
     if (url.endsWith("/git/trees")) return mockResponse({ sha: "1".repeat(40) });
@@ -169,10 +170,10 @@ test("recovers an interrupted proposal branch only when its exact pinned diff ma
       parents: [{ sha: baseSha }], tree: { sha: proposalTreeSha },
     });
     if (url.includes("/git/trees/" + "e".repeat(40))) return mockResponse({
-      truncated: false, tree: [{ type: "blob", path: "src/app/experience-lab/page.jsx", sha: "b".repeat(40) }],
+      truncated: false, tree: [{ type: "blob", mode: "100644", path: "src/app/experience-lab/page.jsx", sha: "b".repeat(40) }],
     });
     if (url.includes("/git/trees/" + proposalTreeSha)) return mockResponse({
-      truncated: false, tree: [{ type: "blob", path: "src/app/experience-lab/page.jsx", sha: expectedBlobSha }],
+      truncated: false, tree: [{ type: "blob", mode: "100644", path: "src/app/experience-lab/page.jsx", sha: expectedBlobSha }],
     });
     if (url.endsWith("/pulls")) return mockResponse({
       number: 29, html_url: "https://github.com/owner/Aahana.ai/pull/29",
@@ -214,8 +215,8 @@ test("refuses to reuse an interrupted branch that contains an unapproved file", 
     });
     if (url.includes("/git/trees/" + proposalTreeSha)) return mockResponse({
       truncated: false, tree: [
-        { type: "blob", path: "src/app/experience-lab/page.jsx", sha: expectedBlobSha },
-        { type: "blob", path: "src/lib/build/unapproved.mjs", sha: "7".repeat(40) },
+        { type: "blob", mode: "100644", path: "src/app/experience-lab/page.jsx", sha: expectedBlobSha },
+        { type: "blob", mode: "100644", path: "src/lib/build/unapproved.mjs", sha: "7".repeat(40) },
       ],
     });
     throw new Error("Unexpected GitHub request: " + url);
@@ -249,6 +250,7 @@ test("reuses an existing draft when the exact pinned Self-Build change is retrie
       baseRefReads += 1;
       return mockResponse({ object: { sha: baseRefReads === 1 ? baseSha : "b".repeat(40) } });
     }
+    if (url.includes("/git/ref/heads/aahana%2Fself-build%2F")) return mockResponse({}, 404);
     if (url.includes("/pulls?state=all")) return mockResponse(existingPullRequest ? [existingPullRequest] : []);
     if (url.includes("/git/commits/" + baseSha)) return mockResponse({ tree: { sha: "e".repeat(40) } });
     if (url.endsWith("/git/blobs")) return mockResponse({ sha: "f".repeat(40) });
