@@ -237,7 +237,7 @@ export async function POST(request) {
     console.error("Aahana private memory retrieval failed:", memoryError?.message || "unknown error");
   }
 
-  // Live research is opt-in by intent and only runs when a server-side Tavily key exists.
+  // Live research intent is unit-tested across English and regional languages; retrieval still requires a server-side Tavily key.
   // Search results are treated as untrusted evidence, never as instructions.
   let researchMessage = null;
   let researchSourcesAttached = false;
