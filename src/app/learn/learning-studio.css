@@ -862,3 +862,13 @@
 @keyframes learning-galaxy-turn{from{rotate:0deg}to{rotate:360deg}}
 @media(max-width:760px){.learning-page::before{opacity:.5;background-size:260px 240px,300px 280px,360px 330px,250px 290px,320px 260px,280px 340px,100% 100%,100% 100%}.learning-page::after{inset:-8%;opacity:.3;filter:blur(11px)}}
 @media(prefers-reduced-motion:reduce){.learning-page::before,.learning-page::after{animation-duration:240s}}
+
+
+/* Shared universe color correction: deep natural space, with lilac reserved
+   for Aahana's interface accents rather than the whole environment. */
+.learning-page{
+  background:
+    radial-gradient(ellipse at 76% 4%,#173744 0%,transparent 35%),
+    radial-gradient(ellipse at 12% 42%,#172b38 0%,transparent 38%),
+    #080e14!important;
+}
