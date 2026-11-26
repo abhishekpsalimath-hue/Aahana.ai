@@ -15,6 +15,17 @@ create table if not exists public.aahana_video_jobs (
   started_at timestamptz,
   completed_at timestamptz,
   constraint aahana_video_jobs_attempt_limit check (attempt <= max_attempts),
+  constraint aahana_video_jobs_updated_after_created check (updated_at >= created_at),
+  constraint aahana_video_jobs_started_after_created check (started_at is null or started_at >= created_at),
+  constraint aahana_video_jobs_completed_after_start check (
+    completed_at is null or completed_at >= coalesce(started_at, created_at)
+  ),
+  constraint aahana_video_jobs_state_timestamps check (
+    (state = 'queued' and started_at is null and completed_at is null)
+    or (state = 'running' and started_at is not null and completed_at is null)
+    or (state in ('succeeded','failed') and started_at is not null and completed_at is not null)
+    or (state = 'cancelled' and completed_at is not null)
+  ),
   constraint aahana_video_jobs_owner_idempotency_unique unique (owner_id, idempotency_key)
 );
 
