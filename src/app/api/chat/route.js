@@ -54,7 +54,7 @@ export async function POST(request) {
   let imageMimeType = null;
   const contentType = request.headers.get("content-type") || "";
   try {
-    if (/^multipart\/form-data\\s*;/i.test(contentType)) {
+    if (/^multipart\/form-data\s*;/i.test(contentType)) {
       const form = await readBoundedMultipartFormData(request, 2_250_000);
       const uploadedImage = form.get("image");
       body = {
