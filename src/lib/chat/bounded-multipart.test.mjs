@@ -53,6 +53,19 @@ test("parses bounded multipart text and image fields without Base64", async () =
   assert.equal(await image.text(), "PNG-BYTES");
 });
 
+test("preserves binary image bytes in a native multipart Request", async () => {
+  const original = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x00, 0xff, 0x0d, 0x0a]);
+  const form = new FormData();
+  form.set("message", "Describe this reference");
+  form.set("image", new Blob([original], { type: "image/png" }), "reference.png");
+  const request = new Request("https://aahana.test/api/chat", { method: "POST", body: form });
+  const parsed = await readBoundedMultipartFormData(request, 4096);
+  const uploaded = parsed.get("image");
+  assert.equal(uploaded.name, "reference.png");
+  assert.equal(uploaded.type, "image/png");
+  assert.deepEqual(new Uint8Array(await uploaded.arrayBuffer()), original);
+});
+
 test("rejects a declared oversized multipart body before reading", async () => {
   const input = multipartRequest([{ name: "message", value: "hello" }], { headers: { "content-length": "9999" } });
   await assert.rejects(readBoundedMultipartFormData(input.request, 100), { status: 413 });
