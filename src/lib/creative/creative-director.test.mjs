@@ -206,3 +206,83 @@ test("poster text safety does not ban explicitly requested poster wording", () =
   assert.match(prompt, /Reproduce requested copy exactly/);
   assert.doesNotMatch(prompt, /Do not add captions, watermarks/);
 });
+
+
+test("reference-edit evaluation matrix separates requested changes from protected invariants", () => {
+  const cases = [
+    {
+      name: "background replacement",
+      source: "A woman with curly hair, round glasses, a blue jacket, standing beside a red bicycle",
+      request: "Replace only the background with a quiet Kyoto street at dawn",
+      required: ["BACKGROUND-CHANGE MODE", "same subject identity", "body proportions", "clothing", "foreground objects"],
+      forbidden: ["POSE-CHANGE MODE", "OUTFIT-CHANGE MODE"],
+    },
+    {
+      name: "couple pose change",
+      source: "A couple in matching formal outfits, standing side by side",
+      request: "Change their pose so they face each other and hold hands",
+      required: ["POSE-CHANGE MODE", "recognizable identity", "facial geometry", "outfit, accessories, setting", "hands, fingers"],
+      forbidden: ["OUTFIT-CHANGE MODE"],
+    },
+    {
+      name: "wardrobe replacement",
+      source: "A person in a casual shirt, standing in a garden",
+      request: "Change only the outfit to a navy formal suit",
+      required: ["OUTFIT-CHANGE MODE", "body proportions", "expression and pose", "original scene"],
+      forbidden: ["POSE-CHANGE MODE", "BACKGROUND-CHANGE MODE"],
+    },
+    {
+      name: "photo enhancement",
+      source: "A close-up portrait with natural skin texture",
+      request: "Enhance the image, reduce noise and improve sharpness",
+      required: ["ENHANCEMENT MODE", "exact person, face, expression", "pose, outfit, accessories, background"],
+      forbidden: ["POSE-CHANGE MODE", "OUTFIT-CHANGE MODE", "BACKGROUND-CHANGE MODE"],
+    },
+    {
+      name: "poster from a portrait",
+      source: "A portrait of a shop owner",
+      request: "Create a vertical poster with the exact title 'Grand Opening' and date '12 December'",
+      required: ["POSTER-AND-BANNER MODE", "recognizable identity", "exact wording", "Never invent dates, phone numbers"],
+      forbidden: ["POSE-CHANGE MODE", "OUTFIT-CHANGE MODE"],
+    },
+  ];
+
+  for (const scenario of cases) {
+    const prompt = buildImageEditPrompt(scenario.source, scenario.request);
+    assert.ok(prompt, scenario.name);
+    for (const phrase of scenario.required) {
+      assert.ok(prompt.toLowerCase().includes(phrase.toLowerCase()), `${scenario.name}: missing "${phrase}"`);
+    }
+    for (const phrase of scenario.forbidden) {
+      assert.ok(!prompt.includes(phrase), `${scenario.name}: unexpectedly enabled "${phrase}"`);
+    }
+    assert.match(prompt, /REFERENCE-LOCKED EDIT/);
+    assert.match(prompt, /CHANGE BOUNDARY/);
+    assert.match(prompt, /Preserve every attribute not explicitly named/);
+  }
+});
+
+test("reference-edit evaluation confirms requested pose changes do not authorize face or body redesign", () => {
+  const prompt = buildImageEditPrompt(
+    "Two people in a park, both wearing their original clothes",
+    "Change their pose so they look at each other, but keep their faces, bodies and outfits the same",
+  );
+  assert.match(prompt, /POSE-CHANGE MODE/);
+  assert.match(prompt, /exact recognizable identity/);
+  assert.match(prompt, /facial geometry/);
+  assert.match(prompt, /Preserve the outfit, accessories, setting/);
+  assert.match(prompt, /Do not create a lookalike or alter the face/);
+  assert.match(prompt, /Make only the requested refinement/);
+});
+
+test("reference-edit evaluation keeps poster copy exact and source text protected", () => {
+  const prompt = buildImageEditPrompt(
+    "A product photo with an existing printed label",
+    "Create a banner using this product and include the exact text 'Aahana AI' and 'Good ideas start somewhere.'",
+  );
+  assert.match(prompt, /POSTER-AND-BANNER MODE/);
+  assert.match(prompt, /Aahana AI/);
+  assert.match(prompt, /Good ideas start somewhere\./);
+  assert.match(prompt, /Keep source text unchanged unless the user explicitly requests a wording change/);
+  assert.match(prompt, /Never fabricate text, names, dates, contact details/);
+});
