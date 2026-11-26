@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { readBoundedJson } from "@/lib/chat/bounded-json.mjs";
 import { executeBuildTask } from "@/lib/build/build-engine.mjs";
 import { validateWorkspaceFiles } from "@/lib/build/sandbox-policy.mjs";
 export const runtime = "nodejs";
@@ -20,7 +21,15 @@ export async function POST(request) {
   if (process.env.AAHANA_BUILD_ENGINE_ENABLED !== "true") return NextResponse.json({ error: "Aahana Build Engine is not enabled in this environment yet." }, { status: 503 });
   if (request.signal.aborted) return NextResponse.json({ error: "Build cancelled." }, { status: 499 });
   let body;
-  try { body = await request.json(); } catch { return NextResponse.json({ error: "Invalid build request." }, { status: 400 }); }
+  try {
+    body = await readBoundedJson(request, 16 * 1024);
+  } catch (error) {
+    if (request.signal.aborted) return NextResponse.json({ error: "Build cancelled." }, { status: 499 });
+    return NextResponse.json(
+      { error: error?.status === 413 ? "Build request is too large." : "Invalid build request." },
+      { status: error?.status || 400 },
+    );
+  }
   const projectId = typeof body?.projectId === "string" ? body.projectId : "";
   const operation = body?.operation;
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(projectId)) return NextResponse.json({ error: "Select a valid project first." }, { status: 400 });
