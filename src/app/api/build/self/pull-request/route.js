@@ -62,7 +62,7 @@ export async function POST(request) {
       title: body?.title,
       summary: body?.summary,
     });
-    return NextResponse.json({ pullRequest: result }, { status: 201, headers: { "Cache-Control": "private, no-store" } });
+    return NextResponse.json({ pullRequest: result }, { status: result.reused ? 200 : 201, headers: { "Cache-Control": "private, no-store" } });
   } catch (error) {
     const conflict = /base branch changed/i.test(error?.message || "");
     console.error("Aahana self-build proposal failed:", error?.message || "unknown error");
