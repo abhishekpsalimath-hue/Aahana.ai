@@ -84,6 +84,7 @@ test("creates a draft pull request from a pinned base and never merges or deploy
     if (url.endsWith("/git/blobs")) return mockResponse({ sha: "f".repeat(40) });
     if (url.endsWith("/git/trees")) return mockResponse({ sha: "1".repeat(40) });
     if (url.endsWith("/git/commits")) return mockResponse({ sha: "2".repeat(40) });
+    if (url.includes("/pulls?state=all")) return mockResponse([]);
     if (url.endsWith("/git/refs")) return mockResponse({ ref: body.ref });
     if (url.endsWith("/pulls")) return mockResponse({ number: 17, html_url: "https://github.com/owner/Aahana.ai/pull/17" });
     throw new Error("Unexpected GitHub request: " + url);
@@ -127,4 +128,49 @@ test("does not request an installation token when self-build configuration is ab
   let called = false;
   await assert.rejects(() => getSelfBuildRepository({ env: {}, fetchImpl: async () => { called = true; } }), /not configured/);
   assert.equal(called, false);
+});
+
+
+test("reuses an existing draft when the exact pinned Self-Build change is retried", async () => {
+  const calls = [];
+  let existingPullRequest = null;
+  const fetchImpl = async (url, options) => {
+    const body = options.body ? JSON.parse(options.body) : null;
+    calls.push({ url, method: options.method || "GET", body });
+    if (url.endsWith("/access_tokens")) return mockResponse({ token: "installation-token" });
+    if (url.includes("/git/ref/heads/main")) return mockResponse({ object: { sha: baseSha } });
+    if (url.includes("/pulls?state=all")) return mockResponse(existingPullRequest ? [existingPullRequest] : []);
+    if (url.includes("/git/commits/" + baseSha)) return mockResponse({ tree: { sha: "e".repeat(40) } });
+    if (url.endsWith("/git/blobs")) return mockResponse({ sha: "f".repeat(40) });
+    if (url.endsWith("/git/trees")) return mockResponse({ sha: "1".repeat(40) });
+    if (url.endsWith("/git/commits")) return mockResponse({ sha: "2".repeat(40) });
+    if (url.endsWith("/git/refs")) return mockResponse({ ref: body.ref });
+    if (url.endsWith("/pulls")) {
+      existingPullRequest = {
+        number: 23,
+        html_url: "https://github.com/owner/Aahana.ai/pull/23",
+        head: { ref: body.head, sha: "2".repeat(40) },
+        base: { ref: body.base },
+      };
+      return mockResponse(existingPullRequest);
+    }
+    throw new Error("Unexpected GitHub request: " + url);
+  };
+  const input = {
+    baseSha,
+    files: [{ path: "src/app/experience-lab/page.jsx", content: "export default function Page() {}" }],
+    title: "Improve Build workspace",
+    summary: "A focused self-build improvement.",
+    env,
+    fetchImpl,
+  };
+  const first = await createSelfBuildPullRequest(input);
+  const writesAfterFirst = calls.filter((call) => call.method === "POST").length;
+  const second = await createSelfBuildPullRequest(input);
+  const writesAfterSecond = calls.filter((call) => call.method === "POST").length;
+  assert.equal(first.number, 23);
+  assert.equal(second.number, 23);
+  assert.equal(second.reused, true);
+  assert.equal(second.branch, first.branch);
+  assert.equal(writesAfterSecond, writesAfterFirst);
 });
