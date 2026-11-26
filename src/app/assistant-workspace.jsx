@@ -1,5 +1,7 @@
 "use client";
 
+import { createReferenceImageFile } from "@/lib/creative/reference-image-file.mjs";
+
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { useRouter } from "next/navigation";
@@ -641,25 +643,6 @@ function renderAssistantContent(content, onCopyCode) {
     nodes.push(...renderMarkdownText(source.slice(lastIndex), "text-" + key++));
   }
   return nodes;
-}
-
-async function createReferenceImageFile(dataUrl) {
-  const image = new Image();
-  image.src = dataUrl;
-  await image.decode();
-  const scale = Math.min(1, 511 / Math.max(image.naturalWidth, image.naturalHeight));
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
-  canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
-  const context = canvas.getContext("2d");
-  if (!context) throw new Error("Could not prepare the reference image.");
-  context.drawImage(image, 0, 0, canvas.width, canvas.height);
-  const blob = await new Promise((resolve, reject) => canvas.toBlob(
-    (value) => value ? resolve(value) : reject(new Error("Could not prepare the reference image.")),
-    "image/jpeg",
-    0.88
-  ));
-  return new File([blob], "aahana-reference.jpg", { type: "image/jpeg" });
 }
 
 function evaluateArithmetic(input) {
