@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildImagePrompt, buildImageEditPrompt, buildVideoPrompt, getCreativeProviderStatus } from "./creative-director.mjs";
+import { buildImagePrompt, buildImageEditPrompt, classifyImageEditIntent, buildVideoPrompt, getCreativeProviderStatus } from "./creative-director.mjs";
 
 test("masterpiece image direction adds composition, lighting, and detail guidance", () => {
   const prompt = buildImagePrompt("A glass perfume bottle on black marble", "masterpiece");
@@ -146,4 +146,63 @@ test("recognizes sacred subjects written in Hindi, Bengali and Gujarati scripts"
 
   const gujaratiRama = buildImagePrompt("શ્રીરામ", "masterpiece");
   assert.match(gujaratiRama, /traditional divine iconography/i);
+});
+
+test("classifies common image-to-image edit requests into explicit intent modes", () => {
+  assert.deepEqual(classifyImageEditIntent("Enhance this photo and improve resolution"), ["enhance"]);
+  assert.deepEqual(classifyImageEditIntent("Change the pose to a natural side-facing stance"), ["pose"]);
+  assert.deepEqual(classifyImageEditIntent("Change the outfit to a black formal suit"), ["outfit"]);
+  assert.deepEqual(classifyImageEditIntent("Create a promotional poster banner with this photo"), ["design"]);
+  assert.deepEqual(classifyImageEditIntent("Replace the background with a beach at sunset"), ["background"]);
+  assert.deepEqual(classifyImageEditIntent("Change pose and outfit, then make a poster banner"), ["pose", "outfit", "design"]);
+  assert.deepEqual(classifyImageEditIntent("Make it more beautiful"), ["targeted"]);
+  assert.equal(classifyImageEditIntent(" "), null);
+});
+
+test("enhancement mode protects original face, pose, outfit and composition", () => {
+  const prompt = buildImageEditPrompt("A portrait of a woman", "Enhance this image, improve sharpness and upscale it");
+  assert.match(prompt, /ENHANCEMENT MODE/);
+  assert.match(prompt, /Preserve the exact person, face, expression, age, skin texture, hair, pose, outfit/);
+  assert.match(prompt, /without inventing texture/);
+  assert.doesNotMatch(prompt, /POSE-CHANGE MODE/);
+});
+
+test("pose change permits pose edits but keeps identity, face, clothing and scene protected", () => {
+  const prompt = buildImageEditPrompt("A couple standing together", "Change their pose so they are looking at each other and holding hands");
+  assert.match(prompt, /POSE-CHANGE MODE/);
+  assert.match(prompt, /Preserve the same person's recognizable identity and facial geometry/);
+  assert.match(prompt, /Preserve the outfit, accessories, setting, camera perspective/);
+  assert.match(prompt, /coherent shoulders, spine, joints, hands, fingers/);
+});
+
+test("outfit change preserves the same person's face and body proportions", () => {
+  const prompt = buildImageEditPrompt("A man wearing a casual shirt", "Change the outfit to a navy blue formal suit");
+  assert.match(prompt, /OUTFIT-CHANGE MODE/);
+  assert.match(prompt, /Preserve the same person's face, identity, skin tone/);
+  assert.match(prompt, /Do not change body shape or facial appearance/);
+  assert.match(prompt, /believable seams, fabric texture, folds/);
+});
+
+test("poster and banner mode preserves people and never invents event or contact text", () => {
+  const prompt = buildImageEditPrompt("A portrait for a local event", "Create a vertical event poster banner with title 'Grand Opening' and date '12 December'");
+  assert.match(prompt, /POSTER-AND-BANNER MODE/);
+  assert.match(prompt, /Preserve the recognizable identity/);
+  assert.match(prompt, /Use only exact wording supplied/);
+  assert.match(prompt, /Never invent dates, phone numbers, addresses, prices/);
+  assert.match(prompt, /Keep text clear, aligned, high-contrast/);
+});
+
+test("mixed edit requests preserve identity while enabling only named pose and outfit changes", () => {
+  const prompt = buildImageEditPrompt("A portrait of a person outdoors", "Change the pose to arms crossed and outfit to a white blazer");
+  assert.match(prompt, /POSE-CHANGE MODE/);
+  assert.match(prompt, /OUTFIT-CHANGE MODE/);
+  assert.match(prompt, /IDENTITY PRESERVATION/);
+  assert.match(prompt, /Apply all requested changes and no unrelated changes/);
+});
+
+test("poster text safety does not ban explicitly requested poster wording", () => {
+  const prompt = buildImageEditPrompt("A product photo", "Design a banner that says 'Aahana AI — Good ideas start somewhere.'");
+  assert.match(prompt, /Aahana AI — Good ideas start somewhere/);
+  assert.match(prompt, /Reproduce requested copy exactly/);
+  assert.doesNotMatch(prompt, /Do not add captions, watermarks/);
 });
