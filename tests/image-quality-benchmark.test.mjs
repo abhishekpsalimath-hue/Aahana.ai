@@ -38,10 +38,28 @@ const cases = [
   ["Tamil", "கடற்கரையில் மாலை நேரத்தில் நடந்து செல்லும் ஒரே ஒரு சிறுமியின் இயற்கையான புகைப்படம்."],
   ["Telugu", "పచ్చని కొండల మధ్య ప్రవహించే చిన్న నది, ఉదయపు మృదువైన వెలుతురు, విశాల దృశ్యం."],
   ["Spanish", "Una fotografía realista de una bicicleta roja apoyada contra una pared amarilla, con espacio vacío a la izquierda."],
+  ["macro", "Extreme macro photograph of a single honeybee on a white clover flower, sharply resolved compound eyes and pollen grains, natural shallow depth of field."],
+  ["night", "A realistic night photograph of a lighthouse on a rocky coast, a single rotating beam visible through sea mist, stars faintly visible, no city lights."],
+  ["group-count", "Exactly five adult musicians standing in a shallow arc on a small stage, each holding a different instrument, all five full bodies visible."],
+  ["brand", "A minimal identity concept for a fictional sustainable water brand named RIVERFORM, using a simple flowing-line symbol and restrained forest-green palette; spell the name exactly."],
+  ["logo", "A flat vector logo consisting of one geometric owl mark and the exact word 'NORTHSTAR'; centered on a plain white background, no gradients or mockup."],
+  ["map", "A clean schematic map with exactly three labeled locations connected in order by one blue route: START, RIVER CROSSING, FINISH; north is at the top."],
+  ["accessibility", "A high-contrast public-service infographic showing three clear steps with large readable icons, generous spacing and no decorative background clutter."],
+  ["material", "A studio macro render of brushed titanium beside matte ceramic and woven carbon fibre, each material clearly separated and accurately textured."],
+  ["reflection", "A photorealistic glass perfume bottle on a black reflective surface, one softbox reflection, crisp silhouette, no extra bottles or labels."],
+  ["sports", "A single football goalkeeper diving to the viewer's left, ball visible just beyond the fingertips, realistic body mechanics and stadium perspective."],
+  ["historical", "A historically grounded reconstruction of an ancient Roman street market, period-appropriate clothing, stalls and architecture, no modern objects."],
+  ["food-detail", "A close-up photograph of a flaky masala dosa cut once diagonally, with coconut chutney and a small bowl of sambar clearly separated."],
+  ["vehicle-detail", "A silver electric motorcycle photographed from a low front three-quarter angle, both wheels fully visible, realistic suspension and brake components."],
+  ["Kannada-typography", "ಸರಳ ಪೋಸ್ಟರ್‌ನಲ್ಲಿ ನಿಖರವಾಗಿ ಈ ಕನ್ನಡ ಶೀರ್ಷಿಕೆ ಇರಲಿ: 'ನಾಳೆಯ ಕಲ್ಪನೆಗಳು'. ಬೇರೆ ಯಾವುದೇ ಪದಗಳನ್ನು ಸೇರಿಸಬೇಡಿ."],
+  ["Hindi-typography", "एक साफ पोस्टर पर केवल यह सटीक हिंदी वाक्य लिखें: 'नई सोच, नई दिशा'। कोई अन्य शब्द नहीं।"],
+  ["Arabic", "صورة واقعية لفنجان قهوة عربي واحد على طاولة خشبية قرب نافذة، مع ضوء صباحي ناعم وتفاصيل طبيعية."],
+  ["Japanese", "朝の柔らかい光が差し込む静かな和室。畳、低い木の机、白い陶器の花瓶を一つだけ配置した自然な写真。"],
+  ["diagram-detail", "A technically coherent labeled cross-section of a lithium-ion battery showing anode, separator, cathode and electrolyte in the correct left-to-right order."],
 ];
 
 test("image benchmark covers multiple visual domains and languages", () => {
-  assert.ok(cases.length >= 30, "benchmark should not collapse to one showcase prompt");
+  assert.ok(cases.length >= 50, "benchmark should cover a broad set of image domains, not one showcase prompt");
   const categories = new Set(cases.map(([category]) => category));
   for (const category of ["person", "animal", "product", "architecture", "composition", "typography", "diagram", "science", "3d", "Kannada", "Hindi", "Tamil", "Telugu", "Spanish"]) {
     assert.ok(categories.has(category), `missing benchmark category: ${category}`);
