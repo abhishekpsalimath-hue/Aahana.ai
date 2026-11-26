@@ -5,7 +5,7 @@ const SHA_PATTERN = /^[a-f0-9]{40}$/i;
 const REPOSITORY_PATTERN = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
 
 // Student Mode, authentication, database, and deployment code are intentionally excluded.
-const ALLOWED_FILES = new Set(["src/app/assistant-workspace.jsx"]);
+const ALLOWED_FILES = new Set();
 const ALLOWED_ROOTS = [
   "src/app/experience-lab/",
   "src/lib/build/",
