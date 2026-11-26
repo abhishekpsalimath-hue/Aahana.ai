@@ -18,6 +18,10 @@ test("approval token is valid only for the exact owner, task, plan and base snap
   assert.equal(verifyApprovalToken(token, { ...approved, task: "Different task" }, env, now + 1), false);
   assert.equal(verifyApprovalToken(token, { ...approved, userId: "other-owner" }, env, now + 1), false);
   assert.equal(verifyApprovalToken(token, { ...approved, baseSha: "b".repeat(40) }, env, now + 1), false);
+  assert.equal(verifyApprovalToken(token, { ...approved, pathHint: "src/app/experience-lab/page.jsx" }, env, now + 1), false);
+  assert.equal(verifyApprovalToken(token, { ...approved, plan: { ...approved.plan, title: "Different approved plan" } }, env, now + 1), false);
+  assert.equal(verifyApprovalToken(token.slice(0, -1) + (token.endsWith("a") ? "b" : "a"), approved, env, now + 1), false);
+  assert.equal(verifyApprovalToken("malformed", approved, env, now + 1), false);
 });
 
 test("approval token expires after ten minutes and fails closed without key", () => {
