@@ -10,6 +10,14 @@ export function getImageOutputMimeType(model) {
   return model === ENHANCED_IMAGE_MODEL || model === ACCURACY_IMAGE_MODEL ? "image/png" : "image/jpeg";
 }
 
+export function getValidatedImageDataUrlMimeType(value, maxLength = 2_850_000) {
+  if (typeof value !== "string" || !Number.isSafeInteger(maxLength) || maxLength < 1 || value.length > maxLength) return null;
+  const match = value.match(/^data:(image\\/(?:png|jpeg|webp));base64,([A-Za-z0-9+/=]+)$/);
+  if (!match) return null;
+  const detectedMime = detectImageMimeTypeFromBase64(match[2]);
+  return detectedMime === match[1] ? detectedMime : null;
+}
+
 export function detectImageMimeTypeFromBase64(value) {
   if (typeof value !== "string" || value.length < 16 || value.length > 24 * 1024 * 1024) return null;
   if (!/^[A-Za-z0-9+/]+={0,2}$/.test(value)) return null;
