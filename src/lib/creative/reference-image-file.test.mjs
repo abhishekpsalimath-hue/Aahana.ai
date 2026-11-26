@@ -109,3 +109,40 @@ test("rejects unsupported formats, malformed URLs and invalid dimensions", async
   assert.equal(MAX_REFERENCE_IMAGE_BYTES, 2 * 1024 * 1024);
   assert.equal(MAX_REFERENCE_IMAGE_EDGE, 511);
 });
+
+
+test("preserves a generated 1024px image for video without downscaling to the edit limit", async () => {
+  const source = new Blob([new Uint8Array([10, 20, 30])], { type: "image/png" });
+  const file = await createReferenceImageFile("data:image/png;base64,ChQe", {
+    ImageCtor: fakeImage(1024, 1024),
+    fetchImpl: async () => new Response(source),
+    maxEdge: 4096,
+    maxBytes: 2 * 1024 * 1024,
+  });
+  assert.equal(file.type, "image/png");
+  assert.deepEqual([...new Uint8Array(await file.arrayBuffer())], [10, 20, 30]);
+});
+
+test("applies the requested video edge and byte limits when preparation is needed", async () => {
+  let drawn;
+  const canvas = {
+    width: 0, height: 0,
+    getContext() { return { drawImage(image, x, y, width, height) { drawn = { width, height }; } }; },
+    toBlob(callback, type) { callback(new Blob([new Uint8Array([4, 5])], { type: "image/png" })); },
+  };
+  const source = new Blob([new Uint8Array([1])], { type: "image/png" });
+  const file = await createReferenceImageFile("data:image/png;base64,AQ==", {
+    ImageCtor: fakeImage(6000, 3000),
+    fetchImpl: async () => new Response(source),
+    documentRef: { createElement: () => canvas },
+    maxEdge: 4096,
+    maxBytes: 2 * 1024 * 1024,
+  });
+  assert.deepEqual(drawn, { width: 4096, height: 2048 });
+  assert.equal(file.size, 2);
+});
+
+test("rejects invalid provider-specific reference image limits", async () => {
+  await assert.rejects(createReferenceImageFile("data:image/png;base64,AQ==", { maxEdge: 8192 }), /limits are invalid/);
+  await assert.rejects(createReferenceImageFile("data:image/png;base64,AQ==", { maxBytes: 3 * 1024 * 1024 }), /limits are invalid/);
+});

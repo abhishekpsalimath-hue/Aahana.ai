@@ -7,7 +7,13 @@ export async function createReferenceImageFile(dataUrl, {
   documentRef = globalThis.document,
   fetchImpl = globalThis.fetch,
   FileCtor = globalThis.File,
+  maxEdge = MAX_REFERENCE_IMAGE_EDGE,
+  maxBytes = MAX_REFERENCE_IMAGE_BYTES,
 } = {}) {
+  if (!Number.isInteger(maxEdge) || maxEdge < 1 || maxEdge > 4096 ||
+      !Number.isInteger(maxBytes) || maxBytes < 1 || maxBytes > MAX_REFERENCE_IMAGE_BYTES) {
+    throw new TypeError("Reference image limits are invalid.");
+  }
   if (typeof dataUrl !== "string") {
     throw new Error("Could not read the reference image.");
   }
@@ -34,13 +40,13 @@ export async function createReferenceImageFile(dataUrl, {
   }
   const longestEdge = Math.max(width, height);
 
-  if (longestEdge <= MAX_REFERENCE_IMAGE_EDGE &&
-      sourceBlob.size > 0 && sourceBlob.size <= MAX_REFERENCE_IMAGE_BYTES) {
+  if (longestEdge <= maxEdge &&
+      sourceBlob.size > 0 && sourceBlob.size <= maxBytes) {
     // Preserve original bytes for small references; avoid unnecessary JPEG loss.
     return new FileCtor([sourceBlob], "aahana-reference", { type: sourceBlob.type });
   }
 
-  const scale = Math.min(1, MAX_REFERENCE_IMAGE_EDGE / longestEdge);
+  const scale = Math.min(1, maxEdge / longestEdge);
   const canvas = (documentRef ?? globalThis.document).createElement("canvas");
   canvas.width = Math.max(1, Math.round(width * scale));
   canvas.height = Math.max(1, Math.round(height * scale));
@@ -53,7 +59,7 @@ export async function createReferenceImageFile(dataUrl, {
     quality
   ));
   let blob = await encode(sourceBlob.type, sourceBlob.type === "image/jpeg" ? 0.92 : undefined);
-  if (!SUPPORTED_REFERENCE_TYPES.has(blob.type) || blob.size < 1 || blob.size > MAX_REFERENCE_IMAGE_BYTES) {
+  if (!SUPPORTED_REFERENCE_TYPES.has(blob.type) || blob.size < 1 || blob.size > maxBytes) {
     if (sourceBlob.type !== "image/jpeg") blob = await encode("image/jpeg", 0.92);
   }
   if (!SUPPORTED_REFERENCE_TYPES.has(blob.type) || blob.size < 1 || blob.size > MAX_REFERENCE_IMAGE_BYTES) {
