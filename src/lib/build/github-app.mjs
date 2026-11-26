@@ -264,23 +264,56 @@ export async function createSelfBuildPullRequest({
       if (!proposalCommit) throw error;
     }
   }
-  const pullRequest = await githubRequest(prefix + "/pulls", token, {
-    fetchImpl, method: "POST",
-    body: {
-      title: title.trim(),
-      head: branch,
-      base: baseBranch,
-      body: [
-        summary.trim(),
-        "",
-        "---",
-        "Created by Aahana Self-Build.",
-        "This change is proposed for human review only. It has not been merged or deployed.",
-        "Student Mode, authentication, production settings, dependencies, and deployment workflows are outside the approved self-build scope.",
-      ].join("\n"),
-      draft: true,
-    },
-  });
+  let pullRequest;
+  try {
+    pullRequest = await githubRequest(prefix + "/pulls", token, {
+      fetchImpl, method: "POST",
+      body: {
+        title: title.trim(),
+        head: branch,
+        base: baseBranch,
+        body: [
+          summary.trim(),
+          "",
+          "---",
+          "Created by Aahana Self-Build.",
+          "This change is proposed for human review only. It has not been merged or deployed.",
+          "Student Mode, authentication, production settings, dependencies, and deployment workflows are outside the approved self-build scope.",
+        ].join("\\n"),
+        draft: true,
+      },
+    });
+  } catch (error) {
+    // Two approved retries can race after the same deterministic branch exists.
+    // Reuse the winner only after verifying the PR still points at our exact branch.
+    if (error.status !== 422) throw error;
+    const racedPullRequests = await githubRequest(
+      prefix + "/pulls?state=open&head=" + encodeURIComponent(owner + ":" + branch) + "&base=" + encodeURIComponent(baseBranch),
+      token,
+      { fetchImpl },
+    );
+    const racedPullRequest = Array.isArray(racedPullRequests)
+      ? racedPullRequests.find((item) => item.state === "open" && item.head?.ref === branch && item.base?.ref === baseBranch)
+      : null;
+    if (!racedPullRequest) throw error;
+    const verifiedBranch = await findVerifiedProposalBranch({
+      prefix, branch, baseSha: changeSet.baseSha, baseTreeSha: baseCommit.tree.sha,
+      files: changeSet.files, token, fetchImpl,
+    });
+    if (!verifiedBranch || racedPullRequest.head?.sha !== verifiedBranch.sha || verifiedBranch.sha !== proposalCommit.sha) {
+      throw new Error("A concurrent draft proposal could not be verified against the exact approved change set.");
+    }
+    return {
+      number: racedPullRequest.number,
+      url: racedPullRequest.html_url,
+      branch,
+      baseBranch,
+      baseSha: changeSet.baseSha,
+      headSha: verifiedBranch.sha,
+      changedFiles: changeSet.files.length,
+      reused: true,
+    };
+  }
   return {
     number: pullRequest.number,
     url: pullRequest.html_url,
