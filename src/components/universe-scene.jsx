@@ -713,6 +713,9 @@ export default function UniverseScene() {
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
       renderer.setSize(w, h, false);
+      // Reduced-motion mode renders a still frame instead of running RAF.
+      // Redraw after viewport changes so the resized canvas never keeps a stale frame.
+      if (reduced) renderer.render(scene, camera);
     };
     const onContextLost = (event) => {
       event.preventDefault();
@@ -873,6 +876,8 @@ export default function UniverseScene() {
         });
       });
       renderer.dispose();
+      // Release the browser's WebGL context on unmount; this scene owns the canvas.
+      renderer.forceContextLoss();
     };
   }, []);
   return <canvas ref={canvasRef} className="universe-webgl" aria-hidden="true" />;
