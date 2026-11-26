@@ -1211,7 +1211,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       const response = await fetch("/api/images/upscale", { method: "POST", body: formData });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || "Could not enhance this image.");
-      if (typeof result.imageDataUrl !== "string" || !/^data:image\\/png;base64,/.test(result.imageDataUrl)) throw new Error("The enhancement service returned an invalid image.");
+      if (typeof result.imageDataUrl !== "string" || !result.imageDataUrl.startsWith("data:image/png;base64,")) throw new Error("The enhancement service returned an invalid image.");
       setGeneratedImage({ dataUrl: result.imageDataUrl, prompt: uploadedFile ? "Enhanced image: " + uploadedFile.name : generatedImage.prompt });
       if (source === "upload") setImageFile(null);
       if (source === "upscale-upload") setImageUpscaleFile(null);
