@@ -89,6 +89,8 @@ test("enforces caption count, duration, text and video-duration bounds", () => {
   longCue.cues[0].end = longCue.cues[0].start + 11;
   assert.throws(() => validateVideoCaptionTrack(longCue), /10 seconds/);
   assert.throws(() => validateVideoCaptionTrack(track(), { durationSeconds: 4 }), /beyond the video duration/);
+  assert.throws(() => validateVideoCaptionTrack(track(), { durationSeconds: -1 }), /between 0 and four hours/);
+  assert.throws(() => validateVideoCaptionTrack(track(), { durationSeconds: Infinity }), /between 0 and four hours/);
   const many = track();
   many.cues = Array.from({ length: VIDEO_CAPTION_LIMITS.maxCues + 1 }, (_, index) => ({
     id: "cue-" + index, start: index * 0.2, end: index * 0.2 + 0.1, text: "x",
