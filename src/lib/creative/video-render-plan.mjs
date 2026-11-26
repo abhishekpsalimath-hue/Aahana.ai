@@ -42,34 +42,60 @@ export function compileVideoRenderPlan(projectInput, exportSettings = {}) {
   const output = normalizeExportSettings(exportSettings);
   const assets = new Set();
   let durationSeconds = 0;
+  let frameCount = 0;
 
   const tracks = project.tracks.map((track, trackIndex) => {
     const clips = track.clips.map((clip, clipIndex) => {
       const end = clip.start + clip.duration;
       durationSeconds = Math.max(durationSeconds, end);
+      const startFrame = Math.round(clip.start * output.fps);
+      const endFrame = Math.max(startFrame + 1, Math.round(end * output.fps));
+      const transitionInFrames = Math.round(clip.transitionIn.duration * output.fps);
+      const transitionOutFrames = Math.round(clip.transitionOut.duration * output.fps);
+      frameCount = Math.max(frameCount, endFrame);
       assets.add(clip.assetId);
       const keyframes = clip.keyframes.map((frame) => Object.freeze({
         at: Number((clip.start + frame.at).toFixed(6)),
+        frame: Math.round((clip.start + frame.at) * output.fps),
         offset: frame.at,
         property: frame.property,
         value: frame.value,
         easing: frame.easing,
       }));
+      const volumeAutomation = clip.keyframes
+        .filter((frame) => frame.property === "volume")
+        .map((frame) => Object.freeze({
+          frame: Math.round((clip.start + frame.at) * output.fps),
+          at: Number((clip.start + frame.at).toFixed(6)),
+          value: output.includeAudio && !track.muted ? frame.value : 0,
+          easing: frame.easing,
+        }));
       return Object.freeze({
         order: clipIndex,
         id: clip.id,
         assetId: clip.assetId,
-        timeline: Object.freeze({ start: clip.start, end, duration: clip.duration }),
+        timeline: Object.freeze({ start: clip.start, end, duration: clip.duration, startFrame, endFrame, frameDuration: endFrame - startFrame }),
         source: Object.freeze({ start: clip.sourceStart, duration: clip.sourceDuration }),
         playback: Object.freeze({
           speed: clip.speed,
           volume: output.includeAudio && !track.muted ? clip.volume : 0,
           muted: track.muted || !output.includeAudio,
+          volumeAutomation: Object.freeze(volumeAutomation),
         }),
         keyframes: Object.freeze(keyframes),
         transitions: Object.freeze({
-          in: clip.transitionIn,
-          out: clip.transitionOut,
+          in: Object.freeze({
+            ...clip.transitionIn,
+            durationFrames: transitionInFrames,
+            startFrame,
+            endFrame: startFrame + transitionInFrames,
+          }),
+          out: Object.freeze({
+            ...clip.transitionOut,
+            durationFrames: transitionOutFrames,
+            startFrame: endFrame - transitionOutFrames,
+            endFrame,
+          }),
         }),
       });
     });
@@ -83,7 +109,6 @@ export function compileVideoRenderPlan(projectInput, exportSettings = {}) {
     });
   });
 
-  const frameCount = Math.ceil(durationSeconds * output.fps);
   return Object.freeze({
     schema: "aahana.video-edl.v1",
     projectId: project.id,

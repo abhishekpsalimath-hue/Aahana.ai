@@ -25,6 +25,7 @@ function normalizeKeyframes(value, duration) {
     if (!Number.isFinite(frame.value)) throw new TypeError("Keyframe value must be finite.");
     if (frame.property === "opacity" && (frame.value < 0 || frame.value > 1)) throw new RangeError("Opacity keyframes must be between 0 and 1.");
     if (frame.property === "scale" && (frame.value < 0.01 || frame.value > 8)) throw new RangeError("Scale keyframes must be between 0.01 and 8.");
+    if (frame.property === "volume" && (frame.value < 0 || frame.value > 2)) throw new RangeError("Volume keyframes must be between 0 and 2.");
     const easing = frame.easing === undefined ? "linear" : frame.easing;
     if (!EASINGS.has(easing)) throw new TypeError("Keyframe easing is unsupported.");
     const key = frame.property + "::" + at;
