@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { parseImageGenerationInput, parseImageEditInput, MAX_IMAGE_EDIT_BYTES, MAX_IMAGE_EDIT_PROMPT_LENGTH, getReferenceImageDimensions, getReferenceImageOutputDimensions, isReferenceImageWithinProviderBounds, inferImageAspectRatio, getGeneratedImageFileMetadata } from "./image-generation.mjs";
+import { parseImageGenerationInput, parseImageEditInput, MAX_IMAGE_EDIT_BYTES, MAX_IMAGE_EDIT_PROMPT_LENGTH, getReferenceImageDimensions, getReferenceImageOutputDimensions, isReferenceImageWithinProviderBounds, isImageWithinPixelBounds, MAX_REFERENCE_IMAGE_PIXELS, MAX_REFERENCE_IMAGE_EDGE, inferImageAspectRatio, getGeneratedImageFileMetadata } from "./image-generation.mjs";
 import { buildImageEditPrompt, buildImageSeriesPrompt } from "./creative-director.mjs";
 
 test("defaults to automatic masterpiece image direction without asking the user to choose settings", () => {
@@ -124,6 +124,20 @@ test("parses PNG reference dimensions and enforces the strict 512px provider lim
   const malformedPng = png.slice();
   malformedPng[7] = 0x00;
   assert.equal(getReferenceImageDimensions(malformedPng, "image/png"), null);
+});
+
+test("bounds decoded image dimensions and total pixel count", () => {
+  assert.equal(isImageWithinPixelBounds({ width: 6000, height: 4000 }), true);
+  assert.equal(isImageWithinPixelBounds({ width: 8000, height: 6000 }), false);
+  assert.equal(isImageWithinPixelBounds({ width: MAX_REFERENCE_IMAGE_EDGE + 1, height: 1 }), false);
+  assert.equal(isImageWithinPixelBounds({ width: 0, height: 100 }), false);
+  assert.equal(isImageWithinPixelBounds({ width: 100, height: -1 }), false);
+  assert.equal(isImageWithinPixelBounds({ width: Number.MAX_SAFE_INTEGER, height: 2 }), false);
+  assert.equal(isImageWithinPixelBounds(null), false);
+  assert.equal(isImageWithinPixelBounds({ width: 10, height: 10 }, 0), false);
+  assert.equal(isImageWithinPixelBounds({ width: 10, height: 10 }, 100, 0), false);
+  assert.equal(MAX_REFERENCE_IMAGE_PIXELS, 40_000_000);
+  assert.equal(MAX_REFERENCE_IMAGE_EDGE, 12_000);
 });
 
 test("parses JPEG and WebP reference dimensions without trusting client metadata", () => {
