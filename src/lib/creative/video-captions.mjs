@@ -39,6 +39,9 @@ export function validateVideoCaptionTrack(input, { durationSeconds } = {}) {
   if (!input || typeof input !== "object" || Array.isArray(input)) {
     throw new TypeError("A caption track object is required.");
   }
+  if (durationSeconds !== undefined && (!Number.isFinite(durationSeconds) || durationSeconds < 0 || durationSeconds > 4 * 60 * 60)) {
+    throw new RangeError("Video duration must be between 0 and four hours.");
+  }
   const language = requireText(input.language, "Caption language", 35);
   if (!LANGUAGE_PATTERN.test(language)) throw new TypeError("Caption language must be a valid BCP 47-style language tag.");
   const label = input.label === undefined ? language : requireText(input.label, "Caption label", 60);
