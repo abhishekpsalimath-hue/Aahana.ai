@@ -277,7 +277,7 @@ test("reuses an existing draft only after verifying its exact pinned branch cont
   let baseRefReads = 0;
   const source = "export default function Page() {}";
   const bytes = Buffer.from(source, "utf8");
-  const expectedBlobSha = createHash("sha1").update("blob " + bytes.length + "\\0").update(bytes).digest("hex");
+  const expectedBlobSha = createHash("sha1").update("blob " + bytes.length + "\0").update(bytes).digest("hex");
   const fetchImpl = async (url, options) => {
     const body = options.body ? JSON.parse(options.body) : null;
     calls.push({ url, method: options.method || "GET", body });
