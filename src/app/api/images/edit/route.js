@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { buildImageEditPrompt } from "@/lib/creative/creative-director.mjs";
-import { getReferenceImageDimensions, isReferenceImageWithinProviderBounds } from "@/lib/creative/image-generation.mjs";
 import { detectImageMimeTypeFromBase64 } from "@/lib/creative/image-provider.mjs";
 import { readBoundedImageEditRequest } from "@/lib/creative/bounded-image-edit-request.mjs";
 import { readBoundedImageProviderJson } from "@/lib/creative/bounded-image-generation-json.mjs";
@@ -32,13 +31,7 @@ export async function POST(request) {
   if (!parsedRequest.ok) {
     return NextResponse.json({ error: parsedRequest.error }, { status: parsedRequest.status });
   }
-  const { image, prompt: editInstruction, referencePrompt } = parsedRequest;
-
-  const imageBytes = new Uint8Array(await image.arrayBuffer());
-  const dimensions = getReferenceImageDimensions(imageBytes, image.type);
-  if (!isReferenceImageWithinProviderBounds(dimensions)) {
-    return NextResponse.json({ error: "The reference image must be smaller than 512 × 512 pixels. Please retry with a smaller image." }, { status: 400 });
-  }
+  const { image, imageBytes, prompt: editInstruction, referencePrompt } = parsedRequest;
   if (request.signal.aborted) return NextResponse.json({ error: "Image editing cancelled." }, { status: 499 });
   const prompt = buildImageEditPrompt(referencePrompt, editInstruction);
   if (!prompt) return NextResponse.json({ error: "Describe the change you want to make." }, { status: 400 });
