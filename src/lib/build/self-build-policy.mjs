@@ -72,7 +72,7 @@ export function isAllowedSelfBuildPath(input) {
 
   if (BLOCKED_FILES.has(segments.at(-1).toLowerCase()) || /\.(?:test|spec)\.[^.]+$/i.test(segments.at(-1))) return false;
   return ALLOWED_ROOTS.some((root) => input.startsWith(root)) &&
-    /\.(?:js|jsx|mjs|cjs|ts|tsx|css|scss|json|md)$/i.test(input));
+    /\.(?:js|jsx|mjs|cjs|ts|tsx|css|scss|json|md)$/i.test(input);
 }
 
 export function validateSelfBuildChangeSet({ baseSha, files }) {
