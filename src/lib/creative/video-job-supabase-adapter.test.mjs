@@ -141,3 +141,35 @@ test("rejects retryable failed jobs once the maximum attempt count is reached", 
     ownerId: job.ownerId, idempotencyKey: job.idempotencyKey, job: exhausted, revision: 1,
   }), /attempts remaining/);
 });
+
+
+test("rejects a mismatched idempotency key and owner in the returned database row", async () => {
+  const client = fakeClient();
+  const adapter = createSupabaseVideoJobAdapter(client);
+  await adapter.insertIfAbsent({ ownerId: job.ownerId, idempotencyKey: job.idempotencyKey, job, revision: 1 });
+  client.rows[0].owner_id = "another-owner";
+  await assert.rejects(adapter.getOwned(job.ownerId, job.id), /invalid fields|identity/);
+});
+
+test("allows queued cancellation before a worker starts", async () => {
+  const adapter = createSupabaseVideoJobAdapter(fakeClient());
+  const cancelled = {
+    ...job, state: "cancelled", updatedAt: 1100, completedAt: 1100,
+  };
+  const result = await adapter.insertIfAbsent({
+    ownerId: job.ownerId, idempotencyKey: job.idempotencyKey, job: cancelled, revision: 1,
+  });
+  assert.equal(result.record.job.state, "cancelled");
+  assert.equal(result.record.job.startedAt, null);
+});
+
+test("rejects timestamp strings and malformed enum or boolean values returned by storage", async () => {
+  const client = fakeClient();
+  const adapter = createSupabaseVideoJobAdapter(client);
+  await adapter.insertIfAbsent({ ownerId: job.ownerId, idempotencyKey: job.idempotencyKey, job, revision: 1 });
+  client.rows[0].state = "unknown";
+  await assert.rejects(adapter.getOwned(job.ownerId, job.id), /invalid fields/);
+  client.rows[0].state = "queued";
+  client.rows[0].retryable = "false";
+  await assert.rejects(adapter.getOwned(job.ownerId, job.id), /invalid fields/);
+});
