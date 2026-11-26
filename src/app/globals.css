@@ -834,3 +834,11 @@ h1,.brand,.composer-mode,.breadcrumb{font-family:"Space Grotesk","Manrope",sans-
 }
 .learning-page>*:not(.universe-webgl){position:relative;z-index:1}
 @media(max-width:760px){.learning-page>.universe-webgl{opacity:.94!important}}
+
+
+/* Remove the hand-drawn CSS galaxy and particle overlay whenever WebGL is
+   healthy; retain it solely for the no-WebGL/context-loss fallback. */
+.space-background:not(.universe-webgl-fallback)>.universe-flight{display:none!important}
+.space-background.universe-webgl-fallback>.universe-flight{display:block!important}
+.space-background>.universe-webgl{z-index:0;opacity:1!important}
+.space-background.universe-webgl-fallback>.universe-webgl{display:none!important}
