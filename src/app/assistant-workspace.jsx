@@ -726,6 +726,7 @@ function evaluateArithmetic(input) {
 export default function Home({ userEmail = "", aiEnabled = false }) {
   const router = useRouter();
   const conversationEndRef = useRef(null);
+  const activeChatControllerRef = useRef(null);
   const [mode, setMode] = useState("solve");
   const [prompt, setPrompt] = useState("");
   const [imageFile, setImageFile] = useState(null);
@@ -1541,18 +1542,30 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     setPrompt("");
     setError("");
     setBusy(true);
+    const controller = new AbortController();
+    activeChatControllerRef.current = controller;
     let imageDataUrl = null;
     if (imageFile) {
       imageDataUrl = await new Promise((resolve, reject) => {
         const reader = new FileReader();
-        reader.onload = () => resolve(String(reader.result || ""));
-        reader.onerror = () => reject(new Error("Could not read the selected image."));
-        reader.readAsDataURL(imageFile);
+        const abortRead = () => reader.abort();
+        const removeAbortListener = () => controller.signal.removeEventListener("abort", abortRead);
+        reader.onload = () => { removeAbortListener(); resolve(String(reader.result || "")); };
+        reader.onerror = () => { removeAbortListener(); reject(new Error("Could not read the selected image.")); };
+        reader.onabort = () => { removeAbortListener(); reject(new DOMException("The request was stopped.", "AbortError")); };
+        controller.signal.addEventListener("abort", abortRead, { once: true });
+        if (controller.signal.aborted) abortRead();
+        else reader.readAsDataURL(imageFile);
       }).catch((err) => {
-        setError(err.message || "Could not read the selected image.");
+        if (err?.name !== "AbortError") setError(err.message || "Could not read the selected image.");
         return null;
       });
-      if (!imageDataUrl) { setBusy(false); return; }
+      if (!imageDataUrl) {
+        if (controller.signal.aborted) setPrompt(text);
+        activeChatControllerRef.current = null;
+        setBusy(false);
+        return;
+      }
     }
     const userMessage = { role: "user", content: imageFile ? `${text || "Please identify this image."}\n[Image attached: ${imageFile.name}]` : text };
     const assistantMessage = { role: "assistant", content: "" };
@@ -1576,6 +1589,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: text || "Please identify and describe this image in detail.", image: imageDataUrl ? { dataUrl: imageDataUrl } : null, mode, conversationId, projectId: selectedProjectId }),
+        signal: controller.signal,
       });
 
       if (!response.ok) {
@@ -1624,11 +1638,23 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
           ? { ...item, content: answer + "\n\n[Response interrupted. You can retry your request.]" }
           : item);
       });
-      setError(err.message || "Something went wrong. Please try again.");
+      if (err?.name === "AbortError") {
+        setMessages((current) => current.map((item, index) => {
+          if (index !== current.length - 1 || item.role !== "assistant") return item;
+          return { ...item, content: answer.trim() ? answer + "\n\n[Response stopped.]" : "Response stopped." };
+        }));
+      } else {
+        setError(err.message || "Something went wrong. Please try again.");
+      }
     } finally {
       if (answerUpdateTimer !== null) window.clearTimeout(answerUpdateTimer);
+      if (activeChatControllerRef.current === controller) activeChatControllerRef.current = null;
       setBusy(false);
     }
+  }
+
+  function stopGeneration() {
+    activeChatControllerRef.current?.abort();
   }
 
   return (
@@ -2106,6 +2132,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
               placeholder={aiEnabled ? "What would you like to work on today?" : "Try a calculation, e.g. 2 + 2 (offline)"} rows={3} disabled={busy} />
             <div className="composer-footer">
               <span className="composer-mode">{modes.find((item) => item.id === mode)?.hint} · Enter to send · Shift + Enter for a new line</span>
+              {busy && <button className="stop-generation" type="button" onClick={stopGeneration}>Stop</button>}
               <button className={`send send-orb${busy || imageGenerating ? " is-thinking" : ""}`} type="submit" disabled={(!prompt.trim() && !imageFile) || busy || imageGenerating || (!aiEnabled && !imageFile && !isImageGenerationRequest(prompt.trim()) && evaluateArithmetic(prompt.trim()) === null)} aria-label={busy || imageGenerating ? "Aahana is working" : "Launch your message"} title={busy || imageGenerating ? "Aahana is working" : "Launch your message"}><span className="send-orb-halo" aria-hidden="true" /><svg className="send-rocket" viewBox="0 0 32 32" aria-hidden="true"><path className="rocket-flame" d="M12 21.5c-2.1 1.2-3.3 3.2-3.4 5.1 2-.1 4-1.3 5.1-3.4" /><path className="rocket-body" d="M12.2 19.8c-1.3-4.9 1.1-11.1 8.8-15.6 1.3 8.8-1.8 14-6.6 16.5l-2.2-.9Z" /><path className="rocket-window" d="M18.7 10.1a2.1 2.1 0 1 0 0 4.2 2.1 2.1 0 0 0 0-4.2Z" /><path className="rocket-fin" d="m12.4 15.8-4.1 1.4 1.1 4.1 4.1-2.2m5.2-6.9 2.2-4.1 4.1 1.1-1.4 4.1" /></svg><span className="send-orb-thinking" aria-hidden="true"><i /><i /><i /></span></button>
             </div>
           </form>
