@@ -58,7 +58,11 @@ export async function POST(request) {
   try {
     if (/^multipart\\/form-data\\s*;/i.test(contentType)) {
       const form = await readBoundedMultipartFormData(request, 2_250_000);
-      const uploadedImage = form.get("image");
+      const uploadedImages = form.getAll("image");
+      if (uploadedImages.length > 1) {
+        return NextResponse.json({ error: "Please attach one image at a time." }, { status: 400 });
+      }
+      const uploadedImage = uploadedImages[0] ?? null;
       body = {
         message: form.get("message"),
         mode: form.get("mode"),
