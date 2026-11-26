@@ -72,6 +72,12 @@ if (!apiKey) {
 }
 
 async function complete(messages, maxTokens) {
+  if (providerRequestsUsed >= maxProviderRequests) {
+    const error = new Error("Provider-request budget exhausted; no additional call was made.");
+    error.code = "BUDGET_EXHAUSTED";
+    throw error;
+  }
+  providerRequestsUsed += 1;
   const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
@@ -132,8 +138,14 @@ async function persist(results, metadata) {
 const metadata = { startedAt: new Date().toISOString(), mode: "solve", isolation: "provider-direct/no-supabase" };
 const results = [];
 let stoppedEarly = false;
+let providerRequestsUsed = 0;
 
-for (let index = 0; index < ASSISTANT_EVALUATION_CASES.length; index += 1) {
+for (let index = 0; index < budget.casesToRun; index += 1) {
+  if (!canStartAssistantBenchmarkCase(providerRequestsUsed, maxProviderRequests)) {
+    stoppedEarly = true;
+    process.stderr.write("Provider-request budget reached; stopping before starting a partial case.\\n");
+    break;
+  }
   const item = ASSISTANT_EVALUATION_CASES[index];
   try {
     const answer = await complete([
@@ -184,15 +196,18 @@ for (let index = 0; index < ASSISTANT_EVALUATION_CASES.length; index += 1) {
       break;
     }
   }
-  await persist(results, { ...metadata, updatedAt: new Date().toISOString(), stoppedEarly });
+  await persist(results, { ...metadata, updatedAt: new Date().toISOString(), stoppedEarly, providerRequestsUsed, providerRequestLimit: maxProviderRequests });
 }
 
-await persist(results, { ...metadata, completedAt: new Date().toISOString(), stoppedEarly });
+await persist(results, { ...metadata, completedAt: new Date().toISOString(), stoppedEarly, providerRequestsUsed, providerRequestLimit: maxProviderRequests });
 const summary = summarizeEvaluation(results);
 process.stdout.write(JSON.stringify({
   outputPath,
   completed: results.length,
+  planned: budget.casesToRun,
   expected: ASSISTANT_EVALUATION_CASES.length,
+  providerRequestsUsed,
+  providerRequestLimit: maxProviderRequests,
   scored: summary.scored,
   average: summary.average,
   atLeastFour: summary.atLeastFour,
