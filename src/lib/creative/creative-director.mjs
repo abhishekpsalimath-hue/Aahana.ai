@@ -40,78 +40,24 @@ const ARDHANARISHVARA_DIRECTION = [
 ].join(" ");
 
 const SACRED_SUBJECT_DIRECTIONS = [
-  {
-    pattern: /(?:ಅರ್ಧನಾರೀಶ್ವರ|ಅರ್ಧನಾರೀಶ್ವರಮೂರ್ತಿ|அர்த்தநாரீஸ்வரர்|அர்த்தநாரீஸ்வரர்|అర్ధనారీశ్వరుడు)/u,
-    direction: ARDHANARISHVARA_DIRECTION
-  },
-  {
-    pattern: /(?:ಶಿವ|ಮಹಾದೇವ|சிவன்|மகாதேவன்|శివుడు|మహాదేవుడు)/u,
-    direction: "Depict Lord Shiva (Mahadev) unmistakably as the Hindu deity, not a generic saint, monk, guru, or ordinary human. Include recognizable traditional iconography: blue-toned throat (Neelkanth), matted jatā hair with the crescent moon and a stream of the Ganga, tripundra ash stripes and third eye, rudraksha beads, and a trident (trishula); a serene divine presence. If seated, use a yogic Himalayan setting or Mount Kailash. Keep the face divine and dignified, with coherent anatomy and all requested attributes clearly visible."
-  },
-  {
-    pattern: /(?:ಹನುಮಂತ|ಆಂಜನೇಯ|அனுமன்|ஆஞ்சநேயர்|హనుమంతుడు|ఆంజనేయుడు)/u,
-    direction: "Depict Lord Hanuman (Anjaneya) unmistakably as the Hindu monkey-faced deity, not a human saint, monk, or generic warrior. Preserve the clearly recognizable vanara face and muzzle, expressive compassionate divine eyes, traditional crown or ornaments where appropriate, gada (mace), and devotional strength. If the scene calls for it, include a saffron dhoti and a reverent devotional pose. Do not replace the monkey-faced divine form with an ordinary human face."
-  },
-  {
-    pattern: /(?:ಗಣೇಶ|ಗಣಪತಿ|விநாயகர்|பிள்ளையார்|గణేశుడు|వినాయకుడు)/u,
-    direction: "Depict Lord Ganesha unmistakably as the elephant-headed Hindu deity, with a clear elephant face and trunk, traditional crown and ornaments, and his characteristic divine form. Never substitute an ordinary human face."
-  },
-  {
-    pattern: /(?:ಕೃಷ್ಣ|ಶ್ರೀಕೃಷ್ಣ|கிருஷ்ணர்|கண்ணன்|కృష్ణుడు)/u,
-    direction: "Depict Lord Krishna unmistakably as the Hindu deity, with a serene youthful divine appearance, blue-toned skin, peacock feather, yellow garments and flute when suitable to the requested scene. Do not substitute a generic human saint."
-  },
-  {
-    pattern: /(?:ರಾಮ|ಶ್ರೀರಾಮ|ராமர்|ஸ்ரீராமர்|రాముడు|శ్రీరాముడు)/u,
-    direction: "Depict Lord Rama unmistakably as the Hindu deity, with traditional divine iconography such as a bow, dignified royal-yet-humble presence, and appropriate traditional attire. Do not depict a generic monk or saint."
-  },
-  {
-    pattern: /(?:शिव|महादेव|শিব|মহাদেব|શિવ|મહાદેવ)/u,
-    direction: "Depict Lord Shiva (Mahadev) unmistakably as the Hindu deity, not a generic saint, monk, guru, or ordinary human. Include recognizable traditional iconography: blue-toned throat (Neelkanth), matted jata hair with the crescent moon and a stream of the Ganga, tripundra ash stripes and third eye, rudraksha beads, and a trident (trishula); a serene divine presence. If seated, use a yogic Himalayan setting or Mount Kailash. Keep the face divine and dignified, with coherent anatomy and all requested attributes clearly visible."
-  },
-  {
-    pattern: /(?:हनुमान|হনুমান|હનુમાન)/u,
-    direction: "Depict Lord Hanuman (Anjaneya) unmistakably as the Hindu monkey-faced deity, not a human saint, monk, or generic warrior. Preserve the clearly recognizable vanara face and muzzle, expressive compassionate divine eyes, traditional crown or ornaments where appropriate, gada (mace), and devotional strength. If the scene calls for it, include a saffron dhoti and a reverent devotional pose. Do not replace the monkey-faced divine form with an ordinary human face."
-  },
-  {
-    pattern: /(?:गणेश|गणपति|विनायक|গণেশ|গণপতি|বিনায়ক|ગણેશ|ગણપતિ|વિનાયક)/u,
-    direction: "Depict Lord Ganesha unmistakably as the elephant-headed Hindu deity, with a clear elephant face and trunk, traditional crown and ornaments, and his characteristic divine form. Never substitute an ordinary human face."
-  },
-  {
-    pattern: /(?:कृष्ण|श्रीकृष्ण|কৃষ্ণ|শ্রীকৃষ্ণ|કૃષ્ણ|શ્રીકૃષ્ણ)/u,
-    direction: "Depict Lord Krishna unmistakably as the Hindu deity, with a serene youthful divine appearance, blue-toned skin, peacock feather, yellow garments and flute when suitable to the requested scene. Do not substitute a generic human saint."
-  },
-  {
-    pattern: /(?:राम|श्रीराम|রাম|শ্রীরাম|રામ|શ્રીરામ)/u,
-    direction: "Depict Lord Rama unmistakably as the Hindu deity, with traditional divine iconography such as a bow, dignified royal-yet-humble presence, and appropriate traditional attire. Do not depict a generic monk or saint."
-  },
-  {
-    pattern: /(?:अर्धनारीश्वर|অর্ধনারীশ্বর|અર્ધનારીશ્વર)/u,
-    direction: ARDHANARISHVARA_DIRECTION
-  },
-  {
-    pattern: /\bardhanarishvara\b|\bardhanarishwar\b|\bshiva\s*[-/]\s*parvati\s*combined\b/i,
-    direction: ARDHANARISHVARA_DIRECTION
-  },
-  {
-    pattern: /\b(lord\s+)?shiva\b|\bmahadev\b|\bmahadeva\b|\bshankar\b/i,
-    direction: "Depict Lord Shiva (Mahadev) unmistakably as the Hindu deity, not a generic saint, monk, guru, or ordinary human. Include recognizable traditional iconography: blue-toned throat (Neelkanth), matted jatā hair with the crescent moon and a stream of the Ganga, tripundra ash stripes and third eye, rudraksha beads, and a trident (trishula); a serene divine presence. If seated, use a yogic Himalayan setting or Mount Kailash. Keep the face divine and dignified, with coherent anatomy and all requested attributes clearly visible."
-  },
-  {
-    pattern: /\b(hanuman|anjaneya|anjaneya swamy|maruti)\b/i,
-    direction: "Depict Lord Hanuman (Anjaneya) unmistakably as the Hindu monkey-faced deity, not a human saint, monk, or generic warrior. Preserve the clearly recognizable vanara face and muzzle, expressive compassionate divine eyes, traditional crown or ornaments where appropriate, gada (mace), and devotional strength. If the scene calls for it, include a saffron dhoti and a reverent devotional pose. Do not replace the monkey-faced divine form with an ordinary human face."
-  },
-  {
-    pattern: /\b(lord\s+)?ganesha\b|\bganapati\b|\bvinayaka\b/i,
-    direction: "Depict Lord Ganesha unmistakably as the elephant-headed Hindu deity, with a clear elephant face and trunk, traditional crown and ornaments, and his characteristic divine form. Never substitute an ordinary human face."
-  },
-  {
-    pattern: /\b(lord\s+)?krishna\b/i,
-    direction: "Depict Lord Krishna unmistakably as the Hindu deity, with a serene youthful divine appearance, blue-toned skin, peacock feather, yellow garments and flute when suitable to the requested scene. Do not substitute a generic human saint."
-  },
-  {
-    pattern: /\b(lord\s+)?rama\b|\bshri\s+ram\b/i,
-    direction: "Depict Lord Rama unmistakably as the Hindu deity, with traditional divine iconography such as a bow, dignified royal-yet-humble presence, and appropriate traditional attire. Do not depict a generic monk or saint."
-  }
+  { pattern: /(?:ಅರ್ಧನಾರೀಶ್ವರ|ಅರ್ಧನಾರೀಶ್ವರಮೂರ್ತಿ|அர்த்தநாரீஸ்வரர்|அர்த்தநாரீஸ்வரர்|అర్ధనారీశ్వరుడు)/u, direction: ARDHANARISHVARA_DIRECTION },
+  { pattern: /(?:ಶಿವ|ಮಹಾದೇವ|சிவன்|மகாதேவன்|శివుడు|మహాదేవుడు)/u, direction: "Depict Lord Shiva (Mahadev) unmistakably as the Hindu deity, not a generic saint, monk, guru, or ordinary human. Include recognizable traditional iconography: blue-toned throat (Neelkanth), matted jatā hair with the crescent moon and a stream of the Ganga, tripundra ash stripes and third eye, rudraksha beads, and a trident (trishula); a serene divine presence. If seated, use a yogic Himalayan setting or Mount Kailash. Keep the face divine and dignified, with coherent anatomy and all requested attributes clearly visible." },
+  { pattern: /(?:ಹನುಮಂತ|ಆಂಜನೇಯ|அனுமன்|ஆஞ்சநேயர்|హనుమంతుడు|ఆంజనేయుడు)/u, direction: "Depict Lord Hanuman (Anjaneya) unmistakably as the Hindu monkey-faced deity, not a human saint, monk, or generic warrior. Preserve the clearly recognizable vanara face and muzzle, expressive compassionate divine eyes, traditional crown or ornaments where appropriate, gada (mace), and devotional strength. If the scene calls for it, include a saffron dhoti and a reverent devotional pose. Do not replace the monkey-faced divine form with an ordinary human face." },
+  { pattern: /(?:ಗಣೇಶ|ಗಣಪತಿ|விநாயகர்|பிள்ளையார்|గణేశుడు|వినాయకుడు)/u, direction: "Depict Lord Ganesha unmistakably as the elephant-headed Hindu deity, with a clear elephant face and trunk, traditional crown and ornaments, and his characteristic divine form. Never substitute an ordinary human face." },
+  { pattern: /(?:ಕೃಷ್ಣ|ಶ್ರೀಕೃಷ್ಣ|கிருஷ்ணர்|கண்ணன்|కృష్ణుడు)/u, direction: "Depict Lord Krishna unmistakably as the Hindu deity, with a serene youthful divine appearance, blue-toned skin, peacock feather, yellow garments and flute when suitable to the requested scene. Do not substitute a generic human saint." },
+  { pattern: /(?:ರಾಮ|ಶ್ರೀರಾಮ|ராமர்|ஸ்ரீராமர்|రాముడు|శ్రీరాముడు)/u, direction: "Depict Lord Rama unmistakably as the Hindu deity, with traditional divine iconography such as a bow, dignified royal-yet-humble presence, and appropriate traditional attire. Do not depict a generic monk or saint." },
+  { pattern: /(?:शिव|महादेव|শিব|মহাদেব|શિવ|મહાદેવ)/u, direction: "Depict Lord Shiva (Mahadev) unmistakably as the Hindu deity, not a generic saint, monk, guru, or ordinary human. Include recognizable traditional iconography: blue-toned throat (Neelkanth), matted jata hair with the crescent moon and a stream of the Ganga, tripundra ash stripes and third eye, rudraksha beads, and a trident (trishula); a serene divine presence. If seated, use a yogic Himalayan setting or Mount Kailash. Keep the face divine and dignified, with coherent anatomy and all requested attributes clearly visible." },
+  { pattern: /(?:हनुमान|হনুমান|હનુમાન)/u, direction: "Depict Lord Hanuman (Anjaneya) unmistakably as the Hindu monkey-faced deity, not a human saint, monk, or generic warrior. Preserve the clearly recognizable vanara face and muzzle, expressive compassionate divine eyes, traditional crown or ornaments where appropriate, gada (mace), and devotional strength. If the scene calls for it, include a saffron dhoti and a reverent devotional pose. Do not replace the monkey-faced divine form with an ordinary human face." },
+  { pattern: /(?:गणेश|गणपति|विनायक|গণেশ|গণপতি|বিনায়ক|ગણેશ|ગણપતિ|વિનાયક)/u, direction: "Depict Lord Ganesha unmistakably as the elephant-headed Hindu deity, with a clear elephant face and trunk, traditional crown and ornaments, and his characteristic divine form. Never substitute an ordinary human face." },
+  { pattern: /(?:कृष्ण|श्रीकृष्ण|কৃষ্ণ|শ্রীকৃষ্ণ|કૃષ્ણ|શ્રીકૃષ્ણ)/u, direction: "Depict Lord Krishna unmistakably as the Hindu deity, with a serene youthful divine appearance, blue-toned skin, peacock feather, yellow garments and flute when suitable to the requested scene. Do not substitute a generic human saint." },
+  { pattern: /(?:राम|श्रीराम|রাম|শ্রীরাম|રામ|શ્રીરામ)/u, direction: "Depict Lord Rama unmistakably as the Hindu deity, with traditional divine iconography such as a bow, dignified royal-yet-humble presence, and appropriate traditional attire. Do not depict a generic monk or saint." },
+  { pattern: /(?:अर्धनारीश्वर|অর্ধনারীশ্বর|અર્ધનારીશ્વર)/u, direction: ARDHANARISHVARA_DIRECTION },
+  { pattern: /\\bardhanarishvara\\b|\\bardhanarishwar\\b|\\bshiva\\s*[-/]\\s*parvati\\s*combined\\b/i, direction: ARDHANARISHVARA_DIRECTION },
+  { pattern: /\\b(lord\\s+)?shiva\\b|\\bmahadev\\b|\\bmahadeva\\b|\\bshankar\\b/i, direction: "Depict Lord Shiva (Mahadev) unmistakably as the Hindu deity, not a generic saint, monk, guru, or ordinary human. Include recognizable traditional iconography: blue-toned throat (Neelkanth), matted jatā hair with the crescent moon and a stream of the Ganga, tripundra ash stripes and third eye, rudraksha beads, and a trident (trishula); a serene divine presence. If seated, use a yogic Himalayan setting or Mount Kailash. Keep the face divine and dignified, with coherent anatomy and all requested attributes clearly visible." },
+  { pattern: /\\b(hanuman|anjaneya|anjaneya swamy|maruti)\\b/i, direction: "Depict Lord Hanuman (Anjaneya) unmistakably as the Hindu monkey-faced deity, not a human saint, monk, or generic warrior. Preserve the clearly recognizable vanara face and muzzle, expressive compassionate divine eyes, traditional crown or ornaments where appropriate, gada (mace), and devotional strength. If the scene calls for it, include a saffron dhoti and a reverent devotional pose. Do not replace the monkey-faced divine form with an ordinary human face." },
+  { pattern: /\\b(lord\\s+)?ganesha\\b|\\bganapati\\b|\\bvinayaka\\b/i, direction: "Depict Lord Ganesha unmistakably as the elephant-headed Hindu deity, with a clear elephant face and trunk, traditional crown and ornaments, and his characteristic divine form. Never substitute an ordinary human face." },
+  { pattern: /\\b(lord\\s+)?krishna\\b/i, direction: "Depict Lord Krishna unmistakably as the Hindu deity, with a serene youthful divine appearance, blue-toned skin, peacock feather, yellow garments and flute when suitable to the requested scene. Do not substitute a generic human saint." },
+  { pattern: /\\b(lord\\s+)?rama\\b|\\bshri\\s+ram\\b/i, direction: "Depict Lord Rama unmistakably as the Hindu deity, with traditional divine iconography such as a bow, dignified royal-yet-humble presence, and appropriate traditional attire. Do not depict a generic monk or saint." }
 ];
 
 export function buildImagePrompt(prompt, quality = "masterpiece") {
@@ -125,14 +71,23 @@ export function buildImageEditPrompt(referencePrompt, editPrompt) {
   const original = typeof referencePrompt === "string" ? referencePrompt.trim().slice(0, 1200) : "";
   const refinement = typeof editPrompt === "string" ? editPrompt.trim() : "";
   if (!refinement) return null;
+
   const brief = [
     original ? `Original image brief: ${original}` : "",
     `Requested refinement: ${refinement}`,
-    "Use the supplied reference image as the source of truth. Preserve the exact main subject, identity, face, anatomy, pose, clothing, sacred attributes, composition, and all existing details unless the user explicitly asks to change them. Make only the requested refinement. Do not replace, reinterpret, or redesign the subject.",
+    "REFERENCE-LOCKED EDIT: The supplied image is the canonical source. Treat this as a constrained edit of that exact image, not a new image-generation request.",
+    "CHANGE SCOPE: Modify only the specific region or attribute explicitly named in the requested refinement. Keep every unmentioned region unchanged. Do not apply a global restyle, global relighting, beauty filter, color grade, sharpening pass, or composition redesign.",
+    "IDENTITY LOCK: Preserve the same people and their exact recognizable identity: facial geometry, eye shape and spacing, nose, lips, jawline, skin tone and texture, hairline, hairstyle, age cues, expression, body proportions, pose, clothing, accessories and relative positions. Do not beautify, retouch, age, de-age, slim, reshape, or reinterpret them unless the user explicitly requests that exact change.",
+    "SCENE LOCK: Preserve the original camera viewpoint, perspective, crop, aspect ratio, subject scale, framing, background elements, object count, object geometry, text, logos and spatial relationships except where the requested edit directly applies. Do not add, remove, duplicate, or move anything outside the requested change.",
+    "EDIT BOUNDARY: Keep transitions at the edited region natural and physically consistent with the unchanged source. Match existing light direction, shadows, reflections, depth of field, grain, sharpness and color temperature. Do not let the edit bleed onto protected faces, bodies, products, or other untouched objects.",
+    "If the request explicitly asks to change a protected feature, change only that named feature and preserve all other identity and scene attributes. If the requested change is ambiguous, make the smallest plausible edit rather than inventing a new interpretation.",
+    "Do not add captions, watermarks, signatures, decorative elements, extra people, extra limbs, or unrequested visual effects."
   ].filter(Boolean).join("\n\n");
-  return buildImagePrompt(brief, "masterpiece");
-}
 
+  // Use standard subject recognition only. The full-image-generation art
+  // direction can encourage a provider to repaint the whole reference.
+  return buildImagePrompt(brief, "standard");
+}
 
 
 const IMAGE_SERIES_FIELDS = Object.freeze({
