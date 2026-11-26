@@ -42,13 +42,18 @@ export async function createReferenceImageFile(dataUrl, {
   const context = canvas.getContext("2d");
   if (!context) throw new Error("Could not prepare the reference image.");
   context.drawImage(image, 0, 0, canvas.width, canvas.height);
-  const blob = await new Promise((resolve, reject) => canvas.toBlob(
+  const encode = (type, quality) => new Promise((resolve, reject) => canvas.toBlob(
     (value) => value ? resolve(value) : reject(new Error("Could not prepare the reference image.")),
-    "image/jpeg",
-    0.92
+    type,
+    quality
   ));
-  if (!blob || blob.size < 1 || blob.size > MAX_REFERENCE_IMAGE_BYTES) {
+  let blob = await encode(sourceBlob.type, sourceBlob.type === "image/jpeg" ? 0.92 : undefined);
+  if (!SUPPORTED_REFERENCE_TYPES.has(blob.type) || blob.size < 1 || blob.size > MAX_REFERENCE_IMAGE_BYTES) {
+    if (sourceBlob.type !== "image/jpeg") blob = await encode("image/jpeg", 0.92);
+  }
+  if (!SUPPORTED_REFERENCE_TYPES.has(blob.type) || blob.size < 1 || blob.size > MAX_REFERENCE_IMAGE_BYTES) {
     throw new Error("The reference image is too large to prepare. Please use a smaller image.");
   }
-  return new FileCtor([blob], "aahana-reference.jpg", { type: "image/jpeg" });
+  const extension = blob.type === "image/png" ? "png" : blob.type === "image/webp" ? "webp" : "jpg";
+  return new FileCtor([blob], "aahana-reference." + extension, { type: blob.type });
 }
