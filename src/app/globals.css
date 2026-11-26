@@ -716,3 +716,26 @@ h1,.brand,.composer-mode,.breadcrumb{font-family:"Space Grotesk","Manrope",sans-
 .learning-page>.universe-webgl[data-webgl-fallback="true"]{display:none}
 @media(max-width:760px){.auth-universe .universe-webgl{opacity:.42}.learning-page>.universe-webgl{opacity:.34}}
 @media(prefers-reduced-motion:reduce){.auth-universe .universe-webgl,.learning-page>.universe-webgl{opacity:.3}}
+
+
+/* Aahana universe quality correction: natural astronomical color, real WebGL
+   forms in the lead, and no duplicate flat CSS galaxy/nebula overlays. */
+.main-panel{
+  background:
+    radial-gradient(ellipse at 72% 18%,#18364224 0%,transparent 44%),
+    linear-gradient(145deg,#050a10 0%,#08121a 48%,#070b10 100%)!important;
+}
+.space-background .universe-webgl{opacity:1!important}
+.space-background .universe-galaxy,
+.space-background .universe-particles,
+.space-background .universe-comets{display:none!important}
+.space-background .universe-depth-stars{opacity:.12!important}
+.auth-universe{background:radial-gradient(ellipse at 52% 44%,#10232d 0%,#09131b 50%,#05090f 100%)!important}
+.auth-universe::before,.auth-universe::after,.auth-universe>span{display:none!important}
+.auth-universe .universe-webgl{opacity:1!important}
+.learning-page>.universe-webgl{opacity:1!important}
+@media(max-width:760px){
+  .space-background .universe-webgl,
+  .auth-universe .universe-webgl,
+  .learning-page>.universe-webgl{opacity:.92!important}
+}
