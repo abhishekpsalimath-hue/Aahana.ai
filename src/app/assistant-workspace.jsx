@@ -1612,7 +1612,6 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     }
     const userMessage = { role: "user", content: imageFile ? `${text || "Please identify this image."}\n[Image attached: ${imageFile.name}]` : text };
     const assistantMessage = { role: "assistant", content: "" };
-    setImageFile(null);
     setMessages((current) => [...current, userMessage, assistantMessage]);
 
     let answer = "";
@@ -1670,6 +1669,8 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         index === current.length - 1 ? { ...item, content: answer || "I couldn't generate a response. Please try again." } : item
       ));
       setHistory([]);
+      // Keep the selected original available for retry until the response completes successfully.
+      setImageFile(null);
     } catch (err) {
       if (answerUpdateTimer !== null) { window.clearTimeout(answerUpdateTimer); answerUpdateTimer = null; }
       setMessages((current) => {
