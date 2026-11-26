@@ -1,4 +1,4 @@
-export function createSseContentParser(onDelta) {
+export function createSseContentParser(onDelta, { maxEventChars = 256_000 } = {}) {
   if (typeof onDelta !== "function") {
     throw new TypeError("A stream delta handler is required.");
   }
@@ -6,6 +6,11 @@ export function createSseContentParser(onDelta) {
   let buffer = "";
   let dataLines = [];
   let closed = false;
+  let firstChunk = true;
+  let eventChars = 0;
+  if (!Number.isSafeInteger(maxEventChars) || maxEventChars < 1) {
+    throw new RangeError("The SSE event limit must be a positive safe integer.");
+  }
 
   const dispatchEvent = () => {
     if (!dataLines.length) return;
@@ -32,6 +37,13 @@ export function createSseContentParser(onDelta) {
     if (field !== "data") return;
     let value = separator === -1 ? "" : line.slice(separator + 1);
     if (value.startsWith(" ")) value = value.slice(1);
+    eventChars += value.length;
+    if (eventChars > maxEventChars) {
+      closed = true;
+      buffer = "";
+      dataLines = [];
+      throw new RangeError("The SSE event exceeds the configured size limit.");
+    }
     dataLines.push(value);
   };
 
