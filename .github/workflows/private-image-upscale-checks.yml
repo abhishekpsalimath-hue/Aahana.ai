@@ -1,0 +1,46 @@
+name: Aahana private image upscale checks
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "workers/image-upscale/**"
+      - "src/app/api/images/upscale/**"
+      - "src/lib/creative/image-upscale.*"
+      - "src/app/assistant-workspace.jsx"
+      - "src/app/api/build/status/route.js"
+      - ".github/workflows/private-image-upscale-checks.yml"
+      - "package.json"
+      - "package-lock.json"
+  push:
+    branches: [feat/4k-image-enhancement-current-main]
+    paths:
+      - "workers/image-upscale/**"
+      - "src/app/api/images/upscale/**"
+      - "src/lib/creative/image-upscale.*"
+      - ".github/workflows/private-image-upscale-checks.yml"
+      - "package.json"
+      - "package-lock.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aahana-private-image-upscale-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run isolated image-upscale tests
+        run: node --test workers/image-upscale/index.test.mjs src/lib/creative/image-upscale.test.mjs
+      - name: Install application dependencies
+        run: npm install --no-audit --no-fund
+      - name: Run application tests and production build
+        run: npm run build
