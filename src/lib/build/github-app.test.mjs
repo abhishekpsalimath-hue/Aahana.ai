@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createHash, generateKeyPairSync, createVerify } from "node:crypto";
-import { createGitHubAppJwt, createSelfBuildPullRequest, getSelfBuildRepository } from "./github-app.mjs";
+import { createGitHubAppJwt, createSelfBuildPullRequest, getSelfBuildRepository, getSelfBuildFile } from "./github-app.mjs";
 
 const { privateKey: privateKeyObject, publicKey } = generateKeyPairSync("rsa", {
   modulusLength: 2048,
@@ -23,7 +23,7 @@ function decodeJwtPart(value) {
 }
 
 function mockResponse(data, status = 200) {
-  return { ok: status >= 200 && status < 300, status, async text() { return JSON.stringify(data); } };
+  return new Response(JSON.stringify(data), { status, headers: { "content-type": "application/json" } });
 }
 
 test("creates a short-lived RS256 GitHub App JWT", () => {
@@ -387,4 +387,69 @@ test("reuses an existing draft only after verifying its exact pinned branch cont
   assert.equal(second.branch, first.branch);
   assert.equal(baseRefReads, 1, "a retry reuses its existing draft even if main has since moved");
   assert.equal(writesAfterSecond, writesAfterFirst);
+});
+
+
+test("fails closed instead of silently truncating an oversized approved inventory", async () => {
+  const entries = Array.from({ length: 501 }, (_, index) => ({
+    type: "blob",
+    path: "src/app/experience-lab/page-" + index + ".jsx",
+    sha: "b".repeat(40),
+    size: 10,
+  }));
+  const fetchImpl = async (url) => {
+    if (url.endsWith("/access_tokens")) return mockResponse({ token: "installation-token" });
+    if (url.includes("/git/ref/heads/main")) return mockResponse({ object: { sha: baseSha } });
+    if (url.includes("/git/trees/")) return mockResponse({ truncated: false, tree: entries });
+    throw new Error("Unexpected GitHub request: " + url);
+  };
+  await assert.rejects(() => getSelfBuildRepository({ env, fetchImpl }), /500-file safety limit/);
+});
+
+test("reads only canonical base64 UTF-8 content whose bytes match GitHub's blob SHA", async () => {
+  const source = "export const greeting = 'Aahana 💜';";
+  const bytes = Buffer.from(source, "utf8");
+  const sha = createHash("sha1").update("blob " + bytes.length + "\\0").update(bytes).digest("hex");
+  const fetchImpl = async (url) => {
+    if (url.endsWith("/access_tokens")) return mockResponse({ token: "installation-token" });
+    if (url.includes("/contents/")) return mockResponse({ type: "file", encoding: "base64", content: bytes.toString("base64"), sha });
+    throw new Error("Unexpected GitHub request: " + url);
+  };
+  const result = await getSelfBuildFile({ path: "src/app/experience-lab/page.jsx", ref: baseSha, env, fetchImpl });
+  assert.equal(result.content, source);
+  assert.equal(result.sha, sha);
+});
+
+test("rejects malformed base64, malformed UTF-8 and mismatched GitHub blob hashes", async () => {
+  const cases = [
+    { content: "%%%not-base64%%%", sha: "a".repeat(40) },
+    { content: Buffer.from([0xc3, 0x28]).toString("base64"), sha: "a".repeat(40) },
+    { content: Buffer.from("valid utf8").toString("base64"), sha: "a".repeat(40) },
+  ];
+  for (const item of cases) {
+    const fetchImpl = async (url) => {
+      if (url.endsWith("/access_tokens")) return mockResponse({ token: "installation-token" });
+      if (url.includes("/contents/")) return mockResponse({ type: "file", encoding: "base64", ...item });
+      throw new Error("Unexpected GitHub request: " + url);
+    };
+    await assert.rejects(() => getSelfBuildFile({
+      path: "src/app/experience-lab/page.jsx", ref: baseSha, env, fetchImpl,
+    }));
+  }
+});
+
+test("cancels a GitHub API response stream that exceeds the response cap", async () => {
+  let cancelled = false;
+  const fetchImpl = async (url) => {
+    if (url.endsWith("/access_tokens")) return mockResponse({ token: "installation-token" });
+    if (url.includes("/git/ref/heads/main")) {
+      return new Response(new ReadableStream({
+        start(controller) { controller.enqueue(new TextEncoder().encode("x".repeat(1024 * 1024 + 1))); },
+        cancel() { cancelled = true; },
+      }));
+    }
+    throw new Error("Unexpected GitHub request: " + url);
+  };
+  await assert.rejects(() => getSelfBuildRepository({ env, fetchImpl }), /safe size limit/);
+  assert.equal(cancelled, true);
 });
