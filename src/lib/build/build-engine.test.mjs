@@ -285,7 +285,7 @@ test("stops the sandbox and denies egress when a project command is cancelled", 
   }), /Build cancelled/);
 
   assert.equal(calls.filter((call) => call.type === "runCommand").length, 1);
-  assert.equal(calls.filter((call) => call.type === "stop").length, 1);
+  assert.equal(calls.filter((call) => call === "stop").length, 1);
   assert.equal(calls.at(-1), "stop");
   assert.equal(calls.filter((call) => call.type === "update").at(-1).options.networkPolicy, "deny-all");
 });
