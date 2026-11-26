@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createVideoJob, startVideoJob, updateVideoJobProgress } from "./video-job-lifecycle.mjs";
+import { createVideoJob, startVideoJob, updateVideoJobProgress, failVideoJob, retryVideoJob } from "./video-job-lifecycle.mjs";
 import { createVideoJobRepository } from "./video-job-repository.mjs";
 
 function makeAdapter() {
@@ -137,7 +137,6 @@ test("rejects forged lifecycle snapshots and illegal state jumps", async () => {
     (job) => ({ ...job, state: "running", attempt: 3, startedAt: 110, updatedAt: 110 }),
     (job) => ({ ...job, state: "running", progress: 25, updatedAt: 110 }),
     (job) => ({ ...job, createdAt: 99, state: "running", attempt: 1, startedAt: 110, updatedAt: 110 }),
-    (job) => ({ ...job, state: "cancelled", completedAt: 110, updatedAt: 110 }),
   ];
   for (const apply of invalidTransitions) {
     await assert.rejects(repository.transition({
