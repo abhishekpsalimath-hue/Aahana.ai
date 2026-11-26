@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { Sandbox } from "@vercel/sandbox";
 import { createClient } from "@/lib/supabase/server";
+import { readBoundedJson } from "@/lib/chat/bounded-json.mjs";
 import { validateWorkspaceFiles, validatePackageManifest } from "@/lib/build/sandbox-policy.mjs";
 import { getPreviewCommand } from "@/lib/build/preview-policy.mjs";
 import { isSupportedSourceFile, isSafePrivateObjectPath } from "@/lib/build/source-file-policy.mjs";
@@ -25,7 +26,15 @@ export async function POST(request) {
   if (!hasSandboxIdentity) return NextResponse.json({ error: "Secure preview runtime is unavailable in this environment." }, { status: 503 });
 
   let body;
-  try { body = await request.json(); } catch { return NextResponse.json({ error: "Invalid preview request." }, { status: 400 }); }
+  try {
+    body = await readBoundedJson(request, 16 * 1024);
+  } catch (error) {
+    if (request.signal.aborted) return NextResponse.json({ error: "Preview cancelled." }, { status: 499 });
+    return NextResponse.json(
+      { error: error?.status === 413 ? "Preview request is too large." : "Invalid preview request." },
+      { status: error?.status || 400 },
+    );
+  }
   const projectId = typeof body?.projectId === "string" ? body.projectId : "";
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(projectId)) {
     return NextResponse.json({ error: "Select a valid project first." }, { status: 400 });
