@@ -85,18 +85,36 @@ test("provider registry reports configuration without exposing credentials", () 
   assert.equal(JSON.stringify(status).includes("secret"), false);
 });
 
-test("reference image edit prompt preserves original sacred subject identity", () => {
+test("reference image edit uses a constrained edit brief rather than global generation art direction", () => {
+  const prompt = buildImageEditPrompt(
+    "A woman with short curly hair, round glasses, a blue jacket, standing beside a red bicycle",
+    "Replace only the background with a quiet Kyoto street at dawn",
+  );
+  assert.match(prompt, /Original image brief: A woman with short curly hair/);
+  assert.match(prompt, /Requested refinement: Replace only the background/);
+  assert.match(prompt, /REFERENCE-LOCKED EDIT/);
+  assert.match(prompt, /Modify only the specific region or attribute/i);
+  assert.match(prompt, /facial geometry, eye shape and spacing, nose, lips, jawline/i);
+  assert.match(prompt, /original camera viewpoint, perspective, crop, aspect ratio/i);
+  assert.match(prompt, /Do not apply a global restyle/i);
+  assert.match(prompt, /edit bleed onto protected faces/i);
+  assert.doesNotMatch(prompt, /portfolio-worthy hero image/i);
+  assert.doesNotMatch(prompt, /Creative direction: produce a premium/i);
+});
+
+test("reference image edit retains subject-specific sacred visual attributes without full image art direction", () => {
   const prompt = buildImageEditPrompt(
     "Generate Lord Shiva with a crescent moon, Ganga, tripundra and trident",
-    "Make the background cinematic"
+    "Make the background cinematic",
   );
   assert.match(prompt, /Original image brief: Generate Lord Shiva/i);
   assert.match(prompt, /Requested refinement: Make the background cinematic/i);
-  assert.match(prompt, /Preserve the exact main subject, identity, face, anatomy, pose/i);
+  assert.match(prompt, /Preserve the same people and their exact recognizable identity|IDENTITY LOCK/i);
   assert.match(prompt, /Lord Shiva \(Mahadev\) unmistakably/i);
+  assert.doesNotMatch(prompt, /portfolio-worthy hero image/i);
 });
 
-test("reference image edit prompt rejects empty instructions", () => {
+test("reference image edit rejects empty instructions", () => {
   assert.equal(buildImageEditPrompt("A portrait", " "), null);
 });
 
