@@ -34,6 +34,7 @@ export async function POST(request) {
     return NextResponse.json({ error: "Invalid video request." }, { status: 400 });
   }
   const boundedBody = await readBoundedRequestBody(request, MAX_VIDEO_REQUEST_BYTES);
+  if (request.signal.aborted) return NextResponse.json({ error: "Video generation cancelled." }, { status: 499 });
   if (!boundedBody.ok) {
     return NextResponse.json(
       { error: boundedBody.reason === "too-large" ? "The video request exceeds the 2 MB image-upload limit." : "Invalid video request." },
@@ -62,6 +63,7 @@ export async function POST(request) {
   } catch {
     return NextResponse.json({ error: "Invalid video request." }, { status: 400 });
   }
+  if (request.signal.aborted) return NextResponse.json({ error: "Video generation cancelled." }, { status: 499 });
   if (!input.ok) return NextResponse.json({ error: input.error }, { status: 400 });
 
   const providerResolution = resolveVideoProvider(process.env.AAHANA_VIDEO_PROVIDER);
@@ -93,6 +95,7 @@ export async function POST(request) {
       const extension = imageFile.type === "image/png" ? "png" : imageFile.type === "image/webp" ? "webp" : "jpg";
       temporaryObjectPath = `${user.id}/personal/video-input-${crypto.randomUUID()}.${extension}`;
       const bytes = new Uint8Array(await imageFile.arrayBuffer());
+      if (request.signal.aborted) return NextResponse.json({ error: "Video generation cancelled." }, { status: 499 });
       const validation = validateVideoReferenceImage({ bytes, imageType: imageFile.type, imageSize: imageFile.size });
       if (!validation.ok) {
         temporaryObjectPath = null;
@@ -101,6 +104,7 @@ export async function POST(request) {
       const { error: uploadError } = await supabase.storage.from("aahana-private").upload(
         temporaryObjectPath, bytes, { contentType: imageFile.type, upsert: false }
       );
+      if (request.signal.aborted) return NextResponse.json({ error: "Video generation cancelled." }, { status: 499 });
       if (uploadError) {
         console.error("Aahana video input upload failed:", uploadError.message);
         return NextResponse.json({ error: "Could not securely prepare the reference image." }, { status: 400 });
@@ -113,6 +117,7 @@ export async function POST(request) {
       providerInput.image = { url: signed.signedUrl };
     }
 
+    if (request.signal.aborted) return NextResponse.json({ error: "Video generation cancelled." }, { status: 499 });
     const response = await fetch(
       `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/ai/run`,
       {
@@ -123,11 +128,13 @@ export async function POST(request) {
         },
         body: JSON.stringify({ model: provider.model, input: providerInput }),
         cache: "no-store",
-        signal: AbortSignal.timeout(160000),
+        signal: AbortSignal.any([request.signal, AbortSignal.timeout(160000)]),
       }
     );
 
+    if (request.signal.aborted) return NextResponse.json({ error: "Video generation cancelled." }, { status: 499 });
     const parsedProviderResponse = await readBoundedResponseJson(response);
+    if (request.signal.aborted) return NextResponse.json({ error: "Video generation cancelled." }, { status: 499 });
     const result = parsedProviderResponse.ok ? parsedProviderResponse.value : null;
     const videoUrl = result?.result?.video;
     if (!response.ok || !hasCompletedVideoProviderResult(result) || typeof videoUrl !== "string") {
@@ -162,6 +169,9 @@ export async function POST(request) {
       mode: imageFile ? "image-to-video" : "text-to-video",
     }, { headers: { "Cache-Control": "private, no-store" } });
   } catch (error) {
+    if (request.signal.aborted || error?.name === "AbortError") {
+      return NextResponse.json({ error: "Video generation cancelled." }, { status: 499 });
+    }
     console.error("Aahana video generation request failed:", error?.name || "unknown error");
     return NextResponse.json({ error: "Video generation timed out or the provider is unavailable. Please try again." }, { status: 503 });
   } finally {
