@@ -56,7 +56,7 @@ export async function POST(request) {
   let imageBytes = null;
   const contentType = request.headers.get("content-type") || "";
   try {
-    if (/^multipart\\/form-data\\s*;/i.test(contentType)) {
+    if (/^multipart\/form-data\s*;/i.test(contentType)) {
       const form = await readBoundedMultipartFormData(request, 2_250_000);
       const uploadedImages = form.getAll("image");
       if (uploadedImages.length > 1) {
@@ -87,7 +87,7 @@ export async function POST(request) {
       body = await readBoundedJson(request, 3_200_000);
       image = body?.image && typeof body.image === "object" && !Array.isArray(body.image) ? body.image : null;
       imageDataUrl = typeof image?.dataUrl === "string" ? image.dataUrl : "";
-      const imageMatch = imageDataUrl.match(/^data:(image\\/(?:png|jpeg|webp));base64,([A-Za-z0-9+/=]+)$/);
+      const imageMatch = imageDataUrl.match(/^data:(image\/(?:png|jpeg|webp));base64,([A-Za-z0-9+/=]+)$/);
       if (image && (!imageMatch || imageDataUrl.length > 2_850_000)) {
         return NextResponse.json({ error: "Please attach one valid PNG, JPEG or WebP image under 2 MB." }, { status: 400 });
       }
