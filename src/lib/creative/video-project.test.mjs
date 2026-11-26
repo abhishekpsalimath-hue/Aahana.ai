@@ -69,6 +69,7 @@ test("rejects duplicate, out-of-range and unsupported keyframes or transitions",
   for (const clip of [
     { id: "c", assetId: "a", start: 0, duration: 4, keyframes: [{ at: 5, property: "opacity", value: 1 }] },
     { id: "c", assetId: "a", start: 0, duration: 4, keyframes: [{ at: 1, property: "opacity", value: 2 }] },
+    { id: "c", assetId: "a", start: 0, duration: 4, keyframes: [{ at: 1, property: "volume", value: 2.5 }] },
     { id: "c", assetId: "a", start: 0, duration: 4, keyframes: [{ at: 1, property: "opacity", value: 1 }, { at: 1, property: "opacity", value: 0 }] },
     { id: "c", assetId: "a", start: 0, duration: 4, transitionIn: "unknown", transitionInDuration: 1 },
     { id: "c", assetId: "a", start: 0, duration: 4, transitionIn: "crossfade", transitionInDuration: 3 },
