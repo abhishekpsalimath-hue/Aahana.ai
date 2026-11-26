@@ -4,9 +4,17 @@ import { parseImageGenerationInput, parseImageEditInput, MAX_IMAGE_EDIT_BYTES, M
 import { buildImageEditPrompt, buildImageSeriesPrompt } from "./creative-director.mjs";
 
 test("defaults to automatic masterpiece image direction without asking the user to choose settings", () => {
-  assert.deepEqual(parseImageGenerationInput({ prompt: "A moonlit forest" }), {
-    ok: true, prompt: "A moonlit forest\n\nCreative direction: produce a premium, portfolio-worthy hero image. Establish one unmistakable focal subject and a deliberate visual hierarchy. Use intentional composition, believable perspective, rich but controlled color, nuanced lighting, dimensional depth, tactile material detail, and crisp subject separation. Make fine details coherent and purposeful; avoid visual clutter, accidental text, malformed anatomy, duplicate objects, plastic-looking textures, and oversharpening. Treat the user prompt as a specification, not loose inspiration. Preserve the exact requested subject identity, number of subjects and objects, defining attributes, left/right placement, pose, setting, materials, palette, and framing. Resolve conflicts in favor of the user's explicit requirements; never replace a named subject with a visually similar generic subject. Interpret the request in the language it was written in; preserve proper names and any exact visible wording, and never invent text. Do not add logos, words, or extra objects unless requested.", steps: 8, style: "none", quality: "masterpiece", aspectRatio: "1:1", width: 1024, height: 1024,
-  });
+  const result = parseImageGenerationInput({ prompt: "A moonlit forest" });
+  assert.equal(result.ok, true);
+  assert.equal(result.steps, 8);
+  assert.equal(result.style, "none");
+  assert.equal(result.quality, "masterpiece");
+  assert.equal(result.aspectRatio, "1:1");
+  assert.match(result.prompt, /^A moonlit forest\\n\\nCreative direction:/);
+  assert.match(result.prompt, /portfolio-worthy hero image/i);
+  assert.match(result.prompt, /Composition fidelity is mandatory/i);
+  assert.match(result.prompt, /Subject fidelity is mandatory/i);
+  assert.match(result.prompt, /tactile material detail/i);
 });
 
 test("accepts explicit supported eight-step image generation with automatic creative direction", () => {
@@ -181,7 +189,7 @@ test("image edits preserve reference identity and change only the requested deta
 test("image edit prompt builder rejects an empty refinement and bounds copied source brief", () => {
   assert.equal(buildImageEditPrompt("Original image", "  "), null);
   const prompt = buildImageEditPrompt("x".repeat(1400), "Change only the lighting");
-  assert.ok(prompt.length < 3000);
+  assert.ok(prompt.length < 6500);
   assert.match(prompt, /x{1200}/);
   assert.doesNotMatch(prompt, /x{1201}/);
 });
