@@ -1,4 +1,12 @@
-import { createVideoJob } from "./video-job-lifecycle.mjs";
+import {
+  createVideoJob,
+  startVideoJob,
+  updateVideoJobProgress,
+  completeVideoJob,
+  failVideoJob,
+  retryVideoJob,
+  cancelVideoJob,
+} from "./video-job-lifecycle.mjs";
 
 const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,99}$/;
 
@@ -7,6 +15,35 @@ function requireId(value, label) {
     throw new TypeError(label + " must be a stable opaque identifier.");
   }
   return value;
+}
+
+function sameSnapshot(actual, expected) {
+  if (!actual || typeof actual !== "object" || Array.isArray(actual)) return false;
+  const keys = Object.keys(expected);
+  return Object.keys(actual).length === keys.length &&
+    keys.every((key) => Object.hasOwn(actual, key) && actual[key] === expected[key]);
+}
+
+function isValidLifecycleTransition(current, next) {
+  const candidates = [];
+  try {
+    if (current.state === "queued") {
+      if (next.state === "running") candidates.push(startVideoJob(current, next.updatedAt));
+      if (next.state === "cancelled") candidates.push(cancelVideoJob(current, next.updatedAt));
+    } else if (current.state === "running") {
+      if (next.state === "running") candidates.push(updateVideoJobProgress(current, next.progress, next.updatedAt));
+      if (next.state === "succeeded") candidates.push(completeVideoJob(current, next.updatedAt));
+      if (next.state === "failed") candidates.push(failVideoJob(current, {
+        now: next.updatedAt, errorCode: next.errorCode, retryable: next.retryable,
+      }));
+      if (next.state === "cancelled") candidates.push(cancelVideoJob(current, next.updatedAt));
+    } else if (current.state === "failed" && next.state === "queued") {
+      candidates.push(retryVideoJob(current, next.updatedAt));
+    }
+  } catch {
+    return false;
+  }
+  return candidates.some((candidate) => sameSnapshot(next, candidate));
 }
 
 function normalizeRecord(record, ownerId, jobId) {
@@ -100,6 +137,9 @@ export function createVideoJobRepository(adapter) {
           nextJob.id !== current.job.id || nextJob.ownerId !== current.job.ownerId ||
           nextJob.idempotencyKey !== current.job.idempotencyKey) {
         throw new Error("A transition cannot change job identity, owner or idempotency key.");
+      }
+      if (!isValidLifecycleTransition(current.job, nextJob)) {
+        throw new Error("The requested video-job transition violates the canonical lifecycle.");
       }
       const nextRecord = Object.freeze({
         revision: current.revision + 1,
