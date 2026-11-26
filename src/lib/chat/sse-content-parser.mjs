@@ -1,16 +1,25 @@
-export function createSseContentParser(onDelta) {
+export function createSseContentParser(onDelta, { maxEventChars = 256_000 } = {}) {
   if (typeof onDelta !== "function") {
     throw new TypeError("A stream delta handler is required.");
+  }
+  if (!Number.isSafeInteger(maxEventChars) || maxEventChars < 1) {
+    throw new RangeError("The SSE event limit must be a positive safe integer.");
   }
 
   let buffer = "";
   let dataLines = [];
+  let eventChars = 0;
+  let firstChunk = true;
   let closed = false;
 
   const dispatchEvent = () => {
-    if (!dataLines.length) return;
+    if (!dataLines.length) {
+      eventChars = 0;
+      return;
+    }
     const data = dataLines.join("\n");
     dataLines = [];
+    eventChars = 0;
     if (!data || data === "[DONE]") return;
     try {
       const payload = JSON.parse(data);
@@ -32,6 +41,14 @@ export function createSseContentParser(onDelta) {
     if (field !== "data") return;
     let value = separator === -1 ? "" : line.slice(separator + 1);
     if (value.startsWith(" ")) value = value.slice(1);
+    eventChars += value.length;
+    if (eventChars > maxEventChars) {
+      closed = true;
+      buffer = "";
+      dataLines = [];
+      eventChars = 0;
+      throw new RangeError("The SSE event exceeds the configured size limit.");
+    }
     dataLines.push(value);
   };
 
@@ -39,9 +56,20 @@ export function createSseContentParser(onDelta) {
     push(chunk) {
       if (closed) throw new Error("The stream parser is already closed.");
       if (typeof chunk !== "string") throw new TypeError("Stream chunks must be strings.");
+      if (firstChunk) {
+        firstChunk = false;
+        if (chunk.charCodeAt(0) === 0xfeff) chunk = chunk.slice(1);
+      }
       buffer += chunk;
       const lines = buffer.split("\n");
       buffer = lines.pop() ?? "";
+      if (buffer.length > maxEventChars + 6) {
+        closed = true;
+        buffer = "";
+        dataLines = [];
+        eventChars = 0;
+        throw new RangeError("The SSE event exceeds the configured size limit.");
+      }
       for (const line of lines) handleLine(line.replace(/\r$/, ""));
     },
     finish() {
