@@ -2,6 +2,7 @@
 
 import { createReferenceImageFile } from "@/lib/creative/reference-image-file.mjs";
 import { inferSpeechLanguage } from "@/lib/chat/speech-language.mjs";
+import { selectSpeechVoice } from "@/lib/chat/speech-voice-selection.mjs";
 
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
@@ -870,10 +871,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     if (speakingMessage === index) { setSpeakingMessage(null); return; }
     const utterance = new SpeechSynthesisUtterance(String(text || ""));
     utterance.lang = inferSpeechLanguage(text, navigator.language || "en-IN");
-    const voices = window.speechSynthesis.getVoices();
-    const languagePrefix = utterance.lang.split("-")[0].toLowerCase();
-    const matchingVoice = voices.find((voice) => voice.lang.toLowerCase() === utterance.lang.toLowerCase())
-      || voices.find((voice) => voice.lang.toLowerCase().startsWith(languagePrefix));
+    const matchingVoice = selectSpeechVoice(window.speechSynthesis.getVoices(), utterance.lang);
     if (matchingVoice) utterance.voice = matchingVoice;
     utterance.onend = () => setSpeakingMessage(null);
     utterance.onerror = () => setSpeakingMessage(null);
