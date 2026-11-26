@@ -29,6 +29,7 @@ export async function executeBuildTask({
   projectId,
   sandboxName,
   SandboxClient,
+  signal,
 }) {
   const workspaceFiles = validateWorkspaceFiles(files);
   const { manifest, hasDependencies } = validatePackageManifest(workspaceFiles);
@@ -63,10 +64,12 @@ export async function executeBuildTask({
     args = ["--", safeEntrypoint];
   }
 
+  if (signal?.aborted) throw new Error("Build cancelled.");
   const Client = SandboxClient || (await import("@vercel/sandbox")).Sandbox;
-  const sandbox = await Client.create(
-    createSafeSandboxOptions({ name: sandboxName, projectId }),
-  );
+  const sandbox = await Client.create({
+    ...createSafeSandboxOptions({ name: sandboxName, projectId }),
+    ...(signal ? { signal } : {}),
+  });
 
   let installOutput = "";
   try {
@@ -74,6 +77,7 @@ export async function executeBuildTask({
       path,
       content: Buffer.from(content, "utf8"),
     })));
+    if (signal?.aborted) throw new Error("Build cancelled.");
 
     if (hasDependencies) {
       let installResult;
@@ -83,6 +87,7 @@ export async function executeBuildTask({
           cmd: "npm",
           args: INSTALL_ARGS,
           cwd: "/vercel/sandbox",
+          ...(signal ? { signal } : {}),
         });
         const [stdout, stderr] = await readOutput(installResult);
         installOutput = (stdout + "\n" + stderr).slice(0, OUTPUT_LIMIT);
@@ -91,6 +96,7 @@ export async function executeBuildTask({
         await sandbox.update({ networkPolicy: "deny-all" });
       }
 
+      if (signal?.aborted) throw new Error("Build cancelled.");
       if (installResult.exitCode !== 0) {
         return {
           status: "failed",
@@ -106,7 +112,9 @@ export async function executeBuildTask({
       cmd: command,
       args,
       cwd: "/vercel/sandbox",
+      ...(signal ? { signal } : {}),
     });
+    if (signal?.aborted) throw new Error("Build cancelled.");
     const [stdout, stderr] = await readOutput(result);
     return {
       status: result.exitCode === 0 ? "passed" : "failed",
