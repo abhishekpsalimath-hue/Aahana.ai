@@ -3,10 +3,10 @@ export const MAX_REFERENCE_IMAGE_BYTES = 2 * 1024 * 1024;
 const SUPPORTED_REFERENCE_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
 
 export async function createReferenceImageFile(dataUrl, {
-  ImageCtor = Image,
-  documentRef,
-  fetchImpl = fetch,
-  FileCtor = File,
+  ImageCtor = globalThis.Image,
+  documentRef = globalThis.document,
+  fetchImpl = globalThis.fetch,
+  FileCtor = globalThis.File,
 } = {}) {
   if (typeof dataUrl !== "string" || !/^data:image\/(?:png|jpeg|webp);base64,/.test(dataUrl)) {
     throw new Error("Could not read the reference image.");
@@ -36,7 +36,7 @@ export async function createReferenceImageFile(dataUrl, {
   }
 
   const scale = Math.min(1, MAX_REFERENCE_IMAGE_EDGE / longestEdge);
-  const canvas = (documentRef ?? document).createElement("canvas");
+  const canvas = (documentRef ?? globalThis.document).createElement("canvas");
   canvas.width = Math.max(1, Math.round(width * scale));
   canvas.height = Math.max(1, Math.round(height * scale));
   const context = canvas.getContext("2d");
