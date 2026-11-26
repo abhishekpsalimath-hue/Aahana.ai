@@ -143,6 +143,18 @@ export function getReferenceImageDimensions(input, imageType) {
   return null;
 }
 
+export const MAX_REFERENCE_IMAGE_PIXELS = 40_000_000;
+export const MAX_REFERENCE_IMAGE_EDGE = 12_000;
+
+export function isImageWithinPixelBounds(dimensions, maxPixels = MAX_REFERENCE_IMAGE_PIXELS, maxEdge = MAX_REFERENCE_IMAGE_EDGE) {
+  if (!dimensions || !Number.isSafeInteger(dimensions.width) || !Number.isSafeInteger(dimensions.height) ||
+      dimensions.width < 1 || dimensions.height < 1 ||
+      !Number.isSafeInteger(maxPixels) || maxPixels < 1 ||
+      !Number.isSafeInteger(maxEdge) || maxEdge < 1) return false;
+  if (dimensions.width > maxEdge || dimensions.height > maxEdge) return false;
+  return dimensions.width * dimensions.height <= maxPixels;
+}
+
 export function isReferenceImageWithinProviderBounds(dimensions) {
   return Boolean(dimensions && Number.isInteger(dimensions.width) && Number.isInteger(dimensions.height) &&
     dimensions.width > 0 && dimensions.height > 0 && dimensions.width < 512 && dimensions.height < 512);
