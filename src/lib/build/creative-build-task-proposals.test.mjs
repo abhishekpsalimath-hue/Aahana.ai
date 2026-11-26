@@ -43,8 +43,8 @@ test("permits only creative and build-internals source files", () => {
     "src/lib/creative/.env.local",
     "src/lib/creative/evil／..／auth/page.jsx",
     "src/lib/creative/evil∕..∕auth/page.jsx",
-    "src/lib/creative/hidden\\u202ejs.mjs",
-    "src/lib/creative/hidden\\u2066js.mjs",
+    "src/lib/creative/hidden" + String.fromCharCode(0x202e) + "js.mjs",
+    "src/lib/creative/hidden" + String.fromCharCode(0x2066) + "js.mjs",
   ]) assert.throws(() => validateCreativeBuildTargetPath(path));
 });
 
