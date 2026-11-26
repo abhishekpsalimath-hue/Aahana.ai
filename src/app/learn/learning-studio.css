@@ -897,3 +897,19 @@
     transition: none !important;
   }
 }
+
+
+/* Natural cosmic palette: reserve lilac for small identity accents, not the
+   atmosphere or every interactive surface. */
+.learning-page{background:transparent!important;color:#edf2f4}
+.learning-header{border-bottom-color:#9fb7c322}
+.learning-brand span,.learning-hero h1 em{color:#b9d2dc}
+.learning-kicker,.learning-section-heading>div>span{color:#a9c3cf}
+.learning-header nav a{color:#c1d7df}
+.learning-mode-icon{color:#b8d2dc}
+.learning-mode-card.selected{border-color:#8eacba;background:linear-gradient(145deg,#172631,#0d151d);box-shadow:inset 0 0 0 1px #9dbac522}
+.learning-mode-card:hover{border-color:#7798a8}
+.learning-select-grid select:focus,.learning-select-grid input:focus,.learning-composer textarea:focus{border-color:#9bbbc9}
+.learning-composer button{background:#d2e0e5;color:#101a20}
+.learning-mode-card small,.learning-quiz-heading span,.learning-quiz-options button span{color:#b9d2dc}
+.learning-quiz-options button:hover:not(:disabled){border-color:#8daab8;background:#1a2a34}
