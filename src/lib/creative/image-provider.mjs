@@ -12,7 +12,7 @@ export function getImageOutputMimeType(model) {
 
 export function getValidatedImageDataUrlMimeType(value, maxLength = 2_850_000) {
   if (typeof value !== "string" || !Number.isSafeInteger(maxLength) || maxLength < 1 || value.length > maxLength) return null;
-  const match = value.match(/^data:(image\\/(?:png|jpeg|webp));base64,([A-Za-z0-9+/=]+)$/);
+  const match = value.match(/^data:(image\/(?:png|jpeg|webp));base64,([A-Za-z0-9+/=]+)$/);
   if (!match) return null;
   const detectedMime = detectImageMimeTypeFromBase64(match[2]);
   return detectedMime === match[1] ? detectedMime : null;
