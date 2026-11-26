@@ -10,6 +10,7 @@ import { createClient } from "@/lib/supabase/client";
 import { getSourceFileMimeType, isSupportedSourceFile } from "@/lib/build/source-file-policy.mjs";
 import { isImageGenerationRequest, isImageEditRequest, isVideoGenerationRequest } from "@/lib/creative/creative-intent.mjs";
 import { getGeneratedImageFileMetadata } from "@/lib/creative/image-generation.mjs";
+import { readFileAsDataUrl } from "@/lib/creative/file-data-url.mjs";
 
 const modes = [
   { id: "solve", label: "Solve", hint: "Work through a problem" },
@@ -1206,7 +1207,8 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   }
 
   async function editGeneratedImage(editPrompt) {
-    if (!generatedImage || !imageEditingEnabled || imageGenerating || imageUpscaling || videoGenerating || busy) return;
+    if ((!generatedImage && !imageFile) || !imageEditingEnabled || imageGenerating || imageUpscaling || videoGenerating || busy) return;
+    setPrompt("");
     setImageGenerating(true);
     setError("");
     setGeneratedVideo(null);
@@ -1215,10 +1217,13 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       { role: "assistant", content: "Applying your changes while preserving the reference image…" },
     ]);
     try {
-      const referenceFile = await createReferenceImageFile(generatedImage.dataUrl);
+      const sourceImage = imageFile
+        ? { dataUrl: await readFileAsDataUrl(imageFile), prompt: "" }
+        : generatedImage;
+      const referenceFile = await createReferenceImageFile(sourceImage.dataUrl);
       const form = new FormData();
       form.set("prompt", editPrompt);
-      form.set("referencePrompt", String(generatedImage.prompt || "").slice(0, 1200));
+      form.set("referencePrompt", String(sourceImage.prompt || "").slice(0, 1200));
       form.set("image", referenceFile);
       const response = await fetch("/api/images/edit", { method: "POST", body: form });
       const result = await response.json().catch(() => ({}));
@@ -1226,7 +1231,8 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       if (typeof result.imageDataUrl !== "string" || !/^data:image\/(?:jpeg|png|webp);base64,/.test(result.imageDataUrl)) {
         throw new Error("The image editor returned an invalid image.");
       }
-      setGeneratedImage({ dataUrl: result.imageDataUrl, prompt: generatedImage.prompt || editPrompt });
+      setGeneratedImage({ dataUrl: result.imageDataUrl, prompt: sourceImage.prompt || editPrompt });
+      if (imageFile) setImageFile(null);
       setMessages((current) => current.map((item, index) =>
         index === current.length - 1 ? { ...item, content: "Updated your image. You can keep refining it with another instruction." } : item
       ));
@@ -1590,7 +1596,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       return;
     }
 
-    if (generatedImage && isImageEditRequest(text)) {
+    if ((generatedImage || imageFile) && isImageEditRequest(text)) {
       setPrompt("");
       if (!imageEditingEnabled) {
         setMessages((current) => [...current,
