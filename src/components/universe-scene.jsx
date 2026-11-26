@@ -87,7 +87,7 @@ export default function UniverseScene() {
     rimLight.position.set(7, -2, -3);
     scene.add(rimLight);
 
-    const starCount = compact ? 1150 : 1500;
+    const starCount = compact ? 5000 : 8000;
     const starPositions = new Float32Array(starCount * 3);
     const starColors = new Float32Array(starCount * 3);
     const palette = [new THREE.Color(0xffffff), new THREE.Color(0xcbb8ff), new THREE.Color(0x9eafea)];
@@ -597,7 +597,8 @@ export default function UniverseScene() {
 
     // A stream of near-field stars travels towards the viewer, creating
     // genuine forward movement rather than rotating a static star dome.
-    const nearStarCount = compact ? 180 : 360;
+    // Keep 20,000 forward-travelling stars on desktop; mobile gets a deliberately lighter 8,000-star stream.
+    const nearStarCount = compact ? 8000 : 20000;
     const nearStarPositions = new Float32Array(nearStarCount * 3);
     const nearStarSpeeds = new Float32Array(nearStarCount);
     for (let i = 0; i < nearStarCount; i++) {
