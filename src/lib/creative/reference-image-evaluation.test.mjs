@@ -68,6 +68,23 @@ test("invalid scores and unknown dimensions are rejected", () => {
   assert.equal(scoreReferenceImageEdit(null), null);
 });
 
+test("inherited dimension values cannot substitute for explicit reviewer scores", () => {
+  const inherited = Object.create({ identity: 5 });
+  Object.assign(inherited, {
+    anatomy: 5,
+    requestedChange: 5,
+    preservation: 5,
+    composition: 5,
+    text: null,
+  });
+  const result = scoreReferenceImageEdit(inherited);
+  assert.equal(result, null);
+});
+
+test("array-shaped score input is rejected", () => {
+  assert.equal(scoreReferenceImageEdit([]), null);
+});
+
 test("every critical dimension must be present before a pass can be awarded", () => {
   const result = scoreReferenceImageEdit({
     identity: null,
