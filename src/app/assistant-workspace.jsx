@@ -1220,6 +1220,49 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     }
   }
 
+  async function editAttachedImage(editPrompt) {
+    if (!imageFile || !imageEditingEnabled || imageGenerating || busy) return;
+    const sourceFile = imageFile;
+    setImageGenerating(true);
+    setError("");
+    setGeneratedVideo(null);
+    setMessages((current) => [...current,
+      { role: "user", content: `${editPrompt}\n[Reference image attached: ${sourceFile.name}]` },
+      { role: "assistant", content: "Applying your requested edit to the attached image while protecting everything you did not ask to change…" },
+    ]);
+    try {
+      const sourceDataUrl = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ""));
+        reader.onerror = () => reject(new Error("Could not read the attached reference image."));
+        reader.readAsDataURL(sourceFile);
+      });
+      const referenceFile = await createReferenceImageFile(sourceDataUrl);
+      const form = new FormData();
+      form.set("prompt", editPrompt);
+      form.set("referencePrompt", "");
+      form.set("image", referenceFile);
+      const response = await fetch("/api/images/edit", { method: "POST", body: form });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Could not edit the attached image.");
+      if (typeof result.imageDataUrl !== "string" || !/^data:image\/(?:jpeg|png|webp);base64,/.test(result.imageDataUrl)) {
+        throw new Error("The image editor returned an invalid image.");
+      }
+      setGeneratedImage({ dataUrl: result.imageDataUrl, prompt: editPrompt });
+      setImageFile(null);
+      setMessages((current) => current.map((item, index) =>
+        index === current.length - 1 ? { ...item, content: "Your edited image is ready. The original upload was not changed; you can download the result or continue refining it." } : item
+      ));
+    } catch (err) {
+      setMessages((current) => current.map((item, index) =>
+        index === current.length - 1 ? { ...item, content: "I couldn't apply that edit to the attached image. Your original upload is still available." } : item
+      ));
+      setError(err.message || "Image editing failed.");
+    } finally {
+      setImageGenerating(false);
+    }
+  }
+
   async function saveGeneratedImage() {
     if (!generatedImage || imageSaving) return;
     setImageSaving(true);
@@ -1507,6 +1550,19 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       } finally {
         setImageGenerating(false);
       }
+      return;
+    }
+
+    if (imageFile && isImageEditRequest(text)) {
+      setPrompt("");
+      if (!imageEditingEnabled) {
+        setMessages((current) => [...current,
+          { role: "user", content: `${text}\n[Reference image attached: ${imageFile.name}]` },
+          { role: "assistant", content: "Reference-image editing is prepared but not enabled in this environment yet. Your original upload remains attached and unchanged." },
+        ]);
+        return;
+      }
+      await editAttachedImage(text);
       return;
     }
 
