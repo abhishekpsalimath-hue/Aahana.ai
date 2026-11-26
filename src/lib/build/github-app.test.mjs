@@ -241,7 +241,7 @@ test("does not request an installation token when self-build configuration is ab
 test("refuses to reuse a proposal that changes an approved source file into a symlink", async () => {
   const source = "export default function Page() {}";
   const bytes = Buffer.from(source, "utf8");
-  const expectedBlobSha = createHash("sha1").update("blob " + bytes.length + "\\0").update(bytes).digest("hex");
+  const expectedBlobSha = createHash("sha1").update("blob " + bytes.length + "\0").update(bytes).digest("hex");
   const existingCommitSha = "9".repeat(40);
   const proposalTreeSha = "8".repeat(40);
   const fetchImpl = async (url) => {
