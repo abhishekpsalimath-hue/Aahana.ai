@@ -9,7 +9,12 @@ export default function UniverseScene() {
     const canvas = canvasRef.current;
     if (!canvas) return undefined;
     const compact = window.matchMedia?.("(max-width: 760px)").matches === true;
-    // Mobile uses a lower-cost WebGL profile rather than falling back to a flat backdrop.
+    const device = typeof navigator !== "undefined" ? navigator : {};
+    const memory = Number(device.deviceMemory) || 0;
+    const cores = Number(device.hardwareConcurrency) || 0;
+    // Keep the immersive scene on capable phones while adapting render cost to
+    // constrained GPUs and devices with limited memory or CPU capacity.
+    const lowPower = compact || (memory > 0 && memory <= 4) || (cores > 0 && cores <= 4);
     let renderer, raf = 0, active = true, inView = true, observer, contextAvailable = true;
     const motionQuery = window.matchMedia?.("(prefers-reduced-motion: reduce)");
     let reduced = motionQuery?.matches === true;
@@ -24,7 +29,7 @@ export default function UniverseScene() {
       }
     };
     try {
-      renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: !compact, powerPreference: "high-performance", stencil: false });
+      renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: !lowPower, powerPreference: "high-performance", stencil: false });
     } catch {
       setWebGLFallback(true);
       return () => setWebGLFallback(false);
@@ -33,7 +38,7 @@ export default function UniverseScene() {
     const camera = new THREE.PerspectiveCamera(48, 1, 0.1, 120);
     camera.position.set(0, 0, 15.5);
     camera.lookAt(0, 0, -2.6);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, compact ? 1.25 : 1.65));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, lowPower ? 1 : 1.4));
     renderer.setClearColor(0x05040a, 0);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -96,7 +101,7 @@ export default function UniverseScene() {
     rimLight.position.set(7, -2, -3);
     scene.add(rimLight);
 
-    const starCount = compact ? 5000 : 8000;
+    const starCount = lowPower ? 5000 : 8000;
     const starPositions = new Float32Array(starCount * 3);
     const starColors = new Float32Array(starCount * 3);
     const palette = [new THREE.Color(0xffffff), new THREE.Color(0xffd9a3), new THREE.Color(0x9ed9e8)];
@@ -109,7 +114,7 @@ export default function UniverseScene() {
     const starGeometry = new THREE.BufferGeometry();
     starGeometry.setAttribute("position", new THREE.Float32BufferAttribute(starPositions, 3));
     starGeometry.setAttribute("color", new THREE.Float32BufferAttribute(starColors, 3));
-    const stars = new THREE.Points(starGeometry, new THREE.PointsMaterial({ size: compact ? 0.045 : 0.052, vertexColors: true, transparent: true, opacity: 0.78, sizeAttenuation: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+    const stars = new THREE.Points(starGeometry, new THREE.PointsMaterial({ size: lowPower ? 0.045 : 0.052, vertexColors: true, transparent: true, opacity: 0.78, sizeAttenuation: true, depthWrite: false, blending: THREE.AdditiveBlending }));
     scene.add(stars);
 
     // A real volumetric spiral galaxy: a 3D star distribution with four
@@ -118,7 +123,7 @@ export default function UniverseScene() {
     const galaxy = new THREE.Group();
     galaxy.position.set(-3.4, 2.1, -24);
     galaxy.rotation.set(0.48, -0.24, 0.12);
-    const galaxyCount = compact ? 6200 : 12800;
+    const galaxyCount = lowPower ? 6200 : 12800;
     const galaxyPositions = new Float32Array(galaxyCount * 3);
     const galaxyColors = new Float32Array(galaxyCount * 3);
     const galaxyPalette = [
@@ -149,7 +154,7 @@ export default function UniverseScene() {
     const galaxyStars = new THREE.Points(
       galaxyGeometry,
       new THREE.PointsMaterial({
-        size: compact ? 0.034 : 0.042,
+        size: lowPower ? 0.034 : 0.042,
         vertexColors: true,
         transparent: true,
         opacity: 0.82,
@@ -173,7 +178,7 @@ export default function UniverseScene() {
     const makePlanetMaps = (seed, colors) => {
       // Keep procedural texture work bounded on phones while retaining enough
       // texel detail for the planets at their on-screen size.
-      const width = compact ? 384 : 768, height = compact ? 192 : 384;
+      const width = lowPower ? 384 : 768, height = lowPower ? 192 : 384;
       const surface = document.createElement("canvas");
       surface.width = width;
       surface.height = height;
@@ -268,7 +273,7 @@ export default function UniverseScene() {
       group.position.set(x, y, z);
       const maps = makePlanetMaps(seed, palette);
       const body = new THREE.Mesh(
-        new THREE.SphereGeometry(radius, compact ? 64 : 96, compact ? 48 : 64),
+        new THREE.SphereGeometry(radius, lowPower ? 64 : 96, lowPower ? 48 : 64),
         new THREE.MeshStandardMaterial({
           color: 0xffffff,
           map: maps.map || null,
@@ -514,10 +519,10 @@ export default function UniverseScene() {
       world.add(object);
       travellers.push({ object, ...config, phase: Math.random() * Math.PI * 2, speed: config.speed || 0.006 });
     };
-    addTraveller(createAstronaut(compact ? 0.62 : 0.82), { x: -3.6, y: -0.8, z: 1.6, speed: 0.0036, rangeX: 1.8, rangeY: 0.9, rangeZ: 12, rz: 0.22 });
-    addTraveller(createAstronaut(compact ? 0.48 : 0.64), { x: 4.3, y: 2.3, z: -7.5, speed: 0.0028, rangeX: 1.4, rangeY: 1.1, rangeZ: 15, rz: -0.35 });
-    addTraveller(createFriendlyAlien(compact ? 0.56 : 0.72), { x: 2.4, y: -1.5, z: -4.8, speed: 0.0024, rangeX: 1.2, rangeY: 0.8, rangeZ: 13, ry: -0.3 });
-    addTraveller(createFriendlyAlien(compact ? 0.46 : 0.58), { x: -4.8, y: 2.5, z: -12, speed: 0.0019, rangeX: 1.5, rangeY: 0.7, rangeZ: 16, ry: 0.5 });
+    addTraveller(createAstronaut(lowPower ? 0.62 : 0.82), { x: -3.6, y: -0.8, z: 1.6, speed: 0.0036, rangeX: 1.8, rangeY: 0.9, rangeZ: 12, rz: 0.22 });
+    addTraveller(createAstronaut(lowPower ? 0.48 : 0.64), { x: 4.3, y: 2.3, z: -7.5, speed: 0.0028, rangeX: 1.4, rangeY: 1.1, rangeZ: 15, rz: -0.35 });
+    addTraveller(createFriendlyAlien(lowPower ? 0.56 : 0.72), { x: 2.4, y: -1.5, z: -4.8, speed: 0.0024, rangeX: 1.2, rangeY: 0.8, rangeZ: 13, ry: -0.3 });
+    addTraveller(createFriendlyAlien(lowPower ? 0.46 : 0.58), { x: -4.8, y: 2.5, z: -12, speed: 0.0019, rangeX: 1.5, rangeY: 0.7, rangeZ: 16, ry: 0.5 });
 
     // A distant black hole with a luminous accretion disc adds a second
     // large-scale landmark; its core remains dark rather than a glowing ball.
@@ -560,7 +565,7 @@ export default function UniverseScene() {
     // low draw-call cost, including on compact mobile GPUs.
     const asteroidBelt = new THREE.Group();
     asteroidBelt.position.set(-0.5, 0.2, -10.5);
-    const asteroidCount = compact ? 52 : 104;
+    const asteroidCount = lowPower ? 52 : 104;
     const asteroidGeometry = new THREE.IcosahedronGeometry(0.12, 2);
     const asteroidMaterial = new THREE.MeshStandardMaterial({ color: 0x777d7c, roughness: 0.98, metalness: 0.03 });
     const asteroids = new THREE.InstancedMesh(asteroidGeometry, asteroidMaterial, asteroidCount);
@@ -649,7 +654,7 @@ export default function UniverseScene() {
     world.add(supernova);
 
     // Meteor particles use a compact point buffer and recycle after each pass.
-    const meteorCount = compact ? 18 : 36;
+    const meteorCount = lowPower ? 18 : 36;
     const meteorPositions = new Float32Array(meteorCount * 3);
     const meteorVelocity = new Float32Array(meteorCount * 3);
     for (let i = 0; i < meteorCount; i++) {
@@ -663,7 +668,7 @@ export default function UniverseScene() {
     }
     const meteorGeometry = new THREE.BufferGeometry();
     meteorGeometry.setAttribute("position", new THREE.BufferAttribute(meteorPositions, 3));
-    const meteors = new THREE.Points(meteorGeometry, new THREE.PointsMaterial({ color: 0xc5dce1, size: compact ? 0.065 : 0.085, transparent: true, opacity: 0.72, blending: THREE.AdditiveBlending, depthWrite: false }));
+    const meteors = new THREE.Points(meteorGeometry, new THREE.PointsMaterial({ color: 0xc5dce1, size: lowPower ? 0.065 : 0.085, transparent: true, opacity: 0.72, blending: THREE.AdditiveBlending, depthWrite: false }));
     scene.add(meteors);
     const meteorTrailPositions = new Float32Array(meteorCount * 6);
     const meteorTrailGeometry = new THREE.BufferGeometry();
@@ -674,7 +679,7 @@ export default function UniverseScene() {
     // A stream of near-field stars travels towards the viewer, creating
     // genuine forward movement rather than rotating a static star dome.
     // Keep 20,000 forward-travelling stars on desktop; mobile gets a deliberately lighter 8,000-star stream.
-    const nearStarCount = compact ? 8000 : 20000;
+    const nearStarCount = lowPower ? 8000 : 20000;
     const nearStarPositions = new Float32Array(nearStarCount * 3);
     const nearStarSpeeds = new Float32Array(nearStarCount);
     for (let i = 0; i < nearStarCount; i++) {
@@ -685,7 +690,7 @@ export default function UniverseScene() {
     }
     const nearStarGeometry = new THREE.BufferGeometry();
     nearStarGeometry.setAttribute("position", new THREE.BufferAttribute(nearStarPositions, 3));
-    const nearStars = new THREE.Points(nearStarGeometry, new THREE.PointsMaterial({ color: 0xe4dfcf, size: compact ? 0.045 : 0.06, transparent: true, opacity: 0.68, blending: THREE.AdditiveBlending, depthWrite: false }));
+    const nearStars = new THREE.Points(nearStarGeometry, new THREE.PointsMaterial({ color: 0xe4dfcf, size: lowPower ? 0.045 : 0.06, transparent: true, opacity: 0.68, blending: THREE.AdditiveBlending, depthWrite: false }));
     scene.add(nearStars);
 
     // Reuse scratch objects and initialize shader lighting before the first
@@ -706,7 +711,7 @@ export default function UniverseScene() {
     updatePlanetLightDirections();
 
     const pointer = { x: 0, y: 0 };
-    const frameInterval = 1000 / (compact ? 45 : 60);
+    const frameInterval = 1000 / (lowPower ? 45 : 60);
     let lastFrameTime = 0;
     const onPointer = (event) => {
       pointer.x = (event.clientX / Math.max(1, window.innerWidth) - 0.5) * 2;
