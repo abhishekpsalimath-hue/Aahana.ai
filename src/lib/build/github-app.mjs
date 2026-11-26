@@ -204,6 +204,13 @@ export async function getSelfBuildFile({ path, ref, env = process.env, fetchImpl
   try { content = new TextDecoder("utf-8", { fatal: true }).decode(bytes); }
   catch { throw new Error("GitHub source file is not valid UTF-8."); }
   if (content.includes("\\u0000")) throw new Error("This repository file is not supported text source.");
+  const computedSha = createHash("sha1")
+    .update("blob " + bytes.length + "\\0")
+    .update(bytes)
+    .digest("hex");
+  if (typeof data.sha !== "string" || data.sha !== computedSha) {
+    throw new Error("GitHub source content does not match its returned blob SHA.");
+  }
   return { path, sha: data.sha, content };
 }
 
