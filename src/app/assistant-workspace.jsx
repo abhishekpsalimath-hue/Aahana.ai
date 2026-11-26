@@ -1517,6 +1517,19 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       return;
     }
 
+    if (imageFile && isImageEditRequest(text)) {
+      setPrompt("");
+      if (!imageEditingEnabled) {
+        setMessages((current) => [...current,
+          { role: "user", content: `${text}\n[Reference image attached: ${imageFile.name}]` },
+          { role: "assistant", content: "Reference-image editing is prepared but not enabled in this environment yet. Your original upload remains attached and unchanged." },
+        ]);
+        return;
+      }
+      await editAttachedImage(text);
+      return;
+    }
+
     if (isImageGenerationRequest(text)) {
       setPrompt("");
       setError("");
@@ -1550,19 +1563,6 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       } finally {
         setImageGenerating(false);
       }
-      return;
-    }
-
-    if (imageFile && isImageEditRequest(text)) {
-      setPrompt("");
-      if (!imageEditingEnabled) {
-        setMessages((current) => [...current,
-          { role: "user", content: `${text}\n[Reference image attached: ${imageFile.name}]` },
-          { role: "assistant", content: "Reference-image editing is prepared but not enabled in this environment yet. Your original upload remains attached and unchanged." },
-        ]);
-        return;
-      }
-      await editAttachedImage(text);
       return;
     }
 
