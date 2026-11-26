@@ -5,7 +5,6 @@ const SHA_PATTERN = /^[a-f0-9]{40}$/i;
 const REPOSITORY_PATTERN = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
 
 // Student Mode, authentication, database, and deployment code are intentionally excluded.
-const ALLOWED_FILES = new Set();
 const ALLOWED_ROOTS = [
   "src/app/experience-lab/",
   "src/lib/build/",
@@ -72,7 +71,7 @@ export function isAllowedSelfBuildPath(input) {
   )) return false;
 
   if (BLOCKED_FILES.has(segments.at(-1).toLowerCase()) || /\.(?:test|spec)\.[^.]+$/i.test(segments.at(-1))) return false;
-  return ALLOWED_FILES.has(input) || (ALLOWED_ROOTS.some((root) => input.startsWith(root)) &&
+  return ALLOWED_ROOTS.some((root) => input.startsWith(root)) &&
     /\.(?:js|jsx|mjs|cjs|ts|tsx|css|scss|json|md)$/i.test(input));
 }
 
