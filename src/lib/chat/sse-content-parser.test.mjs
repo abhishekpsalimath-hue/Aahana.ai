@@ -45,3 +45,25 @@ test("rejects invalid handlers, non-string chunks and use after finish", () => {
   parser.finish();
   assert.throws(() => parser.push("data: x"), /closed/);
 });
+
+test("ignores a UTF-8 BOM at the beginning of the stream", () => {
+  const output = [];
+  const parser = createSseContentParser((delta) => output.push(delta));
+  parser.push('\uFEFFdata: {"choices":[{"delta":{"content":"hello"}}]}\\n\\n');
+  parser.finish();
+  assert.deepEqual(output, ["hello"]);
+});
+
+test("bounds unterminated and multi-line SSE events", () => {
+  const parser = createSseContentParser(() => {}, { maxEventChars: 24 });
+  assert.throws(() => parser.push("data: " + "x".repeat(30)), /size limit/);
+  assert.throws(() => parser.push("data: x"), /closed/);
+
+  const joined = createSseContentParser(() => {}, { maxEventChars: 20 });
+  assert.throws(() => joined.push("data: 1234567890\\ndata: 1234567890\\n"), /size limit/);
+});
+
+test("rejects invalid SSE event limits", () => {
+  assert.throws(() => createSseContentParser(() => {}, { maxEventChars: 0 }), /positive safe integer/);
+  assert.throws(() => createSseContentParser(() => {}, { maxEventChars: Number.MAX_SAFE_INTEGER + 1 }), /positive safe integer/);
+});
