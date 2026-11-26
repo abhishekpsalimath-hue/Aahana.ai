@@ -3,11 +3,13 @@ import { createClient } from "@/lib/supabase/server";
 import { buildImageEditPrompt } from "@/lib/creative/creative-director.mjs";
 import { getReferenceImageDimensions, isReferenceImageWithinProviderBounds, parseImageEditInput } from "@/lib/creative/image-generation.mjs";
 import { detectImageMimeTypeFromBase64 } from "@/lib/creative/image-provider.mjs";
+import { readBoundedRequestBody, readBoundedResponseJson } from "@/lib/http/bounded-request-body.mjs";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
 const MODEL = "@cf/black-forest-labs/flux-2-klein-4b";
+const MAX_IMAGE_EDIT_REQUEST_BYTES = 2 * 1024 * 1024 + 128 * 1024;
 
 export async function POST(request) {
   const supabase = await createClient();
@@ -26,8 +28,22 @@ export async function POST(request) {
     return NextResponse.json({ error: "Image editing is not connected in the private server settings." }, { status: 503 });
   }
 
+  const contentType = request.headers.get("content-type") || "";
+  if (!/^multipart\\/form-data;\\s*boundary=(?:"[^"]+"|[^;]+)$/i.test(contentType)) {
+    return NextResponse.json({ error: "Invalid image-edit request." }, { status: 400 });
+  }
+  const boundedBody = await readBoundedRequestBody(request, MAX_IMAGE_EDIT_REQUEST_BYTES);
+  if (!boundedBody.ok) {
+    return NextResponse.json(
+      { error: boundedBody.reason === "too-large" ? "The image-edit request exceeds the 2 MB image-upload limit." : "Invalid image-edit request." },
+      { status: boundedBody.reason === "too-large" ? 413 : 400 }
+    );
+  }
+
   let form;
-  try { form = await request.formData(); } catch {
+  try {
+    form = await new Response(boundedBody.bytes, { headers: { "content-type": contentType } }).formData();
+  } catch {
     return NextResponse.json({ error: "Invalid image-edit request." }, { status: 400 });
   }
 
@@ -70,7 +86,8 @@ export async function POST(request) {
       }
     );
 
-    const result = await response.json().catch(() => null);
+    const parsedProviderResponse = await readBoundedResponseJson(response, 25 * 1024 * 1024);
+    const result = parsedProviderResponse.ok ? parsedProviderResponse.value : null;
     const imageBase64 = result?.result?.image;
     const imageMimeType = detectImageMimeTypeFromBase64(imageBase64);
     if (!response.ok || !imageMimeType) {
