@@ -34,9 +34,17 @@ test("recognizes image refinement instructions", () => {
   ]) assert.equal(isImageEditRequest(prompt), true, prompt);
 });
 
-test("does not mistake unrelated conversation for image editing", () => {
+test("recognizes common edits requested against an attached reference image", () => {
+  assert.equal(isImageEditRequest("Enhance this image"), true);
+  assert.equal(isImageEditRequest("Change their pose so they are looking at each other"), true);
+  assert.equal(isImageEditRequest("Change the outfit to a formal suit"), true);
+  assert.equal(isImageEditRequest("Create a poster banner using this photo"), true);
+});
+
+test("does not mistake unrelated conversation or poster analysis for image editing", () => {
   assert.equal(isImageEditRequest("Help me change my career"), false);
   assert.equal(isImageEditRequest("Explain the background of this story"), false);
+  assert.equal(isImageEditRequest("What does this poster say?"), false);
 });
 
 
