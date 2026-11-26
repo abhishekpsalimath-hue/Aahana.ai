@@ -71,11 +71,11 @@ export function classifyImageEditIntent(editPrompt) {
   if (typeof editPrompt !== "string" || !editPrompt.trim()) return null;
   const text = editPrompt.toLowerCase();
   const intents = [];
-  if (/\\b(enhance|upscale|restore|denoise|sharpen|improve quality|increase resolution|fix blur|colour correct|color correct|retouch)\\b/.test(text)) intents.push("enhance");
-  if (/\\b(change|改|alter|adjust|modify|different|new)\\b.{0,32}\\b(pose|posture|stance|position|gesture)\\b|\\b(pose|posture|stance|gesture)\\b/.test(text)) intents.push("pose");
-  if (/\\b(change|改|alter|adjust|modify|replace|wearing|dress|outfit|clothes|clothing|costume|suit|shirt|saree|sari|jacket)\\b/.test(text)) intents.push("outfit");
-  if (/\\b(poster|banner|flyer|thumbnail|cover art|advertisement|ad creative|invitation|brochure)\\b/.test(text)) intents.push("design");
-  if (/\\b(background|backdrop|scenery|environment)\\b/.test(text)) intents.push("background");
+  if (/\b(enhance|upscale|restore|denoise|sharpen|improve quality|increase resolution|fix blur|colour correct|color correct|retouch)\b/.test(text)) intents.push("enhance");
+  if (/\b(change|改|alter|adjust|modify|different|new)\b.{0,32}\b(pose|posture|stance|position|gesture)\b|\b(pose|posture|stance|gesture)\b/.test(text)) intents.push("pose");
+  if (/\b(outfit|clothes|clothing|costume|suit|shirt|saree|sari|jacket|dress)\b/.test(text)) intents.push("outfit");
+  if (/\b(poster|banner|flyer|thumbnail|cover art|advertisement|ad creative|invitation|brochure)\b/.test(text)) intents.push("design");
+  if (/\b(background|backdrop|scenery|environment)\b/.test(text)) intents.push("background");
   return intents.length ? [...new Set(intents)] : ["targeted"];
 }
 
