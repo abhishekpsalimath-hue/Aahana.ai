@@ -711,6 +711,7 @@ h1,.brand,.composer-mode,.breadcrumb{font-family:"Space Grotesk","Manrope",sans-
 
 /* One shared real-time universe canvas across sign-in, assistance and Student Mode. */
 .auth-universe .universe-webgl{position:absolute;inset:0;z-index:0;display:block;width:100%;height:100%;opacity:.66;pointer-events:none}
+.auth-universe .universe-webgl[data-webgl-fallback="true"]{display:none}
 .auth-universe>span{z-index:1}
 .learning-page>.universe-webgl{position:fixed;inset:0;z-index:0;display:block;width:100%;height:100%;opacity:.48;pointer-events:none}
 .learning-page>.universe-webgl[data-webgl-fallback="true"]{display:none}
