@@ -111,6 +111,7 @@ test("creates a draft pull request from a pinned base and never merges or deploy
 test("refuses to write when the main branch moved after inspection", async () => {
   const fetchImpl = async (url) => {
     if (url.endsWith("/access_tokens")) return mockResponse({ token: "installation-token" });
+    if (url.includes("/pulls?state=all")) return mockResponse([]);
     if (url.includes("/git/ref/heads/main")) return mockResponse({ object: { sha: "b".repeat(40) } });
     throw new Error("A stale base must stop before writes.");
   };
@@ -171,7 +172,7 @@ test("reuses an existing draft when the exact pinned Self-Build change is retrie
   const first = await createSelfBuildPullRequest(input);
   const writesAfterFirst = calls.filter((call) => call.method === "POST" && !call.url.endsWith("/access_tokens")).length;
   const second = await createSelfBuildPullRequest(input);
-  const writesAfterSecond = calls.filter((call) => call.method === "POST").length;
+  const writesAfterSecond = calls.filter((call) => call.method === "POST" && !call.url.endsWith("/access_tokens")).length;
   assert.equal(first.number, 23);
   assert.equal(second.number, 23);
   assert.equal(second.reused, true);
