@@ -732,11 +732,6 @@ h1,.brand,.composer-mode,.breadcrumb{font-family:"Space Grotesk","Manrope",sans-
 .auth-universe{background:radial-gradient(ellipse at 52% 44%,#10232d 0%,#09131b 50%,#05090f 100%)!important}
 .auth-universe::before,.auth-universe::after,.auth-universe>span{display:none!important}
 .auth-universe .universe-webgl{opacity:1!important}
-@media(max-width:760px){
-  .space-background .universe-webgl,
-  .auth-universe .universe-webgl,
-}
-
 /* If WebGL cannot start (or its context is lost), restore the CSS universe
    instead of leaving sign-in and Assistance with a nearly empty backdrop. */
 .space-background.universe-webgl-fallback .universe-flight{opacity:1!important}
