@@ -815,6 +815,8 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [imageEditingEnabled, setImageEditingEnabled] = useState(false);
   const [videoEnabled, setVideoEnabled] = useState(false);
   const [videoGenerating, setVideoGenerating] = useState(false);
+  const videoAbortControllerRef = useRef(null);
+  useEffect(() => () => { videoAbortControllerRef.current?.abort(); }, []);
   const [videoDuration, setVideoDuration] = useState(5);
   const [videoAspectRatio, setVideoAspectRatio] = useState("16:9");
   const [videoResolution, setVideoResolution] = useState("480p");
@@ -1299,6 +1301,8 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
 
   async function generateVideo(videoPrompt = prompt.trim()) {
     if (!videoEnabled || !videoPrompt || videoGenerating || busy || imageGenerating || imageUpscaling) return false;
+    const controller = new AbortController();
+    videoAbortControllerRef.current = controller;
     setVideoGenerating(true);
     setError("");
     setGeneratedVideo(null);
@@ -1317,6 +1321,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       const response = await fetch("/api/videos/generate", {
         method: "POST",
         body: form,
+        signal: controller.signal,
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || "Could not generate the video.");
@@ -1326,11 +1331,20 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       setGeneratedVideo({ url: result.videoUrl, prompt: videoPrompt, duration: result.duration });
       return true;
     } catch (err) {
-      setError(err.message || "Video generation failed.");
+      if (controller.signal.aborted || err?.name === "AbortError") {
+        setError("Video generation cancelled.");
+      } else {
+        setError(err.message || "Video generation failed.");
+      }
       return false;
     } finally {
+      if (videoAbortControllerRef.current === controller) videoAbortControllerRef.current = null;
       setVideoGenerating(false);
     }
+  }
+
+  function cancelVideoGeneration() {
+    videoAbortControllerRef.current?.abort();
   }
 
   async function deleteFile(id) {
@@ -2060,6 +2074,11 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                   <button className="copy-message" type="button" onClick={() => generateVideo()} disabled={!prompt.trim() || videoGenerating || busy || imageGenerating}>
                     {videoGenerating ? "Generating video…" : imageFile ? "Animate image" : "Generate video"}
                   </button>
+                  {videoGenerating && (
+                    <button className="copy-message" type="button" onClick={cancelVideoGeneration} aria-label="Cancel video generation">
+                      Cancel generation
+                    </button>
+                  )}
                   <details className="video-advanced-settings">
                     <summary>Video settings</summary>
                     <select aria-label="Video duration" value={videoDuration} onChange={(event) => setVideoDuration(Number(event.target.value))} className="copy-message">
