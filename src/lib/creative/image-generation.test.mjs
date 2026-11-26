@@ -10,7 +10,7 @@ test("defaults to automatic masterpiece image direction without asking the user 
   assert.equal(result.style, "none");
   assert.equal(result.quality, "masterpiece");
   assert.equal(result.aspectRatio, "1:1");
-  assert.match(result.prompt, /^A moonlit forest\\n\\nCreative direction:/);
+  assert.match(result.prompt, /^A moonlit forest\n\nCreative direction:/);
   assert.match(result.prompt, /portfolio-worthy hero image/i);
   assert.match(result.prompt, /Composition fidelity is mandatory/i);
   assert.match(result.prompt, /Subject fidelity is mandatory/i);
