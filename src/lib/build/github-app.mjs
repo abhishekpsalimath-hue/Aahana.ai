@@ -192,6 +192,9 @@ export async function createSelfBuildPullRequest({
     ? existingPullRequests.find((item) => item.head?.ref === branch && item.base?.ref === baseBranch)
     : null;
   if (existingPullRequest) {
+    if (existingPullRequest.state !== "open") {
+      throw new Error("An earlier proposal for this exact change set is closed. Prepare a fresh change set instead of reusing a closed draft.");
+    }
     return {
       number: existingPullRequest.number,
       url: existingPullRequest.html_url,
