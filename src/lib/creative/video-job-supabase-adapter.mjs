@@ -46,8 +46,8 @@ function validateSnapshot(job, revision) {
     }
   }
   if (job.updatedAt < job.createdAt ||
-      (job.startedAt !== null && job.startedAt < job.createdAt) ||
-      (job.completedAt !== null && job.completedAt < (job.startedAt ?? job.createdAt))) {
+      (job.startedAt !== null && (job.startedAt < job.createdAt || job.startedAt > job.updatedAt)) ||
+      (job.completedAt !== null && (job.completedAt < (job.startedAt ?? job.createdAt) || job.completedAt > job.updatedAt))) {
     throw new TypeError("Video job timestamps are not chronologically coherent.");
   }
   if (job.retryable && (job.state !== "failed" || job.attempt >= job.maxAttempts)) {
