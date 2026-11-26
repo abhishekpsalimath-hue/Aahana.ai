@@ -93,15 +93,8 @@ export default function LoginPage() {
     >
       <div className="auth-universe" aria-hidden="true">
         <UniverseScene />
-        <span className="auth-nebula auth-nebula-one" />
-        <span className="auth-nebula auth-nebula-two" />
-        <span className="auth-galaxy" />
-        <span className="auth-orbit auth-orbit-one" />
-        <span className="auth-orbit auth-orbit-two" />
-        <span className="auth-planet auth-planet-one" />
-        <span className="auth-planet auth-planet-two" />
       </div>
-      <section className="auth-card">
+      <section className="auth-card auth-entry">
         <Link className="brand auth-brand" href="/"><span className="brand-word">Aahana</span><span className="brand-ai">AI</span></Link>
         <div className="eyebrow"><span /> YOUR THINKING SPACE</div>
         <h1>{mode === "signin" ? "Welcome back." : "Start with Aahana."}</h1>
