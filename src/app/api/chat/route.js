@@ -7,6 +7,7 @@ import { readBoundedResponseJson } from "@/lib/http/bounded-request-body.mjs";
 import { detectImageMimeTypeFromBase64 } from "@/lib/creative/image-provider.mjs";
 import { getReferenceImageDimensions, isImageWithinPixelBounds } from "@/lib/creative/image-generation.mjs";
 import { getLanguageGuidance } from "@/lib/chat/language-guidance.mjs";
+import { prepareAssistantReplyForPersistence } from "@/lib/chat/reply-persistence.mjs";
 import { shouldSearchWeb, getResearchTopic } from "@/lib/chat/research-intent.mjs";
 
 export const runtime = "nodejs";
@@ -495,7 +496,7 @@ export async function POST(request) {
     if (request.signal.aborted) return new Response(null, { status: 499 });
     const { error: saveError } = await supabase.rpc("save_ai_reply", {
       p_conversation_id: conversationId,
-      p_content: verifiedResearchReply.slice(0, 16000),
+      p_content: prepareAssistantReplyForPersistence(verifiedResearchReply),
     });
     await supabase.from("conversations").update({ updated_at: new Date().toISOString() }).eq("id", conversationId);
     if (saveError) console.error("Aahana research reply persistence failed:", saveError.message);
@@ -537,7 +538,7 @@ export async function POST(request) {
         if (fullReply.trim()) {
           const { error: saveError } = await supabase.rpc("save_ai_reply", {
             p_conversation_id: conversationId,
-            p_content: fullReply.slice(0, 16000),
+            p_content: prepareAssistantReplyForPersistence(fullReply),
           });
           await supabase.from("conversations").update({ updated_at: new Date().toISOString() }).eq("id", conversationId);
           if (saveError) console.error("Aahana reply persistence failed:", saveError.message);
