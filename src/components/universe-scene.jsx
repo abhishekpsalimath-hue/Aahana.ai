@@ -27,7 +27,7 @@ export default function UniverseScene() {
       renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: !compact, powerPreference: "high-performance", stencil: false });
     } catch {
       setWebGLFallback(true);
-      return undefined;
+      return () => setWebGLFallback(false);
     }
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(48, 1, 0.1, 120);
