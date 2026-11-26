@@ -59,7 +59,7 @@ test("bounds unterminated and multi-line SSE events", () => {
   assert.throws(() => parser.push("data: " + "x".repeat(30)), /size limit/);
   assert.throws(() => parser.push("data: x"), /closed/);
 
-  const joined = createSseContentParser(() => {}, { maxEventChars: 20 });
+  const joined = createSseContentParser(() => {}, { maxEventChars: 19 });
   assert.throws(() => joined.push("data: 1234567890\\ndata: 1234567890\\n"), /size limit/);
 });
 
