@@ -48,6 +48,37 @@ test("rejects invalid timing, source ranges, volume and playback speed", () => {
   }
 });
 
+test("validates ordered keyframes, easing and clip transitions", () => {
+  const input = project();
+  input.tracks = [{ id: "track-one", type: "video", name: "Video", clips: [{
+    id: "clip-one", assetId: "asset-one", start: 0, duration: 8,
+    keyframes: [
+      { at: 6, property: "positionX", value: 40, easing: "ease-out" },
+      { at: 0, property: "opacity", value: 1 },
+    ],
+    transitionIn: "crossfade", transitionInDuration: 2,
+    transitionOut: "dip-black", transitionOutDuration: 1,
+  }] }];
+  const clip = validateVideoProject(input).tracks[0].clips[0];
+  assert.deepEqual(clip.keyframes.map((frame) => frame.at), [0, 6]);
+  assert.deepEqual(clip.transitionIn, { type: "crossfade", duration: 2 });
+  assert.deepEqual(clip.transitionOut, { type: "dip-black", duration: 1 });
+});
+
+test("rejects duplicate, out-of-range and unsupported keyframes or transitions", () => {
+  for (const clip of [
+    { id: "c", assetId: "a", start: 0, duration: 4, keyframes: [{ at: 5, property: "opacity", value: 1 }] },
+    { id: "c", assetId: "a", start: 0, duration: 4, keyframes: [{ at: 1, property: "opacity", value: 2 }] },
+    { id: "c", assetId: "a", start: 0, duration: 4, keyframes: [{ at: 1, property: "opacity", value: 1 }, { at: 1, property: "opacity", value: 0 }] },
+    { id: "c", assetId: "a", start: 0, duration: 4, transitionIn: "unknown", transitionInDuration: 1 },
+    { id: "c", assetId: "a", start: 0, duration: 4, transitionIn: "crossfade", transitionInDuration: 3 },
+  ]) {
+    const input = project();
+    input.tracks = [{ id: "track-one", type: "video", name: "Video", clips: [clip] }];
+    assert.throws(() => validateVideoProject(input));
+  }
+});
+
 test("enforces track and clip-count bounds", () => {
   const tooManyTracks = project();
   tooManyTracks.tracks = Array.from({ length: VIDEO_PROJECT_LIMITS.maxTracks + 1 }, (_, i) => ({
