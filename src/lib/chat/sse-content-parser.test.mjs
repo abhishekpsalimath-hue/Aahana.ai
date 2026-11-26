@@ -6,7 +6,7 @@ test("parses provider deltas when JSON frames are split across network chunks", 
   const output = [];
   const parser = createSseContentParser((delta) => output.push(delta));
   parser.push('data: {"choices":[{"delta":{"content":"Hel');
-  parser.push('lo"}}]}\n\ndata: {"choices":[{"delta":{"content":" world"}}]}\n');
+  parser.push('lo"}}]}\n\ndata: {"choices":[{"delta":{"content":" world"}}]}\n\n');
   parser.push("data: [DONE]\n");
   parser.finish();
   assert.deepEqual(output, ["Hello", " world"]);
