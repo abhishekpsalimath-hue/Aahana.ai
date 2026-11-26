@@ -1332,7 +1332,13 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
           })),
         }));
       }
-      if (imageFile) form.set("image", imageFile);
+      const videoReferenceFile = imageFile || (generatedImage?.dataUrl
+        ? await createReferenceImageFile(generatedImage.dataUrl, {
+          maxEdge: 4096,
+          maxBytes: 2 * 1024 * 1024,
+        })
+        : null);
+      if (videoReferenceFile) form.set("image", videoReferenceFile);
       const response = await fetch("/api/videos/generate", {
         method: "POST",
         body: form,
@@ -2102,7 +2108,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
               {videoEnabled && (
                 <>
                   <button className="copy-message" type="button" onClick={() => generateVideo()} disabled={!prompt.trim() || videoGenerating || busy || imageGenerating}>
-                    {videoGenerating ? "Generating video…" : imageFile ? "Animate image" : "Generate video"}
+                    {videoGenerating ? "Generating video…" : imageFile || generatedImage ? "Animate image" : "Generate video"}
                   </button>
                   {videoGenerating && (
                     <button className="copy-message" type="button" onClick={cancelVideoGeneration} aria-label="Cancel video generation">
