@@ -22,6 +22,44 @@ export function createGitHubAppJwt({ appId, privateKey, now = Math.floor(Date.no
   return signingInput + "." + signer.sign(key).toString("base64url");
 }
 
+const MAX_GITHUB_RESPONSE_BYTES = 2 * 1024 * 1024;
+
+async function readBoundedGitHubResponse(response, maxBytes = MAX_GITHUB_RESPONSE_BYTES) {
+  const declaredLength = response.headers?.get?.("content-length");
+  if (declaredLength != null) {
+    if (!/^\\d+$/.test(declaredLength.trim())) throw new Error("GitHub returned an invalid response length.");
+    if (Number(declaredLength) > maxBytes) {
+      try { await response.body?.cancel(); } catch {}
+      throw new Error("GitHub response exceeded the safe size limit.");
+    }
+  }
+  if (!response.body) throw new Error("GitHub returned an empty response.");
+  const reader = response.body.getReader();
+  const chunks = [];
+  let total = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (!(value instanceof Uint8Array)) throw new Error("GitHub returned an invalid response stream.");
+      total += value.byteLength;
+      if (total > maxBytes) {
+        try { await reader.cancel(); } catch {}
+        throw new Error("GitHub response exceeded the safe size limit.");
+      }
+      chunks.push(value);
+    }
+  } catch (error) {
+    try { await reader.cancel(); } catch {}
+    throw error;
+  }
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
+  try { return new TextDecoder("utf-8", { fatal: true }).decode(bytes); }
+  catch { throw new Error("GitHub returned invalid UTF-8."); }
+}
+
 async function githubRequest(path, token, { fetchImpl = fetch, method = "GET", body } = {}) {
   const response = await fetchImpl(API + path, {
     method,
@@ -34,9 +72,10 @@ async function githubRequest(path, token, { fetchImpl = fetch, method = "GET", b
     ...(body ? { body: JSON.stringify(body) } : {}),
     cache: "no-store",
   });
-  const text = await response.text();
-  let data = {};
-  try { data = text ? JSON.parse(text) : {}; } catch {}
+  const text = await readBoundedGitHubResponse(response);
+  let data;
+  try { data = text ? JSON.parse(text) : {}; }
+  catch { throw new Error("GitHub returned invalid JSON."); }
   if (!response.ok) {
     const error = new Error("GitHub repository operation failed (HTTP " + response.status + ").");
     error.status = response.status;
@@ -131,10 +170,12 @@ export async function getSelfBuildRepository({ env = process.env, fetchImpl = fe
     token, { fetchImpl },
   );
   if (tree.truncated) throw new Error("The repository tree is too large to inspect safely.");
-  const files = (tree.tree || [])
-    .filter((entry) => entry.type === "blob" && isAllowedSelfBuildPath(entry.path))
-    .slice(0, 500)
-    .map((entry) => ({ path: entry.path, sha: entry.sha, size: entry.size }));
+  const approvedEntries = (tree.tree || [])
+    .filter((entry) => entry.type === "blob" && isAllowedSelfBuildPath(entry.path));
+  if (approvedEntries.length > 500) {
+    throw new Error("The approved self-build inventory exceeds the 500-file safety limit; refresh against a smaller complete snapshot.");
+  }
+  const files = approvedEntries.map((entry) => ({ path: entry.path, sha: entry.sha, size: entry.size }));
   return { repository: config.repository, branch, baseSha: ref.object.sha, files };
 }
 
@@ -152,10 +193,17 @@ export async function getSelfBuildFile({ path, ref, env = process.env, fetchImpl
   if (data.type !== "file" || typeof data.content !== "string" || data.encoding !== "base64") {
     throw new Error("GitHub did not return a supported text source file.");
   }
-  const content = Buffer.from(data.content.replace(/\n/g, ""), "base64").toString("utf8");
-  if (Buffer.byteLength(content, "utf8") > 1024 * 1024 || content.includes("\u0000")) {
-    throw new Error("This repository file exceeds the safe text-source limit.");
+  const encoded = data.content.replace(/\\s/g, "");
+  if (!encoded || !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(encoded)) {
+    throw new Error("GitHub returned malformed base64 source content.");
   }
+  const bytes = Buffer.from(encoded, "base64");
+  if (bytes.toString("base64") !== encoded) throw new Error("GitHub returned non-canonical base64 source content.");
+  if (bytes.length > 1024 * 1024) throw new Error("This repository file exceeds the safe text-source limit.");
+  let content;
+  try { content = new TextDecoder("utf-8", { fatal: true }).decode(bytes); }
+  catch { throw new Error("GitHub source file is not valid UTF-8."); }
+  if (content.includes("\\u0000")) throw new Error("This repository file is not supported text source.");
   return { path, sha: data.sha, content };
 }
 
