@@ -18,6 +18,8 @@ export async function GET(request) {
       Boolean(process.env.CLOUDFLARE_ACCOUNT_ID && process.env.CLOUDFLARE_API_TOKEN),
     imageEditingEnabled: process.env.AAHANA_IMAGE_EDITING_ENABLED === "true" &&
       Boolean(process.env.CLOUDFLARE_ACCOUNT_ID && process.env.CLOUDFLARE_API_TOKEN),
+    imageUpscaleEnabled: process.env.AAHANA_IMAGE_UPSCALE_ENABLED === "true" &&
+      Boolean(process.env.AAHANA_IMAGE_UPSCALE_WORKER_URL && process.env.AAHANA_UPSCALE_SHARED_SECRET),
     creativeProviders: getCreativeProviderStatus(process.env),
     sandboxIdentityAvailable,
     environment: process.env.VERCEL_ENV === "preview" ? "preview" : process.env.VERCEL_ENV === "production" ? "production" : "development",
