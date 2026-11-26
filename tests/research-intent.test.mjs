@@ -53,3 +53,31 @@ test("live research recognises more international languages and scripts", () => 
     "Gib mir die neuesten Nachrichten heute mit Quellen.",
   ]) assert.equal(shouldSearchWeb(prompt), true, prompt);
 });
+
+test("research topic classification recognises news across supported languages", async () => {
+  const { getResearchTopic } = await import("../src/lib/chat/research-intent.mjs");
+  for (const prompt of [
+    "latest breaking news about AI",
+    "ಇಂದಿನ ಪ್ರಮುಖ ಸುದ್ದಿ",
+    "आज की ताज़ा खबरें",
+    "இன்றைய முக்கிய செய்திகள்",
+    "తాజా వార్తలు",
+    "ഇന്നത്തെ പ്രധാന വാർത്തകൾ",
+    "আজকের সর্বশেষ খবর",
+    "આજના તાજા સમાચાર",
+    "ਅੱਜ ਦੀਆਂ ਤਾਜ਼ਾ ਖ਼ਬਰਾਂ",
+    "أحدث الأخبار اليوم",
+    "今天的最新新闻",
+    "今日の最新ニュース",
+    "오늘 최신 뉴스",
+    "Последние новости сегодня",
+    "Últimas noticias de hoy",
+    "Les dernières actualités",
+    "Die neuesten Nachrichten",
+  ]) assert.equal(getResearchTopic(prompt), "news", prompt);
+  for (const prompt of [
+    "Explain how photosynthesis works",
+    "Explain orbital mechanics",
+    "Teach me Kannada grammar",
+  ]) assert.equal(getResearchTopic(prompt), "general", prompt);
+});
