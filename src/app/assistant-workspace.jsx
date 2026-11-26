@@ -1212,6 +1212,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
 
   async function editGeneratedImage(editPrompt) {
     if ((!generatedImage && !imageFile) || !imageEditingEnabled || imageGenerating || imageUpscaling || videoGenerating || busy) return;
+    setPrompt("");
     setImageGenerating(true);
     setError("");
     setGeneratedVideo(null);
