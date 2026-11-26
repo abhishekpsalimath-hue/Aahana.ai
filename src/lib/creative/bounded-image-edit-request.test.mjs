@@ -79,3 +79,26 @@ test("returns cancellation before reading a request body", async () => {
   const result = await readBoundedImageEditRequest(request);
   assert.equal(result.status, 499);
 });
+
+
+test("rejects invalid image signatures and dimensions outside the edit provider contract", async () => {
+  const invalidSignature = await readBoundedImageEditRequest(makeRequest([
+    ["prompt", "Edit"], ["image", new Blob([new Uint8Array(33)], { type: "image/png" })],
+  ]));
+  assert.equal(invalidSignature.ok, false);
+  assert.match(invalidSignature.error, /invalid|512/);
+
+  const tooLarge = await readBoundedImageEditRequest(makeRequest([
+    ["prompt", "Edit"], ["image", pngHeader(512, 256)],
+  ]));
+  assert.equal(tooLarge.ok, false);
+  assert.match(tooLarge.error, /512/);
+});
+
+test("rejects overlong reference context before provider execution", async () => {
+  const result = await readBoundedImageEditRequest(makeRequest([
+    ["prompt", "Edit"], ["referencePrompt", "x".repeat(1201)], ["image", pngHeader()],
+  ]));
+  assert.equal(result.ok, false);
+  assert.match(result.error, /context is too long/);
+});
