@@ -161,7 +161,7 @@ test("rejects a fallback image that exceeds a stricter provider-specific byte ca
     ImageCtor: fakeImage(1024, 1024),
     fetchImpl: async () => new Response(source),
     documentRef: { createElement: () => canvas },
-    maxEdge: 1024,
+    maxEdge: 511,
     maxBytes: 2,
   }), /too large to prepare/);
 });
