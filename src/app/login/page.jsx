@@ -83,6 +83,7 @@ export default function LoginPage() {
     <main
       className="auth-shell"
       onPointerMove={(event) => {
+        if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
         const bounds = event.currentTarget.getBoundingClientRect();
         const x = ((event.clientX - bounds.left) / Math.max(1, bounds.width) - 0.5) * 18;
         const y = ((event.clientY - bounds.top) / Math.max(1, bounds.height) - 0.5) * 14;
