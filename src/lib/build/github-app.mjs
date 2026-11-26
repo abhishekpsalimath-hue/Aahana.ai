@@ -1,4 +1,4 @@
-import { createSign, randomUUID } from "node:crypto";
+import { createHash, createSign } from "node:crypto";
 import { getSelfBuildConfig, isAllowedSelfBuildPath, validateSelfBuildChangeSet } from "./self-build-policy.mjs";
 
 const API = "https://api.github.com";
@@ -134,6 +134,34 @@ export async function createSelfBuildPullRequest({
     throw new Error("Aahana's base branch changed. Refresh the repository before creating a pull request.");
   }
 
+  // A retried owner action must reuse its existing draft rather than opening
+  // another PR for the same exact pinned change set.
+  const idempotencyInput = JSON.stringify({
+    baseSha: changeSet.baseSha,
+    files: [...changeSet.files].sort((a, b) => a.path.localeCompare(b.path)),
+  });
+  const branch = "aahana/self-build/" + createHash("sha256").update(idempotencyInput).digest("hex").slice(0, 24);
+  const existingPullRequests = await githubRequest(
+    prefix + "/pulls?state=all&head=" + encodeURIComponent(owner + ":" + branch) + "&base=" + encodeURIComponent(baseBranch),
+    token,
+    { fetchImpl },
+  );
+  const existingPullRequest = Array.isArray(existingPullRequests)
+    ? existingPullRequests.find((item) => item.head?.ref === branch && item.base?.ref === baseBranch)
+    : null;
+  if (existingPullRequest) {
+    return {
+      number: existingPullRequest.number,
+      url: existingPullRequest.html_url,
+      branch,
+      baseBranch,
+      baseSha: changeSet.baseSha,
+      headSha: existingPullRequest.head?.sha || null,
+      changedFiles: changeSet.files.length,
+      reused: true,
+    };
+  }
+
   const baseCommit = await githubRequest(prefix + "/git/commits/" + changeSet.baseSha, token, { fetchImpl });
   const treeEntries = [];
   for (const file of changeSet.files) {
@@ -155,7 +183,6 @@ export async function createSelfBuildPullRequest({
       parents: [changeSet.baseSha],
     },
   });
-  const branch = "aahana/self-build/" + Date.now() + "-" + randomUUID().slice(0, 8);
   await githubRequest(prefix + "/git/refs", token, {
     fetchImpl, method: "POST",
     body: { ref: "refs/heads/" + branch, sha: commit.sha },
