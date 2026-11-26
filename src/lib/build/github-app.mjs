@@ -279,7 +279,7 @@ export async function createSelfBuildPullRequest({
           "Created by Aahana Self-Build.",
           "This change is proposed for human review only. It has not been merged or deployed.",
           "Student Mode, authentication, production settings, dependencies, and deployment workflows are outside the approved self-build scope.",
-        ].join("\\n"),
+        ].join("\n"),
         draft: true,
       },
     });
