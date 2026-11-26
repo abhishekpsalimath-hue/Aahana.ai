@@ -91,6 +91,15 @@ function toRow(ownerId, idempotencyKey, job, revision) {
   };
 }
 
+function assertReturnedIdentity(record, { ownerId, jobId, idempotencyKey }) {
+  if (!record || record.job.ownerId !== ownerId ||
+      (jobId !== undefined && record.job.id !== jobId) ||
+      (idempotencyKey !== undefined && record.job.idempotencyKey !== idempotencyKey)) {
+    throw new TypeError("The video job database returned a row with mismatched identity.");
+  }
+  return record;
+}
+
 function fromRow(row) {
   if (!row || typeof row !== "object") throw new TypeError("The video job database returned an empty row.");
   if (typeof row.job_id !== "string" || typeof row.owner_id !== "string" ||
@@ -131,7 +140,7 @@ export function createSupabaseVideoJobAdapter(supabase) {
       const row = toRow(ownerId, idempotencyKey, job, revision);
       const inserted = await supabase.from(TABLE).insert(row).select("*").maybeSingle();
       if (!inserted.error && inserted.data) {
-        return { inserted: true, record: fromRow(inserted.data) };
+        return { inserted: true, record: assertReturnedIdentity(fromRow(inserted.data), { ownerId, jobId: job.id, idempotencyKey }) };
       }
       if (inserted.error?.code !== "23505") {
         throw new Error("Could not persist the video job.");
@@ -140,14 +149,14 @@ export function createSupabaseVideoJobAdapter(supabase) {
         .eq("owner_id", ownerId).eq("idempotency_key", idempotencyKey).maybeSingle();
       if (existing.error) throw new Error("Could not retrieve the existing video job.");
       if (!existing.data) throw new Error("The idempotent video job could not be recovered.");
-      return { inserted: false, record: fromRow(existing.data) };
+      return { inserted: false, record: assertReturnedIdentity(fromRow(existing.data), { ownerId, idempotencyKey }) };
     },
 
     async getOwned(ownerId, jobId) {
       const result = await supabase.from(TABLE).select("*")
         .eq("owner_id", ownerId).eq("job_id", jobId).maybeSingle();
       if (result.error) throw new Error("Could not retrieve the video job.");
-      return result.data ? fromRow(result.data) : null;
+      return result.data ? assertReturnedIdentity(fromRow(result.data), { ownerId, jobId }) : null;
     },
 
     async compareAndSwap({ ownerId, jobId, expectedRevision, nextRecord }) {
@@ -168,7 +177,7 @@ export function createSupabaseVideoJobAdapter(supabase) {
         throw new Error("Could not update the video job.");
       }
       return result.data
-        ? { updated: true, record: fromRow(result.data) }
+        ? { updated: true, record: assertReturnedIdentity(fromRow(result.data), { ownerId, jobId, idempotencyKey: nextRecord.job.idempotencyKey }) }
         : { updated: false };
     },
   });
