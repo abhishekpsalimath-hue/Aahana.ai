@@ -103,8 +103,59 @@ export default function UniverseScene() {
     const stars = new THREE.Points(starGeometry, new THREE.PointsMaterial({ size: compact ? 0.045 : 0.052, vertexColors: true, transparent: true, opacity: 0.78, sizeAttenuation: true, depthWrite: false, blending: THREE.AdditiveBlending }));
     scene.add(stars);
 
-    // The former central galaxy was intentionally removed. The scene now
-    // uses distributed planetary forms, atmospheric depth and moving stars.
+    // A real volumetric spiral galaxy: a 3D star distribution with four
+    // curved arms, a dense warm core, and cooler outer-arm stars. This replaces
+    // the flat CSS spiral artwork so its shape responds to camera parallax.
+    const galaxy = new THREE.Group();
+    galaxy.position.set(-3.4, 2.1, -24);
+    galaxy.rotation.set(0.48, -0.24, 0.12);
+    const galaxyCount = compact ? 6200 : 12800;
+    const galaxyPositions = new Float32Array(galaxyCount * 3);
+    const galaxyColors = new Float32Array(galaxyCount * 3);
+    const galaxyPalette = [
+      new THREE.Color(0xffe5bd),
+      new THREE.Color(0xe8b47b),
+      new THREE.Color(0x91c5d8),
+      new THREE.Color(0x789bc2),
+    ];
+    for (let i = 0; i < galaxyCount; i++) {
+      const arm = i % 4;
+      const radius = Math.pow(Math.random(), 0.72) * 5.2;
+      const spread = (Math.random() - 0.5) * (0.16 + radius * 0.075);
+      const angle = arm * Math.PI * 0.5 + radius * 1.22 + spread;
+      const clump = (Math.random() - 0.5) * 0.28;
+      galaxyPositions[i * 3] = Math.cos(angle) * radius + clump;
+      galaxyPositions[i * 3 + 1] = (Math.random() - 0.5) * (0.10 + radius * 0.055);
+      galaxyPositions[i * 3 + 2] = Math.sin(angle) * radius + clump;
+      const colorMix = Math.min(1, radius / 5.2);
+      const inner = galaxyPalette[0].clone().lerp(galaxyPalette[1], Math.min(1, radius / 1.8));
+      const outer = galaxyPalette[2].clone().lerp(galaxyPalette[3], Math.random() * 0.55);
+      const color = inner.lerp(outer, colorMix);
+      const brightness = 0.68 + Math.random() * 0.32;
+      galaxyColors.set([color.r * brightness, color.g * brightness, color.b * brightness], i * 3);
+    }
+    const galaxyGeometry = new THREE.BufferGeometry();
+    galaxyGeometry.setAttribute("position", new THREE.Float32BufferAttribute(galaxyPositions, 3));
+    galaxyGeometry.setAttribute("color", new THREE.Float32BufferAttribute(galaxyColors, 3));
+    const galaxyStars = new THREE.Points(
+      galaxyGeometry,
+      new THREE.PointsMaterial({
+        size: compact ? 0.034 : 0.042,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.82,
+        sizeAttenuation: true,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+      })
+    );
+    galaxy.add(galaxyStars);
+    const galaxyCore = new THREE.Mesh(
+      new THREE.SphereGeometry(0.34, 24, 18),
+      new THREE.MeshBasicMaterial({ color: 0xffdfb0, transparent: true, opacity: 0.62 })
+    );
+    galaxy.add(galaxyCore);
+    scene.add(galaxy);
 
 
     const planets = [];
@@ -677,6 +728,8 @@ export default function UniverseScene() {
         nebulaMaterial.uniforms.uTime.value = time;
         stars.rotation.y += 0.000035 * delta;
         stars.rotation.x += 0.000012 * delta;
+        galaxy.rotation.y += 0.000055 * delta;
+        galaxy.rotation.z += 0.000018 * delta;
         planets.forEach((planet, i) => { planet.rotation.y += (i === 0 ? 0.00055 : 0.0008) * delta; planet.rotation.x += 0.00008 * delta; });
         cloudLayers.forEach((cloud) => { cloud.rotation.y += 0.00068 * delta; cloud.rotation.x += 0.000035 * delta; });
         travellers.forEach((traveller) => {
