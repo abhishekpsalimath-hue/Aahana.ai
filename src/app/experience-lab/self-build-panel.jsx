@@ -144,7 +144,7 @@ export default function AahanaSelfBuildPanel() {
         </div>}
         {status.validationEnabled ? <p style={muted}>Draft PR creation unlocks only after isolated validation passes.</p> : <p style={muted}>Isolated validation is disabled in this environment. Proposals can be reviewed, but a draft PR cannot be created yet.</p>}
         {validation && <p style={muted} role="status">{validation.ok ? "Isolated validation passed." : "Isolated validation failed: " + (validation.message || validation.stage)}</p>}
-        {pullRequest && <p style={muted} role="status">Draft PR created: <a href={pullRequest.url} target="_blank" rel="noreferrer" style={{ color: "#d7c3ff" }}>#{pullRequest.number} — review changes</a></p>}
+        {pullRequest && <p style={muted} role="status">Draft PR available: <a href={pullRequest.url} target="_blank" rel="noreferrer" style={{ color: "#d7c3ff" }}>#{pullRequest.number} — review changes</a></p>}
         {error && <p role="alert" style={{ color: "#ffb4bf", fontSize: 13 }}>{error}</p>}
         <p style={{ ...muted, marginBottom: 0 }}>Aahana cannot write to main, merge, deploy, or change accounts and conversations. Every proposal stays under your review.</p>
       </div>}
