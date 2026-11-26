@@ -880,3 +880,20 @@
     radial-gradient(ellipse at 12% 42%,rgba(125,87,54,.12) 0%,transparent 36%),
     linear-gradient(145deg,#050a10 0%,#08121a 48%,#070b10 100%);
 }
+
+
+/* Honour the operating-system motion preference across the shared universe layer. */
+@media (prefers-reduced-motion: reduce) {
+  .learning-page::before,
+  .learning-page::after {
+    animation: none !important;
+  }
+  .learning-page::after {
+    transform: none;
+  }
+  .student-welcome::after,
+  .learning-mode-picker button {
+    animation: none !important;
+    transition: none !important;
+  }
+}
