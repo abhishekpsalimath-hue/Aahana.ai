@@ -4,6 +4,7 @@ import { createSseContentParser } from "@/lib/chat/sse-content-parser.mjs";
 import { readBoundedJson } from "@/lib/chat/bounded-json.mjs";
 import { readBoundedMultipartFormData } from "@/lib/chat/bounded-multipart.mjs";
 import { getValidatedImageDataUrlMimeType } from "@/lib/creative/image-provider.mjs";
+import { getReferenceImageDimensions, isImageWithinPixelBounds } from "@/lib/creative/image-generation.mjs";
 import { getLanguageGuidance } from "@/lib/chat/language-guidance.mjs";
 import { shouldSearchWeb, getResearchTopic } from "@/lib/chat/research-intent.mjs";
 
@@ -52,6 +53,7 @@ export async function POST(request) {
   let image = null;
   let imageDataUrl = "";
   let imageMimeType = null;
+  let imageBytes = null;
   const contentType = request.headers.get("content-type") || "";
   try {
     if (/^multipart\/form-data\s*;/i.test(contentType)) {
@@ -67,12 +69,12 @@ export async function POST(request) {
         if (typeof uploadedImage?.arrayBuffer !== "function" || uploadedImage.size < 1 || uploadedImage.size > 2 * 1024 * 1024) {
           return NextResponse.json({ error: "Please attach one valid PNG, JPEG or WebP image under 2 MB." }, { status: 400 });
         }
-        const bytes = Buffer.from(await uploadedImage.arrayBuffer());
+        imageBytes = Buffer.from(await uploadedImage.arrayBuffer());
         const declaredMime = uploadedImage.type;
         if (!["image/png", "image/jpeg", "image/webp"].includes(declaredMime)) {
           return NextResponse.json({ error: "Please attach one valid PNG, JPEG or WebP image under 2 MB." }, { status: 400 });
         }
-        imageDataUrl = `data:${declaredMime};base64,${bytes.toString("base64")}`;
+        imageDataUrl = `data:${declaredMime};base64,${imageBytes.toString("base64")}`;
         imageMimeType = getValidatedImageDataUrlMimeType(imageDataUrl, 2_850_000);
         if (!imageMimeType) {
           return NextResponse.json({ error: "Please attach one valid PNG, JPEG or WebP image under 2 MB." }, { status: 400 });
@@ -86,6 +88,13 @@ export async function POST(request) {
       imageMimeType = getValidatedImageDataUrlMimeType(imageDataUrl, 2_850_000);
       if (image && !imageMimeType) {
         return NextResponse.json({ error: "Please attach one valid PNG, JPEG or WebP image under 2 MB." }, { status: 400 });
+      }
+      if (image) imageBytes = Buffer.from(imageDataUrl.slice(imageDataUrl.indexOf(",") + 1), "base64");
+    }
+    if (image) {
+      const dimensions = getReferenceImageDimensions(imageBytes, imageMimeType);
+      if (!isImageWithinPixelBounds(dimensions)) {
+        return NextResponse.json({ error: "This image has unsupported or excessive dimensions. Please use an image up to 40 megapixels and 12,000 pixels per edge." }, { status: 400 });
       }
     }
   } catch (error) {
