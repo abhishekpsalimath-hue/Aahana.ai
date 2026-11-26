@@ -88,3 +88,56 @@ test("does not silently accept malformed adapter setup or timestamps", async () 
     job: { ...job, createdAt: -1 }, revision: 1,
   }), /timestamp/);
 });
+
+
+test("rejects owner and idempotency identity mismatches before persistence", async () => {
+  const adapter = createSupabaseVideoJobAdapter(fakeClient());
+  await assert.rejects(adapter.insertIfAbsent({
+    ownerId: "another-owner", idempotencyKey: job.idempotencyKey, job, revision: 1,
+  }), /identity or revision/);
+  await assert.rejects(adapter.insertIfAbsent({
+    ownerId: job.ownerId, idempotencyKey: "another-key", job, revision: 1,
+  }), /identity or revision/);
+});
+
+test("rejects forged CAS job identity and non-sequential revisions before database update", async () => {
+  const adapter = createSupabaseVideoJobAdapter(fakeClient());
+  await adapter.insertIfAbsent({ ownerId: job.ownerId, idempotencyKey: job.idempotencyKey, job, revision: 1 });
+  const validNext = { revision: 2, job: { ...job, state: "running", attempt: 1, startedAt: 1100, updatedAt: 1100 } };
+  await assert.rejects(adapter.compareAndSwap({
+    ownerId: job.ownerId, jobId: "different-job", expectedRevision: 1, nextRecord: validNext,
+  }), /identity or revision/);
+  await assert.rejects(adapter.compareAndSwap({
+    ownerId: job.ownerId, jobId: job.id, expectedRevision: 1,
+    nextRecord: { ...validNext, revision: 3 },
+  }), /identity or revision/);
+  await assert.rejects(adapter.compareAndSwap({
+    ownerId: "different-owner", jobId: job.id, expectedRevision: 1, nextRecord: validNext,
+  }), /identity or revision/);
+});
+
+test("rejects malformed persisted row fields and incoherent lifecycle timestamps", async () => {
+  const client = fakeClient();
+  const adapter = createSupabaseVideoJobAdapter(client);
+  await adapter.insertIfAbsent({ ownerId: job.ownerId, idempotencyKey: job.idempotencyKey, job, revision: 1 });
+  client.rows[0].progress = "0";
+  await assert.rejects(adapter.getOwned(job.ownerId, job.id), /invalid fields/);
+
+  const invalidRunning = {
+    ...job, state: "running", attempt: 1, startedAt: 900, updatedAt: 1100,
+  };
+  await assert.rejects(adapter.insertIfAbsent({
+    ownerId: job.ownerId, idempotencyKey: job.idempotencyKey, job: invalidRunning, revision: 1,
+  }), /chronologically coherent/);
+});
+
+test("rejects retryable failed jobs once the maximum attempt count is reached", async () => {
+  const adapter = createSupabaseVideoJobAdapter(fakeClient());
+  const exhausted = {
+    ...job, state: "failed", attempt: 3, retryable: true,
+    startedAt: 1100, completedAt: 1200, updatedAt: 1200, errorCode: "provider_failed",
+  };
+  await assert.rejects(adapter.insertIfAbsent({
+    ownerId: job.ownerId, idempotencyKey: job.idempotencyKey, job: exhausted, revision: 1,
+  }), /attempts remaining/);
+});
