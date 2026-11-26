@@ -46,7 +46,8 @@ begin
   if tg_op = 'INSERT' then
     if new.state <> 'queued' or new.revision <> 1 or new.attempt <> 0
        or new.progress <> 0 or new.retryable or new.started_at is not null
-       or new.completed_at is not null or new.error_code is not null then
+       or new.completed_at is not null or new.error_code is not null
+       or new.updated_at < new.created_at then
       raise exception 'video job must begin as a canonical queued snapshot';
     end if;
     return new;
