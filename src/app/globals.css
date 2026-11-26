@@ -842,3 +842,23 @@ h1,.brand,.composer-mode,.breadcrumb{font-family:"Space Grotesk","Manrope",sans-
 .space-background.universe-webgl-fallback>.universe-flight{display:block!important}
 .space-background>.universe-webgl{z-index:0;opacity:1!important}
 .space-background.universe-webgl-fallback>.universe-webgl{display:none!important}
+
+
+/* A quiet, non-interactive fallback remains available if WebGL is unavailable. */
+.auth-universe.universe-webgl-fallback::before{
+  content:""!important;display:block!important;position:absolute;inset:0;z-index:0;
+  background-image:
+    radial-gradient(1px 1px at 12% 18%,#dce8edaa 98%,transparent),
+    radial-gradient(1px 1px at 31% 74%,#c5d7e188 98%,transparent),
+    radial-gradient(2px 2px at 68% 24%,#fff 98%,transparent),
+    radial-gradient(1px 1px at 84% 68%,#a8c4d0aa 98%,transparent);
+  background-size:280px 260px,370px 330px,440px 390px,310px 350px;
+  opacity:.5!important;
+}
+.auth-universe.universe-webgl-fallback::after{
+  content:""!important;display:block!important;position:absolute;inset:0;z-index:0;
+  background:
+    radial-gradient(ellipse at 68% 36%,#28445a66 0%,transparent 38%),
+    radial-gradient(ellipse at 24% 72%,#60472d44 0%,transparent 36%);
+  filter:blur(32px);opacity:.8!important;
+}
