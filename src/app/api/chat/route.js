@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createSseContentParser } from "@/lib/chat/sse-content-parser.mjs";
 import { readBoundedJson } from "@/lib/chat/bounded-json.mjs";
 import { readBoundedMultipartFormData } from "@/lib/chat/bounded-multipart.mjs";
+import { readBoundedResponseJson } from "@/lib/http/bounded-request-body.mjs";
 import { detectImageMimeTypeFromBase64 } from "@/lib/creative/image-provider.mjs";
 import { getReferenceImageDimensions, isImageWithinPixelBounds } from "@/lib/creative/image-generation.mjs";
 import { getLanguageGuidance } from "@/lib/chat/language-guidance.mjs";
@@ -315,7 +316,10 @@ export async function POST(request) {
           signal: AbortSignal.any([request.signal, AbortSignal.timeout(10000)]),
         });
         if (searchResponse.ok) {
-          const searchData = await searchResponse.json();
+          const parsedSearchResponse = await readBoundedResponseJson(searchResponse, 512 * 1024);
+          if (request.signal.aborted) return new Response(null, { status: 499 });
+          const searchData = parsedSearchResponse.ok ? parsedSearchResponse.value : null;
+          if (searchData) {
           const rankedResults = (Array.isArray(searchData.results) ? searchData.results : [])
             .filter((item) => {
               if (typeof item?.url !== "string" || typeof item?.content !== "string" || !item.content.trim()) return false;
@@ -354,6 +358,10 @@ export async function POST(request) {
                 "</untrusted_web_results>",
               ].join("\n\n"),
             };
+          }
+          }
+          if (!searchData) {
+            console.error("Aahana live research response was invalid or exceeded its size limit.");
           }
         } else {
           console.error("Aahana live research provider returned:", searchResponse.status);
@@ -443,14 +451,12 @@ export async function POST(request) {
   // Research answers are buffered so citations can be validated against the exact URLs
   // retrieved for this request before any answer is shown to the user.
   if (requiresLiveResearch) {
-    let researchPayload;
-    try {
-      researchPayload = await upstream.json();
-    } catch {
-      if (request.signal.aborted) return new Response(null, { status: 499 });
-      return NextResponse.json({ error: "The research provider returned an unreadable response.", code: "RESEARCH_RESPONSE_INVALID" }, { status: 502 });
-    }
+    const parsedResearchResponse = await readBoundedResponseJson(upstream, 512 * 1024);
     if (request.signal.aborted) return new Response(null, { status: 499 });
+    if (!parsedResearchResponse.ok) {
+      return NextResponse.json({ error: "The research provider returned an unreadable or oversized response.", code: "RESEARCH_RESPONSE_INVALID" }, { status: 502 });
+    }
+    const researchPayload = parsedResearchResponse.value;
     const researchReply = researchPayload?.choices?.[0]?.message?.content;
     if (typeof researchReply !== "string" || !researchReply.trim()) {
       return NextResponse.json({ error: "Aahana could not generate a source-backed research answer. Please retry.", code: "RESEARCH_ANSWER_EMPTY" }, { status: 502 });
