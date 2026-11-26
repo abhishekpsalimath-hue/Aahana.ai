@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { parseImageGenerationInput } from "@/lib/creative/image-generation.mjs";
+import { readBoundedJson } from "@/lib/creative/bounded-json-response.mjs";
 import { resolveImageModel, DEFAULT_IMAGE_MODEL, ACCURACY_IMAGE_MODEL, ENHANCED_IMAGE_MODEL, buildImageProviderRequest, detectImageMimeTypeFromBase64, supportsImageAspectRatio } from "@/lib/creative/image-provider.mjs";
 
 export const runtime = "nodejs";
@@ -22,8 +23,14 @@ export async function POST(request) {
   }
 
   let body;
-  try { body = await request.json(); } catch {
-    return NextResponse.json({ error: "Invalid request." }, { status: 400 });
+  try {
+    body = await readBoundedJson(request, { maxBytes: 64 * 1024, label: "Image generation request" });
+  } catch (error) {
+    const tooLarge = /safe size limit/.test(error?.message || "");
+    return NextResponse.json(
+      { error: tooLarge ? "The image-generation request is too large." : "Invalid request." },
+      { status: tooLarge ? 413 : 400 },
+    );
   }
   const input = parseImageGenerationInput(body);
   if (!input.ok) {
@@ -49,7 +56,10 @@ export async function POST(request) {
       }
     );
 
-    const result = await response.json().catch(() => null);
+    const result = await readBoundedJson(response, {
+      maxBytes: 26 * 1024 * 1024,
+      label: "Image provider response",
+    }).catch(() => null);
     const image = result?.result?.image;
     const imageMimeType = detectImageMimeTypeFromBase64(image);
     if (!response.ok || !imageMimeType) {
