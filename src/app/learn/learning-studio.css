@@ -872,3 +872,11 @@
     radial-gradient(ellipse at 12% 42%,#172b38 0%,transparent 38%),
     #080e14!important;
 }
+
+/* Shared universe color balance: natural deep-space tones with lilac reserved for brand accents. */
+.learning-page{
+  background:
+    radial-gradient(ellipse at 78% 7%,rgba(55,103,119,.2) 0%,transparent 34%),
+    radial-gradient(ellipse at 12% 42%,rgba(125,87,54,.12) 0%,transparent 36%),
+    linear-gradient(145deg,#050a10 0%,#08121a 48%,#070b10 100%);
+}
