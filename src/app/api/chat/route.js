@@ -262,7 +262,7 @@ export async function POST(request) {
             include_raw_content: false,
             topic: getResearchTopic(prompt),
           }),
-          signal: AbortSignal.timeout(10000),
+          signal: AbortSignal.any([request.signal, AbortSignal.timeout(10000)]),
         });
         if (searchResponse.ok) {
           const searchData = await searchResponse.json();
@@ -309,9 +309,12 @@ export async function POST(request) {
           console.error("Aahana live research provider returned:", searchResponse.status);
         }
       } catch (researchError) {
-        console.error("Aahana live research failed:", researchError?.message || "unknown error");
+        if (!request.signal.aborted) {
+          console.error("Aahana live research failed:", researchError?.message || "unknown error");
+        }
       }
     }
+    if (request.signal.aborted) return new Response(null, { status: 499 });
     if (!researchMessage) {
       researchMessage = {
         role: "system",
@@ -358,12 +361,14 @@ export async function POST(request) {
           ...context,
         ],
       }),
-      signal: AbortSignal.timeout(45000),
+      signal: AbortSignal.any([request.signal, AbortSignal.timeout(45000)]),
     });
   } catch {
+    if (request.signal.aborted) return new Response(null, { status: 499 });
     return NextResponse.json({ error: "Aahana could not connect to the AI service. Please try again." }, { status: 502 });
   }
 
+  if (request.signal.aborted) return new Response(null, { status: 499 });
   if (!upstream.ok || !upstream.body) {
     const gatewayRequestId = upstream.headers.get("x-request-id") || upstream.headers.get("x-vercel-id") || null;
     // Provider error bodies are untrusted and may echo request or account details.
@@ -392,8 +397,10 @@ export async function POST(request) {
     try {
       researchPayload = await upstream.json();
     } catch {
+      if (request.signal.aborted) return new Response(null, { status: 499 });
       return NextResponse.json({ error: "The research provider returned an unreadable response.", code: "RESEARCH_RESPONSE_INVALID" }, { status: 502 });
     }
+    if (request.signal.aborted) return new Response(null, { status: 499 });
     const researchReply = researchPayload?.choices?.[0]?.message?.content;
     if (typeof researchReply !== "string" || !researchReply.trim()) {
       return NextResponse.json({ error: "Aahana could not generate a source-backed research answer. Please retry.", code: "RESEARCH_ANSWER_EMPTY" }, { status: 502 });
@@ -428,6 +435,8 @@ export async function POST(request) {
       });
       return NextResponse.json({ error: "Aahana retrieved sources but could not produce a verifiable citation. Please retry your research question.", code: "RESEARCH_CITATION_VALIDATION_FAILED" }, { status: 502 });
     }
+    // A stopped request must never persist a buffered research answer.
+    if (request.signal.aborted) return new Response(null, { status: 499 });
     const { error: saveError } = await supabase.rpc("save_ai_reply", {
       p_conversation_id: conversationId,
       p_content: verifiedResearchReply.slice(0, 16000),
@@ -448,6 +457,7 @@ export async function POST(request) {
   const decoder = new TextDecoder();
   const reader = upstream.body.getReader();
   let fullReply = "";
+  let clientCancelled = false;
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -465,6 +475,7 @@ export async function POST(request) {
         }
         parser.push(decoder.decode());
         parser.finish();
+        if (clientCancelled || request.signal.aborted) return;
         finished = true;
 
         if (fullReply.trim()) {
@@ -477,13 +488,16 @@ export async function POST(request) {
         }
         controller.close();
       } catch (error) {
-        console.error("Aahana stream failed:", error?.message || "unknown error");
-        if (!finished) controller.error(error);
+        if (!clientCancelled && !request.signal.aborted) {
+          console.error("Aahana stream failed:", error?.message || "unknown error");
+          if (!finished) controller.error(error);
+        }
       } finally {
         reader.releaseLock();
       }
     },
     async cancel() {
+      clientCancelled = true;
       await reader.cancel().catch(() => {});
     },
   });
