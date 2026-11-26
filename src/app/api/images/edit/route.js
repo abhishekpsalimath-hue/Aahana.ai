@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { buildImageEditPrompt } from "@/lib/creative/creative-director.mjs";
 import { getReferenceImageDimensions, getReferenceImageOutputDimensions, isReferenceImageWithinProviderBounds, parseImageEditInput } from "@/lib/creative/image-generation.mjs";
 import { detectImageMimeTypeFromBase64 } from "@/lib/creative/image-provider.mjs";
+import { readBoundedMultipartFormData } from "@/lib/chat/bounded-multipart.mjs";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -27,8 +28,13 @@ export async function POST(request) {
   }
 
   let form;
-  try { form = await request.formData(); } catch {
-    return NextResponse.json({ error: "Invalid image-edit request." }, { status: 400 });
+  try {
+    form = await readBoundedMultipartFormData(request, 2_250_000);
+  } catch (error) {
+    return NextResponse.json(
+      { error: error?.status === 413 ? "Image-edit request is too large." : "Invalid image-edit request." },
+      { status: error?.status || 400 },
+    );
   }
 
   const image = form.get("image");
@@ -46,7 +52,11 @@ export async function POST(request) {
     return NextResponse.json({ error: "The reference image context is too long." }, { status: 400 });
   }
   const imageBytes = new Uint8Array(await image.arrayBuffer());
-  const dimensions = getReferenceImageDimensions(imageBytes, image.type);
+  const detectedMime = detectImageMimeTypeFromBase64(Buffer.from(imageBytes).toString("base64"));
+  if (detectedMime !== image.type) {
+    return NextResponse.json({ error: "The uploaded image content does not match its declared file type." }, { status: 400 });
+  }
+  const dimensions = getReferenceImageDimensions(imageBytes, detectedMime);
   if (!isReferenceImageWithinProviderBounds(dimensions)) {
     return NextResponse.json({ error: "The reference image must be smaller than 512 × 512 pixels. Please retry with a smaller image." }, { status: 400 });
   }
