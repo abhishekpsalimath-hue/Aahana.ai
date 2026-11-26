@@ -193,7 +193,7 @@ export async function getSelfBuildFile({ path, ref, env = process.env, fetchImpl
   if (data.type !== "file" || typeof data.content !== "string" || data.encoding !== "base64") {
     throw new Error("GitHub did not return a supported text source file.");
   }
-  const encoded = data.content.replace(/\\s/g, "");
+  const encoded = data.content.replace(/\s/g, "");
   if (!encoded || !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(encoded)) {
     throw new Error("GitHub returned malformed base64 source content.");
   }
@@ -203,9 +203,9 @@ export async function getSelfBuildFile({ path, ref, env = process.env, fetchImpl
   let content;
   try { content = new TextDecoder("utf-8", { fatal: true }).decode(bytes); }
   catch { throw new Error("GitHub source file is not valid UTF-8."); }
-  if (content.includes("\\u0000")) throw new Error("This repository file is not supported text source.");
+  if (content.includes("\u0000")) throw new Error("This repository file is not supported text source.");
   const computedSha = createHash("sha1")
-    .update("blob " + bytes.length + "\\0")
+    .update("blob " + bytes.length + "\0")
     .update(bytes)
     .digest("hex");
   if (typeof data.sha !== "string" || data.sha !== computedSha) {
