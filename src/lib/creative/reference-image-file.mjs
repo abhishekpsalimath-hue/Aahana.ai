@@ -62,7 +62,7 @@ export async function createReferenceImageFile(dataUrl, {
   if (!SUPPORTED_REFERENCE_TYPES.has(blob.type) || blob.size < 1 || blob.size > maxBytes) {
     if (sourceBlob.type !== "image/jpeg") blob = await encode("image/jpeg", 0.92);
   }
-  if (!SUPPORTED_REFERENCE_TYPES.has(blob.type) || blob.size < 1 || blob.size > MAX_REFERENCE_IMAGE_BYTES) {
+  if (!SUPPORTED_REFERENCE_TYPES.has(blob.type) || blob.size < 1 || blob.size > maxBytes) {
     throw new Error("The reference image is too large to prepare. Please use a smaller image.");
   }
   const extension = blob.type === "image/png" ? "png" : blob.type === "image/webp" ? "webp" : "jpg";

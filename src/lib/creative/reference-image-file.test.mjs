@@ -146,3 +146,22 @@ test("rejects invalid provider-specific reference image limits", async () => {
   await assert.rejects(createReferenceImageFile("data:image/png;base64,AQ==", { maxEdge: 8192 }), /limits are invalid/);
   await assert.rejects(createReferenceImageFile("data:image/png;base64,AQ==", { maxBytes: 3 * 1024 * 1024 }), /limits are invalid/);
 });
+
+
+test("rejects a fallback image that exceeds a stricter provider-specific byte cap", async () => {
+  const canvas = {
+    width: 0, height: 0,
+    getContext() { return { drawImage() {} }; },
+    toBlob(callback, type) {
+      callback(new Blob([new Uint8Array([1, 2, 3])], { type }));
+    },
+  };
+  const source = new Blob([new Uint8Array([1, 2, 3])], { type: "image/png" });
+  await assert.rejects(createReferenceImageFile("data:image/png;base64,AQ==", {
+    ImageCtor: fakeImage(1024, 1024),
+    fetchImpl: async () => new Response(source),
+    documentRef: { createElement: () => canvas },
+    maxEdge: 511,
+    maxBytes: 2,
+  }), /too large to prepare/);
+});
