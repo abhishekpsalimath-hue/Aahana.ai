@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createSseContentParser } from "@/lib/chat/sse-content-parser.mjs";
 import { readBoundedJson } from "@/lib/chat/bounded-json.mjs";
+import { detectImageMimeTypeFromBase64 } from "@/lib/creative/image-provider.mjs";
 import { getLanguageGuidance } from "@/lib/chat/language-guidance.mjs";
 import { shouldSearchWeb, getResearchTopic } from "@/lib/chat/research-intent.mjs";
 
@@ -60,8 +61,9 @@ export async function POST(request) {
   const image = body?.image && typeof body.image === "object" ? body.image : null;
   const imageDataUrl = typeof image?.dataUrl === "string" ? image.dataUrl : "";
   const imageMatch = imageDataUrl.match(/^data:(image\/(?:png|jpeg|webp));base64,([A-Za-z0-9+/=]+)$/);
-  if (image && (!imageMatch || imageDataUrl.length > 2_850_000)) {
-    return NextResponse.json({ error: "Please attach one PNG, JPEG or WebP image under 2 MB." }, { status: 400 });
+  const detectedImageMime = imageMatch ? detectImageMimeTypeFromBase64(imageMatch[2]) : null;
+  if (image && (!imageMatch || imageDataUrl.length > 2_850_000 || detectedImageMime !== imageMatch[1])) {
+    return NextResponse.json({ error: "Please attach one valid PNG, JPEG or WebP image under 2 MB." }, { status: 400 });
   }
   const mode = ["solve", "create", "write", "build", "improve", "learn"].includes(body?.mode) ? body.mode : "solve";
   const requestedConversationId = typeof body?.conversationId === "string" ? body.conversationId : null;
