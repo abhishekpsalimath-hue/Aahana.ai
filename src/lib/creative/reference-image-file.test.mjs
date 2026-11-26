@@ -156,7 +156,7 @@ test("rejects a fallback image that exceeds a stricter provider-specific byte ca
       callback(new Blob([new Uint8Array([1, 2, 3])], { type }));
     },
   };
-  const source = new Blob([new Uint8Array([1])], { type: "image/png" });
+  const source = new Blob([new Uint8Array([1, 2, 3])], { type: "image/png" });
   await assert.rejects(createReferenceImageFile("data:image/png;base64,AQ==", {
     ImageCtor: fakeImage(1024, 1024),
     fetchImpl: async () => new Response(source),
