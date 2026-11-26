@@ -8,16 +8,16 @@ Measure whether a model follows the user's brief across many kinds of images. A 
 
 Use the 32 prompts in `tests/image-quality-benchmark.test.mjs`. They cover:
 
-- People, anatomy and hands
+- People, groups, anatomy and hands
 - Animals and natural subjects
 - Product identity and small product details
 - Architecture, interiors and landscapes
 - Exact counts, spatial placement and negative space
-- Typography, spelling and exact visible text
+- Typography, spelling and exact visible text across multiple scripts
 - Educational diagrams and scientific structure
 - Food, fashion and culturally specific visual details
-- Vehicles, illustration, stylized 3D and cinematic scenes
-- Kannada, Hindi, Tamil, Telugu and Spanish prompts
+- Vehicles, illustration, stylized 3D, cinematic scenes, logos, maps and accessibility graphics
+- Kannada, Hindi, Tamil, Telugu, Spanish, Arabic and Japanese prompts
 
 Do not silently simplify a prompt, change its language, remove constraints or replace a named subject. Preserve the original brief for every model.
 
