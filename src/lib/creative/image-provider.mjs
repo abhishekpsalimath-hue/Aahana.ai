@@ -1,6 +1,7 @@
 export const DEFAULT_IMAGE_MODEL = "@cf/black-forest-labs/flux-1-schnell";
 export const ENHANCED_IMAGE_MODEL = "@cf/black-forest-labs/flux-2-klein-4b";
 export const ACCURACY_IMAGE_MODEL = "@cf/black-forest-labs/flux-2-dev";
+export const MAX_IMAGE_PROVIDER_OUTPUT_BYTES = 12 * 1024 * 1024;
 
 export function supportsImageAspectRatio(model, aspectRatio) {
   return model !== DEFAULT_IMAGE_MODEL || aspectRatio === "1:1";
@@ -11,13 +12,15 @@ export function getImageOutputMimeType(model) {
 }
 
 export function detectImageMimeTypeFromBase64(value) {
-  if (typeof value !== "string" || value.length < 16 || value.length > 24 * 1024 * 1024) return null;
+  const maxEncodedLength = Math.ceil(MAX_IMAGE_PROVIDER_OUTPUT_BYTES / 3) * 4;
+  if (typeof value !== "string" || value.length < 16 || value.length > maxEncodedLength) return null;
   if (!/^[A-Za-z0-9+/]+={0,2}$/.test(value)) return null;
   const unpadded = value.replace(/=+$/, "");
   if (unpadded.length % 4 === 1 || (value.includes("=") && value.length % 4 !== 0)) return null;
 
   const bytes = Buffer.from(value, "base64");
-  if (!bytes.length || bytes.toString("base64").replace(/=+$/, "") !== unpadded) return null;
+  if (!bytes.length || bytes.length > MAX_IMAGE_PROVIDER_OUTPUT_BYTES ||
+      bytes.toString("base64").replace(/=+$/, "") !== unpadded) return null;
 
   if (bytes.length >= 8 && bytes.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) {
     return "image/png";

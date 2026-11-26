@@ -4,6 +4,7 @@ import {
   DEFAULT_IMAGE_MODEL,
   ENHANCED_IMAGE_MODEL,
   ACCURACY_IMAGE_MODEL,
+  MAX_IMAGE_PROVIDER_OUTPUT_BYTES,
   getImageOutputMimeType,
   detectImageMimeTypeFromBase64,
   resolveImageModel,
@@ -100,6 +101,12 @@ test("rejects malformed, unsupported, and oversized provider image payloads", ()
   assert.equal(detectImageMimeTypeFromBase64(Buffer.from("GIF89a000000", "ascii").toString("base64")), null);
   assert.equal(detectImageMimeTypeFromBase64("A".repeat(24 * 1024 * 1024 + 4)), null);
   assert.equal(detectImageMimeTypeFromBase64(null), null);
+});
+
+test("rejects a valid image signature when decoded provider output exceeds the 12 MiB save limit", () => {
+  const oversizedPng = Buffer.alloc(MAX_IMAGE_PROVIDER_OUTPUT_BYTES + 1);
+  Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]).copy(oversizedPng);
+  assert.equal(detectImageMimeTypeFromBase64(oversizedPng.toString("base64")), null);
 });
 
 test("passes portrait and widescreen dimensions to FLUX.2 Dev requests", () => {
