@@ -127,13 +127,6 @@ export async function createSelfBuildPullRequest({
   const [owner, repo] = config.repository.split("/");
   const baseBranch = String(env.AAHANA_SELF_BUILD_BASE_BRANCH || "main");
   const prefix = "/repos/" + encodeURIComponent(owner) + "/" + encodeURIComponent(repo);
-  const currentRef = await githubRequest(
-    prefix + "/git/ref/heads/" + encodeURIComponent(baseBranch), token, { fetchImpl },
-  );
-  if (currentRef.object?.sha !== changeSet.baseSha) {
-    throw new Error("Aahana's base branch changed. Refresh the repository before creating a pull request.");
-  }
-
   // A retried owner action must reuse its existing draft rather than opening
   // another PR for the same exact pinned change set.
   const idempotencyInput = JSON.stringify({
@@ -160,6 +153,13 @@ export async function createSelfBuildPullRequest({
       changedFiles: changeSet.files.length,
       reused: true,
     };
+  }
+
+  const currentRef = await githubRequest(
+    prefix + "/git/ref/heads/" + encodeURIComponent(baseBranch), token, { fetchImpl },
+  );
+  if (currentRef.object?.sha !== changeSet.baseSha) {
+    throw new Error("Aahana's base branch changed. Refresh the repository before creating a pull request.");
   }
 
   const baseCommit = await githubRequest(prefix + "/git/commits/" + changeSet.baseSha, token, { fetchImpl });
