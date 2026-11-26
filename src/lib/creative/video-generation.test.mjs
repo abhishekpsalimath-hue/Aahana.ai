@@ -144,3 +144,38 @@ test("accepts only completed provider responses with a video URL", () => {
   assert.equal(hasCompletedVideoProviderResult(null), false);
   assert.equal(hasCompletedVideoProviderResult([]), false);
 });
+
+
+const validStoryboard = () => ({
+  title: "Cinematic subject reveal",
+  visualStyle: "Photorealistic, soft natural light, consistent warm color grade",
+  continuity: { subjectId: "person-01", wardrobeId: "jacket-01", propIds: ["bag-01"] },
+  shots: [
+    { id: "shot-01", durationSeconds: 4, scene: "A quiet city street at dawn", action: "The same person walks into frame", camera: "Wide tracking shot from the left", transition: "start" },
+    { id: "shot-02", durationSeconds: 5, scene: "The same street and dawn light", action: "The person pauses and looks toward the skyline", camera: "Slow medium push-in, preserving screen direction", transition: "match-cut" },
+  ],
+});
+
+test("integrates a validated multi-shot storyboard and derives its total duration", () => {
+  const result = parseVideoGenerationInput({ prompt: "A thoughtful cinematic city moment", storyboard: validStoryboard() });
+  assert.equal(result.ok, true);
+  assert.equal(result.duration, 9);
+  assert.equal(result.storyboard.shots.length, 2);
+  assert.match(result.prompt, /GLOBAL CONTINUITY LOCK/);
+  assert.match(result.prompt, /SHOT 1 \(0–4s; 4s\)/);
+  assert.match(result.prompt, /SHOT 2 \(4–9s; 5s\)/);
+});
+
+test("rejects storyboard duration conflicts with the selected provider duration", () => {
+  const result = parseVideoGenerationInput({ prompt: "A cinematic scene", duration: 5, storyboard: validStoryboard() });
+  assert.equal(result.ok, false);
+  assert.match(result.error, /must match the total storyboard shot duration/);
+});
+
+test("rejects malformed storyboard data before provider settings are accepted", () => {
+  const storyboard = validStoryboard();
+  storyboard.shots[1].transition = "teleport";
+  const result = parseVideoGenerationInput({ prompt: "A cinematic scene", storyboard });
+  assert.equal(result.ok, false);
+  assert.match(result.error, /supported transition/);
+});
