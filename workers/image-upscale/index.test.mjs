@@ -5,7 +5,7 @@ import worker from "./index.mjs";
 const SECRET = "test-only-secret";
 const PNG = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00]);
 
-function makeEnv(calls = {}) {
+function makeEnv(calls = {}, outputBytes = PNG) {
   return {
     AAHANA_UPSCALE_SHARED_SECRET: SECRET,
     IMAGES: {
@@ -24,7 +24,7 @@ function makeEnv(calls = {}) {
                 return {
                   async response(options) {
                     calls.responseOptions = options;
-                    return new Response(new Uint8Array([1, 2, 3]), {
+                    return new Response(outputBytes, {
                       headers: { "Content-Type": "image/png", ...options.headers },
                     });
                   },
@@ -93,6 +93,13 @@ test("processes private bytes at a 4K long edge without changing aspect ratio", 
   });
   assert.deepEqual(calls.outputOptions, { format: "image/png" });
   assert.equal(calls.responseOptions.headers["Cache-Control"], "no-store");
+});
+
+test("rejects enhanced outputs larger than the 12 MiB safety cap", async () => {
+  const oversized = new Uint8Array(12 * 1024 * 1024 + 1);
+  oversized.set(PNG);
+  const response = await worker.fetch(makeRequest(), makeEnv({}, oversized));
+  assert.equal(response.status, 502);
 });
 
 test("does not downscale images that already exceed 4K", async () => {
