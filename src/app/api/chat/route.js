@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createSseContentParser } from "@/lib/chat/sse-content-parser.mjs";
 import { readBoundedJson } from "@/lib/chat/bounded-json.mjs";
+import { readBoundedMultipartFormData } from "@/lib/chat/bounded-multipart.mjs";
 import { getValidatedImageDataUrlMimeType } from "@/lib/creative/image-provider.mjs";
 import { getLanguageGuidance } from "@/lib/chat/language-guidance.mjs";
 import { shouldSearchWeb, getResearchTopic } from "@/lib/chat/research-intent.mjs";
@@ -48,8 +49,45 @@ export async function POST(request) {
   }
 
   let body;
+  let image = null;
+  let imageDataUrl = "";
+  let imageMimeType = null;
+  const contentType = request.headers.get("content-type") || "";
   try {
-    body = await readBoundedJson(request, 3_200_000);
+    if (/^multipart\/form-data\\s*;/i.test(contentType)) {
+      const form = await readBoundedMultipartFormData(request, 2_250_000);
+      const uploadedImage = form.get("image");
+      body = {
+        message: form.get("message"),
+        mode: form.get("mode"),
+        conversationId: form.get("conversationId"),
+        projectId: form.get("projectId"),
+      };
+      if (uploadedImage !== null) {
+        if (typeof uploadedImage?.arrayBuffer !== "function" || uploadedImage.size < 1 || uploadedImage.size > 2 * 1024 * 1024) {
+          return NextResponse.json({ error: "Please attach one valid PNG, JPEG or WebP image under 2 MB." }, { status: 400 });
+        }
+        const bytes = Buffer.from(await uploadedImage.arrayBuffer());
+        const declaredMime = uploadedImage.type;
+        if (!["image/png", "image/jpeg", "image/webp"].includes(declaredMime)) {
+          return NextResponse.json({ error: "Please attach one valid PNG, JPEG or WebP image under 2 MB." }, { status: 400 });
+        }
+        imageDataUrl = `data:${declaredMime};base64,${bytes.toString("base64")}`;
+        imageMimeType = getValidatedImageDataUrlMimeType(imageDataUrl, 2_850_000);
+        if (!imageMimeType) {
+          return NextResponse.json({ error: "Please attach one valid PNG, JPEG or WebP image under 2 MB." }, { status: 400 });
+        }
+        image = { dataUrl: imageDataUrl };
+      }
+    } else {
+      body = await readBoundedJson(request, 3_200_000);
+      image = body?.image && typeof body.image === "object" ? body.image : null;
+      imageDataUrl = typeof image?.dataUrl === "string" ? image.dataUrl : "";
+      imageMimeType = getValidatedImageDataUrlMimeType(imageDataUrl, 2_850_000);
+      if (image && !imageMimeType) {
+        return NextResponse.json({ error: "Please attach one valid PNG, JPEG or WebP image under 2 MB." }, { status: 400 });
+      }
+    }
   } catch (error) {
     return NextResponse.json(
       { error: error?.status === 413 ? "Request body is too large." : "Invalid request." },
@@ -58,12 +96,6 @@ export async function POST(request) {
   }
 
   const prompt = typeof body?.message === "string" ? body.message.trim() : "";
-  const image = body?.image && typeof body.image === "object" ? body.image : null;
-  const imageDataUrl = typeof image?.dataUrl === "string" ? image.dataUrl : "";
-  const imageMimeType = getValidatedImageDataUrlMimeType(imageDataUrl, 2_850_000);
-  if (image && !imageMimeType) {
-    return NextResponse.json({ error: "Please attach one valid PNG, JPEG or WebP image under 2 MB." }, { status: 400 });
-  }
   const mode = ["solve", "create", "write", "build", "improve", "learn"].includes(body?.mode) ? body.mode : "solve";
   const requestedConversationId = typeof body?.conversationId === "string" ? body.conversationId : null;
   const requestedProjectId = typeof body?.projectId === "string" ? body.projectId : null;
