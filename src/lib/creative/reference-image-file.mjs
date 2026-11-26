@@ -8,14 +8,19 @@ export async function createReferenceImageFile(dataUrl, {
   fetchImpl = globalThis.fetch,
   FileCtor = globalThis.File,
 } = {}) {
-  if (typeof dataUrl !== "string" || !/^data:image\/(?:png|jpeg|webp);base64,/.test(dataUrl)) {
+  if (typeof dataUrl !== "string") {
     throw new Error("Could not read the reference image.");
+  }
+  const dataUrlMatch = dataUrl.match(/^data:(image\/[^;,]+);base64,/);
+  if (!dataUrlMatch) throw new Error("Could not read the reference image.");
+  if (!SUPPORTED_REFERENCE_TYPES.has(dataUrlMatch[1])) {
+    throw new Error("Attach a PNG, JPEG or WebP reference image.");
   }
 
   const sourceResponse = await fetchImpl(dataUrl);
   if (!sourceResponse.ok) throw new Error("Could not read the reference image.");
   const sourceBlob = await sourceResponse.blob();
-  if (!SUPPORTED_REFERENCE_TYPES.has(sourceBlob.type)) {
+  if (!SUPPORTED_REFERENCE_TYPES.has(sourceBlob.type) || sourceBlob.type !== dataUrlMatch[1]) {
     throw new Error("Attach a PNG, JPEG or WebP reference image.");
   }
 
