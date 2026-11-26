@@ -201,12 +201,32 @@ export default function UniverseScene() {
         return (n - Math.floor(n)) * 2 - 1;
       };
       const smooth = (t) => t * t * (3 - 2 * t);
+      // Hash each noise-grid lattice point once per planet instead of
+      // evaluating several trigonometric hashes for every output texel.
+      const noiseGrids = new Map();
+      const getNoiseGrid = (scaleX, scaleY) => {
+        const key = `${scaleX}x${scaleY}`;
+        let grid = noiseGrids.get(key);
+        if (!grid) {
+          grid = new Float32Array(scaleX * (scaleY + 1));
+          for (let gy = 0; gy <= scaleY; gy++) {
+            for (let gx = 0; gx < scaleX; gx++) {
+              grid[gy * scaleX + gx] = hash(gx, gy);
+            }
+          }
+          noiseGrids.set(key, grid);
+        }
+        return grid;
+      };
       const valueNoise = (u, v, scaleX, scaleY) => {
         const px = u * scaleX, py = v * scaleY;
         const ix = Math.floor(px), iy = Math.floor(py);
         const fx = smooth(px - ix), fy = smooth(py - iy);
         const x0 = ((ix % scaleX) + scaleX) % scaleX, x1 = (x0 + 1) % scaleX;
-        const a = hash(x0, iy), b = hash(x1, iy), c = hash(x0, iy + 1), d = hash(x1, iy + 1);
+        const grid = getNoiseGrid(scaleX, scaleY);
+        const row = iy * scaleX, nextRow = (iy + 1) * scaleX;
+        const a = grid[row + x0], b = grid[row + x1];
+        const c = grid[nextRow + x0], d = grid[nextRow + x1];
         const top = a + (b - a) * fx, bottom = c + (d - c) * fx;
         return top + (bottom - top) * fy;
       };
