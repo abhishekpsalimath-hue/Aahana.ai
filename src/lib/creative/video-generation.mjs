@@ -1,5 +1,6 @@
 import { buildVideoContinuityPrompt, buildVideoPrompt, VIDEO_DIRECTOR_PRESETS } from "./creative-director.mjs";
 import { getReferenceImageDimensions } from "./image-generation.mjs";
+import { compileVideoStoryboard } from "./video-storyboard.mjs";
 export const VIDEO_MODEL = "xai/grok-imagine-video";
 export const MAX_VIDEO_PROMPT_LENGTH = 2000;
 export const MAX_VIDEO_DURATION_SECONDS = 15;
@@ -12,7 +13,18 @@ export function parseVideoGenerationInput(body) {
     return { ok: false, error: "Describe the video in 1–2,000 characters." };
   }
 
-  const duration = body?.duration === undefined ? 5 : body.duration;
+  let storyboardPlan = null;
+  if (body?.storyboard !== undefined) {
+    try {
+      storyboardPlan = compileVideoStoryboard(body.storyboard, prompt);
+    } catch (error) {
+      return { ok: false, error: error?.message || "Check the storyboard and try again." };
+    }
+  }
+
+  const duration = body?.duration === undefined
+    ? (storyboardPlan?.durationSeconds ?? 5)
+    : body.duration;
   if (!Number.isInteger(duration) || duration < 1 || duration > MAX_VIDEO_DURATION_SECONDS) {
     return { ok: false, error: "Video duration must be between 1 and 15 seconds." };
   }
@@ -36,12 +48,16 @@ export function parseVideoGenerationInput(body) {
   if (continuityPrompt === null) {
     return { ok: false, error: "Check the video continuity fields and keep each to 180 characters or fewer." };
   }
-  const finalPrompt = [directedPrompt, continuityPrompt].filter(Boolean).join("\n\n");
+  if (storyboardPlan && storyboardPlan.durationSeconds !== duration) {
+    return { ok: false, error: "The selected video duration must match the total storyboard shot duration." };
+  }
+  const storyboardPrompt = storyboardPlan?.prompt || "";
+  const finalPrompt = [directedPrompt, continuityPrompt, storyboardPrompt].filter(Boolean).join("\n\n");
   if (!directedPrompt || finalPrompt.length > MAX_VIDEO_PROMPT_LENGTH) {
     return { ok: false, error: "This video prompt is too long for the selected direction. Shorten it and try again." };
   }
 
-  return { ok: true, prompt: finalPrompt, duration, aspectRatio, resolution, director };
+  return { ok: true, prompt: finalPrompt, duration, aspectRatio, resolution, director, ...(storyboardPlan ? { storyboard: storyboardPlan } : {}) };
 }
 
 

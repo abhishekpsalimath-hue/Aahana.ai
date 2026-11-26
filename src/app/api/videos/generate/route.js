@@ -58,6 +58,12 @@ export async function POST(request) {
         if (typeof raw !== "string" || raw.length > 2048) throw new Error("Invalid continuity plan");
         return JSON.parse(raw);
       })(),
+      storyboard: (() => {
+        const raw = form.get("storyboard");
+        if (raw === null) return undefined;
+        if (typeof raw !== "string" || raw.length > 12000) throw new Error("Invalid storyboard");
+        return JSON.parse(raw);
+      })(),
     });
     imageFile = form.get("image");
   } catch {
