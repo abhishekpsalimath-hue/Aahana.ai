@@ -815,6 +815,12 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [imageEditingEnabled, setImageEditingEnabled] = useState(false);
   const [videoEnabled, setVideoEnabled] = useState(false);
   const [videoGenerating, setVideoGenerating] = useState(false);
+  const [videoStoryboardEnabled, setVideoStoryboardEnabled] = useState(false);
+  const [videoStoryboardStyle, setVideoStoryboardStyle] = useState("Photorealistic, coherent lighting, consistent color grade and natural motion");
+  const [videoStoryboardShots, setVideoStoryboardShots] = useState([
+    { id: "shot-1", durationSeconds: 2, scene: "", action: "", camera: "", transition: "start" },
+    { id: "shot-2", durationSeconds: 3, scene: "", action: "", camera: "", transition: "cut" },
+  ]);
   const videoAbortControllerRef = useRef(null);
   useEffect(() => () => { videoAbortControllerRef.current?.abort(); }, []);
   const [videoDuration, setVideoDuration] = useState(5);
@@ -1303,13 +1309,28 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     if (!videoEnabled || !videoPrompt || videoGenerating || busy || imageGenerating || imageUpscaling) return false;
     const controller = new AbortController();
     videoAbortControllerRef.current = controller;
+    const storyboardDuration = videoStoryboardShots.reduce((sum, shot) => sum + Number(shot.durationSeconds || 0), 0);
+    if (videoStoryboardEnabled) {
+      if (videoStoryboardShots.length < 2 || videoStoryboardShots.length > 6 || storyboardDuration > 15) {
+        setError("A storyboard needs 2–6 shots with a combined duration of 15 seconds or less.");
+        return false;
+      }
+      if (videoStoryboardShots.some((shot) => !shot.scene.trim() || !shot.action.trim() || !shot.camera.trim())) {
+        setError("Complete the scene, action and camera direction for every storyboard shot.");
+        return false;
+      }
+      if (!videoStoryboardStyle.trim()) {
+        setError("Add a visual style for the storyboard.");
+        return false;
+      }
+    }
     setVideoGenerating(true);
     setError("");
     setGeneratedVideo(null);
     try {
       const form = new FormData();
       form.set("prompt", videoPrompt);
-      form.set("duration", String(videoDuration));
+      form.set("duration", String(videoStoryboardEnabled ? storyboardDuration : videoDuration));
       form.set("aspectRatio", videoAspectRatio);
       form.set("resolution", videoResolution);
       form.set("director", videoDirector);
@@ -1317,6 +1338,17 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         Object.entries(videoContinuity).map(([key, value]) => [key, value.trim()]).filter(([, value]) => value)
       );
       if (Object.keys(continuity).length) form.set("continuity", JSON.stringify(continuity));
+      if (videoStoryboardEnabled) {
+        form.set("storyboard", JSON.stringify({
+          title: videoPrompt.slice(0, 80) || "Aahana storyboard",
+          visualStyle: videoStoryboardStyle.trim(),
+          continuity: { subjectId: "primary-subject", wardrobeId: "primary-wardrobe", propIds: [] },
+          shots: videoStoryboardShots.map((shot, index) => ({
+            ...shot,
+            transition: index === 0 ? "start" : shot.transition,
+          })),
+        }));
+      }
       if (imageFile) form.set("image", imageFile);
       const response = await fetch("/api/videos/generate", {
         method: "POST",
@@ -1341,6 +1373,21 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       if (videoAbortControllerRef.current === controller) videoAbortControllerRef.current = null;
       setVideoGenerating(false);
     }
+  }
+
+  function updateVideoStoryboardShot(id, field, value) {
+    setVideoStoryboardShots((shots) => shots.map((shot) => shot.id === id ? { ...shot, [field]: value } : shot));
+  }
+
+  function addVideoStoryboardShot() {
+    setVideoStoryboardShots((shots) => shots.length >= 6 ? shots : [
+      ...shots,
+      { id: "shot-" + crypto.randomUUID(), durationSeconds: 2, scene: "", action: "", camera: "", transition: "cut" },
+    ]);
+  }
+
+  function removeVideoStoryboardShot(id) {
+    setVideoStoryboardShots((shots) => shots.length <= 2 ? shots : shots.filter((shot) => shot.id !== id));
   }
 
   function cancelVideoGeneration() {
@@ -2081,7 +2128,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                   )}
                   <details className="video-advanced-settings">
                     <summary>Video settings</summary>
-                    <select aria-label="Video duration" value={videoDuration} onChange={(event) => setVideoDuration(Number(event.target.value))} className="copy-message">
+                    <select aria-label="Video duration" value={videoDuration} onChange={(event) => setVideoDuration(Number(event.target.value))} className="copy-message" disabled={videoStoryboardEnabled}>
                       <option value={3}>3 seconds</option>
                       <option value={5}>5 seconds</option>
                       <option value={10}>10 seconds</option>
@@ -2107,6 +2154,42 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                       <option value="480p">480p</option>
                       <option value="720p">720p</option>
                     </select>
+                    <details className="video-advanced-settings">
+                      <summary>Multi-shot storyboard (optional)</summary>
+                      <label className="copy-message" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <input type="checkbox" checked={videoStoryboardEnabled} onChange={(event) => setVideoStoryboardEnabled(event.target.checked)} />
+                        Build this video from a shot-by-shot plan
+                      </label>
+                      {videoStoryboardEnabled && (
+                        <div className="video-storyboard-editor">
+                          <p className="muted">2–6 shots · maximum 15 seconds total. This guides one video-generation request; exact cut execution depends on the video model.</p>
+                          <input aria-label="Storyboard visual style" className="copy-message" maxLength={160} value={videoStoryboardStyle} onChange={(event) => setVideoStoryboardStyle(event.target.value)} placeholder="Visual style, lighting and color grade" />
+                          {videoStoryboardShots.map((shot, index) => (
+                            <fieldset key={shot.id} className="video-storyboard-shot">
+                              <legend>Shot {index + 1}</legend>
+                              <select aria-label={`Shot ${index + 1} duration`} className="copy-message" value={shot.durationSeconds} onChange={(event) => updateVideoStoryboardShot(shot.id, "durationSeconds", Number(event.target.value))}>
+                                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((seconds) => <option key={seconds} value={seconds}>{seconds} seconds</option>)}
+                              </select>
+                              <input aria-label={`Shot ${index + 1} scene`} className="copy-message" maxLength={180} value={shot.scene} onChange={(event) => updateVideoStoryboardShot(shot.id, "scene", event.target.value)} placeholder="Scene and environment" />
+                              <input aria-label={`Shot ${index + 1} action`} className="copy-message" maxLength={180} value={shot.action} onChange={(event) => updateVideoStoryboardShot(shot.id, "action", event.target.value)} placeholder="What happens in this shot" />
+                              <input aria-label={`Shot ${index + 1} camera`} className="copy-message" maxLength={180} value={shot.camera} onChange={(event) => updateVideoStoryboardShot(shot.id, "camera", event.target.value)} placeholder="Camera framing and movement" />
+                              {index > 0 && (
+                                <select aria-label={`Shot ${index + 1} transition`} className="copy-message" value={shot.transition} onChange={(event) => updateVideoStoryboardShot(shot.id, "transition", event.target.value)}>
+                                  <option value="cut">Cut</option>
+                                  <option value="dissolve">Dissolve</option>
+                                  <option value="match-cut">Match cut</option>
+                                  <option value="whip-pan">Whip pan</option>
+                                  <option value="fade">Fade</option>
+                                </select>
+                              )}
+                              {videoStoryboardShots.length > 2 && <button className="copy-message" type="button" onClick={() => removeVideoStoryboardShot(shot.id)}>Remove shot</button>}
+                            </fieldset>
+                          ))}
+                          <p className="muted">Total storyboard duration: {storyboardDuration} / 15 seconds</p>
+                          <button className="copy-message" type="button" onClick={addVideoStoryboardShot} disabled={videoStoryboardShots.length >= 6}>Add shot</button>
+                        </div>
+                      )}
+                    </details>
                     <details className="video-advanced-settings">
                       <summary>Scene continuity (optional)</summary>
                       <input aria-label="Continuity subject identity" className="copy-message" maxLength={180} placeholder="Subject identity and defining traits"
