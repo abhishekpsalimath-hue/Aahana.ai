@@ -59,7 +59,7 @@ export function isSelfBuildOwner(email, config) {
 
 export function isAllowedSelfBuildPath(input) {
   if (typeof input !== "string" || input.length < 1 || input.length > 240 ||
-      input.startsWith("/") || input.includes("\\") || input.includes("%") ||
+      input.startsWith("/") || input.includes("\\") || input.includes("%") || /[\u2044\u2215\u29f8\uff0f]/u.test(input) ||
       /[\u0000-\u001f\u007f\u202a-\u202e\u2066-\u2069]/u.test(input)) return false;
 
   const segments = input.split("/");
