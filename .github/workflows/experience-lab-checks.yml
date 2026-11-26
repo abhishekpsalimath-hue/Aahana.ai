@@ -17,6 +17,11 @@ on:
     paths:
       - "src/app/experience-lab/**"
       - "src/app/universe-lab/**"
+      - "src/app/learn/**"
+      - "src/app/assistant-workspace.jsx"
+      - "src/components/universe-scene.jsx"
+      - "src/app/login/**"
+      - "src/app/globals.css"
       - "src/app/api/build/**"
       - "src/app/api/chat/**"
       - "src/app/api/files/**"

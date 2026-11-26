@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import UniverseScene from "@/components/universe-scene";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -82,6 +83,7 @@ export default function LoginPage() {
     <main
       className="auth-shell"
       onPointerMove={(event) => {
+        if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
         const bounds = event.currentTarget.getBoundingClientRect();
         const x = ((event.clientX - bounds.left) / Math.max(1, bounds.width) - 0.5) * 18;
         const y = ((event.clientY - bounds.top) / Math.max(1, bounds.height) - 0.5) * 14;
@@ -90,15 +92,9 @@ export default function LoginPage() {
       }}
     >
       <div className="auth-universe" aria-hidden="true">
-        <span className="auth-nebula auth-nebula-one" />
-        <span className="auth-nebula auth-nebula-two" />
-        <span className="auth-galaxy" />
-        <span className="auth-orbit auth-orbit-one" />
-        <span className="auth-orbit auth-orbit-two" />
-        <span className="auth-planet auth-planet-one" />
-        <span className="auth-planet auth-planet-two" />
+        <UniverseScene />
       </div>
-      <section className="auth-card">
+      <section className="auth-card auth-entry">
         <Link className="brand auth-brand" href="/"><span className="brand-word">Aahana</span><span className="brand-ai">AI</span></Link>
         <div className="eyebrow"><span /> YOUR THINKING SPACE</div>
         <h1>{mode === "signin" ? "Welcome back." : "Start with Aahana."}</h1>

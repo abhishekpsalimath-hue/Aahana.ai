@@ -706,4 +706,159 @@ h1,.brand,.composer-mode,.breadcrumb{font-family:"Space Grotesk","Manrope",sans-
 @keyframes auth-nebula-drift{0%{translate:-3% 2%;scale:.94}100%{translate:5% -4%;scale:1.08}}
 @keyframes auth-planet-float{0%,100%{translate:0 0}50%{translate:14px -20px}}
 @media(max-width:600px){.auth-universe::after{width:125vw;height:125vw;opacity:.48}.auth-galaxy{width:86vw;height:86vw;opacity:.5}.auth-nebula{filter:blur(34px);opacity:.22}.auth-planet-one{left:5%;top:12%}.auth-planet-two{right:5%;bottom:10%}.auth-card{background:#111017f7}}
-@media(prefers-reduced-motion:reduce){.auth-universe::before,.auth-universe::after,.auth-nebula,.auth-orbit,.auth-planet{animation-duration:120s}.auth-card{transition:none}}
+@media(prefers-reduced-motion:reduce){.auth-universe::before,.auth-universe::after,.auth-nebula,.auth-galaxy,.auth-orbit,.auth-planet{animation:none!important;transition:none!important}.auth-card{transition:none!important}}
+
+
+/* One shared real-time universe canvas across sign-in, assistance and Student Mode. */
+.auth-universe .universe-webgl{position:absolute;inset:0;z-index:0;display:block;width:100%;height:100%;opacity:.66;pointer-events:none}
+.auth-universe .universe-webgl[data-webgl-fallback="true"]{display:none}
+.auth-universe>span{z-index:1}
+.learning-page>.universe-webgl{position:fixed;inset:0;z-index:0;display:block;width:100%;height:100%;opacity:.48;pointer-events:none}
+.learning-page>.universe-webgl[data-webgl-fallback="true"]{display:none}
+@media(max-width:760px){.auth-universe .universe-webgl{opacity:.42}.learning-page>.universe-webgl{opacity:.34}}
+@media(prefers-reduced-motion:reduce){.auth-universe .universe-webgl,.learning-page>.universe-webgl{opacity:.3}}
+
+
+/* Aahana universe quality correction: natural astronomical color, real WebGL
+   forms in the lead, and no duplicate flat CSS galaxy/nebula overlays. */
+.main-panel{
+  background:
+    radial-gradient(ellipse at 72% 18%,#18364224 0%,transparent 44%),
+    linear-gradient(145deg,#050a10 0%,#08121a 48%,#070b10 100%)!important;
+}
+.space-background .universe-webgl{opacity:1!important}
+.space-background .universe-galaxy,
+.space-background .universe-particles,
+.space-background .universe-comets{display:none!important}
+.space-background .universe-depth-stars{opacity:.12!important}
+.auth-universe{background:radial-gradient(ellipse at 52% 44%,#10232d 0%,#09131b 50%,#05090f 100%)!important}
+.auth-universe::before,.auth-universe::after,.auth-universe>span{display:none!important}
+.auth-universe .universe-webgl{opacity:1!important}
+.learning-page>.universe-webgl{opacity:1!important}
+@media(max-width:760px){
+  .space-background .universe-webgl,
+  .auth-universe .universe-webgl,
+  .learning-page>.universe-webgl{opacity:.92!important}
+}
+
+/* If WebGL cannot start (or its context is lost), restore the CSS universe
+   instead of leaving sign-in and Assistance with a nearly empty backdrop. */
+.space-background.universe-webgl-fallback .universe-flight{opacity:1!important}
+.space-background.universe-webgl-fallback .universe-depth-stars{opacity:.72!important}
+.space-background.universe-webgl-fallback .universe-nebula{opacity:.48!important}
+.space-background.universe-webgl-fallback .universe-galaxy,
+.space-background.universe-webgl-fallback .universe-particles,
+.space-background.universe-webgl-fallback .universe-comets{display:block!important;opacity:1!important}
+.auth-universe.universe-webgl-fallback::before,
+.auth-universe.universe-webgl-fallback::after,
+.auth-universe.universe-webgl-fallback>span{display:block!important}
+.auth-universe.universe-webgl-fallback::before{opacity:.62}
+.auth-universe.universe-webgl-fallback::after{opacity:.5}
+
+
+/* Cinematic entry: let the shared 3D scene own the space, not decorative CSS
+   rings, gradient planets, or a boxed login widget. */
+.auth-shell{
+  position:relative;display:block;min-height:100svh;min-height:100vh;
+  overflow:hidden;isolation:isolate;padding:0;background:#03060b;
+}
+.auth-universe{
+  position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;
+  background:radial-gradient(ellipse at 72% 42%,#101b27 0%,#070d15 42%,#03060b 78%);
+}
+.auth-universe::before,.auth-universe::after{content:none!important;display:none!important}
+.auth-universe canvas{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;display:block;opacity:1}
+.auth-universe>.auth-nebula,.auth-universe>.auth-galaxy,
+.auth-universe>.auth-orbit,.auth-universe>.auth-planet{display:none!important}
+.auth-card.auth-entry{
+  position:absolute;z-index:3;left:clamp(26px,8.2vw,144px);
+  bottom:clamp(34px,10vh,112px);width:min(430px,calc(100vw - 52px));
+  margin:0;padding:0;border:0;border-radius:0;background:linear-gradient(90deg,rgba(3,7,13,.88),rgba(3,7,13,.64) 72%,rgba(3,7,13,0));
+  box-shadow:none;backdrop-filter:none;
+}
+.auth-entry .auth-brand{display:inline-flex;align-items:baseline;gap:5px;margin:0 0 clamp(38px,7vh,76px);padding:0}
+.auth-entry .brand-word{font-size:19px;letter-spacing:-.7px;color:#f3f5f7}
+.auth-entry .brand-ai{font-size:10px;letter-spacing:1.8px;color:#a8c4d0}
+.auth-entry .eyebrow{font-size:10px;letter-spacing:2.6px;color:#a8c4d0}
+.auth-entry .eyebrow span{background:#c5dbe3;box-shadow:0 0 12px #a8d7e8}
+.auth-entry h1{max-width:420px;margin:18px 0 10px;font-size:clamp(42px,5.8vw,68px);line-height:.98;letter-spacing:-.055em;font-weight:500;color:#f4f5f6}
+.auth-entry .auth-copy{max-width:340px;margin:0 0 27px;color:#aeb9c2;font-size:14px;line-height:1.7}
+.auth-entry .auth-form{gap:7px;max-width:360px}
+.auth-entry .auth-form label{margin-top:12px;color:#b8c5ce;font-size:10px;letter-spacing:1.25px;text-transform:uppercase}
+.auth-entry .auth-form input{
+  height:46px;padding:0 2px;border:0;border-bottom:1px solid #62717d80;border-radius:0;
+  background:transparent;color:#f4f6f7;font-size:14px;outline:none;
+}
+.auth-entry .auth-form input:focus{border-bottom-color:#c4dce5;box-shadow:0 1px 0 #c4dce5}
+.auth-entry .auth-form input::placeholder{color:#65727d}
+.auth-entry .password-field{position:relative}
+.auth-entry .password-field input{padding-right:65px}
+.auth-entry .password-toggle{right:0;border:0;border-radius:0;background:transparent;color:#b7cbd4;padding:7px 0}
+.auth-entry .auth-submit{
+  height:49px;margin-top:22px;border:1px solid #d6e4e9;border-radius:2px;
+  background:#dce8ec;color:#101820;font-size:12px;letter-spacing:.7px;font-weight:700;
+  transition:background .2s ease,transform .2s ease;
+}
+.auth-entry .auth-submit:hover:not(:disabled){background:#fff;transform:translateY(-1px)}
+.auth-entry .auth-message{background:#101923b8;border:1px solid #71889766;border-radius:2px;color:#d8e5ea}
+.auth-entry .auth-switch{margin:22px 0 0;text-align:left;color:#9daab3}
+.auth-entry .auth-switch button{color:#d6e5eb;text-decoration:underline;text-underline-offset:4px}
+.auth-entry .auth-legal{margin:18px 0 0;text-align:left;color:#6e7c87}
+@media(max-width:700px){
+  .auth-universe{background:radial-gradient(ellipse at 58% 28%,#13212c 0%,#080f17 48%,#03060b 84%)}
+  .auth-card.auth-entry{left:24px;bottom:28px;width:calc(100vw - 48px);padding:24px 0 0;background:linear-gradient(0deg,rgba(3,7,13,.98),rgba(3,7,13,.86) 78%,rgba(3,7,13,0))}
+  .auth-entry .auth-brand{margin-bottom:26px}
+  .auth-entry h1{font-size:clamp(39px,11vw,54px)}
+  .auth-entry .auth-copy{font-size:13px;margin-bottom:16px}
+  .auth-entry .auth-form{max-width:none}
+}
+@media(prefers-reduced-motion:reduce){.auth-entry .auth-submit{transition:none}}
+
+
+/* The WebGL universe is the primary scene. Keep the legacy CSS flight layer
+   only as a graceful fallback when the browser cannot create a WebGL context. */
+.space-background:not(.universe-webgl-fallback)>.universe-flight{display:none!important}
+.space-background.universe-webgl-fallback>.universe-flight{display:block!important}
+.space-background>.universe-webgl{z-index:0;opacity:1!important}
+.space-background.universe-webgl-fallback>.universe-webgl{display:none!important}
+
+/* Student Mode shares the same world, while its learning UI stays readable. */
+.learning-page{
+  position:relative;isolation:isolate;min-height:100vh;
+  background:linear-gradient(145deg,#03070d 0%,#08131b 48%,#070b11 100%)!important;
+}
+.learning-page>.universe-webgl{
+  position:fixed!important;inset:0!important;z-index:0!important;
+  display:block;width:100vw!important;height:100vh!important;
+  pointer-events:none;opacity:1!important;
+}
+.learning-page>*:not(.universe-webgl){position:relative;z-index:1}
+@media(max-width:760px){.learning-page>.universe-webgl{opacity:.94!important}}
+
+
+/* Remove the hand-drawn CSS galaxy and particle overlay whenever WebGL is
+   healthy; retain it solely for the no-WebGL/context-loss fallback. */
+.space-background:not(.universe-webgl-fallback)>.universe-flight{display:none!important}
+.space-background.universe-webgl-fallback>.universe-flight{display:block!important}
+.space-background>.universe-webgl{z-index:0;opacity:1!important}
+.space-background.universe-webgl-fallback>.universe-webgl{display:none!important}
+
+
+/* A quiet, non-interactive fallback remains available if WebGL is unavailable. */
+.auth-universe.universe-webgl-fallback::before{
+  content:""!important;display:block!important;position:absolute;inset:0;z-index:0;
+  background-image:
+    radial-gradient(1px 1px at 12% 18%,#dce8edaa 98%,transparent),
+    radial-gradient(1px 1px at 31% 74%,#c5d7e188 98%,transparent),
+    radial-gradient(2px 2px at 68% 24%,#fff 98%,transparent),
+    radial-gradient(1px 1px at 84% 68%,#a8c4d0aa 98%,transparent);
+  background-size:280px 260px,370px 330px,440px 390px,310px 350px;
+  opacity:.5!important;
+}
+.auth-universe.universe-webgl-fallback::after{
+  content:""!important;display:block!important;position:absolute;inset:0;z-index:0;
+  background:
+    radial-gradient(ellipse at 68% 36%,#28445a66 0%,transparent 38%),
+    radial-gradient(ellipse at 24% 72%,#60472d44 0%,transparent 36%);
+  filter:blur(32px);opacity:.8!important;
+}

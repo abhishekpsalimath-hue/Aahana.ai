@@ -69,7 +69,7 @@
 .learning-quiz-question{animation:learning-scene-in .5s both}
 .learning-quiz-question.solved{border-color:#66518a;animation:learning-solved .75s ease-out}
 .learning-quiz-question-top{display:flex;justify-content:space-between;align-items:center;gap:10px;color:#b9a7d8;font-size:9px;font-weight:800;letter-spacing:1.2px}
-.learning-quiz-sparkle{color:#cbb5ff;letter-spacing:.2px;text-transform:none;animation:learning-sparkle 1.8s ease-in-out infinite}
+.learning-quiz-sparkle{color:#b8dce3;letter-spacing:.2px;text-transform:none;animation:learning-sparkle 1.8s ease-in-out infinite}
 .learning-quiz-options button{transition:transform .2s ease,border-color .2s ease,background .2s ease}
 .learning-quiz-options button:hover:not(:disabled){transform:translateY(-2px)}
 .learning-quiz-options button.gentle-hint{border-color:#8a75ad;background:#211b2d}
@@ -849,3 +849,67 @@
 .learning-revision-steps span{display:grid;gap:5px;padding:10px;border:1px solid #403650;border-radius:10px;background:#171321;color:#bdb1ce;font-size:10px;line-height:1.5}
 .learning-revision-steps b{color:#d8c2ff;font-size:10px}
 @media(max-width:640px){.learning-revision-steps{grid-template-columns:1fr}}
+
+
+/* Aahana's universe is the shared environment for Student Mode too.
+   Keep this layer atmospheric and behind the existing learning controls. */
+.learning-page{position:relative;isolation:isolate;background:radial-gradient(ellipse at 78% 5%,#33254d 0%,transparent 34%),radial-gradient(ellipse at 8% 38%,#20253d 0%,transparent 36%),#08070f}
+.learning-page::before,.learning-page::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none}
+.learning-page::before{background-image:radial-gradient(1px 1px at 8% 14%,#fff 98%,transparent),radial-gradient(1px 1px at 24% 68%,#c5e3e8 98%,transparent),radial-gradient(2px 2px at 47% 31%,#fff 98%,transparent),radial-gradient(1px 1px at 72% 19%,#b8dce3 98%,transparent),radial-gradient(1px 1px at 88% 74%,#fff 98%,transparent),radial-gradient(1px 1px at 94% 42%,#c5e3e8 98%,transparent),radial-gradient(ellipse at 18% 25%,#347f8b2b 0%,transparent 36%),radial-gradient(ellipse at 84% 76%,#9b70472b 0%,transparent 40%);background-size:310px 270px,370px 330px,440px 390px,290px 340px,410px 300px,350px 420px,100% 100%,100% 100%;opacity:.7;animation:learning-cosmos-drift 115s linear infinite}
+.learning-page::after{inset:-22%;background:repeating-conic-gradient(from 12deg at 50% 48%,#fff0 0deg,#b8dce312 5deg,#fff0 12deg,#d3a06a0d 20deg,#fff0 31deg);mask-image:radial-gradient(ellipse at center,transparent 0%,#000 24%,#000 49%,transparent 74%);filter:blur(8px) drop-shadow(0 0 32px #8fc4d022);opacity:.44;transform:perspective(1000px) rotateX(66deg) rotateZ(-20deg);animation:learning-galaxy-turn 150s linear infinite}
+.learning-header,.learning-hero,.learning-profile,.learning-modes,.learning-session,.learning-discovery,.learning-3d-world,.learning-page>section{position:relative;z-index:1}
+@keyframes learning-cosmos-drift{from{background-position:0 0,0 0,0 0,0 0,0 0,0 0,center,center}to{background-position:-90px 60px,70px -80px,-60px 40px,55px 75px,-45px -65px,80px -40px,center,center}}
+@keyframes learning-galaxy-turn{from{rotate:0deg}to{rotate:360deg}}
+@media(max-width:760px){.learning-page::before{opacity:.5;background-size:260px 240px,300px 280px,360px 330px,250px 290px,320px 260px,280px 340px,100% 100%,100% 100%}.learning-page::after{inset:-8%;opacity:.3;filter:blur(11px)}}
+@media(prefers-reduced-motion:reduce){.learning-page::before,.learning-page::after{animation-duration:240s}}
+
+
+/* Shared universe color correction: deep natural space, with lilac reserved
+   for Aahana's interface accents rather than the whole environment. */
+.learning-page{
+  background:
+    radial-gradient(ellipse at 76% 4%,#173744 0%,transparent 35%),
+    radial-gradient(ellipse at 12% 42%,#172b38 0%,transparent 38%),
+    #080e14!important;
+}
+
+/* Shared universe color balance: natural deep-space tones with lilac reserved for brand accents. */
+.learning-page{
+  background:
+    radial-gradient(ellipse at 78% 7%,rgba(55,103,119,.2) 0%,transparent 34%),
+    radial-gradient(ellipse at 12% 42%,rgba(125,87,54,.12) 0%,transparent 36%),
+    linear-gradient(145deg,#050a10 0%,#08121a 48%,#070b10 100%);
+}
+
+
+/* Honour the operating-system motion preference across the shared universe layer. */
+@media (prefers-reduced-motion: reduce) {
+  .learning-page::before,
+  .learning-page::after {
+    animation: none !important;
+  }
+  .learning-page::after {
+    transform: none;
+  }
+  .student-welcome::after,
+  .learning-mode-picker button {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+
+/* Natural cosmic palette: reserve lilac for small identity accents, not the
+   atmosphere or every interactive surface. */
+.learning-page{background:transparent!important;color:#edf2f4}
+.learning-header{border-bottom-color:#9fb7c322}
+.learning-brand span,.learning-hero h1 em{color:#b9d2dc}
+.learning-kicker,.learning-section-heading>div>span{color:#a9c3cf}
+.learning-header nav a{color:#c1d7df}
+.learning-mode-icon{color:#b8d2dc}
+.learning-mode-card.selected{border-color:#8eacba;background:linear-gradient(145deg,#172631,#0d151d);box-shadow:inset 0 0 0 1px #9dbac522}
+.learning-mode-card:hover{border-color:#7798a8}
+.learning-select-grid select:focus,.learning-select-grid input:focus,.learning-composer textarea:focus{border-color:#9bbbc9}
+.learning-composer button{background:#d2e0e5;color:#101a20}
+.learning-mode-card small,.learning-quiz-heading span,.learning-quiz-options button span{color:#b9d2dc}
+.learning-quiz-options button:hover:not(:disabled){border-color:#8daab8;background:#1a2a34}
