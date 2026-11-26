@@ -228,3 +228,13 @@ test("image series compiler rejects unknown fields, invalid scene numbers and ov
   assert.equal(buildImageSeriesPrompt("A scene", { subject: "x".repeat(181) }), null);
   assert.equal(parseImageGenerationInput({ prompt: "A scene", series: { sceneNumber: "3" } }).ok, false);
 });
+
+test("rejects empty, malformed, and oversized generated image payloads before saving", async () => {
+  const { MAX_GENERATED_IMAGE_BYTES } = await import("./image-generation.mjs");
+  assert.equal(getGeneratedImageFileMetadata("data:image/png;base64,", "image/png"), null);
+  assert.equal(getGeneratedImageFileMetadata("data:image/png;base64,@@@=", "image/png"), null);
+  assert.equal(getGeneratedImageFileMetadata("data:image/png;base64,AAAA=", "image/png"), null);
+  const oversized = "A".repeat(Math.ceil((MAX_GENERATED_IMAGE_BYTES + 1) / 3) * 4);
+  assert.equal(getGeneratedImageFileMetadata("data:image/png;base64," + oversized, "image/png"), null);
+  assert.deepEqual(getGeneratedImageFileMetadata("data:image/png;base64,AAAA", "image/png"), { mimeType: "image/png", extension: "png" });
+});
