@@ -107,10 +107,12 @@ export function createVideoJobRepository(adapter) {
           record: latest === null ? null : normalizeRecord(latest, ownerId, jobId),
         });
       }
-      return Object.freeze({
-        status: "updated",
-        record: normalizeRecord(result.record ?? nextRecord, ownerId, jobId),
-      });
+      const persisted = normalizeRecord(result.record ?? nextRecord, ownerId, jobId);
+      if (persisted.revision !== nextRecord.revision ||
+          persisted.job.idempotencyKey !== current.job.idempotencyKey) {
+        throw new Error("The video-job adapter did not persist the expected revision and identity.");
+      }
+      return Object.freeze({ status: "updated", record: persisted });
     },
   });
 }
