@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { parseImageGenerationInput, parseImageEditInput, MAX_IMAGE_EDIT_BYTES, MAX_IMAGE_EDIT_PROMPT_LENGTH, getReferenceImageDimensions, isReferenceImageWithinProviderBounds, inferImageAspectRatio, getGeneratedImageFileMetadata } from "./image-generation.mjs";
+import { parseImageGenerationInput, parseImageEditInput, MAX_IMAGE_EDIT_BYTES, MAX_IMAGE_EDIT_PROMPT_LENGTH, getReferenceImageDimensions, getReferenceImageOutputDimensions, isReferenceImageWithinProviderBounds, inferImageAspectRatio, getGeneratedImageFileMetadata } from "./image-generation.mjs";
 import { buildImageEditPrompt, buildImageSeriesPrompt } from "./creative-director.mjs";
 
 test("defaults to automatic masterpiece image direction without asking the user to choose settings", () => {
@@ -98,6 +98,15 @@ test("validates conversational reference-image edits and bounded uploads", () =>
   assert.equal(parseImageEditInput({ prompt: "Change it", imageType: "image/gif", imageSize: 20 }).ok, false);
   assert.equal(parseImageEditInput({ prompt: "Change it", imageType: "image/jpeg", imageSize: MAX_IMAGE_EDIT_BYTES + 1 }).ok, false);
   assert.equal(parseImageEditInput({ prompt: "x".repeat(MAX_IMAGE_EDIT_PROMPT_LENGTH + 1), imageType: "image/jpeg", imageSize: 20 }).ok, false);
+});
+
+test("sizes edited image output to the reference aspect ratio within provider bounds", () => {
+  assert.deepEqual(getReferenceImageOutputDimensions({ width: 511, height: 480 }), { width: 1024, height: 962 });
+  assert.deepEqual(getReferenceImageOutputDimensions({ width: 383, height: 511 }), { width: 768, height: 1024 });
+  assert.deepEqual(getReferenceImageOutputDimensions({ width: 511, height: 120 }), { width: 1090, height: 256 });
+  assert.equal(getReferenceImageOutputDimensions(null), null);
+  assert.equal(getReferenceImageOutputDimensions({ width: 0, height: 480 }), null);
+  assert.equal(getReferenceImageOutputDimensions({ width: 511, height: 1 }), null);
 });
 
 test("parses PNG reference dimensions and enforces the strict 512px provider limit", () => {
