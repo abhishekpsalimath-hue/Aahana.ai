@@ -3,6 +3,11 @@ export const VIDEO_DIRECTOR_PRESETS = Object.freeze(["cinematic", "commercial", 
 
 const IMAGE_MASTERPIECE_DIRECTION = [
   "Creative direction: produce a carefully art-directed, production-quality image that follows the user's brief exactly. Do not optimize for a generic beautiful image at the expense of the requested result.",
+  "Establish one unmistakable focal subject and a deliberate visual hierarchy.",
+  "Use intentional composition, believable perspective, rich but controlled color, nuanced lighting, dimensional depth, tactile material detail, and crisp subject separation.",
+  "Treat the user prompt as a specification, not loose inspiration.",
+  "Preserve the exact requested subject identity, number of subjects and objects, defining attributes, left/right placement, pose, setting, materials, palette, and framing.",
+  "Interpret the request in the language it was written in; preserve proper names and any exact visible wording, and never invent text.",
   "Before rendering, resolve the brief into a visual specification: primary subject, exact subject and object counts, defining attributes, action or pose, environment, foreground/midground/background, camera viewpoint, framing, orientation, spatial relationships, lighting, materials, palette, style and any exact visible text. Preserve every explicit constraint and their relationships.",
   "Composition fidelity is mandatory. Respect requested left/right/top/bottom placement, relative scale, distance, orientation, crop, camera angle, negative space and aspect ratio. If the user specifies a count, show exactly that count. If the user specifies one subject, do not add background people or duplicate objects. Keep every important requested feature inside the frame unless an intentional crop is requested.",
   "Subject fidelity is mandatory. Preserve named identities, species, product silhouettes, clothing, accessories, architecture, cultural or scientific attributes, and distinctive details. Never substitute a named subject with a generic lookalike, merge separate subjects, silently redesign a product, or add unrequested logos and branding.",
