@@ -1561,6 +1561,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         return null;
       });
       if (!imageDataUrl) {
+        if (controller.signal.aborted) setPrompt(text);
         activeChatControllerRef.current = null;
         setBusy(false);
         return;
