@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { buildImageEditPrompt } from "@/lib/creative/creative-director.mjs";
-import { getReferenceImageDimensions, isReferenceImageWithinProviderBounds, parseImageEditInput } from "@/lib/creative/image-generation.mjs";
 import { detectImageMimeTypeFromBase64 } from "@/lib/creative/image-provider.mjs";
+import { readBoundedImageEditRequest } from "@/lib/creative/bounded-image-edit-request.mjs";
+import { readBoundedImageProviderJson } from "@/lib/creative/bounded-image-generation-json.mjs";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -26,31 +27,13 @@ export async function POST(request) {
     return NextResponse.json({ error: "Image editing is not connected in the private server settings." }, { status: 503 });
   }
 
-  let form;
-  try { form = await request.formData(); } catch {
-    return NextResponse.json({ error: "Invalid image-edit request." }, { status: 400 });
+  const parsedRequest = await readBoundedImageEditRequest(request);
+  if (!parsedRequest.ok) {
+    return NextResponse.json({ error: parsedRequest.error }, { status: parsedRequest.status });
   }
-
-  const image = form.get("image");
-  const input = parseImageEditInput({
-    prompt: form.get("prompt"),
-    imageType: image?.type,
-    imageSize: image?.size,
-  });
-  if (!input.ok || !(image instanceof File)) {
-    return NextResponse.json({ error: input.error || "Attach a valid reference image." }, { status: 400 });
-  }
-
-  const referencePrompt = form.get("referencePrompt");
-  if (referencePrompt !== null && (typeof referencePrompt !== "string" || referencePrompt.length > 1200)) {
-    return NextResponse.json({ error: "The reference image context is too long." }, { status: 400 });
-  }
-  const imageBytes = new Uint8Array(await image.arrayBuffer());
-  const dimensions = getReferenceImageDimensions(imageBytes, image.type);
-  if (!isReferenceImageWithinProviderBounds(dimensions)) {
-    return NextResponse.json({ error: "The reference image must be smaller than 512 × 512 pixels. Please retry with a smaller image." }, { status: 400 });
-  }
-  const prompt = buildImageEditPrompt(referencePrompt || "", input.prompt);
+  const { image, imageBytes, prompt: editInstruction, referencePrompt } = parsedRequest;
+  if (request.signal.aborted) return NextResponse.json({ error: "Image editing cancelled." }, { status: 499 });
+  const prompt = buildImageEditPrompt(referencePrompt, editInstruction);
   if (!prompt) return NextResponse.json({ error: "Describe the change you want to make." }, { status: 400 });
   const providerForm = new FormData();
   providerForm.set("prompt", prompt);
@@ -66,11 +49,14 @@ export async function POST(request) {
         headers: { Authorization: `Bearer ${apiToken}` },
         body: providerForm,
         cache: "no-store",
-        signal: AbortSignal.timeout(55000),
+        signal: AbortSignal.any([request.signal, AbortSignal.timeout(55000)]),
       }
     );
 
-    const result = await response.json().catch(() => null);
+    if (request.signal.aborted) return NextResponse.json({ error: "Image editing cancelled." }, { status: 499 });
+    const parsedProviderResponse = await readBoundedImageProviderJson(response);
+    const result = parsedProviderResponse.ok ? parsedProviderResponse.value : null;
+    if (request.signal.aborted) return NextResponse.json({ error: "Image editing cancelled." }, { status: 499 });
     const imageBase64 = result?.result?.image;
     const imageMimeType = detectImageMimeTypeFromBase64(imageBase64);
     if (!response.ok || !imageMimeType) {
@@ -91,6 +77,9 @@ export async function POST(request) {
       { headers: { "Cache-Control": "no-store" } }
     );
   } catch (error) {
+    if (request.signal.aborted || error?.name === "AbortError") {
+      return NextResponse.json({ error: "Image editing cancelled." }, { status: 499 });
+    }
     console.error("Aahana reference image edit request failed:", error?.name || "unknown error");
     return NextResponse.json({ error: "Image editing timed out or the provider is unavailable. Please try again." }, { status: 503 });
   }
