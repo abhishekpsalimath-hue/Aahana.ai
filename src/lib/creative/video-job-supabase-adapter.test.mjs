@@ -143,11 +143,23 @@ test("rejects retryable failed jobs once the maximum attempt count is reached", 
 });
 
 
-test("rejects a mismatched idempotency key and owner in the returned database row", async () => {
-  const client = fakeClient();
-  const adapter = createSupabaseVideoJobAdapter(client);
-  await adapter.insertIfAbsent({ ownerId: job.ownerId, idempotencyKey: job.idempotencyKey, job, revision: 1 });
-  client.rows[0].idempotency_key = "another-key";
+test("rejects a mismatched owner in a database row returned despite owner filters", async () => {
+  const backing = fakeClient();
+  await createSupabaseVideoJobAdapter(backing).insertIfAbsent({
+    ownerId: job.ownerId, idempotencyKey: job.idempotencyKey, job, revision: 1,
+  });
+  const maliciousClient = {
+    from() {
+      return {
+        select() { return this; },
+        eq() { return this; },
+        async maybeSingle() {
+          return { data: { ...backing.rows[0], owner_id: "another-owner" }, error: null };
+        },
+      };
+    },
+  };
+  const adapter = createSupabaseVideoJobAdapter(maliciousClient);
   await assert.rejects(adapter.getOwned(job.ownerId, job.id), /mismatched identity/);
 });
 
