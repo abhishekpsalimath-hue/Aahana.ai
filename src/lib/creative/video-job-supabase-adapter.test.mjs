@@ -173,3 +173,14 @@ test("rejects timestamp strings and malformed enum or boolean values returned by
   client.rows[0].retryable = "false";
   await assert.rejects(adapter.getOwned(job.ownerId, job.id), /invalid fields/);
 });
+
+
+test("rejects lifecycle timestamps that are later than updatedAt", async () => {
+  const adapter = createSupabaseVideoJobAdapter(fakeClient());
+  const invalidRunning = {
+    ...job, state: "running", attempt: 1, startedAt: 1200, updatedAt: 1100,
+  };
+  await assert.rejects(adapter.insertIfAbsent({
+    ownerId: job.ownerId, idempotencyKey: job.idempotencyKey, job: invalidRunning, revision: 1,
+  }), /chronologically coherent/);
+});
