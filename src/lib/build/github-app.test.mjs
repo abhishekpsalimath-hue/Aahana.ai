@@ -169,7 +169,7 @@ test("reuses an existing draft when the exact pinned Self-Build change is retrie
     fetchImpl,
   };
   const first = await createSelfBuildPullRequest(input);
-  const writesAfterFirst = calls.filter((call) => call.method === "POST").length;
+  const writesAfterFirst = calls.filter((call) => call.method === "POST" && !call.url.endsWith("/access_tokens")).length;
   const second = await createSelfBuildPullRequest(input);
   const writesAfterSecond = calls.filter((call) => call.method === "POST").length;
   assert.equal(first.number, 23);
