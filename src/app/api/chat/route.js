@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createSseContentParser } from "@/lib/chat/sse-content-parser.mjs";
 import { readBoundedJson } from "@/lib/chat/bounded-json.mjs";
 import { getLanguageGuidance } from "@/lib/chat/language-guidance.mjs";
-import { shouldSearchWeb } from "@/lib/chat/research-intent.mjs";
+import { shouldSearchWeb, getResearchTopic } from "@/lib/chat/research-intent.mjs";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -260,7 +260,7 @@ export async function POST(request) {
             max_results: 10,
             include_answer: false,
             include_raw_content: false,
-            topic: /\b(?:news|breaking|today|yesterday|this week|this month|developments|announcements|breakthroughs|release|launched|November|December|October|September|August|July|June|May|April|March|February|January)\b/i.test(prompt) ? "news" : "general",
+            topic: getResearchTopic(prompt),
           }),
           signal: AbortSignal.timeout(10000),
         });
