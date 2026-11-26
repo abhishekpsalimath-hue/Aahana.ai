@@ -24,7 +24,7 @@ function readIntegerOption(name, fallback, maximum) {
   const index = args.indexOf(name);
   const raw = equals ? equals.slice(name.length + 1) : index >= 0 ? args[index + 1] : undefined;
   if (raw === undefined) return fallback;
-  if (!/^\\d+$/.test(raw)) throw new Error(`Invalid ${name} value.`);
+  if (!/^\d+$/.test(raw)) throw new Error(`Invalid ${name} value.`);
   const value = Number(raw);
   if (!Number.isSafeInteger(value) || value < (name === "--max-provider-requests" ? 0 : 1) || value > maximum) {
     throw new Error(`${name} must be within its safe range.`);
