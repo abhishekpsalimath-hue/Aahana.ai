@@ -125,6 +125,28 @@ test("refuses to write when the main branch moved after inspection", async () =>
   }), /base branch changed/);
 });
 
+test("does not report a previously closed proposal as an available draft", async () => {
+  const fetchImpl = async (url) => {
+    if (url.endsWith("/access_tokens")) return mockResponse({ token: "installation-token" });
+    if (url.includes("/pulls?state=all")) return mockResponse([{
+      number: 31,
+      state: "closed",
+      html_url: "https://github.com/owner/Aahana.ai/pull/31",
+      head: { ref: "aahana/self-build/closed", sha: "2".repeat(40) },
+      base: { ref: "main" },
+    }]);
+    throw new Error("A closed proposal must stop before any repository write: " + url);
+  };
+  await assert.rejects(() => createSelfBuildPullRequest({
+    baseSha,
+    files: [{ path: "src/app/experience-lab/page.jsx", content: "export default function Page() {}" }],
+    title: "Do not reuse closed proposal",
+    summary: "Must stop safely.",
+    env,
+    fetchImpl,
+  }), /proposal.*closed/i);
+});
+
 test("recovers an interrupted proposal branch only when its exact pinned diff matches", async () => {
   const source = "export default function Page() {}";
   const bytes = Buffer.from(source, "utf8");
@@ -233,6 +255,7 @@ test("reuses an existing draft when the exact pinned Self-Build change is retrie
     if (url.endsWith("/pulls")) {
       existingPullRequest = {
         number: 23,
+        state: "open",
         html_url: "https://github.com/owner/Aahana.ai/pull/23",
         head: { ref: body.head, sha: "2".repeat(40) },
         base: { ref: body.base },
