@@ -234,27 +234,39 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [messages, setMessages] = useState([]);
   const [astronautMotion, setAstronautMotion] = useState({ x: 0, y: 0, rotation: -3, duration: 3600 });
   useEffect(() => {
-    const prefersReducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true;
+    const motionQuery = window.matchMedia?.("(prefers-reduced-motion: reduce)");
     let active = true;
     let timer;
+    const clearMotionTimer = () => {
+      if (timer) window.clearTimeout(timer);
+      timer = undefined;
+    };
     const moveAstronaut = () => {
-      if (!active) return;
-      // Keep the astronaut gently drifting even on devices that request reduced motion.
-      const duration = prefersReducedMotion
-        ? 8500 + Math.round(Math.random() * 4500)
-        : 2600 + Math.round(Math.random() * 2600);
-      const travelX = prefersReducedMotion ? 18 : 36;
-      const travelY = prefersReducedMotion ? 14 : 30;
+      if (!active || motionQuery?.matches === true) return;
+      const duration = 2600 + Math.round(Math.random() * 2600);
       setAstronautMotion({
-        x: Math.round((Math.random() - 0.5) * travelX),
-        y: Math.round((Math.random() - 0.5) * travelY),
-        rotation: Math.round((Math.random() - 0.5) * (prefersReducedMotion ? 8 : 18)),
+        x: Math.round((Math.random() - 0.5) * 36),
+        y: Math.round((Math.random() - 0.5) * 30),
+        rotation: Math.round((Math.random() - 0.5) * 18),
         duration,
       });
       timer = window.setTimeout(moveAstronaut, duration);
     };
-    timer = window.setTimeout(moveAstronaut, 500);
-    return () => { active = false; window.clearTimeout(timer); };
+    const onMotionPreferenceChange = (event) => {
+      clearMotionTimer();
+      if (event.matches) {
+        setAstronautMotion({ x: 0, y: 0, rotation: -3, duration: 0 });
+      } else if (active) {
+        timer = window.setTimeout(moveAstronaut, 500);
+      }
+    };
+    if (motionQuery?.matches !== true) timer = window.setTimeout(moveAstronaut, 500);
+    motionQuery?.addEventListener?.("change", onMotionPreferenceChange);
+    return () => {
+      active = false;
+      clearMotionTimer();
+      motionQuery?.removeEventListener?.("change", onMotionPreferenceChange);
+    };
   }, []);
   useEffect(() => {
     if (messages.length) conversationEndRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
