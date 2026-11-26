@@ -17,7 +17,7 @@ export async function readBoundedJson(request, maxBytes) {
   }
   const reader = request.body?.getReader?.();
   if (!reader) throw requestError("Invalid request.", 400);
-  const decoder = new TextDecoder();
+  const decoder = new TextDecoder("utf-8", { fatal: true });
   let text = "";
   let bytes = 0;
   try {
@@ -35,6 +35,7 @@ export async function readBoundedJson(request, maxBytes) {
     text += decoder.decode();
     return JSON.parse(text);
   } catch (error) {
+    await reader.cancel().catch(() => {});
     if (error?.status) throw error;
     throw requestError("Invalid request.", 400);
   }
