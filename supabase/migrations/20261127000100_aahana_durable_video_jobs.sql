@@ -57,8 +57,16 @@ begin
      or new.created_at <> old.created_at or new.max_attempts <> old.max_attempts then
     raise exception 'video job identity and creation metadata are immutable';
   end if;
-  if new.revision <> old.revision + 1 or new.updated_at < old.updated_at then
+  if new.revision <> old.revision + 1 or new.updated_at < old.updated_at
+     or new.updated_at < new.created_at then
     raise exception 'video job revision and timestamps must advance monotonically';
+  end if;
+  if (new.started_at is not null and new.started_at < new.created_at)
+     or (new.completed_at is not null and new.completed_at < coalesce(new.started_at, new.created_at)) then
+    raise exception 'video job lifecycle timestamps must be chronologically coherent';
+  end if;
+  if new.retryable and (new.state <> 'failed' or new.attempt >= new.max_attempts) then
+    raise exception 'only failed jobs with attempts remaining may be retryable';
   end if;
 
   if old.state = 'queued' and new.state = 'running' then
@@ -85,7 +93,7 @@ begin
   elsif old.state = 'running' and new.state = 'failed' then
     if new.attempt <> old.attempt or new.progress <> old.progress
        or new.started_at <> old.started_at or new.completed_at is null or new.error_code is null
-       or new.retryable <> (old.attempt < old.max_attempts and new.retryable) then
+       or (new.retryable and new.attempt >= new.max_attempts) then
       raise exception 'invalid running-to-failed video job transition';
     end if;
   elsif old.state = 'running' and new.state = 'cancelled' then
