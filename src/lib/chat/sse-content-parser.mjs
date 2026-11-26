@@ -4,13 +4,14 @@ export function createSseContentParser(onDelta) {
   }
 
   let buffer = "";
+  let dataLines = [];
   let closed = false;
 
-  const handleLine = (line) => {
-    if (!line.startsWith("data:")) return;
-    const data = line.slice(5).trim();
+  const dispatchEvent = () => {
+    if (!dataLines.length) return;
+    const data = dataLines.join("\n");
+    dataLines = [];
     if (!data || data === "[DONE]") return;
-
     try {
       const payload = JSON.parse(data);
       const delta = payload?.choices?.[0]?.delta?.content;
@@ -18,6 +19,20 @@ export function createSseContentParser(onDelta) {
     } catch {
       // Ignore provider keepalives, comments, and non-JSON metadata frames.
     }
+  };
+
+  const handleLine = (line) => {
+    if (line === "") {
+      dispatchEvent();
+      return;
+    }
+    if (line.startsWith(":")) return;
+    const separator = line.indexOf(":");
+    const field = separator === -1 ? line : line.slice(0, separator);
+    if (field !== "data") return;
+    let value = separator === -1 ? "" : line.slice(separator + 1);
+    if (value.startsWith(" ")) value = value.slice(1);
+    dataLines.push(value);
   };
 
   return {
@@ -34,6 +49,7 @@ export function createSseContentParser(onDelta) {
       closed = true;
       if (buffer) handleLine(buffer.replace(/\r$/, ""));
       buffer = "";
+      dispatchEvent();
     },
   };
 }
