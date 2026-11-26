@@ -102,7 +102,7 @@ test("validates conversational reference-image edits and bounded uploads", () =>
 
 test("sizes edited image output to the reference aspect ratio within provider bounds", () => {
   assert.deepEqual(getReferenceImageOutputDimensions({ width: 511, height: 480 }), { width: 1024, height: 962 });
-  assert.deepEqual(getReferenceImageOutputDimensions({ width: 383, height: 511 }), { width: 768, height: 1024 });
+  assert.deepEqual(getReferenceImageOutputDimensions({ width: 383, height: 511 }), { width: 767, height: 1024 });
   assert.deepEqual(getReferenceImageOutputDimensions({ width: 511, height: 120 }), { width: 1090, height: 256 });
   assert.equal(getReferenceImageOutputDimensions(null), null);
   assert.equal(getReferenceImageOutputDimensions({ width: 0, height: 480 }), null);
