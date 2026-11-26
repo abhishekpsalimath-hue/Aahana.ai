@@ -271,22 +271,34 @@ test("refuses to reuse a proposal that changes an approved source file into a sy
   }), /exact approved file contents/);
 });
 
-test("reuses an existing draft when the exact pinned Self-Build change is retried", async () => {
+test("reuses an existing draft only after verifying its exact pinned branch contents", async () => {
   const calls = [];
   let existingPullRequest = null;
   let baseRefReads = 0;
+  const source = "export default function Page() {}";
+  const bytes = Buffer.from(source, "utf8");
+  const expectedBlobSha = createHash("sha1").update("blob " + bytes.length + "\\0").update(bytes).digest("hex");
   const fetchImpl = async (url, options) => {
     const body = options.body ? JSON.parse(options.body) : null;
     calls.push({ url, method: options.method || "GET", body });
     if (url.endsWith("/access_tokens")) return mockResponse({ token: "installation-token" });
-    if (url.includes("/git/ref/heads/main")) {
+    if (url.includes("/pulls?state=all")) return mockResponse(existingPullRequest ? [existingPullRequest] : []);
+    if (url.endsWith("/git/ref/heads/main")) {
       baseRefReads += 1;
       return mockResponse({ object: { sha: baseRefReads === 1 ? baseSha : "b".repeat(40) } });
     }
-    if (url.includes("/git/ref/heads/aahana%2Fself-build%2F")) return mockResponse({}, 404);
-    if (url.includes("/pulls?state=all")) return mockResponse(existingPullRequest ? [existingPullRequest] : []);
-    if (url.includes("/git/commits/" + baseSha)) return mockResponse({ tree: { sha: "e".repeat(40) } });
-    if (url.endsWith("/git/blobs")) return mockResponse({ sha: "f".repeat(40) });
+    if (url.includes("/git/ref/heads/aahana%2Fself-build%2F")) {
+      return existingPullRequest ? mockResponse({ object: { sha: "2".repeat(40) } }) : mockResponse({}, 404);
+    }
+    if (url.endsWith("/git/commits/" + baseSha)) return mockResponse({ tree: { sha: "e".repeat(40) } });
+    if (url.endsWith("/git/commits/" + "2".repeat(40))) return mockResponse({
+      parents: [{ sha: baseSha }], tree: { sha: "1".repeat(40) },
+    });
+    if (url.includes("/git/trees/" + "e".repeat(40))) return mockResponse({ truncated: false, tree: [] });
+    if (url.includes("/git/trees/" + "1".repeat(40))) return mockResponse({ truncated: false, tree: [
+      { type: "blob", mode: "100644", path: "src/app/experience-lab/page.jsx", sha: expectedBlobSha },
+    ] });
+    if (url.endsWith("/git/blobs")) return mockResponse({ sha: expectedBlobSha });
     if (url.endsWith("/git/trees")) return mockResponse({ sha: "1".repeat(40) });
     if (url.endsWith("/git/commits")) return mockResponse({ sha: "2".repeat(40) });
     if (url.endsWith("/git/refs")) return mockResponse({ ref: body.ref });
@@ -304,7 +316,7 @@ test("reuses an existing draft when the exact pinned Self-Build change is retrie
   };
   const input = {
     baseSha,
-    files: [{ path: "src/app/experience-lab/page.jsx", content: "export default function Page() {}" }],
+    files: [{ path: "src/app/experience-lab/page.jsx", content: source }],
     title: "Improve Build workspace",
     summary: "A focused self-build improvement.",
     env,
@@ -317,6 +329,7 @@ test("reuses an existing draft when the exact pinned Self-Build change is retrie
   assert.equal(first.number, 23);
   assert.equal(second.number, 23);
   assert.equal(second.reused, true);
+  assert.equal(second.headSha, "2".repeat(40));
   assert.equal(second.branch, first.branch);
   assert.equal(baseRefReads, 1, "a retry reuses its existing draft even if main has since moved");
   assert.equal(writesAfterSecond, writesAfterFirst);
