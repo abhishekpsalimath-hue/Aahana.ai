@@ -53,8 +53,8 @@ for (const [category, prompt] of cases) {
     const result = parseImageGenerationInput({ prompt, quality: "masterpiece", steps: 8 });
     assert.equal(result.ok, true);
     assert.ok(result.prompt.includes(prompt), "the complete original brief must survive prompt direction");
-    assert.ok(result.prompt.includes("Preserve the exact requested subject identity"));
-    assert.ok(result.prompt.includes("Treat the user prompt as a specification"));
+    assert.ok(result.prompt.includes("Subject fidelity is mandatory"));
+    assert.ok(result.prompt.includes("follows the user's brief exactly"));
     assert.ok(result.width > 0 && result.height > 0);
   });
 }
