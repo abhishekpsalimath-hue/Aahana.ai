@@ -26,6 +26,7 @@ export function scoreReferenceImageEdit(scores) {
 
   const normalized = {};
   for (const key of Object.keys(DIMENSIONS)) {
+    if (!Object.hasOwn(scores, key)) return null;
     const score = scores[key];
     if (score === undefined) return null;
     if (score !== null && (!Number.isInteger(score) || score < MIN_SCORE || score > MAX_SCORE)) return null;
