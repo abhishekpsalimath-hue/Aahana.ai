@@ -15,7 +15,7 @@ export default function UniverseScene() {
     let reduced = motionQuery?.matches === true;
     // Pointer movement also receives touch-drag PointerEvents on phones.
     try {
-      renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: false, powerPreference: "low-power", stencil: false });
+      renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: !compact, powerPreference: "high-performance", stencil: false });
     } catch {
       canvas.dataset.webglFallback = "true";
       return undefined;
@@ -24,7 +24,7 @@ export default function UniverseScene() {
     const camera = new THREE.PerspectiveCamera(48, 1, 0.1, 120);
     camera.position.set(0, 0, 15.5);
     camera.lookAt(0, 0, -2.6);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, compact ? 1 : 1.2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, compact ? 1.25 : 1.65));
     renderer.setClearColor(0x05040a, 0);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -164,7 +164,7 @@ export default function UniverseScene() {
     const makePlanetMaps = (seed, colors) => {
       // Keep procedural texture work bounded on phones while retaining enough
       // texel detail for the planets at their on-screen size.
-      const width = compact ? 256 : 320, height = compact ? 128 : 160;
+      const width = compact ? 384 : 768, height = compact ? 192 : 384;
       const surface = document.createElement("canvas");
       surface.width = width;
       surface.height = height;
@@ -259,7 +259,7 @@ export default function UniverseScene() {
       group.position.set(x, y, z);
       const maps = makePlanetMaps(seed, palette);
       const body = new THREE.Mesh(
-        new THREE.SphereGeometry(radius, 64, 48),
+        new THREE.SphereGeometry(radius, compact ? 64 : 96, compact ? 48 : 64),
         new THREE.MeshStandardMaterial({
           color: 0xffffff,
           map: maps.map || null,
@@ -436,11 +436,23 @@ export default function UniverseScene() {
     const travellers = [];
     const astronautSuit = new THREE.MeshStandardMaterial({ color: 0xe7e1d2, roughness: 0.72, metalness: 0.12 });
     const astronautTrim = new THREE.MeshStandardMaterial({ color: 0x3d7180, roughness: 0.48, metalness: 0.28, emissive: 0x10262c });
-    const visorMaterial = new THREE.MeshPhysicalMaterial({ color: 0x18233c, metalness: 0.72, roughness: 0.16, clearcoat: 1, clearcoatRoughness: 0.08, emissive: 0x243e70, emissiveIntensity: 0.32 });
+    const visorMaterial = new THREE.MeshPhysicalMaterial({ color: 0x142331, metalness: 0.82, roughness: 0.11, clearcoat: 1, clearcoatRoughness: 0.035, emissive: 0x173746, emissiveIntensity: 0.16 });
     const createAstronaut = (scale = 1) => {
       const g = new THREE.Group();
       const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.19, 0.34, 5, 10), astronautSuit);
       torso.position.y = -0.03; g.add(torso);
+      const chestPanel = new THREE.Mesh(new THREE.BoxGeometry(0.19, 0.16, 0.035), new THREE.MeshStandardMaterial({ color: 0x263b42, roughness: 0.42, metalness: 0.38 }));
+      chestPanel.position.set(0, 0.015, 0.17); g.add(chestPanel);
+      const chestGlass = new THREE.Mesh(new THREE.BoxGeometry(0.115, 0.062, 0.012), new THREE.MeshPhysicalMaterial({ color: 0x78c6cf, emissive: 0x245b63, emissiveIntensity: 0.42, roughness: 0.2, metalness: 0.35, clearcoat: 1 }));
+      chestGlass.position.set(0, 0.04, 0.192); g.add(chestGlass);
+      const chestIndicator = new THREE.Mesh(new THREE.SphereGeometry(0.018, 10, 8), new THREE.MeshBasicMaterial({ color: 0xffc879 }));
+      chestIndicator.position.set(0.066, -0.025, 0.194); g.add(chestIndicator);
+      const packTank = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.052, 0.28, 16), astronautTrim);
+      packTank.rotation.z = Math.PI / 2;
+      packTank.position.set(0, -0.015, -0.22); g.add(packTank);
+      const visorGlint = new THREE.Mesh(new THREE.SphereGeometry(0.06, 16, 12), new THREE.MeshBasicMaterial({ color: 0xb8e5e8, transparent: true, opacity: 0.24 }));
+      visorGlint.scale.set(0.72, 0.22, 0.12);
+      visorGlint.position.set(-0.045, 0.365, 0.19); g.add(visorGlint);
       const helmet = new THREE.Mesh(new THREE.SphereGeometry(0.19, 24, 18), astronautSuit);
       helmet.position.set(0, 0.31, 0.015); g.add(helmet);
       const visor = new THREE.Mesh(new THREE.SphereGeometry(0.145, 24, 16), visorMaterial);
@@ -450,6 +462,10 @@ export default function UniverseScene() {
       for (const side of [-1, 1]) {
         const arm = new THREE.Mesh(new THREE.CapsuleGeometry(0.055, 0.22, 4, 8), astronautSuit);
         arm.position.set(side * 0.23, 0.02, 0); arm.rotation.z = side * -0.48; g.add(arm);
+        const glove = new THREE.Mesh(new THREE.SphereGeometry(0.066, 16, 12), astronautSuit);
+        glove.scale.set(0.9, 0.82, 0.9); glove.position.set(side * 0.34, -0.105, 0.015); g.add(glove);
+        const wristSeal = new THREE.Mesh(new THREE.CylinderGeometry(0.061, 0.061, 0.055, 16), astronautTrim);
+        wristSeal.position.set(side * 0.31, -0.045, 0.01); wristSeal.rotation.z = side * -0.48; g.add(wristSeal);
         const leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.065, 0.2, 4, 8), astronautSuit);
         leg.position.set(side * 0.09, -0.34, 0.015); leg.rotation.z = side * 0.08; g.add(leg);
         const boot = new THREE.Mesh(new THREE.SphereGeometry(0.075, 12, 10), astronautTrim);
@@ -536,7 +552,7 @@ export default function UniverseScene() {
     const asteroidBelt = new THREE.Group();
     asteroidBelt.position.set(-0.5, 0.2, -10.5);
     const asteroidCount = compact ? 52 : 104;
-    const asteroidGeometry = new THREE.IcosahedronGeometry(0.12, 1);
+    const asteroidGeometry = new THREE.IcosahedronGeometry(0.12, 2);
     const asteroidMaterial = new THREE.MeshStandardMaterial({ color: 0x777d7c, roughness: 0.98, metalness: 0.03 });
     const asteroids = new THREE.InstancedMesh(asteroidGeometry, asteroidMaterial, asteroidCount);
     const asteroidDummy = new THREE.Object3D();
@@ -681,7 +697,7 @@ export default function UniverseScene() {
     updatePlanetLightDirections();
 
     const pointer = { x: 0, y: 0 };
-    const frameInterval = 1000 / 30;
+    const frameInterval = 1000 / (compact ? 45 : 60);
     let lastFrameTime = 0;
     const onPointer = (event) => {
       pointer.x = (event.clientX / Math.max(1, window.innerWidth) - 0.5) * 2;
