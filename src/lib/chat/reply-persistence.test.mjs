@@ -17,3 +17,13 @@ test("bounds persisted replies and handles malformed values safely", () => {
   assert.equal(prepareAssistantReplyForPersistence(null), "");
   assert.equal(prepareAssistantReplyForPersistence({ content: "unsafe" }), "");
 });
+
+test("does not split a supplementary Unicode character at the persistence limit", () => {
+  const emoji = "🚀";
+  const value = "a".repeat(MAX_PERSISTED_ASSISTANT_REPLY_CHARS - 1) + emoji + "tail";
+  const result = prepareAssistantReplyForPersistence(value);
+  assert.equal(result.length, MAX_PERSISTED_ASSISTANT_REPLY_CHARS - 1);
+  assert.equal(result, "a".repeat(MAX_PERSISTED_ASSISTANT_REPLY_CHARS - 1));
+  assert.doesNotMatch(result, /[\uD800-\uDBFF]$/u);
+  assert.equal([...result].length, result.length);
+});
