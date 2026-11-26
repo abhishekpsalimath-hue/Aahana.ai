@@ -238,6 +238,39 @@ test("does not request an installation token when self-build configuration is ab
 });
 
 
+test("refuses to reuse a proposal that changes an approved source file into a symlink", async () => {
+  const source = "export default function Page() {}";
+  const bytes = Buffer.from(source, "utf8");
+  const expectedBlobSha = createHash("sha1").update("blob " + bytes.length + "\\0").update(bytes).digest("hex");
+  const existingCommitSha = "9".repeat(40);
+  const proposalTreeSha = "8".repeat(40);
+  const fetchImpl = async (url) => {
+    if (url.endsWith("/access_tokens")) return mockResponse({ token: "installation-token" });
+    if (url.includes("/pulls?state=all")) return mockResponse([]);
+    if (url.endsWith("/git/ref/heads/main")) return mockResponse({ object: { sha: baseSha } });
+    if (url.includes("/git/ref/heads/aahana%2Fself-build%2F")) return mockResponse({ object: { sha: existingCommitSha } });
+    if (url.endsWith("/git/commits/" + baseSha)) return mockResponse({ tree: { sha: "e".repeat(40) } });
+    if (url.endsWith("/git/commits/" + existingCommitSha)) return mockResponse({
+      parents: [{ sha: baseSha }], tree: { sha: proposalTreeSha },
+    });
+    if (url.includes("/git/trees/" + "e".repeat(40))) return mockResponse({
+      truncated: false, tree: [{ type: "blob", mode: "100644", path: "src/app/experience-lab/page.jsx", sha: "b".repeat(40) }],
+    });
+    if (url.includes("/git/trees/" + proposalTreeSha)) return mockResponse({
+      truncated: false, tree: [{ type: "blob", mode: "120000", path: "src/app/experience-lab/page.jsx", sha: expectedBlobSha }],
+    });
+    throw new Error("A symlink proposal must be rejected before pull-request creation: " + url);
+  };
+  await assert.rejects(() => createSelfBuildPullRequest({
+    baseSha,
+    files: [{ path: "src/app/experience-lab/page.jsx", content: source }],
+    title: "Reject symlink proposal",
+    summary: "Must not create a pull request.",
+    env,
+    fetchImpl,
+  }), /exact approved file contents/);
+});
+
 test("reuses an existing draft when the exact pinned Self-Build change is retried", async () => {
   const calls = [];
   let existingPullRequest = null;
