@@ -52,7 +52,7 @@ function stableJson(value) {
 
 export function validateCreativeBuildTargetPath(path) {
   if (typeof path !== "string" || path.length > 240 || path.startsWith("/") ||
-      path.includes("\\") || /[\u0000-\u001f\u007f]/u.test(path)) {
+      path.includes("\\") || /[\u0000-\u001f\u007f\u202a-\u202e\u2066-\u2069\u2044\u2215\u29f8\uff0f]/u.test(path)) {
     throw new Error("Build task target must be a safe relative source path.");
   }
   if (BLOCKED_PATH.test(path) || !ALLOWED_ROOTS.some((root) => path.startsWith(root)) ||
