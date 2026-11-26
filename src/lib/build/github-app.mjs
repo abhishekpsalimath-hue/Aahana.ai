@@ -195,13 +195,21 @@ export async function createSelfBuildPullRequest({
     if (existingPullRequest.state !== "open") {
       throw new Error("An earlier proposal for this exact change set is closed. Prepare a fresh change set instead of reusing a closed draft.");
     }
+    const pinnedBaseCommit = await githubRequest(prefix + "/git/commits/" + changeSet.baseSha, token, { fetchImpl });
+    const verifiedBranch = await findVerifiedProposalBranch({
+      prefix, branch, baseSha: changeSet.baseSha, baseTreeSha: pinnedBaseCommit.tree.sha,
+      files: changeSet.files, token, fetchImpl,
+    });
+    if (!verifiedBranch || existingPullRequest.head?.sha !== verifiedBranch.sha) {
+      throw new Error("The existing draft no longer matches the exact approved change set. It was not reused.");
+    }
     return {
       number: existingPullRequest.number,
       url: existingPullRequest.html_url,
       branch,
       baseBranch,
       baseSha: changeSet.baseSha,
-      headSha: existingPullRequest.head?.sha || null,
+      headSha: verifiedBranch.sha,
       changedFiles: changeSet.files.length,
       reused: true,
     };
