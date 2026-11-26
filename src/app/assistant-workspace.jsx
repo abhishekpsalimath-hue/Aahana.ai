@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/client";
 import { getSourceFileMimeType, isSupportedSourceFile } from "@/lib/build/source-file-policy.mjs";
 import { isImageGenerationRequest, isImageEditRequest, isVideoGenerationRequest } from "@/lib/creative/creative-intent.mjs";
 import { getGeneratedImageFileMetadata } from "@/lib/creative/image-generation.mjs";
+import { inferSpeechLanguage } from "@/lib/chat/speech-language.mjs";
 
 const modes = [
   { id: "solve", label: "Solve", hint: "Work through a problem" },
@@ -824,13 +825,8 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [memoryLoading, setMemoryLoading] = useState(false);
   const [memoryBusy, setMemoryBusy] = useState(false);
   const [memoryError, setMemoryError] = useState("");
-  const [voiceLanguage, setVoiceLanguage] = useState("en-IN");
   const [listening, setListening] = useState(false);
   const [speakingMessage, setSpeakingMessage] = useState(null);
-  const voiceLanguages = [
-    ["en-IN","English (India)"],["kn-IN","Kannada"],["hi-IN","Hindi"],["ta-IN","Tamil"],["te-IN","Telugu"],["ml-IN","Malayalam"],["mr-IN","Marathi"],["bn-IN","Bengali"],["gu-IN","Gujarati"],["pa-IN","Punjabi"],["ur-IN","Urdu"],["or-IN","Odia"],["as-IN","Assamese"],["sa-IN","Sanskrit"],["ne-NP","Nepali"],["si-LK","Sinhala"],
-    ["en-US","English (US)"],["en-GB","English (UK)"],["en-AU","English (Australia)"],["es-ES","Spanish"],["fr-FR","French"],["de-DE","German"],["pt-BR","Portuguese"],["ar-SA","Arabic"],["zh-CN","Chinese (Mandarin)"],["ja-JP","Japanese"],["ko-KR","Korean"],["ru-RU","Russian"],["it-IT","Italian"],["nl-NL","Dutch"],["tr-TR","Turkish"],["id-ID","Indonesian"],["th-TH","Thai"],["vi-VN","Vietnamese"],["fil-PH","Filipino"],["sw-KE","Swahili"],["fa-IR","Persian"],["he-IL","Hebrew"],["uk-UA","Ukrainian"],["pl-PL","Polish"]
-  ];
 
   function startVoiceInput() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -839,7 +835,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       return;
     }
     const recognition = new SpeechRecognition();
-    recognition.lang = voiceLanguage;
+    recognition.lang = navigator.language || "en-IN";
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
     recognition.onstart = () => { setListening(true); setError(""); };
@@ -872,10 +868,10 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     window.speechSynthesis.cancel();
     if (speakingMessage === index) { setSpeakingMessage(null); return; }
     const utterance = new SpeechSynthesisUtterance(String(text || ""));
-    utterance.lang = voiceLanguage;
+    utterance.lang = inferSpeechLanguage(text, navigator.language || "en-IN");
     const voices = window.speechSynthesis.getVoices();
-    const languagePrefix = voiceLanguage.split("-")[0].toLowerCase();
-    const matchingVoice = voices.find((voice) => voice.lang.toLowerCase() === voiceLanguage.toLowerCase())
+    const languagePrefix = utterance.lang.split("-")[0].toLowerCase();
+    const matchingVoice = voices.find((voice) => voice.lang.toLowerCase() === utterance.lang.toLowerCase())
       || voices.find((voice) => voice.lang.toLowerCase().startsWith(languagePrefix));
     if (matchingVoice) utterance.voice = matchingVoice;
     utterance.onend = () => setSpeakingMessage(null);
@@ -2197,7 +2193,6 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                   </details>
                 </>
               )}
-              <select aria-label="Voice language" value={voiceLanguage} onChange={(event) => setVoiceLanguage(event.target.value)} className="copy-message">{voiceLanguages.map(([code, label]) => <option key={code} value={code}>{label}</option>)}</select>
               <button className="copy-message" type="button" onClick={startVoiceInput} disabled={listening || busy}>{listening ? "Listening…" : "Speak"}</button>
               <label className="image-attach">
                 + Add image
