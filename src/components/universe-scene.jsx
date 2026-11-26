@@ -558,27 +558,66 @@ export default function UniverseScene() {
     blackHole.position.set(6.8, -3.8, -20);
     const singularity = new THREE.Mesh(new THREE.SphereGeometry(1.08, 40, 32), new THREE.MeshBasicMaterial({ color: 0x020106 }));
     blackHole.add(singularity);
-    const disk = new THREE.Mesh(
-      new THREE.TorusGeometry(1.62, 0.24, 12, 100),
-      new THREE.MeshBasicMaterial({ color: 0xff9b4a, transparent: true, opacity: 0.62, blending: THREE.AdditiveBlending })
-    );
+    // A turbulent, temperature-graded accretion flow replaces the flat orange
+    // torus. Its uneven brightness and Doppler-biased hot side are animated in
+    // the shader; this remains a real-time visual approximation, not a GR solver.
+    const accretionMaterials = [];
+    const makeAccretionMaterial = (gain = 1) => {
+      const material = new THREE.ShaderMaterial({
+        transparent: true,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+        side: THREE.DoubleSide,
+        uniforms: { uTime: { value: 0 }, uGain: { value: gain } },
+        vertexShader: `
+          varying vec2 vUv;
+          void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: `
+          varying vec2 vUv;
+          uniform float uTime;
+          uniform float uGain;
+          float hash(vec2 p) {
+            return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+          }
+          float noise(vec2 p) {
+            vec2 i = floor(p), f = fract(p);
+            f = f * f * (3.0 - 2.0 * f);
+            return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x),
+                       mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y);
+          }
+          void main() {
+            float angle = vUv.x * 6.2831853;
+            float tube = 1.0 - abs(vUv.y - 0.5) * 2.0;
+            float turbulence = noise(vec2(angle * 5.0 + uTime * 0.00008, vUv.y * 18.0));
+            float filaments = noise(vec2(angle * 17.0 - uTime * 0.00013, vUv.y * 46.0));
+            float structure = smoothstep(0.08, 0.72, tube) * (0.35 + turbulence * 0.45 + filaments * 0.32);
+            float doppler = 0.34 + 0.86 * smoothstep(-0.72, 0.82, sin(angle + 0.35));
+            float innerHeat = smoothstep(0.0, 1.0, tube);
+            vec3 outerColor = vec3(0.82, 0.25, 0.075);
+            vec3 hotColor = vec3(1.0, 0.88, 0.66);
+            vec3 color = mix(outerColor, hotColor, innerHeat * 0.82);
+            color *= doppler * (0.68 + structure * 0.8) * uGain;
+            float alpha = structure * doppler * 0.82;
+            gl_FragColor = vec4(color, alpha);
+          }
+        `,
+      });
+      accretionMaterials.push(material);
+      return material;
+    };
+    const disk = new THREE.Mesh(new THREE.TorusGeometry(1.62, 0.24, 20, 180), makeAccretionMaterial(1));
     disk.rotation.x = 1.12; disk.rotation.y = 0.18; blackHole.add(disk);
-    const diskInner = new THREE.Mesh(
-      new THREE.TorusGeometry(1.28, 0.07, 10, 100),
-      new THREE.MeshBasicMaterial({ color: 0xffd38a, transparent: true, opacity: 0.78, blending: THREE.AdditiveBlending })
-    );
+    const diskInner = new THREE.Mesh(new THREE.TorusGeometry(1.28, 0.07, 16, 160), makeAccretionMaterial(1.18));
     diskInner.rotation.x = 1.12; diskInner.rotation.y = 0.18; blackHole.add(diskInner);
     world.add(blackHole);
     // A thin photon-ring cue and faint outer lensing halo frame the shadow.
     // This is an artistic real-time approximation, not a ray-traced GR solver.
     const photonRing = new THREE.Mesh(new THREE.TorusGeometry(1.13, 0.035, 10, 120), new THREE.MeshBasicMaterial({ color: 0xffedcf, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending }));
     photonRing.rotation.x = 1.12; photonRing.rotation.y = 0.18; blackHole.add(photonRing);
-    // Split the outer disc into a brighter approaching side and a dimmer
-    // receding side: a stylized Doppler-beaming cue from black-hole imagery.
-    const diskBrightSide = new THREE.Mesh(new THREE.TorusGeometry(1.62, 0.24, 10, 64, Math.PI), new THREE.MeshBasicMaterial({ color: 0xffc16c, transparent: true, opacity: 0.72, blending: THREE.AdditiveBlending }));
-    diskBrightSide.rotation.x = 1.12; diskBrightSide.rotation.y = 0.18; blackHole.add(diskBrightSide);
-    const diskDimSide = new THREE.Mesh(new THREE.TorusGeometry(1.62, 0.24, 10, 64, Math.PI), new THREE.MeshBasicMaterial({ color: 0x8a4e31, transparent: true, opacity: 0.32, blending: THREE.AdditiveBlending }));
-    diskDimSide.rotation.x = 1.12; diskDimSide.rotation.y = 0.18; diskDimSide.rotation.z = Math.PI; blackHole.add(diskDimSide);
     const lensingHalo = new THREE.Mesh(new THREE.TorusGeometry(1.92, 0.095, 8, 120), new THREE.MeshBasicMaterial({ color: 0x86b6c8, transparent: true, opacity: 0.19, blending: THREE.AdditiveBlending }));
     lensingHalo.rotation.x = 1.12; lensingHalo.rotation.y = 0.18; blackHole.add(lensingHalo);
     const plasmaMaterial = new THREE.MeshBasicMaterial({ color: 0xffe0a6, transparent: true, opacity: 0.88, blending: THREE.AdditiveBlending });
@@ -804,6 +843,7 @@ export default function UniverseScene() {
           object.rotation.z += Math.sin(t * 0.8) * 0.0007 * delta;
         });
         blackHole.rotation.z += 0.00018 * delta;
+        accretionMaterials.forEach((material) => { material.uniforms.uTime.value = time; });
         plasmaKnots.forEach(({ knot, angle, radius }) => {
           const a = angle + time * 0.00022;
           knot.position.set(Math.cos(a) * radius, Math.sin(a) * radius * 0.32, Math.sin(a) * radius * 0.88);
