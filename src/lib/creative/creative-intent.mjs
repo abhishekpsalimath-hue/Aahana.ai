@@ -31,9 +31,14 @@ export function isImageGenerationRequest(value) {
 export function isImageEditRequest(value) {
   const text = String(value || "").trim();
   if (!text) return false;
-  const visualTarget = /\b(?:background|foreground|lighting|light|shadow|color|colour|sky|moon|sun|clouds?|mountains?|stars?|water|ocean|hair|clothes|outfit|face|eyes|skin|object|person|subject|trident|gada|jewelry|ornaments?|composition|framing|camera|texture|style)\b/i;
+  const visualTarget = /\b(?:background|foreground|lighting|light|shadow|color|colour|sky|moon|sun|clouds?|mountains?|stars?|water|ocean|hair|clothes|clothing|outfit|costume|suit|shirt|saree|sari|jacket|dress|face|eyes|skin|object|person|subject|pose|posture|stance|gesture|trident|gada|jewelry|ornaments?|composition|framing|camera|texture|style)\b/i;
   const editAction = /\b(?:change|replace|remove|add|adjust|edit|modify|transform|put|move|brighten|darken|blur|sharpen|crop|recolor|restyle)\b/i;
-  return (editAction.test(text) && visualTarget.test(text)) ||
+  const enhancementRequest = /\b(?:enhance|upscale|restore|denoise|retouch|improve|increase resolution|fix blur)\b/i.test(text) &&
+    /\b(?:image|photo|picture|it|quality|resolution|sharpness)\b/i.test(text);
+  const poseRequest = /\b(?:look(?:ing)? at each other|face each other|hold(?:ing)? hands|arms crossed|turn(?:ing)? toward each other)\b/i.test(text) ||
+    (/\b(?:change|adjust|modify|make|turn|set)\b/i.test(text) && /\b(?:pose|posture|stance|gesture)\b/i.test(text));
+  const designRequest = /\b(?:create|make|design|redesign|turn|transform)\b[\s\S]{0,80}\b(?:poster|banner|flyer|thumbnail|cover|advertisement|invitation|brochure)\b/i.test(text);
+  return (editAction.test(text) && visualTarget.test(text)) || enhancementRequest || poseRequest || designRequest ||
     /\bmake\b[\s\S]{0,35}\b(?:it|(?:the\s+)?background|(?:the\s+)?lighting|(?:the\s+)?colors?|(?:the\s+)?sky)\b[\s\S]{0,35}\b(?:cinematic|realistic|bright|brighter|dark|darker|detailed|vibrant|dramatic|colorful|minimal|soft|warm|cool)\b/i.test(text) ||
     /\b(?:more|less)\s+(?:cinematic|realistic|bright|dark|detailed|vibrant|dramatic|colorful|minimal|soft|warm|cool)\b/i.test(text);
 }
