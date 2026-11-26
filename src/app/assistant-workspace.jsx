@@ -1165,7 +1165,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
 
   async function generateImage() {
     const imagePrompt = prompt.trim();
-    if (!imagePrompt || imageGenerating || imageUpscaling || videoGenerating || busy || imageFile) return;
+    if (!imagePrompt || imageGenerating || imageUpscaling || videoGenerating || busy || imageFile || imageUpscaleFile) return;
     setImageGenerating(true);
     setError("");
     setGeneratedImage(null);
@@ -1486,6 +1486,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   async function submitPrompt(event) {
     event.preventDefault();
     const text = prompt.trim();
+    if (imageUpscaleFile) { setError("Use Enhance to 4K to process the separately attached image."); return; }
     if ((!text && !imageFile) || busy || buildBusy || imageGenerating || videoGenerating || imageUpscaling) return;
 
     if (isVideoGenerationRequest(text)) {
