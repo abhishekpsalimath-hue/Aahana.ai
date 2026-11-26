@@ -16,9 +16,9 @@ create table if not exists public.aahana_video_jobs (
   completed_at timestamptz,
   constraint aahana_video_jobs_attempt_limit check (attempt <= max_attempts),
   constraint aahana_video_jobs_updated_after_created check (updated_at >= created_at),
-  constraint aahana_video_jobs_started_after_created check (started_at is null or started_at >= created_at),
+  constraint aahana_video_jobs_started_after_created check (started_at is null or (started_at >= created_at and started_at <= updated_at)),
   constraint aahana_video_jobs_completed_after_start check (
-    completed_at is null or completed_at >= coalesce(started_at, created_at)
+    completed_at is null or (completed_at >= coalesce(started_at, created_at) and completed_at <= updated_at)
   ),
   constraint aahana_video_jobs_state_timestamps check (
     (state = 'queued' and started_at is null and completed_at is null)
@@ -73,8 +73,8 @@ begin
      or new.updated_at < new.created_at then
     raise exception 'video job revision and timestamps must advance monotonically';
   end if;
-  if (new.started_at is not null and new.started_at < new.created_at)
-     or (new.completed_at is not null and new.completed_at < coalesce(new.started_at, new.created_at)) then
+  if (new.started_at is not null and (new.started_at < new.created_at or new.started_at > new.updated_at))
+     or (new.completed_at is not null and (new.completed_at < coalesce(new.started_at, new.created_at) or new.completed_at > new.updated_at)) then
     raise exception 'video job lifecycle timestamps must be chronologically coherent';
   end if;
   if new.retryable and (new.state <> 'failed' or new.attempt >= new.max_attempts) then
