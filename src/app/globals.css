@@ -714,3 +714,23 @@ h1,.brand,.composer-mode,.breadcrumb{font-family:"Space Grotesk","Manrope",sans-
 .stop-generation:hover{background:#1b2933;border-color:#c2d6df;transform:translateY(-1px)}
 .stop-generation:focus-visible{outline:2px solid #c2d6df;outline-offset:3px}
 @media(prefers-reduced-motion:reduce){.stop-generation{transition:none}}
+
+
+/* Aahana astronaut companion — the original artwork is rendered as one untouched image layer. */
+.astronaut-companion{position:fixed;z-index:30;display:flex;flex-direction:column;align-items:center;gap:5px;pointer-events:none;user-select:none;isolation:isolate}
+.astronaut-companion--login{left:clamp(12px,calc(50% - 470px),8vw);bottom:5vh;width:clamp(104px,13vw,176px)}
+.astronaut-companion--assistant{right:clamp(12px,2.2vw,34px);bottom:clamp(82px,12vh,132px);width:clamp(96px,11vw,148px)}
+.astronaut-companion__image{display:block;width:100%;height:auto;object-fit:contain;filter:drop-shadow(0 12px 22px rgba(0,0,0,.28));transform-origin:50% 62%;animation:astronaut-companion-float 6.8s ease-in-out infinite;will-change:transform}
+.astronaut-companion__message{max-width:220px;padding:8px 12px;border:1px solid rgba(203,180,255,.26);border-radius:14px;background:rgba(20,16,31,.88);box-shadow:0 8px 28px rgba(0,0,0,.25);color:#e9ddff;font:600 11px/1.45 'DM Sans',sans-serif;text-align:center;backdrop-filter:blur(8px);animation:astronaut-message-breathe 4.2s ease-in-out infinite}
+.astronaut-action--drift .astronaut-companion__image{animation-name:astronaut-companion-drift}
+.astronaut-action--bank .astronaut-companion__image{animation-name:astronaut-companion-bank}
+.astronaut-action--rise .astronaut-companion__image{animation-name:astronaut-companion-rise}
+.astronaut-action--glide .astronaut-companion__image{animation-name:astronaut-companion-glide}
+@keyframes astronaut-companion-float{0%,100%{transform:translate3d(0,0,0) rotate(-1deg)}50%{transform:translate3d(7px,-16px,0) rotate(2deg)}}
+@keyframes astronaut-companion-drift{0%,100%{transform:translate3d(0,0,0) rotate(-3deg)}28%{transform:translate3d(13px,-10px,0) rotate(2deg)}68%{transform:translate3d(-8px,-18px,0) rotate(-1deg)}}
+@keyframes astronaut-companion-bank{0%,100%{transform:translate3d(0,0,0) rotate(1deg)}35%{transform:translate3d(-10px,-14px,0) rotate(-5deg)}72%{transform:translate3d(8px,-5px,0) rotate(4deg)}}
+@keyframes astronaut-companion-rise{0%,100%{transform:translate3d(0,0,0) rotate(-1deg)}45%{transform:translate3d(4px,-24px,0) rotate(2deg)}75%{transform:translate3d(-5px,-12px,0) rotate(-2deg)}}
+@keyframes astronaut-companion-glide{0%,100%{transform:translate3d(0,0,0) rotate(2deg)}30%{transform:translate3d(-12px,-9px,0) rotate(-3deg)}65%{transform:translate3d(11px,-19px,0) rotate(3deg)}}
+@keyframes astronaut-message-breathe{0%,100%{transform:translateY(0);opacity:.92}50%{transform:translateY(-3px);opacity:1}}
+@media(max-width:760px){.astronaut-companion--login{left:auto;right:8px;bottom:10px;width:78px;gap:2px}.astronaut-companion--assistant{right:5px;bottom:86px;width:78px;gap:2px}.astronaut-companion__message{max-width:150px;padding:6px 8px;font-size:9px}}
+@media(prefers-reduced-motion:reduce){.astronaut-companion__image,.astronaut-companion__message{animation:none!important;transform:none!important}}
