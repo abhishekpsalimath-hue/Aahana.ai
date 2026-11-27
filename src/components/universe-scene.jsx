@@ -15,8 +15,7 @@ export default function UniverseScene() {
     const saveData = device.connection?.saveData === true;
     // Screen size is not a proxy for capability: modern phones keep the real
     // 3D universe. Only genuinely constrained devices receive the low tier.
-    const lowPower = saveData || (memory > 0 && memory <= 3) || (cores > 0 && cores <= 4);
-    const quality = lowPower ? "low" : compact ? "mobile" : "high";
+    const lowPower = saveData || (memory > 0 && memory <= 4) || (cores > 0 && cores <= 4);
     let renderer, raf = 0, active = true, inView = true, observer, contextAvailable = true;
     const motionQuery = window.matchMedia?.("(prefers-reduced-motion: reduce)");
     let reduced = motionQuery?.matches === true;
@@ -797,7 +796,7 @@ export default function UniverseScene() {
 
     // A stream of near-field stars travels towards the viewer, creating
     // genuine forward movement rather than rotating a static star dome.
-    // Keep 20,000 forward-travelling stars on desktop; mobile gets a deliberately lighter 8,000-star stream.
+    // Preserve 20,000 forward-travelling stars on desktop, 10,000 on capable phones, and a bounded 6,000 on constrained devices.
     const nearStarCount = lowPower ? 6000 : compact ? 10000 : 20000;
     const nearStarPositions = new Float32Array(nearStarCount * 3);
     const nearStarSpeeds = new Float32Array(nearStarCount);
