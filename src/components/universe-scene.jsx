@@ -967,6 +967,56 @@ export default function UniverseScene() {
     });
     world.add(supernova);
 
+    // Quiet first-contact silhouettes: two non-human, bioluminescent
+    // organisms drift through the distant field. Their translucent mantles,
+    // soft cores and fine trailing filaments read as living forms, not cartoon
+    // mascots or spacecraft, and stay small enough to preserve the cosmic scale.
+    const visitorFleet = [];
+    const createVisitor = (x, y, z, scale, phase, tint) => {
+      const visitor = new THREE.Group();
+      const mantleMaterial = new THREE.MeshStandardMaterial({
+        color: tint,
+        emissive: tint,
+        emissiveIntensity: 0.18,
+        roughness: 0.38,
+        metalness: 0.08,
+        transparent: true,
+        opacity: 0.34,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+      });
+      const mantle = new THREE.Mesh(new THREE.SphereGeometry(0.46, 24, 18), mantleMaterial);
+      mantle.scale.set(0.92, 0.72, 1.38);
+      visitor.add(mantle);
+      const innerCore = new THREE.Mesh(
+        new THREE.SphereGeometry(0.16, 18, 14),
+        new THREE.MeshBasicMaterial({ color: 0xe9ddff, transparent: true, opacity: 0.72, blending: THREE.AdditiveBlending, depthWrite: false })
+      );
+      innerCore.position.z = 0.08;
+      visitor.add(innerCore);
+      const halo = new THREE.Mesh(
+        new THREE.SphereGeometry(0.66, 20, 16),
+        new THREE.MeshBasicMaterial({ color: tint, transparent: true, opacity: 0.055, blending: THREE.AdditiveBlending, depthWrite: false })
+      );
+      halo.scale.set(0.9, 0.72, 1.2);
+      visitor.add(halo);
+      const tendrilMaterial = new THREE.MeshBasicMaterial({ color: tint, transparent: true, opacity: 0.42, blending: THREE.AdditiveBlending, depthWrite: false });
+      for (let strand = 0; strand < 5; strand++) {
+        const angle = (strand / 5) * Math.PI * 2;
+        const root = new THREE.Vector3(Math.cos(angle) * 0.22, Math.sin(angle) * 0.18, -0.22);
+        const bend = new THREE.Vector3(Math.cos(angle + 0.38) * (0.48 + (strand % 2) * 0.12), Math.sin(angle + 0.38) * (0.4 + (strand % 2) * 0.12), -0.72);
+        const tip = new THREE.Vector3(Math.cos(angle + 0.72) * (0.72 + (strand % 2) * 0.16), Math.sin(angle + 0.72) * (0.58 + (strand % 2) * 0.14), -1.32);
+        const curve = new THREE.CatmullRomCurve3([root, bend, tip]);
+        visitor.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 16, 0.012, 5, false), tendrilMaterial));
+      }
+      visitor.scale.setScalar(scale);
+      visitor.position.set(x, y, z);
+      world.add(visitor);
+      visitorFleet.push({ group: visitor, x, y, z, phase, scale });
+    };
+    createVisitor(-6.8, 1.8, -22, 0.82, 0.4, 0x9fc6dc);
+    createVisitor(6.1, -2.1, -29, 0.66, 2.2, 0xc4a6ed);
+
     // Meteor particles use a compact point buffer and recycle after each pass.
     const meteorCount = lowPower ? 18 : 36;
     const meteorPositions = new Float32Array(meteorCount * 3);
@@ -1157,6 +1207,17 @@ export default function UniverseScene() {
         wormholeRings.forEach((ring, i) => { ring.rotation.z += (i % 2 ? -1 : 1) * 0.00024 * delta; });
         supernova.rotation.y += 0.00008 * delta;
         supernovaGlow.material.opacity = 0.12 + (Math.sin(time * 0.0012) + 1) * 0.035;
+        visitorFleet.forEach(({ group, x, y, z, phase }) => {
+          const drift = time * 0.00012 + phase;
+          group.position.set(
+            x + Math.sin(drift * 0.8) * 0.42,
+            y + Math.cos(drift * 0.65) * 0.28,
+            z + Math.sin(drift * 0.42) * 1.15
+          );
+          group.rotation.y = Math.sin(drift) * 0.16;
+          group.rotation.x = Math.cos(drift * 0.72) * 0.1;
+          group.rotation.z = Math.sin(drift * 0.55) * 0.12;
+        });
         supernovaRings.forEach(({ ring, phase }) => {
           const pulse = (time * 0.000075 + phase) % 1;
           const scale = 0.72 + pulse * 1.75;
