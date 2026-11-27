@@ -32,6 +32,8 @@ test("benchmark dry run validates all 100 cases without credentials or network",
   const report = JSON.parse(output);
   assert.equal(report.dryRun, true);
   assert.equal(report.cases, 100);
+  assert.equal(report.casesPlanned, 100);
+  assert.equal(report.availableCases, 100);
   assert.equal(report.categories.length, 10);
   assert.equal(report.networkRequests, 0);
   assert.equal(report.databaseWrites, 0);
