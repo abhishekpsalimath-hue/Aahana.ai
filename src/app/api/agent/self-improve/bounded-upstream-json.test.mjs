@@ -7,8 +7,10 @@ function responseFromChunks(chunks, headers = {}) {
   let cancelled = false;
   const body = new ReadableStream({
     pull(controller) {
-      if (index < chunks.length) controller.enqueue(new TextEncoder().encode(chunks[index++]));
-      else controller.close();
+      if (index < chunks.length) {
+        const chunk = chunks[index++];
+        controller.enqueue(chunk instanceof Uint8Array ? chunk : new TextEncoder().encode(chunk));
+      } else controller.close();
     },
     cancel() { cancelled = true; },
   });
@@ -30,6 +32,12 @@ test("rejects streamed overflow and cancels the reader", async () => {
   const { response, wasCancelled } = responseFromChunks(['{"x":"', "a".repeat(100), '"}']);
   await assert.rejects(readBoundedUpstreamJson(response, 32), { code: "TOO_LARGE" });
   assert.equal(wasCancelled(), true);
+});
+
+test("rejects malformed UTF-8 instead of silently replacing bytes", async () => {
+  const invalidUtf8 = new Uint8Array([0x7b, 0x22, 0x78, 0x22, 0x3a, 0x22, 0xc3, 0x28, 0x22, 0x7d]);
+  const { response } = responseFromChunks([invalidUtf8]);
+  await assert.rejects(readBoundedUpstreamJson(response), { code: "INVALID_UTF8" });
 });
 
 test("rejects malformed JSON and non-object JSON", async () => {
