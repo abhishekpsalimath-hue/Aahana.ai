@@ -21,3 +21,8 @@ test("authenticated cancellation is exposed only through an owner-scoped definer
   assert.match(migration, /grant execute on function public\.cancel_aahana_video_job\(text\) to authenticated/i);
   assert.match(migration, /revoke all on function public\.cancel_aahana_video_job\(text\) from public, anon/i);
 });
+
+test("cancellation function uses a valid PostgreSQL dollar-quoted body", () => {
+  assert.match(migration, /function public\\.cancel_aahana_video_job\\(p_job_id text\\)[\\s\\S]*?set search_path = ''[\\s\\S]*?as \\\$\\$[\\s\\S]*?\\$\\$;/i);
+  assert.doesNotMatch(migration, /function public\\.cancel_aahana_video_job\\(p_job_id text\\)[\\s\\S]*?set search_path = ''[\\s\\S]*?as \\$\\s*declare/i);
+});
