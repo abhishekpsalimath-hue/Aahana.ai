@@ -223,6 +223,55 @@ export default function UniverseScene() {
     galaxy.add(galaxyCore);
     scene.add(galaxy);
 
+    // A smaller, older spiral sits far beyond the hero galaxy. Its tighter
+    // three-arm structure and cooler stellar population add real scale without
+    // duplicating the foreground galaxy or overwhelming the mobile particle budget.
+    const distantGalaxy = new THREE.Group();
+    distantGalaxy.position.set(7.4, 4.25, -46);
+    distantGalaxy.rotation.set(0.82, 0.34, -0.28);
+    const distantGalaxyCount = lowPower ? 360 : compact ? 680 : 1200;
+    const distantPositions = new Float32Array(distantGalaxyCount * 3);
+    const distantColors = new Float32Array(distantGalaxyCount * 3);
+    const distantPalette = [
+      new THREE.Color(0xffd8b0),
+      new THREE.Color(0xb7a4e7),
+      new THREE.Color(0x8ea7d4),
+    ];
+    for (let i = 0; i < distantGalaxyCount; i++) {
+      const arm = i % 3;
+      const radius = Math.pow(Math.random(), 0.78) * 2.35;
+      const angle = arm * (Math.PI * 2 / 3) + radius * 1.42 + (Math.random() - 0.5) * (0.18 + radius * 0.05);
+      const offset = i * 3;
+      distantPositions[offset] = Math.cos(angle) * radius;
+      distantPositions[offset + 1] = (Math.random() - 0.5) * (0.06 + radius * 0.045);
+      distantPositions[offset + 2] = Math.sin(angle) * radius;
+      const color = distantPalette[Math.floor(Math.random() * distantPalette.length)];
+      const brightness = 0.48 + Math.random() * 0.42;
+      distantColors[offset] = color.r * brightness;
+      distantColors[offset + 1] = color.g * brightness;
+      distantColors[offset + 2] = color.b * brightness;
+    }
+    const distantGeometry = new THREE.BufferGeometry();
+    distantGeometry.setAttribute("position", new THREE.Float32BufferAttribute(distantPositions, 3));
+    distantGeometry.setAttribute("color", new THREE.Float32BufferAttribute(distantColors, 3));
+    const distantStars = new THREE.Points(
+      distantGeometry,
+      new THREE.PointsMaterial({
+        size: lowPower ? 0.022 : 0.028,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.62,
+        sizeAttenuation: true,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+      })
+    );
+    distantGalaxy.add(distantStars);
+    distantGalaxy.add(new THREE.Mesh(
+      new THREE.SphereGeometry(0.13, 16, 12),
+      new THREE.MeshBasicMaterial({ color: 0xffdfc2, transparent: true, opacity: 0.42 })
+    ));
+    scene.add(distantGalaxy);
 
     const planets = [];
     const cloudLayers = [];
@@ -901,6 +950,9 @@ export default function UniverseScene() {
         stars.rotation.x += 0.000012 * delta;
         galaxy.rotation.y += 0.000055 * delta;
         galaxy.rotation.z += 0.000018 * delta;
+        distantGalaxy.rotation.y -= 0.000024 * delta;
+        distantGalaxy.rotation.z += 0.000009 * delta;
+        distantStars.material.opacity = 0.56 + Math.sin(time * 0.00019) * 0.045;
         planets.forEach((planet, i) => { planet.rotation.y += (i === 0 ? 0.00055 : 0.0008) * delta; planet.rotation.x += 0.00008 * delta; });
         cloudLayers.forEach((cloud) => { cloud.rotation.y += 0.00068 * delta; cloud.rotation.x += 0.000035 * delta; });
         travellers.forEach((traveller) => {
