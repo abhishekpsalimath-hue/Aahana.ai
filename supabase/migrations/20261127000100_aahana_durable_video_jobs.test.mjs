@@ -23,6 +23,7 @@ test("authenticated cancellation is exposed only through an owner-scoped definer
 });
 
 test("cancellation function uses a valid PostgreSQL dollar-quoted body", () => {
-  assert.match(migration, /function public\\.cancel_aahana_video_job\\(p_job_id text\\)[\\s\\S]*?set search_path = ''[\\s\\S]*?as \\\$\\$[\\s\\S]*?\\$\\$;/i);
-  assert.doesNotMatch(migration, /function public\\.cancel_aahana_video_job\\(p_job_id text\\)[\\s\\S]*?set search_path = ''[\\s\\S]*?as \\$\\s*declare/i);
+  assert.ok(migration.includes("as $$\ndeclare"));
+  assert.ok(migration.includes("\n$$;\n\nrevoke all on function public.cancel_aahana_video_job"));
+  assert.doesNotMatch(migration, /as \$\s*declare/i);
 });
