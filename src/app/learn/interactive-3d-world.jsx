@@ -328,7 +328,7 @@ function makeSceneModel(group,id,selectedPlanet=null,cellFocus="all",chemistryMo
         roughness:.24,
         metalness:.025,
         emissive:selected?atom.color:0x000000,
-        emissiveIntensity:selected&&chemistryFocus!=="all"?.28:0,
+        emissiveIntensity: selected && chemistryFocus !== "all" ? 0.28 : 0,
         transparent:!selected,
         opacity:selected?1:.3,
       });
