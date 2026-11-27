@@ -692,3 +692,10 @@ h1,.brand,.composer-mode,.breadcrumb{font-family:"Space Grotesk","Manrope",sans-
 .shell>.space-background{position:absolute;inset:0;z-index:0}
 .shell>.sidebar{position:sticky;z-index:2;background:linear-gradient(90deg,rgba(12,12,17,.96),rgba(12,12,17,.86))}
 .shell>.main-panel{position:relative;z-index:1}
+
+/* The WebGL scene is the single source of live cosmic objects when available.
+   Showing the CSS fallback stars, comets and planets over it duplicates motion
+   at different depths and creates the layered shimmer/glitch seen on phones.
+   Keep the complete CSS scene only for WebGL creation/context-loss fallback. */
+.space-background:not(.universe-webgl-fallback) .universe-flight{display:none!important}
+.space-background.universe-webgl-fallback .universe-flight{display:block!important}
