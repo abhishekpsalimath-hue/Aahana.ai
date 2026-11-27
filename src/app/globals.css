@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Syne:wght@500;600;700;800&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
@@ -716,3 +717,104 @@ h1,.brand,.composer-mode,.breadcrumb{font-family:"Space Grotesk","Manrope",sans-
 @keyframes astronaut-companion-glide{0%,100%{transform:translate3d(0,0,0) rotate(2deg)}30%{transform:translate3d(-12px,-9px,0) rotate(-3deg)}65%{transform:translate3d(11px,-19px,0) rotate(3deg)}}
 @media(max-width:760px){.astronaut-companion--login{left:8px;right:auto;bottom:4px;width:64px;gap:2px}.astronaut-companion--assistant{right:8px;bottom:90px;width:56px;gap:2px}.astronaut-companion--login .astronaut-companion__message,.astronaut-companion--assistant .astronaut-companion__message{display:none}}
 @media(prefers-reduced-motion:reduce){.astronaut-companion__image,.astronaut-companion__message{animation:none!important;transform:none!important}}
+
+
+/* Aahana typographic identity — editorial futurism, scoped outside Student Mode. */
+.shell,
+.auth-shell,
+.discover-shell {
+  --aahana-font-ui: "Sora", "DM Sans", sans-serif;
+  --aahana-font-display: "Syne", "Space Grotesk", sans-serif;
+  font-family: var(--aahana-font-ui);
+  font-optical-sizing: auto;
+  font-kerning: normal;
+}
+.shell :is(button, input, textarea, select),
+.auth-shell :is(button, input, textarea, select),
+.discover-shell :is(button, input, textarea, select) {
+  font-family: var(--aahana-font-ui);
+}
+.shell .brand,
+.auth-shell .brand,
+.discover-shell .brand {
+  font-family: var(--aahana-font-display);
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: -0.075em;
+}
+.shell .brand-word,
+.auth-shell .brand-word,
+.discover-shell .brand-word {
+  letter-spacing: -0.075em;
+}
+.shell .welcome h1,
+.auth-shell .auth-card h1,
+.discover-shell .discover-hero h1,
+.discover-shell .discover-modes > h2,
+.discover-shell .discover-detail h2,
+.discover-shell .discover-final h2,
+.discover-shell .discover-mode-card h3 {
+  font-family: var(--aahana-font-display);
+  font-weight: 700;
+  font-optical-sizing: auto;
+  font-kerning: normal;
+  text-wrap: balance;
+}
+.shell .welcome h1 {
+  font-size: clamp(46px, 6.4vw, 76px);
+  line-height: 0.99;
+  letter-spacing: -0.075em;
+}
+.auth-shell .auth-card h1 {
+  letter-spacing: -0.065em;
+  line-height: 1.04;
+}
+.discover-shell .discover-hero h1 {
+  letter-spacing: -0.085em;
+  line-height: 0.96;
+}
+.discover-shell .discover-modes > h2,
+.discover-shell .discover-detail h2,
+.discover-shell .discover-final h2 {
+  letter-spacing: -0.065em;
+  line-height: 1.08;
+}
+.shell .eyebrow,
+.shell .side-label,
+.shell .message-role,
+.shell .composer-mode,
+.discover-shell .discover-eyebrow,
+.discover-shell .discover-mode-index {
+  font-family: var(--aahana-font-ui);
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  font-variant-numeric: tabular-nums;
+}
+.shell .chat-message p,
+.shell .welcome > p,
+.auth-shell .auth-copy,
+.discover-shell .discover-lead {
+  font-family: var(--aahana-font-ui);
+  letter-spacing: -0.018em;
+}
+.shell .composer textarea {
+  font-family: var(--aahana-font-ui);
+  letter-spacing: -0.02em;
+}
+.shell .starter,
+.shell .mode,
+.shell .side-item,
+.auth-shell .auth-form label,
+.discover-shell .discover-mode-card {
+  font-family: var(--aahana-font-ui);
+  letter-spacing: -0.025em;
+}
+@media (max-width: 760px) {
+  .shell .welcome h1 {
+    font-size: clamp(43px, 11vw, 58px);
+    letter-spacing: -0.07em;
+  }
+  .discover-shell .discover-hero h1 {
+    letter-spacing: -0.075em;
+  }
+}
