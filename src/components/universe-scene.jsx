@@ -273,6 +273,92 @@ export default function UniverseScene() {
     ));
     scene.add(distantGalaxy);
 
+    // Interstellar dust: three overlapping volumetric particle banks give the
+    // star systems a sense of scale and suspended matter. Soft point sprites
+    // retain their shape at distance and avoid flat, opaque fog cards.
+    const dustCount = lowPower ? 720 : compact ? 1480 : 3200;
+    const dustPositions = new Float32Array(dustCount * 3);
+    const dustColors = new Float32Array(dustCount * 3);
+    const dustSizes = new Float32Array(dustCount);
+    const dustPhases = new Float32Array(dustCount);
+    const dustPalette = [
+      new THREE.Color(0x9d7bc8),
+      new THREE.Color(0xc5a3df),
+      new THREE.Color(0x7d8fbe),
+      new THREE.Color(0xd6a98d),
+      new THREE.Color(0xeee0ff),
+    ];
+    const dustBanks = [
+      { x: -6.4, y: 1.8, z: -17, sx: 4.6, sy: 1.35, sz: 2.4 },
+      { x: 5.2, y: -1.4, z: -29, sx: 5.2, sy: 1.7, sz: 3.2 },
+      { x: -1.2, y: -4.5, z: -39, sx: 6.4, sy: 1.15, sz: 2.8 },
+    ];
+    for (let i = 0; i < dustCount; i++) {
+      const bank = dustBanks[i % dustBanks.length];
+      const offset = i * 3;
+      // Gaussian distribution creates wispy cloud banks instead of uniform fog.
+      const gaussian = () => {
+        const u = Math.max(0.0001, Math.random());
+        const v = Math.random();
+        return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v) * 0.42;
+      };
+      dustPositions[offset] = bank.x + gaussian() * bank.sx;
+      dustPositions[offset + 1] = bank.y + gaussian() * bank.sy;
+      dustPositions[offset + 2] = bank.z + gaussian() * bank.sz;
+      const color = dustPalette[Math.floor(Math.random() * dustPalette.length)];
+      const brightness = 0.42 + Math.random() * 0.48;
+      dustColors[offset] = color.r * brightness;
+      dustColors[offset + 1] = color.g * brightness;
+      dustColors[offset + 2] = color.b * brightness;
+      dustSizes[i] = 0.65 + Math.random() * 1.7;
+      dustPhases[i] = Math.random() * Math.PI * 2;
+    }
+    const dustGeometry = new THREE.BufferGeometry();
+    dustGeometry.setAttribute("position", new THREE.BufferAttribute(dustPositions, 3));
+    dustGeometry.setAttribute("color", new THREE.BufferAttribute(dustColors, 3));
+    dustGeometry.setAttribute("aSize", new THREE.BufferAttribute(dustSizes, 1));
+    dustGeometry.setAttribute("aPhase", new THREE.BufferAttribute(dustPhases, 1));
+    const dustMaterial = new THREE.ShaderMaterial({
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      uniforms: { uTime: { value: 0 } },
+      vertexShader: `
+        attribute float aSize;
+        attribute float aPhase;
+        varying vec3 vColor;
+        varying float vPhase;
+        uniform float uTime;
+        void main() {
+          vColor = color;
+          vPhase = aPhase;
+          vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+          float depthScale = 250.0 / max(1.0, -mvPosition.z);
+          gl_PointSize = clamp(aSize * depthScale, 1.0, 9.0);
+          gl_Position = projectionMatrix * mvPosition;
+        }
+      `,
+      fragmentShader: `
+        varying vec3 vColor;
+        varying float vPhase;
+        uniform float uTime;
+        void main() {
+          vec2 p = gl_PointCoord - 0.5;
+          float radius = length(p) * 2.0;
+          float core = 1.0 - smoothstep(0.08, 0.72, radius);
+          float halo = 1.0 - smoothstep(0.18, 1.0, radius);
+          float shimmer = 0.78 + 0.22 * sin(uTime * 0.00042 + vPhase);
+          float alpha = (core * 0.22 + halo * 0.11) * shimmer;
+          if (alpha < 0.008) discard;
+          gl_FragColor = vec4(vColor * (0.82 + core * 0.5), alpha);
+        }
+      `,
+      vertexColors: true,
+    });
+    const interstellarDust = new THREE.Points(dustGeometry, dustMaterial);
+    interstellarDust.renderOrder = -1;
+    scene.add(interstellarDust);
+
     const planets = [];
     const cloudLayers = [];
     const planetLightBindings = [];
