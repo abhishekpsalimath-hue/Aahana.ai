@@ -12,7 +12,7 @@ const controls=[
 {id:"incident",group:"Monitoring",title:"Incident response plan",detail:"Document containment, communication, evidence and recovery steps.",priority:"Medium"}];
 const groups=["All controls","Identity","Resilience","Data protection","Monitoring"];
 export default function ShieldWorkspace(){
- const [done,setDone]=useState(["mfa","backup","encrypt"]);
+ const [done,setDone]=useState([]);
  const [filter,setFilter]=useState("All controls");
  const [selected,setSelected]=useState("mfa");
  const [showPlan,setShowPlan]=useState(false);
