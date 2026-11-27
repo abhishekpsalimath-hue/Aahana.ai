@@ -306,6 +306,10 @@ export default function AnimatedLesson({ content, topic = "", memoryEnabled = fa
       {scene.media.video && <figure className="motion-learning-video">
         <div className="motion-learning-video-frame"><iframe src={scene.media.video.url} title={scene.media.video.title} loading="lazy" referrerPolicy="strict-origin-when-cross-origin" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowFullScreen sandbox="allow-scripts allow-same-origin allow-presentation" /></div>
         <figcaption>{scene.media.video.title}{scene.media.video.source ? <span>Source: {scene.media.video.source}</span> : null}</figcaption>
+        {scene.media.video.transcript && <details className="motion-learning-transcript">
+          <summary>Read video transcript</summary>
+          <p>{scene.media.video.transcript}</p>
+        </details>}
       </figure>}
     </div>}
     <div className="motion-action"><strong>Explore:</strong> {scene.action}</div>
