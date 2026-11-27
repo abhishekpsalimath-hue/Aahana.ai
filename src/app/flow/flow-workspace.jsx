@@ -12,7 +12,6 @@ export default function FlowWorkspace(){
  const [prompt,setPrompt]=useState("");
  const [draft,setDraft]=useState("");
  const [dryRun,setDryRun]=useState(null);
- const ran=Boolean(dryRun?.ok);
  const [logs,setLogs]=useState(false);
  const active=templates.find(x=>x.id===activeId)||templates[0];
  const completed=dryRun?.steps?.filter(step=>step.status==="simulated").length||0;
