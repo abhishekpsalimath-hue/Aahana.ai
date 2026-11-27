@@ -75,5 +75,7 @@ jobs:
           node-version: 22
       - name: Install dependencies
         run: npm install --no-audit --no-fund
+      - name: Lint the Assistance Universe renderer and workspace
+        run: npx eslint src/components/universe-scene.jsx src/app/assistant-workspace.jsx
       - name: Run tests and production build
         run: npm run build
