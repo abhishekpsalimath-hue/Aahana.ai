@@ -218,7 +218,7 @@ function rod(group,a,b,color=0xb9c8e2,radius=.035) {
   const mesh=new THREE.Mesh(new THREE.CylinderGeometry(radius,radius,delta.length(),20),new THREE.MeshStandardMaterial({color,metalness:.45,roughness:.28}));
   mesh.position.copy(start).add(end).multiplyScalar(.5);mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),delta.normalize());group.add(mesh);return mesh;
 }
-function makeSceneModel(group,id,selectedPlanet=null) {
+function makeSceneModel(group,id,selectedPlanet=null,cellFocus="all") {
   if(id==="planet"){
     const earth=sphere(group,[0,0,0],1,"#ffffff",{material:new THREE.MeshStandardMaterial({map:makeEarthTexture(),roughness:.86})});
     const clouds=sphere(group,[0,0,0],1.008,"#ffffff",{material:new THREE.MeshStandardMaterial({color:0xffffff,transparent:true,opacity:.13,roughness:1,wireframe:true})});
@@ -325,10 +325,31 @@ function makeSceneModel(group,id,selectedPlanet=null) {
   if(id==="cell"||id==="plant-cell"){
     const plant=id==="plant-cell";
     const membrane=sphere(group,[0,0,0],1,plant?0x5c9b59:0x62aeb0,{material:new THREE.MeshPhysicalMaterial({color:plant?0x80c66f:0x67c5c0,transparent:true,opacity:.23,roughness:.2,metalness:0,transmission:.22,thickness:.4})});
-    if(plant){const wall=new THREE.Mesh(new THREE.BoxGeometry(2.05,1.45,1.45),new THREE.MeshStandardMaterial({color:0x75a95d,wireframe:true,transparent:true,opacity:.65}));group.add(wall);}
-    sphere(group,[0,.08,.05],.34,0x9c72c6);
-    for(let i=0;i<7;i++){const a=i*Math.PI*2/7;sphere(group,[Math.cos(a)*.58,Math.sin(a)*.48,Math.sin(a*2)*.24],.12,i%2?0xe9b66c:0x69b78e);}
-    if(plant){sphere(group,[0,0,0],.48,0x9ad7ef,{material:new THREE.MeshPhysicalMaterial({color:0x83cfe8,transparent:true,opacity:.38,roughness:.2})});for(let i=0;i<8;i++){const a=i*Math.PI/4;sphere(group,[Math.cos(a)*.72,Math.sin(a)*.48,.18],.09,0x6cba66);}}return;
+    membrane.userData.learningPart="membrane";
+    if(plant){const wall=new THREE.Mesh(new THREE.BoxGeometry(2.05,1.45,1.45),new THREE.MeshStandardMaterial({color:0x75a95d,wireframe:true,transparent:true,opacity:.65}));wall.userData.learningPart="cellWall";group.add(wall);}
+    const nucleus=sphere(group,[0,.08,.05],.34,0x9c72c6);nucleus.userData.learningPart="nucleus";
+    for(let i=0;i<7;i++){
+      const a=i*Math.PI*2/7;
+      const part=sphere(group,[Math.cos(a)*.58,Math.sin(a)*.48,Math.sin(a*2)*.24],.12,i%2?0xe9b66c:0x69b78e);
+      part.userData.learningPart=i===0||i===3?"mitochondria":plant?"chloroplasts":"ribosomes";
+    }
+    if(plant){
+      const vacuole=sphere(group,[0,0,0],.48,0x9ad7ef,{material:new THREE.MeshPhysicalMaterial({color:0x83cfe8,transparent:true,opacity:.38,roughness:.2})});
+      vacuole.userData.learningPart="vacuole";
+      for(let i=0;i<8;i++){const a=i*Math.PI/4;const chloroplast=sphere(group,[Math.cos(a)*.72,Math.sin(a)*.48,.18],.09,0x6cba66);chloroplast.userData.learningPart="chloroplasts";}
+    }
+    if(cellFocus!=="all"){
+      group.traverse((object)=>{
+        if(!object.isMesh||!object.userData.learningPart)return;
+        const selected=object.userData.learningPart===cellFocus;
+        const materials=Array.isArray(object.material)?object.material:[object.material];
+        materials.forEach((material)=>{
+          if(material.emissive){material.emissive.set(selected?0x9b78ff:0x000000);material.emissiveIntensity=selected?.95:0;}
+          if(!selected&&object.userData.learningPart!=="membrane"){material.transparent=true;material.opacity=Math.min(material.opacity??1,.22);}
+        });
+      });
+    }
+    return;
   }
   if(id==="heart"){
     sphere(group,[-.28,.1,0],.43,0xb94d65);sphere(group,[.25,.1,0],.43,0xd36b78);sphere(group,[0,-.35,0],.46,0xb83e57);
@@ -386,7 +407,7 @@ function makeSceneModel(group,id,selectedPlanet=null) {
     return;
   }
 }
-function createThreeScene(canvas,id,selectedPlanet=null) {
+function createThreeScene(canvas,id,selectedPlanet=null,cellFocus="all") {
   const constrainedDevice = window.matchMedia?.("(max-width: 760px)")?.matches
     || (navigator.hardwareConcurrency || 8) <= 4
     || window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
@@ -422,7 +443,7 @@ function createThreeScene(canvas,id,selectedPlanet=null) {
   const stars = addStars(scene);
   const group = new THREE.Group();
   scene.add(group);
-  makeSceneModel(group, id, selectedPlanet);
+  makeSceneModel(group, id, selectedPlanet, cellFocus);
   // Real light/shadow response adds depth to solid models without affecting the fallback renderer.
   group.traverse((object) => {
     if (object.isMesh) {
@@ -430,7 +451,7 @@ function createThreeScene(canvas,id,selectedPlanet=null) {
       object.receiveShadow = renderer.shadowMap.enabled;
     }
   });
-  const state = { renderer, scene, camera, group, id, selectedPlanet, stars, width: 0, height: 0 };
+  const state = { renderer, scene, camera, group, id, selectedPlanet, cellFocus, stars, width: 0, height: 0 };
   threeScenes.set(canvas,state);return state;
 }
 function clearSceneGroup(group) {
@@ -439,10 +460,10 @@ function clearSceneGroup(group) {
     if(object.material){const materials=Array.isArray(object.material)?object.material:[object.material];materials.forEach(material=>{material.map?.dispose();material.dispose();});}
   });
 }
-function renderThreeScene(canvas, id, yaw, pitch, zoom, time = 0, selectedPlanet = null) {
+function renderThreeScene(canvas, id, yaw, pitch, zoom, time = 0, selectedPlanet = null, cellFocus = "all") {
   let state = threeScenes.get(canvas);
   if (!state) {
-    state = createThreeScene(canvas, id, selectedPlanet);
+    state = createThreeScene(canvas, id, selectedPlanet, cellFocus);
     if (!state) {
       const ctx = canvas.getContext("2d");
       if (ctx) {
@@ -455,14 +476,15 @@ function renderThreeScene(canvas, id, yaw, pitch, zoom, time = 0, selectedPlanet
       return;
     }
   }
-  if (state.id !== id || state.selectedPlanet !== selectedPlanet) {
+  if (state.id !== id || state.selectedPlanet !== selectedPlanet || state.cellFocus !== cellFocus) {
     state.scene.remove(state.group);
     clearSceneGroup(state.group);
     state.group = new THREE.Group();
     state.scene.add(state.group);
     state.id = id;
     state.selectedPlanet = selectedPlanet;
-    makeSceneModel(state.group, id, selectedPlanet);
+    state.cellFocus = cellFocus;
+    makeSceneModel(state.group, id, selectedPlanet, cellFocus);
     state.group.traverse((object) => {
       if (object.isMesh) {
         object.castShadow = state.renderer.shadowMap.enabled;
@@ -857,7 +879,7 @@ function illuminateFace(color, brightness) {
 }
 
 function drawScene(canvas, modelId, yaw, pitch, zoom, ecosystem = {}, time = 0, selectedPlanet = null) {
-  renderThreeScene(canvas, modelId, yaw, pitch, zoom, time, selectedPlanet);
+  renderThreeScene(canvas, modelId, yaw, pitch, zoom, time, selectedPlanet, ecosystem.cellFocus || "all");
 }
 
 function animateScene(canvas, render) {
