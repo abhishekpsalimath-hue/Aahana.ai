@@ -111,3 +111,6 @@ The first workspace prototype batch now includes authenticated `/flow` and `/shi
 ## Current prototype scope (branch snapshot)
 
 The Flow canvas now supports adding and removing bounded custom action steps from a fixed safe operation menu, switching among three starter templates, and generating a validated local dry-run plan. Outbound/notification-style actions are held at the final human approval gate. The natural-language field currently captures a request description only; it is not yet an AI workflow planner. The Shield checklist provides evidence examples tailored to each control, starts with no controls marked reviewed, and keeps review state only in the current browser session. These limitations are intentionally visible rather than simulated as connected production capabilities.
+
+
+The Shield control catalog is now separated into an immutable, testable domain module. Review-summary logic filters unknown/duplicate IDs and reports remaining high-priority controls without presenting it as a security score. Six additional Node tests cover catalog uniqueness/evidence, group derivation, honest zero baseline, duplicate/unknown review IDs, toggle behavior, and immutability. The combined Flow + Shield unit suite now contains 15 tests; execution is still pending the Vercel deployment quota reset or another approved test runner.
