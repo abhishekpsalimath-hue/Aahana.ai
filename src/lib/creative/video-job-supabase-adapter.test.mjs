@@ -189,6 +189,9 @@ test("rejects timestamp strings and malformed enum or boolean values returned by
   client.rows[0].state = "queued";
   client.rows[0].retryable = "false";
   await assert.rejects(adapter.getOwned(job.ownerId, job.id), /invalid fields/);
+  client.rows[0].retryable = false;
+  client.rows[0].created_at = 1000;
+  await assert.rejects(adapter.getOwned(job.ownerId, job.id), /invalid video job timestamp/);
 });
 
 
