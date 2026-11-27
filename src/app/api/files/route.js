@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { isSupportedSourceFile } from "@/lib/build/source-file-policy.mjs";
+import { readBoundedJson } from "@/lib/chat/bounded-json.mjs";
 
 const BUCKET = "aahana-private";
 const MAX_BYTES = 10 * 1024 * 1024;
@@ -36,7 +37,17 @@ export async function POST(request) {
   if (authError || !user) return NextResponse.json({ error: "Please sign in." }, { status: 401 });
 
   let body;
-  try { body = await request.json(); } catch { return NextResponse.json({ error: "Invalid request." }, { status: 400 }); }
+  try {
+    // File metadata is a small control-plane payload, never an upload body.
+    // Enforce the byte limit while streaming; Content-Length alone is not trusted.
+    body = await readBoundedJson(request, 16 * 1024);
+  } catch (error) {
+    const status = error?.status === 413 ? 413 : 400;
+    return NextResponse.json(
+      { error: status === 413 ? "File metadata request is too large." : "Invalid request." },
+      { status },
+    );
+  }
   const { objectPath, originalFilename, mimeType, sizeBytes, projectId = null } = body || {};
   const sourceFile = typeof originalFilename === "string" && typeof mimeType === "string" &&
     isSupportedSourceFile(originalFilename, mimeType);
