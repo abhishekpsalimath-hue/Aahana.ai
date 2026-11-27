@@ -50,7 +50,8 @@ async function readBoundedGitHubResponse(response, maxBytes = MAX_GITHUB_RESPONS
       chunks.push(value);
     }
   } catch (error) {
-    try { await reader.cancel(); } catch {}
+    // Initiate cancellation without waiting on a potentially stalled upstream stream.
+    try { void reader.cancel().catch(() => {}); } catch {}
     throw error;
   }
   const bytes = new Uint8Array(total);
