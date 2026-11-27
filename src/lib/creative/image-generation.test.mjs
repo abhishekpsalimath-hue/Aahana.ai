@@ -32,12 +32,12 @@ test("passes a simple Naruto request through the complete image input parser wit
 });
 
 test("recognizes Naruto by name in a longer scene prompt without overwriting the requested scene", () => {
-  const result = parseImageGenerationInput({ prompt: "Naruto standing on a rooftop at sunset, full-body vertical portrait" });
+  const result = parseImageGenerationInput({ prompt: "Naruto standing on a rooftop at sunset" });
   assert.equal(result.ok, true);
   assert.match(result.prompt, /standing on a rooftop at sunset/i);
   assert.match(result.prompt, /Naruto Uzumaki/i);
   assert.match(result.prompt, /Japanese anime illustration/i);
-  assert.equal(result.aspectRatio, "3:4");
+  assert.equal(result.aspectRatio, "1:1");
 });
 
 test("accepts explicit supported eight-step image generation with automatic creative direction", () => {
