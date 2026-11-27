@@ -331,7 +331,7 @@ function makeSceneModel(group,id,selectedPlanet=null,cellFocus="all") {
     for(let i=0;i<7;i++){
       const a=i*Math.PI*2/7;
       const part=sphere(group,[Math.cos(a)*.58,Math.sin(a)*.48,Math.sin(a*2)*.24],.12,i%2?0xe9b66c:0x69b78e);
-      part.userData.learningPart=i===0||i===3?"mitochondria":plant?"chloroplasts":"ribosomes";
+      part.userData.learningPart=i===0||i===3?"mitochondria":!plant&&i===5?"endoplasmicReticulum":plant?"chloroplasts":"ribosomes";
     }
     if(plant){
       const vacuole=sphere(group,[0,0,0],.48,0x9ad7ef,{material:new THREE.MeshPhysicalMaterial({color:0x83cfe8,transparent:true,opacity:.38,roughness:.2})});
@@ -344,7 +344,7 @@ function makeSceneModel(group,id,selectedPlanet=null,cellFocus="all") {
         const selected=object.userData.learningPart===cellFocus;
         const materials=Array.isArray(object.material)?object.material:[object.material];
         materials.forEach((material)=>{
-          if(material.emissive){material.emissive.set(selected?0x9b78ff:0x000000);material.emissiveIntensity=selected?.95:0;}
+          if(material.emissive){material.emissive.set(selected?0x9b78ff:0x000000);material.emissiveIntensity=selected ? 0.95 : 0;}
           if(!selected&&object.userData.learningPart!=="membrane"){material.transparent=true;material.opacity=Math.min(material.opacity??1,.22);}
         });
       });
