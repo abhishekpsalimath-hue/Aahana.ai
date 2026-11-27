@@ -683,3 +683,12 @@ h1,.brand,.composer-mode,.breadcrumb{font-family:"Space Grotesk","Manrope",sans-
   .space-background .universe-webgl{opacity:.68}
   .space-background .universe-flight{opacity:.58}
 }
+
+
+/* Full-width Universe: the scene now lives behind both the Assistance sidebar
+   and workspace canvas. The sidebar stays readable with a solid dark wash;
+   no blur or glass treatment is applied. */
+.shell{position:relative;isolation:isolate}
+.shell>.space-background{position:absolute;inset:0;z-index:0}
+.shell>.sidebar{position:sticky;z-index:2;background:linear-gradient(90deg,rgba(12,12,17,.96),rgba(12,12,17,.86))}
+.shell>.main-panel{position:relative;z-index:1}
