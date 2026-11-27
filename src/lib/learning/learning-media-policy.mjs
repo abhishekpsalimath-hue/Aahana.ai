@@ -47,7 +47,8 @@ export function normalizeLearningVideo(video) {
   const title = typeof video.title === "string" ? video.title.trim().slice(0, 120) : "";
   const source = typeof video.source === "string" ? video.source.trim().slice(0, 80) : "";
   if (!title) return null;
-  return { url: embedUrl, title, source };
+  const transcript = typeof video.transcript === "string" ? video.transcript.trim().slice(0, 2400) : "";
+  return { url: embedUrl, title, source, transcript };
 }
 
 export function normalizeLearningMedia(media) {
