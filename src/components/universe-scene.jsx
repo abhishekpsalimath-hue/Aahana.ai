@@ -1076,7 +1076,7 @@ export default function UniverseScene() {
     // return receives a slightly different lateral path so the field feels
     // continuously populated rather than like a rotating wallpaper.
     const depthDrifters = [];
-    const registerDepthDrifter = (object, speed, minZ = -68, maxZ = 18) => {
+    const registerDepthDrifter = (object, speed, minZ = -68, maxZ = 18, preserveXY = false) => {
       depthDrifters.push({
         object,
         speed: speed * (lowPower ? 0.78 : 1),
@@ -1084,6 +1084,7 @@ export default function UniverseScene() {
         maxZ,
         baseX: object.position.x,
         baseY: object.position.y,
+        preserveXY,
         phase: Math.random() * Math.PI * 2,
         swayX: 0.16 + Math.random() * 0.42,
         swayY: 0.10 + Math.random() * 0.28,
@@ -1095,7 +1096,7 @@ export default function UniverseScene() {
     registerDepthDrifter(blackHole, 0.00185, -78, 18);
     registerDepthDrifter(asteroidBelt, 0.0038, -62, 18);
     registerDepthDrifter(miniatureSystem, 0.00265, -72, 18);
-    registerDepthDrifter(comet, 0.0052, -66, 18);
+    registerDepthDrifter(comet, 0.0052, -66, 18, true);
     registerDepthDrifter(wormhole, 0.0019, -84, 18);
     registerDepthDrifter(supernova, 0.0017, -86, 18);
 
@@ -1261,8 +1262,10 @@ export default function UniverseScene() {
           const { object, speed, minZ, maxZ } = drifter;
           object.position.z += speed * delta;
           const drift = time * 0.00011 + drifter.phase;
-          object.position.x = drifter.baseX + Math.sin(drift * 0.82) * drifter.swayX;
-          object.position.y = drifter.baseY + Math.cos(drift * 0.68) * drifter.swayY;
+          if (!drifter.preserveXY) {
+            object.position.x = drifter.baseX + Math.sin(drift * 0.82) * drifter.swayX;
+            object.position.y = drifter.baseY + Math.cos(drift * 0.68) * drifter.swayY;
+          }
           if (object.position.z > maxZ) {
             // Recycle only after the object has passed behind the camera.
             // Stagger its next appearance and trajectory deep in the distance.
