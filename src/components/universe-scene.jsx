@@ -340,7 +340,11 @@ export default function UniverseScene() {
     const addPlanet = (x, y, z, radius, color, palette, ring = false, seed = 1) => {
       const group = new THREE.Group();
       group.position.set(x, y, z);
-      const maps = makePlanetMaps(seed, palette);
+      // Phone GPUs already carry the starfield, galaxy, travellers and atmospheric
+      // shells. Skip CPU-generated canvas maps on constrained devices: generating
+      // four multi-octave textures synchronously during mount can stall the entire
+      // workspace before its first useful paint.
+      const maps = lowPower ? { map: null, bumpMap: null } : makePlanetMaps(seed, palette);
       const body = new THREE.Mesh(
         new THREE.SphereGeometry(radius, lowPower ? 64 : 96, lowPower ? 48 : 64),
         new THREE.MeshStandardMaterial({
@@ -399,7 +403,10 @@ export default function UniverseScene() {
       // A slow, translucent cloud deck adds a second physical layer to the
       // hero planet. The field is evaluated in 3D sphere space, so it has no
       // longitude seam and does not depend on downloaded texture assets.
-      if (radius > 0.8) {
+      // The cloud shader evaluates several 3D noise octaves per fragment. Keep
+      // it for desktop, but omit this expensive translucent pass on low-power
+      // devices; the lit sphere and atmosphere still provide depth and shading.
+      if (radius > 0.8 && !lowPower) {
         const cloudMaterial = new THREE.ShaderMaterial({
           transparent: true,
           depthWrite: false,
