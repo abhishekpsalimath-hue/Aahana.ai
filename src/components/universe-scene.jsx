@@ -36,6 +36,45 @@ export default function UniverseScene() {
     }
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(48, 1, 0.1, 120);
+
+    // A subtle touch/click ripple makes the universe acknowledge the visitor.
+    // It is decorative only: it never captures or prevents product UI input.
+    const interactionRipple = new THREE.Mesh(
+      new THREE.RingGeometry(0.12, 0.17, 48),
+      new THREE.MeshBasicMaterial({
+        color: 0x9ed9e8,
+        transparent: true,
+        opacity: 0,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+      })
+    );
+    interactionRipple.position.z = 6;
+    interactionRipple.visible = false;
+    scene.add(interactionRipple);
+    let rippleStartedAt = 0;
+    const onUniversePointerDown = (event) => {
+      if (!active || reduced || !contextAvailable) return;
+      const target = event.target;
+      if (target?.closest?.("button,a,input,textarea,select,[role='button']")) return;
+      const rect = canvas.getBoundingClientRect();
+      if (event.clientX < rect.left || event.clientX > rect.right
+        || event.clientY < rect.top || event.clientY > rect.bottom) return;
+      const nx = ((event.clientX - rect.left) / Math.max(1, rect.width)) * 2 - 1;
+      const ny = 1 - ((event.clientY - rect.top) / Math.max(1, rect.height)) * 2;
+      const distance = camera.position.z - interactionRipple.position.z;
+      const visibleHeight = 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov * 0.5)) * distance;
+      const visibleWidth = visibleHeight * camera.aspect;
+      interactionRipple.position.x = nx * visibleWidth * 0.5;
+      interactionRipple.position.y = ny * visibleHeight * 0.5;
+      interactionRipple.scale.setScalar(0.22);
+      interactionRipple.material.opacity = 0.62;
+      interactionRipple.visible = true;
+      rippleStartedAt = performance.now();
+      if (reduced) renderer.render(scene, camera);
+    };
+    window.addEventListener("pointerdown", onUniversePointerDown, { passive: true });
     camera.position.set(0, 0, 15.5);
     camera.lookAt(0, 0, -2.6);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, lowPower ? 1 : 1.4));
@@ -825,6 +864,16 @@ export default function UniverseScene() {
       const delta = lastFrameTime ? Math.min(50, time - lastFrameTime) / 16.667 : 1;
       lastFrameTime = time;
       if (!reduced) {
+        if (rippleStartedAt) {
+          const elapsed = Math.max(0, time - rippleStartedAt);
+          const progress = Math.min(1, elapsed / 820);
+          interactionRipple.scale.setScalar(0.22 + progress * 3.2);
+          interactionRipple.material.opacity = 0.62 * (1 - progress) * (1 - progress);
+          if (progress >= 1) {
+            interactionRipple.visible = false;
+            rippleStartedAt = 0;
+          }
+        }
         nebulaMaterial.uniforms.uTime.value = time;
         stars.rotation.y += 0.000035 * delta;
         stars.rotation.x += 0.000012 * delta;
@@ -949,6 +998,7 @@ export default function UniverseScene() {
     return () => {
       active = false; stop();
       setWebGLFallback(false);
+      window.removeEventListener("pointerdown", onUniversePointerDown);
       document.removeEventListener("visibilitychange", onVisibility);
       motionQuery?.removeEventListener?.("change", onMotionPreferenceChange);
       canvas.removeEventListener("webglcontextlost", onContextLost, false);
