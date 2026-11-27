@@ -495,7 +495,7 @@ button:focus-visible,a:focus-visible{outline-color:#c4a7ff}
 .space-background .universe-comets i{animation-timing-function:cubic-bezier(.32,.02,.62,.98)}
 @media(max-width:760px){.space-background .universe-particles i{box-shadow:0 0 5px #c8aaff,0 0 10px #9d7bd955}.space-background .universe-comets i{width:clamp(26px,7vw,48px)}}
 
-/* Aahana cinematic visual refresh — layered depth, restrained motion, no central galaxy. */
+/* Aahana cinematic visual refresh — layered depth, restrained motion and a single live galaxy. */
 :root{--lilac:#cbb5ff;--lilac-2:#a98be8;--line:#292536}
 html,body{font-family:"DM Sans",sans-serif}
 h1,.brand,.composer-mode,.breadcrumb{font-family:"Space Grotesk","Manrope",sans-serif}
@@ -672,8 +672,7 @@ h1,.brand,.composer-mode,.breadcrumb{font-family:"Space Grotesk","Manrope",sans-
 @media(prefers-reduced-motion:reduce){.stop-generation{transition:none}}
 
 
-/* WebGL owns the live spiral galaxy. Keep the CSS spiral only as a fallback;
-   rendering both at once creates two competing focal points and visual shimmer. */
+/* WebGL owns the live scene. The CSS scene remains a fallback for WebGL creation or context failure. */
 .space-background:not(.universe-webgl-fallback) .universe-galaxy{display:none!important}
 .space-background.universe-webgl-fallback .universe-galaxy{display:block!important}
 
