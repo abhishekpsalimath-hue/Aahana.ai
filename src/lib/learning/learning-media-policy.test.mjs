@@ -27,3 +27,13 @@ test("drops unsafe optional media without invalidating the learning scene", () =
   assert.equal(safe.images.length, 1);
   assert.equal(safe.video.url, "https://player.vimeo.com/video/1234567");
 });
+
+
+test("keeps an optional bounded plain-text transcript for accessible video learning", () => {
+  const transcript = "The Moon orbits Earth. Its phases depend on the positions of the Sun, Earth and Moon.";
+  const video = normalizeLearningVideo({ url: "https://youtu.be/abcdefghijk", title: "Moon phases", transcript });
+  assert.equal(video.transcript, transcript);
+  const bounded = normalizeLearningVideo({ url: "https://youtu.be/abcdefghijk", title: "Moon phases", transcript: "x".repeat(3000) });
+  assert.equal(bounded.transcript.length, 2400);
+  assert.equal(normalizeLearningVideo({ url: "https://youtu.be/abcdefghijk", title: "Moon phases" }).transcript, "");
+});
