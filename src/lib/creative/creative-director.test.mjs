@@ -14,6 +14,17 @@ test("standard image direction stays minimal and unknown quality is rejected", (
   assert.equal(buildImagePrompt("A portrait", "unknown"), null);
 });
 
+test("Naruto requests receive concise anime-specific direction without generic masterpiece prompt bloat", () => {
+  const prompt = buildImagePrompt("Generate an image of Naruto Anime", "masterpiece");
+  assert.match(prompt, /Naruto Uzumaki/i);
+  assert.match(prompt, /spiky blond hair/i);
+  assert.match(prompt, /three whisker-like marks/i);
+  assert.match(prompt, /Leaf Village forehead protector/i);
+  assert.match(prompt, /Japanese anime illustration/i);
+  assert.doesNotMatch(prompt, /portfolio-worthy hero image/i);
+  assert.doesNotMatch(prompt, /Faces, hands, fingers/i);
+});
+
 test("Ardhanarishvara gets a dedicated unified-form direction before standalone Shiva matching", () => {
   const prompt = buildImagePrompt("A hyper-realistic portrait of Ardhanarishvara, the divine half-male / half-female form of Shiva and Parvati", "masterpiece");
   assert.match(prompt, /one unified divine being/i);
