@@ -662,7 +662,7 @@ h1,.brand,.composer-mode,.breadcrumb{font-family:"Space Grotesk","Manrope",sans-
 @keyframes auth-nebula-drift{0%{translate:-3% 2%;scale:.94}100%{translate:5% -4%;scale:1.08}}
 @keyframes auth-planet-float{0%,100%{translate:0 0}50%{translate:14px -20px}}
 @media(max-width:600px){.auth-universe::after{width:125vw;height:125vw;opacity:.48}.auth-galaxy{width:86vw;height:86vw;opacity:.5}.auth-nebula{filter:blur(34px);opacity:.22}.auth-planet-one{left:5%;top:12%}.auth-planet-two{right:5%;bottom:10%}.auth-card{background:#111017f7}}
-@media(prefers-reduced-motion:reduce){.auth-universe::before,.auth-universe::after,.auth-nebula,.auth-orbit,.auth-planet{animation-duration:120s}.auth-card{transition:none}}
+@media(prefers-reduced-motion:reduce){.auth-universe::before,.auth-universe::after,.auth-nebula,.auth-orbit,.auth-planet{animation:none!important;transition:none!important}.auth-card{transition:none!important}}
 
 
 /* Accessible stop control for active Core Assistance generation. */
