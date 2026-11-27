@@ -121,7 +121,7 @@ const NARUTO_ANIME_DIRECTION = [
 
 export function buildImagePrompt(prompt, quality = "masterpiece") {
   if (quality !== "standard" && quality !== "masterpiece") return null;
-  const naruto = /\\b(naruto|uzumaki)\\b/i.test(prompt);
+  const naruto = /\b(naruto|uzumaki)\b/i.test(prompt);
   if (naruto) return [prompt, NARUTO_ANIME_DIRECTION].join("\n\n");
   const subject = SACRED_SUBJECT_DIRECTIONS.find(({ pattern }) => pattern.test(prompt));
   const direction = quality === "masterpiece" ? IMAGE_MASTERPIECE_DIRECTION : "";
