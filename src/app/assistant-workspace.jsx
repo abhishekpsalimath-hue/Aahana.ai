@@ -221,27 +221,51 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [messages, setMessages] = useState([]);
   const [astronautMotion, setAstronautMotion] = useState({ x: 0, y: 0, rotation: -3, duration: 3600 });
   useEffect(() => {
-    const prefersReducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true;
+    const motionQuery = window.matchMedia?.("(prefers-reduced-motion: reduce)");
+    let reduced = motionQuery?.matches === true;
     let active = true;
-    let timer;
+    let timer = null;
+    const stop = () => {
+      if (timer !== null) window.clearTimeout(timer);
+      timer = null;
+    };
     const moveAstronaut = () => {
-      if (!active) return;
-      // Keep the astronaut gently drifting even on devices that request reduced motion.
-      const duration = prefersReducedMotion
-        ? 8500 + Math.round(Math.random() * 4500)
-        : 2600 + Math.round(Math.random() * 2600);
-      const travelX = prefersReducedMotion ? 18 : 36;
-      const travelY = prefersReducedMotion ? 14 : 30;
+      if (!active || reduced || document.hidden) return;
+      const duration = 3000 + Math.round(Math.random() * 3600);
       setAstronautMotion({
-        x: Math.round((Math.random() - 0.5) * travelX),
-        y: Math.round((Math.random() - 0.5) * travelY),
-        rotation: Math.round((Math.random() - 0.5) * (prefersReducedMotion ? 8 : 18)),
+        x: Math.round((Math.random() - 0.5) * 42),
+        y: Math.round((Math.random() - 0.5) * 34),
+        rotation: Math.round((Math.random() - 0.5) * 20),
         duration,
       });
       timer = window.setTimeout(moveAstronaut, duration);
     };
-    timer = window.setTimeout(moveAstronaut, 500);
-    return () => { active = false; window.clearTimeout(timer); };
+    const start = () => {
+      stop();
+      if (!active || reduced || document.hidden) return;
+      timer = window.setTimeout(moveAstronaut, 450);
+    };
+    const onMotionPreference = (event) => {
+      reduced = event.matches;
+      if (reduced) {
+        stop();
+        setAstronautMotion({ x: 0, y: 0, rotation: -3, duration: 0 });
+      } else start();
+    };
+    const onVisibility = () => {
+      if (document.hidden) stop();
+      else start();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    motionQuery?.addEventListener?.("change", onMotionPreference);
+    if (reduced) setAstronautMotion({ x: 0, y: 0, rotation: -3, duration: 0 });
+    else start();
+    return () => {
+      active = false;
+      stop();
+      document.removeEventListener("visibilitychange", onVisibility);
+      motionQuery?.removeEventListener?.("change", onMotionPreference);
+    };
   }, []);
   useEffect(() => {
     if (messages.length) conversationEndRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
