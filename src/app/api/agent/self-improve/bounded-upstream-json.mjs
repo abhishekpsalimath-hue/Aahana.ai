@@ -14,7 +14,7 @@ export async function readBoundedUpstreamJson(response, maxBytes = MAX_AGENT_UPS
 
   const declaredLength = response.headers?.get?.("content-length");
   if (declaredLength != null) {
-    if (!/^\d+$/.test(declaredLength.trim())) {
+    if (!/^\\d+$/.test(declaredLength.trim())) {
       throw upstreamError("Invalid upstream content length.", "INVALID_LENGTH");
     }
     if (Number(declaredLength) > maxBytes) {
@@ -24,7 +24,14 @@ export async function readBoundedUpstreamJson(response, maxBytes = MAX_AGENT_UPS
   }
 
   const reader = response.body.getReader();
-  const decoder = new TextDecoder();
+  const decoder = new TextDecoder("utf-8", { fatal: true });
+  const decode = (bytes, options) => {
+    try {
+      return decoder.decode(bytes, options);
+    } catch {
+      throw upstreamError("Upstream response contained invalid UTF-8.", "INVALID_UTF8");
+    }
+  };
   let totalBytes = 0;
   let raw = "";
   try {
@@ -36,9 +43,9 @@ export async function readBoundedUpstreamJson(response, maxBytes = MAX_AGENT_UPS
         try { await reader.cancel(); } catch {}
         throw upstreamError("Upstream response exceeded the byte limit.", "TOO_LARGE");
       }
-      raw += decoder.decode(value, { stream: true });
+      raw += decode(value, { stream: true });
     }
-    raw += decoder.decode();
+    raw += decode();
   } catch (error) {
     try { await reader.cancel(); } catch {}
     if (error?.code) throw error;
