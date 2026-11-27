@@ -1012,7 +1012,7 @@ export default function UniverseScene() {
       visitor.scale.setScalar(scale);
       visitor.position.set(x, y, z);
       world.add(visitor);
-      visitorFleet.push({ group: visitor, x, y, z, phase, scale });
+      visitorFleet.push({ group: visitor, x, y, z, phase, mantleMaterial, core: innerCore, haloMaterial: halo.material, tendrilMaterial });
     };
     createVisitor(-6.8, 1.8, -22, 0.82, 0.4, 0x9fc6dc);
     createVisitor(6.1, -2.1, -29, 0.66, 2.2, 0xc4a6ed);
@@ -1207,16 +1207,25 @@ export default function UniverseScene() {
         wormholeRings.forEach((ring, i) => { ring.rotation.z += (i % 2 ? -1 : 1) * 0.00024 * delta; });
         supernova.rotation.y += 0.00008 * delta;
         supernovaGlow.material.opacity = 0.12 + (Math.sin(time * 0.0012) + 1) * 0.035;
-        visitorFleet.forEach(({ group, x, y, z, phase }) => {
+        visitorFleet.forEach(({ group, x, y, z, phase, mantleMaterial, core, haloMaterial, tendrilMaterial }) => {
+          const cycle = (time * 0.000022 + phase / (Math.PI * 2)) % 1;
+          const approach = cycle * cycle * (3 - 2 * cycle);
+          const fade = Math.min(1, cycle * 7, (1 - cycle) * 7);
           const drift = time * 0.00012 + phase;
+          // Fade in from the distant field, glide toward the viewer, then fade
+          // back into depth before the next pass — no visible teleport at reset.
           group.position.set(
             x + Math.sin(drift * 0.8) * 0.42,
             y + Math.cos(drift * 0.65) * 0.28,
-            z + Math.sin(drift * 0.42) * 1.15
+            z + approach * 8.5
           );
           group.rotation.y = Math.sin(drift) * 0.16;
           group.rotation.x = Math.cos(drift * 0.72) * 0.1;
           group.rotation.z = Math.sin(drift * 0.55) * 0.12;
+          mantleMaterial.opacity = 0.34 * fade;
+          tendrilMaterial.opacity = 0.42 * fade;
+          haloMaterial.opacity = 0.055 * fade;
+          core.material.opacity = 0.72 * fade * (0.82 + Math.sin(drift * 2.2) * 0.18);
         });
         supernovaRings.forEach(({ ring, phase }) => {
           const pulse = (time * 0.000075 + phase) % 1;
