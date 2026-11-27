@@ -1070,6 +1070,35 @@ export default function UniverseScene() {
     const nearStars = new THREE.Points(nearStarGeometry, new THREE.PointsMaterial({ color: 0xffffff, size: lowPower ? 0.045 : 0.06, vertexColors: true, transparent: true, opacity: 0.72, blending: THREE.AdditiveBlending, depthWrite: false }));
     scene.add(nearStars);
 
+    // The universe itself travels forward even when the visitor is completely
+    // idle. Large landmarks occupy independent depth lanes: they approach,
+    // pass the camera plane, and are recycled far behind the viewer. Each
+    // return receives a slightly different lateral path so the field feels
+    // continuously populated rather than like a rotating wallpaper.
+    const depthDrifters = [];
+    const registerDepthDrifter = (object, speed, minZ = -68, maxZ = 18) => {
+      depthDrifters.push({
+        object,
+        speed: speed * (lowPower ? 0.78 : 1),
+        minZ,
+        maxZ,
+        baseX: object.position.x,
+        baseY: object.position.y,
+        phase: Math.random() * Math.PI * 2,
+        swayX: 0.16 + Math.random() * 0.42,
+        swayY: 0.10 + Math.random() * 0.28,
+      });
+    };
+    registerDepthDrifter(galaxy, 0.0022, -66, 18);
+    registerDepthDrifter(distantGalaxy, 0.00155, -82, 18);
+    planets.forEach((planet, index) => registerDepthDrifter(planet, 0.0030 + index * 0.00034, -64, 18));
+    registerDepthDrifter(blackHole, 0.00185, -78, 18);
+    registerDepthDrifter(asteroidBelt, 0.0038, -62, 18);
+    registerDepthDrifter(miniatureSystem, 0.00265, -72, 18);
+    registerDepthDrifter(comet, 0.0052, -66, 18);
+    registerDepthDrifter(wormhole, 0.0019, -84, 18);
+    registerDepthDrifter(supernova, 0.0017, -86, 18);
+
     // Reuse scratch objects and initialize shader lighting before the first
     // render, including the reduced-motion path where the animation loop is idle.
     const keyLightWorldPosition = new THREE.Vector3();
@@ -1225,6 +1254,23 @@ export default function UniverseScene() {
           tendrilMaterial.opacity = 0.42 * fade;
           haloMaterial.opacity = 0.055 * fade;
           core.material.opacity = 0.72 * fade * (0.82 + Math.sin(drift * 2.2) * 0.18);
+        });
+        // Independent depth lanes make galaxies, worlds and cosmic structures
+        // visibly approach even when there is no pointer or touch input.
+        depthDrifters.forEach((drifter) => {
+          const { object, speed, minZ, maxZ } = drifter;
+          object.position.z += speed * delta;
+          const drift = time * 0.00011 + drifter.phase;
+          object.position.x = drifter.baseX + Math.sin(drift * 0.82) * drifter.swayX;
+          object.position.y = drifter.baseY + Math.cos(drift * 0.68) * drifter.swayY;
+          if (object.position.z > maxZ) {
+            // Recycle only after the object has passed behind the camera.
+            // Stagger its next appearance and trajectory deep in the distance.
+            object.position.z = minZ - Math.random() * 12;
+            drifter.baseX += (Math.random() - 0.5) * 7.5;
+            drifter.baseY += (Math.random() - 0.5) * 4.8;
+            drifter.phase = Math.random() * Math.PI * 2;
+          }
         });
         supernovaRings.forEach(({ ring, phase }) => {
           const pulse = (time * 0.000075 + phase) % 1;
