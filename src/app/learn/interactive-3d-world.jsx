@@ -284,8 +284,8 @@ function makeSceneModel(group,id,selectedPlanet=null,cellFocus="all",chemistryMo
       water: {
         atoms: [
           { role:"oxygen", position:[0,.08,0], radius:.36, color:0xe66b78 },
-          { role:"hydrogen", position:[-.68,-.43,.12], radius:.23, color:0xe9edf7 },
-          { role:"hydrogen", position:[.68,-.43,.12], radius:.23, color:0xe9edf7 },
+          { role:"hydrogen", position:[-.75,-.58,0], radius:.23, color:0xe9edf7 },
+          { role:"hydrogen", position:[.75,-.58,0], radius:.23, color:0xe9edf7 },
         ],
         bonds:[[0,1],[0,2]],
       },
@@ -300,19 +300,19 @@ function makeSceneModel(group,id,selectedPlanet=null,cellFocus="all",chemistryMo
       methane: {
         atoms: [
           { role:"carbon", position:[0,0,0], radius:.32, color:0x737b8d },
-          { role:"hydrogen", position:[.72,.55,.55], radius:.2, color:0xe9edf7 },
-          { role:"hydrogen", position:[-.72,.55,-.55], radius:.2, color:0xe9edf7 },
-          { role:"hydrogen", position:[.55,-.65,-.55], radius:.2, color:0xe9edf7 },
-          { role:"hydrogen", position:[-.55,-.65,.55], radius:.2, color:0xe9edf7 },
+          { role:"hydrogen", position:[.61,.61,.61], radius:.2, color:0xe9edf7 },
+          { role:"hydrogen", position:[-.61,-.61,.61], radius:.2, color:0xe9edf7 },
+          { role:"hydrogen", position:[-.61,.61,-.61], radius:.2, color:0xe9edf7 },
+          { role:"hydrogen", position:[.61,-.61,-.61], radius:.2, color:0xe9edf7 },
         ],
         bonds:[[0,1],[0,2],[0,3],[0,4]],
       },
       ammonia: {
         atoms: [
           { role:"nitrogen", position:[0,.12,0], radius:.34, color:0x7298dc },
-          { role:"hydrogen", position:[.72,-.38,.18], radius:.2, color:0xe9edf7 },
-          { role:"hydrogen", position:[-.66,-.42,.22], radius:.2, color:0xe9edf7 },
-          { role:"hydrogen", position:[0,-.48,-.72], radius:.2, color:0xe9edf7 },
+          { role:"hydrogen", position:[.93,-.36,0], radius:.2, color:0xe9edf7 },
+          { role:"hydrogen", position:[-.465,-.36,.806], radius:.2, color:0xe9edf7 },
+          { role:"hydrogen", position:[-.465,-.36,-.806], radius:.2, color:0xe9edf7 },
         ],
         bonds:[[0,1],[0,2],[0,3]],
       },
