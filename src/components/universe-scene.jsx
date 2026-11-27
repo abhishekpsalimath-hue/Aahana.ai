@@ -326,7 +326,6 @@ export default function UniverseScene() {
       blending: THREE.AdditiveBlending,
       uniforms: { uTime: { value: 0 } },
       vertexShader: `
-        attribute vec3 color;
         attribute float aSize;
         attribute float aPhase;
         varying vec3 vColor;
