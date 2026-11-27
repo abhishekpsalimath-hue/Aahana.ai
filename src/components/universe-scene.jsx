@@ -55,6 +55,7 @@ export default function UniverseScene() {
     interactionRipple.visible = false;
     scene.add(interactionRipple);
     let rippleStartedAt = 0;
+    let warpPulseStartedAt = 0;
     const onUniversePointerDown = (event) => {
       if (!active || reduced || !contextAvailable) return;
       const target = event.target;
@@ -75,6 +76,7 @@ export default function UniverseScene() {
       // Reduced-motion mode intentionally ignores decorative pointer ripples.
       // The scene is rendered as a still frame by the lifecycle start/resize paths.
       rippleStartedAt = performance.now();
+      warpPulseStartedAt = rippleStartedAt;
     };
     window.addEventListener("pointerdown", onUniversePointerDown, { passive: true });
     camera.position.set(0, 0, 15.5);
@@ -1186,9 +1188,15 @@ export default function UniverseScene() {
         }
         meteorTrailGeometry.attributes.position.needsUpdate = true;
         const nearPositions = nearStarGeometry.attributes.position.array;
+        const warpElapsed = warpPulseStartedAt ? Math.max(0, time - warpPulseStartedAt) : 0;
+        const warpProgress = Math.min(1, warpElapsed / 1050);
+        const warpBoost = warpPulseStartedAt && warpProgress < 1
+          ? 1 + 2.1 * Math.sin(Math.PI * warpProgress)
+          : 1;
+        if (warpPulseStartedAt && warpProgress >= 1) warpPulseStartedAt = 0;
         for (let i = 0; i < nearStarCount; i++) {
           const offset = i * 3;
-          nearPositions[offset + 2] += nearStarSpeeds[i] * delta;
+          nearPositions[offset + 2] += nearStarSpeeds[i] * delta * warpBoost;
           if (nearPositions[offset + 2] > 9) {
             nearPositions[offset] = (Math.random() - 0.5) * 26;
             nearPositions[offset + 1] = (Math.random() - 0.5) * 17;
@@ -1205,7 +1213,7 @@ export default function UniverseScene() {
         camera.position.y += (cameraTargetY - camera.position.y) * easing;
         // A restrained forward/backward camera drift makes the scene feel like
         // a continuous journey through depth instead of a static 3D wallpaper.
-        const cameraDepth = 15.5 + Math.sin(flight * 0.62) * 0.52 + Math.sin(flight * 0.29) * 0.16;
+        const cameraDepth = 15.5 + Math.sin(flight * 0.62) * 0.52 + Math.sin(flight * 0.29) * 0.16 - (warpBoost - 1) * 0.11;
         camera.position.z += (cameraDepth - camera.position.z) * easing;
         world.position.x = Math.sin(flight * 0.82) * 0.2;
         world.position.y = Math.cos(flight * 0.68) * 0.13;
