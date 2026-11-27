@@ -81,7 +81,7 @@ export async function POST(request) {
     );
   } catch (error) {
     if (request.signal.aborted || error?.name === "AbortError") {
-      return NextResponse.json({ error: "Image generation cancelled or timed out." }, { status: 499 });
+      return NextResponse.json({ error: "Image generation cancelled." }, { status: 499 });
     }
     console.error("Aahana image generation request failed:", error?.name || "unknown error");
     return NextResponse.json({ error: "Image generation timed out or the provider is unavailable. Please try again." }, { status: 503 });
