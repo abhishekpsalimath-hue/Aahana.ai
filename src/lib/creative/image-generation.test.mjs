@@ -18,6 +18,28 @@ test("defaults to automatic masterpiece image direction without asking the user 
   assert.match(result.prompt, /tactile material detail/i);
 });
 
+test("passes a simple Naruto request through the complete image input parser with concise character direction", () => {
+  const result = parseImageGenerationInput({ prompt: "Naruto Anime" });
+  assert.equal(result.ok, true);
+  assert.match(result.prompt, /Naruto Uzumaki/i);
+  assert.match(result.prompt, /spiky blond hair/i);
+  assert.match(result.prompt, /three whisker-like marks/i);
+  assert.match(result.prompt, /Leaf Village forehead protector/i);
+  assert.match(result.prompt, /Japanese anime illustration/i);
+  assert.doesNotMatch(result.prompt, /portfolio-worthy hero image/i);
+  assert.equal(result.width, 1024);
+  assert.equal(result.height, 1024);
+});
+
+test("recognizes Naruto by name in a longer scene prompt without overwriting the requested scene", () => {
+  const result = parseImageGenerationInput({ prompt: "Naruto standing on a rooftop at sunset, full-body vertical portrait" });
+  assert.equal(result.ok, true);
+  assert.match(result.prompt, /standing on a rooftop at sunset/i);
+  assert.match(result.prompt, /Naruto Uzumaki/i);
+  assert.match(result.prompt, /Japanese anime illustration/i);
+  assert.equal(result.aspectRatio, "3:4");
+});
+
 test("accepts explicit supported eight-step image generation with automatic creative direction", () => {
   const result = parseImageGenerationInput({ prompt: "A moonlit forest", steps: 8 });
   assert.equal(result.ok, true);
