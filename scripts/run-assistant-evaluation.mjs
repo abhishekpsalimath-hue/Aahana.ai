@@ -31,8 +31,8 @@ function readIntegerOption(name, fallback, maximum) {
   }
   return value;
 }
-const maxCases = readIntegerOption("--max-cases", 10, 100);
-const maxProviderRequests = readIntegerOption("--max-provider-requests", 20, 200);
+const maxCases = readIntegerOption("--max-cases", dryRun ? 100 : 10, 100);
+const maxProviderRequests = readIntegerOption("--max-provider-requests", dryRun ? 200 : 20, 200);
 const budget = resolveAssistantBenchmarkBudget({
   caseCount: ASSISTANT_EVALUATION_CASES.length, maxCases, maxProviderRequests,
 });
@@ -53,6 +53,7 @@ if (dryRun) {
     provider,
     model,
     availableCases: ASSISTANT_EVALUATION_CASES.length,
+    cases: budget.casesToRun,
     casesPlanned: budget.casesToRun,
     maxCases: budget.maxCases,
     maxProviderRequests: budget.maxProviderRequests,
