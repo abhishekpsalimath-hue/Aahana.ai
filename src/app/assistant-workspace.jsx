@@ -1260,6 +1260,50 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
 
   return (
     <main className="shell">
+      <div className="space-background" aria-hidden="true">
+        <UniverseScene />
+        <div className="universe-flight" data-speed="65 km/h">
+          <div className="universe-depth-stars" aria-hidden="true">
+            <i className="depth-stars-far" />
+            <i className="depth-stars-mid" />
+            <i className="depth-stars-near" />
+          </div>
+          <div className="universe-galaxy" aria-hidden="true">
+            <span className="galaxy-core" />
+            <i className="galaxy-arm galaxy-arm-one" />
+            <i className="galaxy-arm galaxy-arm-two" />
+            <i className="galaxy-arm galaxy-arm-three" />
+          </div>
+          <div className="universe-particles">
+            {Array.from({ length: 64 }, (_, index) => (
+              <i
+                key={index}
+                style={{
+                  "--particle-x": `${(index * 37 + 11) % 100}%`,
+                  "--particle-y": `${(index * 61 + 7) % 100}%`,
+                  "--particle-delay": `${-((index * 7) % 19)}s`,
+                  "--particle-duration": `${11 + (index % 8) * 1.5}s`,
+                  "--particle-size": `${1 + (index % 3)}px`,
+                }}
+              />
+            ))}
+          </div>
+          <div className="universe-comets">
+            {Array.from({ length: 6 }, (_, index) => (
+              <i
+                key={index}
+                style={{
+                  "--comet-x": `${(index * 23 + 9) % 92}%`,
+                  "--comet-y": `${(index * 31 + 13) % 84}%`,
+                  "--comet-delay": `${-((index * 5) % 17)}s`,
+                  "--comet-duration": `${12 + (index % 3) * 3}s`,
+                  "--comet-angle": `${-24 + (index % 4) * 16}deg`,
+                }}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
       <aside className="sidebar">
         <a className="brand" href="/" aria-label="Aahana AI home">
           <span className="brand-word">Aahana</span><span className="brand-ai">AI</span>
@@ -1379,50 +1423,6 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       </aside>
 
       <section className="main-panel">
-        <div className="space-background" aria-hidden="true">
-          <UniverseScene />
-          <div className="universe-flight" data-speed="65 km/h">
-            <div className="universe-depth-stars" aria-hidden="true">
-              <i className="depth-stars-far" />
-              <i className="depth-stars-mid" />
-              <i className="depth-stars-near" />
-            </div>
-            <div className="universe-galaxy" aria-hidden="true">
-              <span className="galaxy-core" />
-              <i className="galaxy-arm galaxy-arm-one" />
-              <i className="galaxy-arm galaxy-arm-two" />
-              <i className="galaxy-arm galaxy-arm-three" />
-            </div>
-            <div className="universe-particles">
-              {Array.from({ length: 64 }, (_, index) => (
-                <i
-                  key={index}
-                  style={{
-                    "--particle-x": `${(index * 37 + 11) % 100}%`,
-                    "--particle-y": `${(index * 61 + 7) % 100}%`,
-                    "--particle-delay": `${-((index * 7) % 19)}s`,
-                    "--particle-duration": `${11 + (index % 8) * 1.5}s`,
-                    "--particle-size": `${1 + (index % 3)}px`,
-                  }}
-                />
-              ))}
-            </div>
-            <div className="universe-comets">
-              {Array.from({ length: 6 }, (_, index) => (
-                <i
-                  key={index}
-                  style={{
-                    "--comet-x": `${(index * 23 + 9) % 92}%`,
-                    "--comet-y": `${(index * 31 + 13) % 84}%`,
-                    "--comet-delay": `${-((index * 5) % 17)}s`,
-                    "--comet-duration": `${12 + (index % 3) * 3}s`,
-                    "--comet-angle": `${-24 + (index % 4) * 16}deg`,
-                  }}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
         <header className="topbar">
           <div className="breadcrumb">Workspace <span>/</span> {selectedProjectId ? (projects.find((item) => item.id === selectedProjectId)?.name || "Project") : "Assistant"}</div>
           <div className="top-actions"><button className="mobile-history-toggle" type="button" onClick={toggleProjects}>Projects</button><button className="mobile-history-toggle" type="button" onClick={toggleHistory}>History</button><button className="mobile-history-toggle" type="button" onClick={toggleFiles}>Files</button><button className="mobile-history-toggle" type="button" onClick={toggleMemoryPanel}>Memory</button><span>Private workspace</span></div>
