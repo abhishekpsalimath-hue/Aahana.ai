@@ -53,7 +53,7 @@ export default function AstronautCompanion({ variant = "assistant" }) {
   const current = moments[moment];
   return (
     <aside className={`astronaut-companion astronaut-companion--${variant} astronaut-action--${current.action}`} aria-label="Aahana astronaut companion">
-      <div className="astronaut-companion__message" aria-live="polite">{current[variant] || current.assistant}</div>
+      <div className="astronaut-companion__message" aria-live="off">{current[variant] || current.assistant}</div>
       <img
         className="astronaut-companion__image"
         src="/astronaut.webp"
