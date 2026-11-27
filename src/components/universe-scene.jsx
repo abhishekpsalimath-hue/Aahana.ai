@@ -1281,9 +1281,10 @@ export default function UniverseScene() {
           material.dispose?.();
         });
       });
+      // Dispose GPU resources; the detached canvas can release its context naturally.
+      // Avoid forceContextLoss here: React Strict Mode may immediately remount this
+      // component on the same canvas during development.
       renderer.dispose();
-      // Release the browser's WebGL context on unmount; this scene owns the canvas.
-      renderer.forceContextLoss();
     };
   }, []);
   return <canvas ref={canvasRef} className="universe-webgl" aria-hidden="true" />;
