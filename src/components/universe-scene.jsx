@@ -12,9 +12,11 @@ export default function UniverseScene() {
     const device = typeof navigator !== "undefined" ? navigator : {};
     const memory = Number(device.deviceMemory) || 0;
     const cores = Number(device.hardwareConcurrency) || 0;
-    // Keep the immersive scene on capable phones while adapting render cost to
-    // constrained GPUs and devices with limited memory or CPU capacity.
-    const lowPower = compact || (memory > 0 && memory <= 4) || (cores > 0 && cores <= 4);
+    const saveData = device.connection?.saveData === true;
+    // Screen size is not a proxy for capability: modern phones keep the real
+    // 3D universe. Only genuinely constrained devices receive the low tier.
+    const lowPower = saveData || (memory > 0 && memory <= 3) || (cores > 0 && cores <= 4);
+    const quality = lowPower ? "low" : compact ? "mobile" : "high";
     let renderer, raf = 0, active = true, inView = true, observer, contextAvailable = true;
     const motionQuery = window.matchMedia?.("(prefers-reduced-motion: reduce)");
     let reduced = motionQuery?.matches === true;
@@ -42,7 +44,7 @@ export default function UniverseScene() {
     const interactionRipple = new THREE.Mesh(
       new THREE.RingGeometry(0.12, 0.17, 48),
       new THREE.MeshBasicMaterial({
-        color: 0x9ed9e8,
+        color: 0xcbb5ff,
         transparent: true,
         opacity: 0,
         side: THREE.DoubleSide,
@@ -78,7 +80,7 @@ export default function UniverseScene() {
     window.addEventListener("pointerdown", onUniversePointerDown, { passive: true });
     camera.position.set(0, 0, 15.5);
     camera.lookAt(0, 0, -2.6);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, lowPower ? 1 : 1.4));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, lowPower ? 0.9 : compact ? 1.15 : 1.4));
     renderer.setClearColor(0x05040a, 0);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -114,12 +116,14 @@ export default function UniverseScene() {
           float filaments=fbm(q*9.0+clouds*1.8);
           float mask=smoothstep(0.47,0.79,clouds*0.72+filaments*0.38);
           float wisps=smoothstep(0.54,0.82,filaments)*mask;
-          vec3 violet=vec3(0.055,0.13,0.20);
-          vec3 lilac=vec3(0.16,0.36,0.43);
-          vec3 blue=vec3(0.10,0.22,0.38);
+          vec3 violet=vec3(0.075,0.045,0.16);
+          vec3 lilac=vec3(0.30,0.20,0.48);
+          vec3 blue=vec3(0.12,0.19,0.36);
+          vec3 rose=vec3(0.42,0.20,0.34);
           vec3 color=mix(violet,lilac,smoothstep(0.38,0.72,clouds));
-          color=mix(color,blue,smoothstep(0.48,0.82,fbm(q*2.1+8.0))*0.62);
-          color+=vec3(0.34,0.23,0.13)*wisps*0.42;
+          color=mix(color,blue,smoothstep(0.48,0.82,fbm(q*2.1+8.0))*0.56);
+          color=mix(color,rose,smoothstep(0.58,0.86,filaments)*0.24);
+          color+=vec3(0.58,0.42,0.76)*wisps*0.22;
           float edge=1.0-smoothstep(0.38,0.88,length(p*vec2(0.82,1.12)));
           float alpha=mask*edge*0.34+wisps*edge*0.12;
           gl_FragColor=vec4(color,alpha);
@@ -133,19 +137,19 @@ export default function UniverseScene() {
     const world = new THREE.Group();
     world.position.z = -2.5;
     scene.add(world);
-    scene.add(new THREE.AmbientLight(0x8999a8, 0.42));
-    const keyLight = new THREE.PointLight(0xffdfb4, 52, 42, 1.8);
+    scene.add(new THREE.AmbientLight(0x9d8bbd, 0.48));
+    const keyLight = new THREE.PointLight(0xffe8cf, 48, 42, 1.8);
     keyLight.position.set(-4, 5, 7);
     scene.add(keyLight);
-    const rimLight = new THREE.PointLight(0x5fa9c8, 28, 38, 1.7);
+    const rimLight = new THREE.PointLight(0x9c8bea, 30, 38, 1.7);
     rimLight.position.set(7, -2, -3);
     scene.add(rimLight);
 
     // Mobile/low-power devices retain the layered sky but use bounded particle buffers.
-    const starCount = lowPower ? 1800 : 8000;
+    const starCount = lowPower ? 2800 : compact ? 5200 : 8000;
     const starPositions = new Float32Array(starCount * 3);
     const starColors = new Float32Array(starCount * 3);
-    const palette = [new THREE.Color(0xffffff), new THREE.Color(0xffd9a3), new THREE.Color(0x9ed9e8)];
+    const palette = [new THREE.Color(0xffffff), new THREE.Color(0xffdfbd), new THREE.Color(0xcbb5ff), new THREE.Color(0x9caef0)];
     for (let i = 0; i < starCount; i++) {
       const r = 18 + Math.random() * 48, theta = Math.random() * Math.PI * 2, phi = Math.acos(2 * Math.random() - 1);
       starPositions.set([r * Math.sin(phi) * Math.cos(theta), r * Math.sin(phi) * Math.sin(theta), r * Math.cos(phi) - 8], i * 3);
@@ -164,14 +168,14 @@ export default function UniverseScene() {
     const galaxy = new THREE.Group();
     galaxy.position.set(-3.4, 2.1, -24);
     galaxy.rotation.set(0.48, -0.24, 0.12);
-    const galaxyCount = lowPower ? 2400 : 12800;
+    const galaxyCount = lowPower ? 4200 : compact ? 7600 : 12800;
     const galaxyPositions = new Float32Array(galaxyCount * 3);
     const galaxyColors = new Float32Array(galaxyCount * 3);
     const galaxyPalette = [
-      new THREE.Color(0xffe5bd),
-      new THREE.Color(0xe8b47b),
-      new THREE.Color(0x91c5d8),
-      new THREE.Color(0x789bc2),
+      new THREE.Color(0xffead2),
+      new THREE.Color(0xd9a9a2),
+      new THREE.Color(0xb8a2ed),
+      new THREE.Color(0x758ac6),
     ];
     for (let i = 0; i < galaxyCount; i++) {
       const arm = i % 4;
@@ -227,7 +231,7 @@ export default function UniverseScene() {
     const makePlanetMaps = (seed, colors) => {
       // Keep procedural texture work bounded on phones while retaining enough
       // texel detail for the planets at their on-screen size.
-      const width = lowPower ? 384 : 768, height = lowPower ? 192 : 384;
+      const width = lowPower ? 256 : compact ? 384 : 768, height = lowPower ? 128 : compact ? 192 : 384;
       const surface = document.createElement("canvas");
       surface.width = width;
       surface.height = height;
@@ -387,10 +391,10 @@ export default function UniverseScene() {
             float sunFacing = dot(normalize(vAtmospherePosition), normalize(uLightDirection));
             float daylight = smoothstep(-0.38, 0.48, sunFacing);
             float twilight = exp(-abs(sunFacing + 0.04) * 5.0);
-            vec3 dayColor = vec3(0.24, 0.53, 0.72);
-            vec3 nightColor = vec3(0.055, 0.12, 0.20);
+            vec3 dayColor = vec3(0.34, 0.45, 0.78);
+            vec3 nightColor = vec3(0.10, 0.07, 0.22);
             vec3 atmosphereColor = mix(nightColor, dayColor, daylight);
-            atmosphereColor += vec3(0.88, 0.39, 0.16) * twilight * 0.34;
+            atmosphereColor += vec3(0.72, 0.36, 0.56) * twilight * 0.28;
             float alpha = rim * (0.075 + daylight * 0.12);
             gl_FragColor = vec4(atmosphereColor, alpha);
           }
@@ -666,7 +670,7 @@ export default function UniverseScene() {
     // This is an artistic real-time approximation, not a ray-traced GR solver.
     const photonRing = new THREE.Mesh(new THREE.TorusGeometry(1.13, 0.035, 10, 120), new THREE.MeshBasicMaterial({ color: 0xffedcf, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending }));
     photonRing.rotation.x = 1.12; photonRing.rotation.y = 0.18; blackHole.add(photonRing);
-    const lensingHalo = new THREE.Mesh(new THREE.TorusGeometry(1.92, 0.095, 8, 120), new THREE.MeshBasicMaterial({ color: 0x86b6c8, transparent: true, opacity: 0.19, blending: THREE.AdditiveBlending }));
+    const lensingHalo = new THREE.Mesh(new THREE.TorusGeometry(1.92, 0.095, 8, 120), new THREE.MeshBasicMaterial({ color: 0xa89ce8, transparent: true, opacity: 0.19, blending: THREE.AdditiveBlending }));
     lensingHalo.rotation.x = 1.12; lensingHalo.rotation.y = 0.18; blackHole.add(lensingHalo);
     const plasmaMaterial = new THREE.MeshBasicMaterial({ color: 0xffe0a6, transparent: true, opacity: 0.88, blending: THREE.AdditiveBlending });
     const plasmaKnots = [];
@@ -723,13 +727,13 @@ export default function UniverseScene() {
 
     // A comet crosses the scene on a long elliptical path with a layered tail.
     const comet = new THREE.Group();
-    const cometHead = new THREE.Mesh(new THREE.IcosahedronGeometry(0.16, 2), new THREE.MeshStandardMaterial({ color: 0xd8f0f2, emissive: 0x3f8fa7, emissiveIntensity: 1.2, roughness: 0.35 }));
+    const cometHead = new THREE.Mesh(new THREE.IcosahedronGeometry(0.16, 2), new THREE.MeshStandardMaterial({ color: 0xf1eaff, emissive: 0x8c70d1, emissiveIntensity: 1.1, roughness: 0.35 }));
     comet.add(cometHead);
-    const cometTail = new THREE.Mesh(new THREE.ConeGeometry(0.3, 3.6, 18, 1, true), new THREE.MeshBasicMaterial({ color: 0x5caec4, transparent: true, opacity: 0.22, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, depthWrite: false }));
+    const cometTail = new THREE.Mesh(new THREE.ConeGeometry(0.3, 3.6, 18, 1, true), new THREE.MeshBasicMaterial({ color: 0x9c83d8, transparent: true, opacity: 0.22, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, depthWrite: false }));
     cometTail.rotation.z = Math.PI / 2;
     cometTail.position.x = 1.82;
     comet.add(cometTail);
-    const cometInnerTail = new THREE.Mesh(new THREE.ConeGeometry(0.12, 2.6, 14, 1, true), new THREE.MeshBasicMaterial({ color: 0xd4e9dc, transparent: true, opacity: 0.25, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, depthWrite: false }));
+    const cometInnerTail = new THREE.Mesh(new THREE.ConeGeometry(0.12, 2.6, 14, 1, true), new THREE.MeshBasicMaterial({ color: 0xe4d8ff, transparent: true, opacity: 0.25, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, depthWrite: false }));
     cometInnerTail.rotation.z = Math.PI / 2;
     cometInnerTail.position.x = 1.3;
     comet.add(cometInnerTail);
@@ -744,7 +748,7 @@ export default function UniverseScene() {
     wormhole.add(wormholeCore);
     const wormholeRings = [];
     [1.12, 1.38, 1.68].forEach((radius, i) => {
-      const ring = new THREE.Mesh(new THREE.TorusGeometry(radius, i === 1 ? 0.045 : 0.022, 8, 96), new THREE.MeshBasicMaterial({ color: i === 1 ? 0x8dd6df : 0xb6c9c9, transparent: true, opacity: 0.42 - i * 0.07, blending: THREE.AdditiveBlending }));
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(radius, i === 1 ? 0.045 : 0.022, 8, 96), new THREE.MeshBasicMaterial({ color: i === 1 ? 0xc7a9ff : 0x9da9e4, transparent: true, opacity: 0.42 - i * 0.07, blending: THREE.AdditiveBlending }));
       ring.rotation.set(0.42 + i * 0.24, 0.2 - i * 0.18, i * 0.36);
       wormhole.add(ring);
       wormholeRings.push(ring);
@@ -794,7 +798,7 @@ export default function UniverseScene() {
     // A stream of near-field stars travels towards the viewer, creating
     // genuine forward movement rather than rotating a static star dome.
     // Keep 20,000 forward-travelling stars on desktop; mobile gets a deliberately lighter 8,000-star stream.
-    const nearStarCount = lowPower ? 3200 : 20000;
+    const nearStarCount = lowPower ? 6000 : compact ? 10000 : 20000;
     const nearStarPositions = new Float32Array(nearStarCount * 3);
     const nearStarSpeeds = new Float32Array(nearStarCount);
     for (let i = 0; i < nearStarCount; i++) {
@@ -826,7 +830,7 @@ export default function UniverseScene() {
     updatePlanetLightDirections();
 
     const pointer = { x: 0, y: 0 };
-    const frameInterval = 1000 / (lowPower ? 30 : 60);
+    const frameInterval = 1000 / (lowPower ? 30 : compact ? 45 : 60);
     let lastFrameTime = 0;
     const onPointer = (event) => {
       pointer.x = (event.clientX / Math.max(1, window.innerWidth) - 0.5) * 2;
@@ -961,8 +965,19 @@ export default function UniverseScene() {
         nearStarGeometry.attributes.position.needsUpdate = true;
         updatePlanetLightDirections();
         const easing = 1 - Math.pow(1 - 0.012, delta);
-        camera.position.x += (pointer.x * 0.28 - camera.position.x) * easing;
-        camera.position.y += (-pointer.y * 0.18 - camera.position.y) * easing;
+        const flight = time * 0.000085;
+        const cameraTargetX = pointer.x * 0.34 + Math.sin(flight) * 0.12;
+        const cameraTargetY = -pointer.y * 0.22 + Math.cos(flight * 0.73) * 0.08;
+        camera.position.x += (cameraTargetX - camera.position.x) * easing;
+        camera.position.y += (cameraTargetY - camera.position.y) * easing;
+        // A restrained forward/backward camera drift makes the scene feel like
+        // a continuous journey through depth instead of a static 3D wallpaper.
+        const cameraDepth = 15.5 + Math.sin(flight * 0.62) * 0.34;
+        camera.position.z += (cameraDepth - camera.position.z) * easing;
+        world.position.x = Math.sin(flight * 0.82) * 0.12;
+        world.position.y = Math.cos(flight * 0.68) * 0.08;
+        stars.material.opacity = 0.72 + Math.sin(time * 0.00042) * 0.055;
+        galaxyStars.material.opacity = 0.76 + Math.sin(time * 0.00031 + 1.4) * 0.07;
         camera.lookAt(0, 0, -2.6);
       }
       renderer.render(scene, camera);
