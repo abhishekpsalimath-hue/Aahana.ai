@@ -71,8 +71,9 @@ export default function UniverseScene() {
       interactionRipple.scale.setScalar(0.22);
       interactionRipple.material.opacity = 0.62;
       interactionRipple.visible = true;
+      // Reduced-motion mode intentionally ignores decorative pointer ripples.
+      // The scene is rendered as a still frame by the lifecycle start/resize paths.
       rippleStartedAt = performance.now();
-      if (reduced) renderer.render(scene, camera);
     };
     window.addEventListener("pointerdown", onUniversePointerDown, { passive: true });
     camera.position.set(0, 0, 15.5);
