@@ -114,3 +114,10 @@ The Flow canvas now supports adding and removing bounded custom action steps fro
 
 
 The Shield control catalog is now separated into an immutable, testable domain module. Review-summary logic filters unknown/duplicate IDs and reports remaining high-priority controls without presenting it as a security score. Six additional Node tests cover catalog uniqueness/evidence, group derivation, honest zero baseline, duplicate/unknown review IDs, toggle behavior, and immutability. The combined Flow + Shield unit suite now contains 15 tests; execution is still pending the Vercel deployment quota reset or another approved test runner.
+
+
+## Next implementation batch — planning and authorization boundaries
+
+Flow now has a deterministic, keyword-assisted starter recommender for enquiry, invoice, and daily-summary requests. It reports ambiguity rather than guessing and is explicitly labelled as a heuristic, not an AI planner. The user must load and edit the suggested starter; no workflow is generated or executed automatically. Six tests cover matches, ambiguity, and invalid input.
+
+Shield now has a pure assessment-scope guard requiring affirmative authorization, a meaningful authorization note, 1–10 exact public DNS hostnames, and an expiry within 30 days. It rejects wildcard, URL, path, and IP targets. A scope-approved record is inert: network activity is false and findings start empty. This is only an authorization data model; no scanner, DNS resolution, network request, or live assessment exists. Six tests cover the boundary conditions. Test execution remains pending; these are added tests, not reported as passing.
