@@ -670,3 +670,16 @@ h1,.brand,.composer-mode,.breadcrumb{font-family:"Space Grotesk","Manrope",sans-
 .stop-generation:hover{background:#1b2933;border-color:#c2d6df;transform:translateY(-1px)}
 .stop-generation:focus-visible{outline:2px solid #c2d6df;outline-offset:3px}
 @media(prefers-reduced-motion:reduce){.stop-generation{transition:none}}
+
+
+/* WebGL owns the live spiral galaxy. Keep the CSS spiral only as a fallback;
+   rendering both at once creates two competing focal points and visual shimmer. */
+.space-background:not(.universe-webgl-fallback) .universe-galaxy{display:none!important}
+.space-background.universe-webgl-fallback .universe-galaxy{display:block!important}
+
+/* Adaptive quality tiers: retain cinematic depth on capable phones without
+   forcing desktop pixel density or frame rate onto a mobile GPU. */
+@media(max-width:760px){
+  .space-background .universe-webgl{opacity:.68}
+  .space-background .universe-flight{opacity:.58}
+}
