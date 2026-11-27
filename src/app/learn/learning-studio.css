@@ -849,3 +849,16 @@
 .learning-revision-steps span{display:grid;gap:5px;padding:10px;border:1px solid #403650;border-radius:10px;background:#171321;color:#bdb1ce;font-size:10px;line-height:1.5}
 .learning-revision-steps b{color:#d8c2ff;font-size:10px}
 @media(max-width:640px){.learning-revision-steps{grid-template-columns:1fr}}
+
+
+/* Aahana's universe is the shared environment for Student Mode too.
+   Keep this layer atmospheric and behind the existing learning controls. */
+.learning-page{position:relative;isolation:isolate;background:radial-gradient(ellipse at 78% 5%,#33254d 0%,transparent 34%),radial-gradient(ellipse at 8% 38%,#20253d 0%,transparent 36%),#08070f}
+.learning-page::before,.learning-page::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none}
+.learning-page::before{background-image:radial-gradient(1px 1px at 8% 14%,#fff 98%,transparent),radial-gradient(1px 1px at 24% 68%,#d8c5ff 98%,transparent),radial-gradient(2px 2px at 47% 31%,#fff 98%,transparent),radial-gradient(1px 1px at 72% 19%,#cbb5ff 98%,transparent),radial-gradient(1px 1px at 88% 74%,#fff 98%,transparent),radial-gradient(1px 1px at 94% 42%,#d8c5ff 98%,transparent),radial-gradient(ellipse at 18% 25%,#7652b52b 0%,transparent 36%),radial-gradient(ellipse at 84% 76%,#5369b22b 0%,transparent 40%);background-size:310px 270px,370px 330px,440px 390px,290px 340px,410px 300px,350px 420px,100% 100%,100% 100%;opacity:.7;animation:learning-cosmos-drift 115s linear infinite}
+.learning-page::after{inset:-22%;background:repeating-conic-gradient(from 12deg at 50% 48%,#fff0 0deg,#cbb5ff12 5deg,#fff0 12deg,#9f8cdd0d 20deg,#fff0 31deg);mask-image:radial-gradient(ellipse at center,transparent 0%,#000 24%,#000 49%,transparent 74%);filter:blur(8px) drop-shadow(0 0 32px #a98be822);opacity:.44;transform:perspective(1000px) rotateX(66deg) rotateZ(-20deg);animation:learning-galaxy-turn 150s linear infinite}
+.learning-header,.learning-hero,.learning-profile,.learning-modes,.learning-session,.learning-discovery,.learning-3d-world,.learning-page>section{position:relative;z-index:1}
+@keyframes learning-cosmos-drift{from{background-position:0 0,0 0,0 0,0 0,0 0,0 0,center,center}to{background-position:-90px 60px,70px -80px,-60px 40px,55px 75px,-45px -65px,80px -40px,center,center}}
+@keyframes learning-galaxy-turn{from{rotate:0deg}to{rotate:360deg}}
+@media(max-width:760px){.learning-page::before{opacity:.5;background-size:260px 240px,300px 280px,360px 330px,250px 290px,320px 260px,280px 340px,100% 100%,100% 100%}.learning-page::after{inset:-8%;opacity:.3;filter:blur(11px)}}
+@media(prefers-reduced-motion:reduce){.learning-page::before,.learning-page::after{animation-duration:240s}}

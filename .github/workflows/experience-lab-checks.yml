@@ -17,6 +17,7 @@ on:
     paths:
       - "src/app/experience-lab/**"
       - "src/app/universe-lab/**"
+      - "src/app/learn/**"
       - "src/app/api/build/**"
       - "src/app/api/chat/**"
       - "src/app/api/files/**"
