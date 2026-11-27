@@ -40,13 +40,12 @@ alter table public.aahana_video_jobs enable row level security;
 create policy "Owners can read their own video jobs"
   on public.aahana_video_jobs for select to authenticated
   using ((select auth.uid()) = owner_id);
-create policy "Owners can create their own video jobs"
-  on public.aahana_video_jobs for insert to authenticated
-  with check ((select auth.uid()) = owner_id and state = 'queued' and revision = 1 and attempt = 0 and progress = 0);
-create policy "Owners can update their own video jobs"
-  on public.aahana_video_jobs for update to authenticated
-  using ((select auth.uid()) = owner_id)
-  with check ((select auth.uid()) = owner_id);
+-- Authenticated users are read-only. Job creation and worker lifecycle
+-- transitions are performed only by trusted server-side code using the
+-- service_role credential, which must never be exposed to a browser.
+revoke all on public.aahana_video_jobs from anon, authenticated;
+grant select on public.aahana_video_jobs to authenticated;
+grant select, insert, update on public.aahana_video_jobs to service_role;
 
 create or replace function public.guard_aahana_video_job_transition()
 returns trigger
@@ -131,4 +130,46 @@ create trigger aahana_video_jobs_transition_guard
   before insert or update on public.aahana_video_jobs
   for each row execute function public.guard_aahana_video_job_transition();
 
-grant select, insert, update on public.aahana_video_jobs to authenticated;
+-- Users may cancel only their own queued/running job. This narrow SECURITY
+-- DEFINER function is the sole authenticated write path; all other writes
+-- remain restricted to trusted server-side workers.
+create or replace function public.cancel_aahana_video_job(p_job_id text)
+returns public.aahana_video_jobs
+language plpgsql
+security definer
+set search_path = ''
+as $
+declare
+  v_owner_id uuid := auth.uid();
+  v_job public.aahana_video_jobs;
+  v_now timestamptz := clock_timestamp();
+begin
+  if v_owner_id is null then
+    raise exception 'authentication required' using errcode = '42501';
+  end if;
+
+  select * into v_job
+    from public.aahana_video_jobs
+    where job_id = p_job_id and owner_id = v_owner_id
+    for update;
+
+  if not found then
+    return null;
+  end if;
+
+  if v_job.state in ('queued', 'running') then
+    update public.aahana_video_jobs
+      set state = 'cancelled',
+          revision = revision + 1,
+          updated_at = greatest(v_now, updated_at),
+          completed_at = greatest(v_now, updated_at)
+      where job_id = p_job_id and owner_id = v_owner_id
+      returning * into v_job;
+  end if;
+
+  return v_job;
+end;
+$;
+
+revoke all on function public.cancel_aahana_video_job(text) from public, anon;
+grant execute on function public.cancel_aahana_video_job(text) to authenticated;
