@@ -528,22 +528,24 @@ export default function UniverseScene() {
     // the same 3D scene on independent, gently varied trajectories.
     const travellers = [];
     const astronautSuit = new THREE.MeshStandardMaterial({ color: 0xe7e1d2, roughness: 0.72, metalness: 0.12 });
-    const astronautTrim = new THREE.MeshStandardMaterial({ color: 0x3d7180, roughness: 0.48, metalness: 0.28, emissive: 0x10262c });
-    const visorMaterial = new THREE.MeshPhysicalMaterial({ color: 0x142331, metalness: 0.82, roughness: 0.11, clearcoat: 1, clearcoatRoughness: 0.035, emissive: 0x173746, emissiveIntensity: 0.16 });
+    const astronautTrim = new THREE.MeshStandardMaterial({ color: 0x40365d, roughness: 0.48, metalness: 0.28, emissive: 0x17112a });
+    const visorMaterial = new THREE.MeshPhysicalMaterial({ color: 0x1b2434, metalness: 0.82, roughness: 0.11, clearcoat: 1, clearcoatRoughness: 0.035, emissive: 0x2a2148, emissiveIntensity: 0.16 });
     const createAstronaut = (scale = 1) => {
       const g = new THREE.Group();
+      const motionArms = [];
+      const motionLegs = [];
       const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.19, 0.34, 5, 10), astronautSuit);
       torso.position.y = -0.03; g.add(torso);
-      const chestPanel = new THREE.Mesh(new THREE.BoxGeometry(0.19, 0.16, 0.035), new THREE.MeshStandardMaterial({ color: 0x263b42, roughness: 0.42, metalness: 0.38 }));
+      const chestPanel = new THREE.Mesh(new THREE.BoxGeometry(0.19, 0.16, 0.035), new THREE.MeshStandardMaterial({ color: 0x2b2738, roughness: 0.42, metalness: 0.38 }));
       chestPanel.position.set(0, 0.015, 0.17); g.add(chestPanel);
-      const chestGlass = new THREE.Mesh(new THREE.BoxGeometry(0.115, 0.062, 0.012), new THREE.MeshPhysicalMaterial({ color: 0x78c6cf, emissive: 0x245b63, emissiveIntensity: 0.42, roughness: 0.2, metalness: 0.35, clearcoat: 1 }));
+      const chestGlass = new THREE.Mesh(new THREE.BoxGeometry(0.115, 0.062, 0.012), new THREE.MeshPhysicalMaterial({ color: 0xbca6ff, emissive: 0x6550a5, emissiveIntensity: 0.34, roughness: 0.2, metalness: 0.35, clearcoat: 1 }));
       chestGlass.position.set(0, 0.04, 0.192); g.add(chestGlass);
       const chestIndicator = new THREE.Mesh(new THREE.SphereGeometry(0.018, 10, 8), new THREE.MeshBasicMaterial({ color: 0xffc879 }));
       chestIndicator.position.set(0.066, -0.025, 0.194); g.add(chestIndicator);
       const packTank = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.052, 0.28, 16), astronautTrim);
       packTank.rotation.z = Math.PI / 2;
       packTank.position.set(0, -0.015, -0.22); g.add(packTank);
-      const visorGlint = new THREE.Mesh(new THREE.SphereGeometry(0.06, 16, 12), new THREE.MeshBasicMaterial({ color: 0xb8e5e8, transparent: true, opacity: 0.24 }));
+      const visorGlint = new THREE.Mesh(new THREE.SphereGeometry(0.06, 16, 12), new THREE.MeshBasicMaterial({ color: 0xf4e8d5, transparent: true, opacity: 0.24 }));
       visorGlint.scale.set(0.72, 0.22, 0.12);
       visorGlint.position.set(-0.045, 0.365, 0.19); g.add(visorGlint);
       const helmet = new THREE.Mesh(new THREE.SphereGeometry(0.19, 24, 18), astronautSuit);
@@ -555,24 +557,29 @@ export default function UniverseScene() {
       for (const side of [-1, 1]) {
         const arm = new THREE.Mesh(new THREE.CapsuleGeometry(0.055, 0.22, 4, 8), astronautSuit);
         arm.position.set(side * 0.23, 0.02, 0); arm.rotation.z = side * -0.48; g.add(arm);
+        motionArms.push({ mesh: arm, base: arm.rotation.z, side });
         const glove = new THREE.Mesh(new THREE.SphereGeometry(0.066, 16, 12), astronautSuit);
         glove.scale.set(0.9, 0.82, 0.9); glove.position.set(side * 0.34, -0.105, 0.015); g.add(glove);
         const wristSeal = new THREE.Mesh(new THREE.CylinderGeometry(0.061, 0.061, 0.055, 16), astronautTrim);
         wristSeal.position.set(side * 0.31, -0.045, 0.01); wristSeal.rotation.z = side * -0.48; g.add(wristSeal);
         const leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.065, 0.2, 4, 8), astronautSuit);
         leg.position.set(side * 0.09, -0.34, 0.015); leg.rotation.z = side * 0.08; g.add(leg);
+        motionLegs.push({ mesh: leg, base: leg.rotation.z, side });
         const boot = new THREE.Mesh(new THREE.SphereGeometry(0.075, 12, 10), astronautTrim);
         boot.scale.set(1, 0.65, 1.25); boot.position.set(side * 0.09, -0.49, 0.045); g.add(boot);
       }
-      const shoulderLight = new THREE.PointLight(0x8ed4e4, 0.38, 1.8);
+      const shoulderLight = new THREE.PointLight(0xcbb5ff, 0.38, 1.8);
       shoulderLight.position.set(0, 0.12, 0.2); g.add(shoulderLight);
+      g.userData.motionParts = { kind: "astronaut", arms: motionArms, legs: motionLegs, chestIndicator };
       g.scale.setScalar(scale);
       return g;
     };
     const createFriendlyAlien = (scale = 1) => {
       const g = new THREE.Group();
-      const skin = new THREE.MeshStandardMaterial({ color: 0x8ec9bd, roughness: 0.48, metalness: 0.04, emissive: 0x173d3a, emissiveIntensity: 0.12 });
+      const skin = new THREE.MeshStandardMaterial({ color: 0x91b7a5, roughness: 0.48, metalness: 0.04, emissive: 0x243b2c, emissiveIntensity: 0.12 });
       const dark = new THREE.MeshPhysicalMaterial({ color: 0x10182b, roughness: 0.12, metalness: 0.22, clearcoat: 1 });
+      const motionEyes = [];
+      const motionArms = [];
       const body = new THREE.Mesh(new THREE.SphereGeometry(0.15, 20, 16), skin);
       body.scale.set(0.82, 1.2, 0.72); body.position.y = -0.12; g.add(body);
       const head = new THREE.Mesh(new THREE.SphereGeometry(0.23, 24, 18), skin);
@@ -580,15 +587,18 @@ export default function UniverseScene() {
       for (const side of [-1, 1]) {
         const eye = new THREE.Mesh(new THREE.SphereGeometry(0.055, 16, 12), dark);
         eye.scale.set(0.78, 1.15, 0.42); eye.position.set(side * 0.085, 0.2, 0.174); g.add(eye);
+        motionEyes.push({ mesh: eye, baseY: eye.scale.y });
         const glint = new THREE.Mesh(new THREE.SphereGeometry(0.012, 8, 8), new THREE.MeshBasicMaterial({ color: 0xd9f5ff }));
         glint.position.set(side * 0.085 - 0.012, 0.22, 0.197); g.add(glint);
         const arm = new THREE.Mesh(new THREE.CapsuleGeometry(0.035, 0.15, 4, 8), skin);
         arm.position.set(side * 0.17, -0.1, 0); arm.rotation.z = side * -0.55; g.add(arm);
+        motionArms.push({ mesh: arm, base: arm.rotation.z, side });
       }
       const antenna = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.012, 0.12, 8), skin);
       antenna.position.set(0, 0.46, 0); g.add(antenna);
-      const tip = new THREE.Mesh(new THREE.SphereGeometry(0.035, 12, 10), new THREE.MeshBasicMaterial({ color: 0xb9f5e9 }));
+      const tip = new THREE.Mesh(new THREE.SphereGeometry(0.035, 12, 10), new THREE.MeshBasicMaterial({ color: 0xffd39b }));
       tip.position.set(0, 0.53, 0); g.add(tip);
+      g.userData.motionParts = { kind: "alien", eyes: motionEyes, arms: motionArms, antenna, tip };
       g.scale.setScalar(scale);
       return g;
     };
@@ -902,6 +912,25 @@ export default function UniverseScene() {
           if (object.position.z > 5) object.position.z -= rangeZ;
           object.rotation.y += 0.0018 * delta;
           object.rotation.z += Math.sin(t * 0.8) * 0.0007 * delta;
+          const motion = object.userData.motionParts;
+          if (motion?.kind === "astronaut") {
+            const salute = Math.pow(Math.max(0, Math.sin(t * 0.31 + phase)), 10);
+            motion.arms.forEach(({ mesh, base, side }) => {
+              mesh.rotation.z = base + Math.sin(t * 1.15 + phase + side) * 0.16 + (side > 0 ? salute * 0.92 : 0);
+            });
+            motion.legs.forEach(({ mesh, base, side }) => {
+              mesh.rotation.z = base + Math.sin(t * 1.3 + phase + side * 0.8) * 0.12;
+            });
+            motion.chestIndicator.material.color.setHSL(0.11 + Math.sin(t * 1.8) * 0.025, 0.72, 0.64);
+          } else if (motion?.kind === "alien") {
+            const blink = Math.pow(Math.max(0, Math.sin(t * 0.72 + phase)), 28);
+            motion.eyes.forEach(({ mesh, baseY }) => { mesh.scale.y = baseY * (1 - blink * 0.88); });
+            motion.arms.forEach(({ mesh, base, side }) => {
+              mesh.rotation.z = base + Math.sin(t * 1.35 + phase + side) * 0.2;
+            });
+            motion.antenna.rotation.z = Math.sin(t * 0.9 + phase) * 0.16;
+            motion.tip.material.color.setHSL(0.1 + Math.sin(t * 1.4 + phase) * 0.025, 0.72, 0.68);
+          }
         });
         blackHole.rotation.z += 0.00018 * delta;
         accretionMaterials.forEach((material) => { material.uniforms.uTime.value = time; });
