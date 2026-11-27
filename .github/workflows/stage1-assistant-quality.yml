@@ -7,6 +7,9 @@ on:
       - stage-1/five-dimension-evaluation
     paths:
       - "src/lib/ai/assistant-evaluation.*"
+      - "src/lib/ai/system-prompt.*"
+      - "src/app/api/chat/route.js"
+      - "scripts/run-assistant-evaluation.mjs"
       - "src/lib/learning/quiz-bank-policy.*"
       - "src/lib/learning/learner-progress-policy.*"
       - "src/app/interaction-accessibility.test.mjs"
