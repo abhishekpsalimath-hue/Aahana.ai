@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Mini3DModel } from "./interactive-3d-world";
+import { normalizeLearningMedia } from "@/lib/learning/learning-media-policy.mjs";
 
 const visualTypes = new Set(["counter-board", "shape-explorer", "pattern-builder", "fraction", "orbit", "water-cycle", "plant-growth", "number-line", "molecule", "concept-map", "timeline", "bar-chart", "anatomy", "circuit", "code-flow", "sound-wave", "map", "3d-solar-system", "3d-planet", "3d-molecule", "3d-atom", "3d-dna", "3d-geometry", "3d-terrain", "3d-plant-cell", "3d-heart", "3d-pyramid", "3d-ecosystem", "3d-engine", "3d-cart", "3d-bridge"]);
 
@@ -40,7 +41,7 @@ export function readMotionLesson(content) {
       typeof scene.challenge.explanation === "string" && scene.challenge.explanation.trim() && scene.challenge.explanation.length <= 500
     );
     if (scenes.length !== value.scenes.length) return null;
-    return { title: value.title.slice(0, 100), scenes };
+    return { title: value.title.slice(0, 100), scenes: scenes.map((scene) => ({ ...scene, media: normalizeLearningMedia(scene.media) })) };
   } catch {
     return null;
   }
@@ -297,6 +298,16 @@ export default function AnimatedLesson({ content, topic = "", memoryEnabled = fa
       {showSupport && <p className="motion-support-explanation">{scene.support.explanation}</p>}
     </div>
     <p className="motion-narration">{scene.narration}</p>
+    {scene.media && <div className="motion-learning-media" aria-label="Additional learning media">
+      {scene.media.images.map((image) => <figure className="motion-learning-image" key={image.url}>
+        <img src={image.url} alt={image.alt} loading="lazy" decoding="async" referrerPolicy="no-referrer" />
+        {(image.caption || image.source) && <figcaption>{image.caption}{image.source ? <span>Source: {image.source}</span> : null}</figcaption>}
+      </figure>)}
+      {scene.media.video && <figure className="motion-learning-video">
+        <div className="motion-learning-video-frame"><iframe src={scene.media.video.url} title={scene.media.video.title} loading="lazy" referrerPolicy="strict-origin-when-cross-origin" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowFullScreen sandbox="allow-scripts allow-same-origin allow-presentation" /></div>
+        <figcaption>{scene.media.video.title}{scene.media.video.source ? <span>Source: {scene.media.video.source}</span> : null}</figcaption>
+      </figure>}
+    </div>}
     <div className="motion-action"><strong>Explore:</strong> {scene.action}</div>
     <div className="motion-prediction" aria-live="polite">
       <strong>{challenge.question}</strong>
