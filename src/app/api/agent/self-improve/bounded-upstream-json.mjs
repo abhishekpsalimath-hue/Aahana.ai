@@ -14,7 +14,7 @@ export async function readBoundedUpstreamJson(response, maxBytes = MAX_AGENT_UPS
 
   const declaredLength = response.headers?.get?.("content-length");
   if (declaredLength != null) {
-    if (!/^\\d+$/.test(declaredLength.trim())) {
+    if (!/^\d+$/.test(declaredLength.trim())) {
       throw upstreamError("Invalid upstream content length.", "INVALID_LENGTH");
     }
     if (Number(declaredLength) > maxBytes) {
