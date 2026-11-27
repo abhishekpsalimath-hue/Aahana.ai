@@ -919,6 +919,10 @@ export default function Interactive3DWorld({ selectedPlanet, onSelectedPlanetCha
   const selectedPlanetInfo = solarPlanets.find((item) => item.id === selectedPlanet) || null;
   const displayedTitle = selectedPlanetInfo ? selectedPlanetInfo.label : model.label;
   const displayedDescription = selectedPlanetInfo ? selectedPlanetInfo.description : model.description;
+  const concepts = modelExplorations[modelId] || [{ title: "Observe", question: "What details can you notice as you rotate this model?", explanation: model.description }];
+  const activeConceptIndex = Math.min(conceptIndex, concepts.length - 1);
+  const activeConcept = concepts[activeConceptIndex];
+
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -1077,12 +1081,16 @@ export default function Interactive3DWorld({ selectedPlanet, onSelectedPlanetCha
             <button type="button" onClick={() => setEcosystem({ rainfall: "regular", waterSource: true, pollution: false })}>Reset experiment</button>
           </div>}
           <div className="learning-3d-concept-panel" aria-live="polite">
-            <span>DISCOVERY GUIDE</span>
+            <span>DISCOVERY GUIDE · STEP {activeConceptIndex + 1} OF {concepts.length}</span>
             <div className="learning-3d-concept-tabs">
-              {(modelExplorations[modelId] || [{ title: "Observe", question: "What details can you notice as you rotate this model?", explanation: model.description }]).map((concept, index) => <button type="button" key={concept.title} className={conceptIndex === index ? "active" : ""} onClick={() => setConceptIndex(index)} aria-pressed={conceptIndex === index}>{concept.title}</button>)}
+              {concepts.map((concept, index) => <button type="button" key={concept.title} className={activeConceptIndex === index ? "active" : ""} onClick={() => setConceptIndex(index)} aria-pressed={activeConceptIndex === index}>{concept.title}</button>)}
             </div>
-            <strong>{(modelExplorations[modelId] || [{ question: "What details can you notice as you rotate this model?", explanation: model.description }])[conceptIndex]?.question}</strong>
-            <p>{(modelExplorations[modelId] || [{ question: "What details can you notice as you rotate this model?", explanation: model.description }])[conceptIndex]?.explanation}</p>
+            <strong>{activeConcept.question}</strong>
+            <p>{activeConcept.explanation}</p>
+            <div className="learning-3d-concept-tabs" role="group" aria-label="Guided discovery steps">
+              <button type="button" disabled={activeConceptIndex === 0} onClick={() => setConceptIndex((index) => Math.max(0, index - 1))}>Previous step</button>
+              <button type="button" disabled={activeConceptIndex === concepts.length - 1} onClick={() => setConceptIndex((index) => Math.min(concepts.length - 1, index + 1))}>Next step</button>
+            </div>
           </div>
           <div className="learning-3d-model-list" aria-label="Choose a 3D model">
             {models.map((item) => <button type="button" key={item.id} className={item.id === modelId ? "active" : ""} onClick={() => { setModelId(item.id); setSelectedPlanet(null); setConceptIndex(0); setRotation({ yaw: -.55, pitch: -.22 }); setZoom(1); }} aria-pressed={item.id === modelId}>{item.label}</button>)}
