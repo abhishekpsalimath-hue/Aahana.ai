@@ -1092,15 +1092,15 @@ export default function UniverseScene() {
         swayY: 0.10 + Math.random() * 0.28,
       });
     };
-    registerDepthDrifter(galaxy, 0.0022, -66, 18);
-    registerDepthDrifter(distantGalaxy, 0.00155, -82, 18);
-    planets.forEach((planet, index) => registerDepthDrifter(planet, 0.0030 + index * 0.00034, -64, 18));
-    registerDepthDrifter(blackHole, 0.00185, -78, 18);
-    registerDepthDrifter(asteroidBelt, 0.0038, -62, 18);
-    registerDepthDrifter(miniatureSystem, 0.00265, -72, 18);
-    registerDepthDrifter(comet, 0.0052, -66, 18, true);
-    registerDepthDrifter(wormhole, 0.0019, -84, 18);
-    registerDepthDrifter(supernova, 0.0017, -86, 18);
+    registerDepthDrifter(galaxy, 0.018, -66, 18);
+    registerDepthDrifter(distantGalaxy, 0.014, -82, 18);
+    planets.forEach((planet, index) => registerDepthDrifter(planet, 0.024 + index * 0.0027, -64, 18));
+    registerDepthDrifter(blackHole, 0.017, -78, 18);
+    registerDepthDrifter(asteroidBelt, 0.035, -62, 18);
+    registerDepthDrifter(miniatureSystem, 0.024, -72, 18);
+    registerDepthDrifter(comet, 0.05, -66, 18, true);
+    registerDepthDrifter(wormhole, 0.018, -84, 18);
+    registerDepthDrifter(supernova, 0.016, -86, 18);
 
     // Reuse scratch objects and initialize shader lighting before the first
     // render, including the reduced-motion path where the animation loop is idle.
