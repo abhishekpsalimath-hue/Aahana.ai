@@ -27,6 +27,8 @@ on:
       - "src/lib/build/**"
       - "src/lib/chat/**"
       - "src/lib/creative/**"
+      - "src/lib/automations/**"
+      - "src/lib/entitlements/**"
       - ".github/workflows/experience-lab-checks.yml"
       - "package.json"
   push:
