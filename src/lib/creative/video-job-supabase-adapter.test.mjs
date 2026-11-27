@@ -163,14 +163,19 @@ test("rejects a mismatched owner in a database row returned despite owner filter
   await assert.rejects(adapter.getOwned(job.ownerId, job.id), /mismatched identity/);
 });
 
-test("allows queued cancellation before a worker starts", async () => {
+test("allows queued cancellation before a worker starts through a guarded CAS transition", async () => {
   const adapter = createSupabaseVideoJobAdapter(fakeClient());
+  await adapter.insertIfAbsent({
+    ownerId: job.ownerId, idempotencyKey: job.idempotencyKey, job, revision: 1,
+  });
   const cancelled = {
     ...job, state: "cancelled", updatedAt: 1100, completedAt: 1100,
   };
-  const result = await adapter.insertIfAbsent({
-    ownerId: job.ownerId, idempotencyKey: job.idempotencyKey, job: cancelled, revision: 1,
+  const result = await adapter.compareAndSwap({
+    ownerId: job.ownerId, jobId: job.id, expectedRevision: 1,
+    nextRecord: { revision: 2, job: cancelled },
   });
+  assert.equal(result.updated, true);
   assert.equal(result.record.job.state, "cancelled");
   assert.equal(result.record.job.startedAt, null);
 });
