@@ -44,7 +44,7 @@ async function readBoundedGitHubResponse(response, maxBytes = MAX_GITHUB_RESPONS
       if (!(value instanceof Uint8Array)) throw new Error("GitHub returned an invalid response stream.");
       total += value.byteLength;
       if (total > maxBytes) {
-        try { await reader.cancel(); } catch {}
+        // The shared catch path cancels the reader exactly once before rethrowing.
         throw new Error("GitHub response exceeded the safe size limit.");
       }
       chunks.push(value);
