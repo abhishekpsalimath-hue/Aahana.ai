@@ -714,3 +714,6 @@ h1,.brand,.composer-mode,.breadcrumb{font-family:"Space Grotesk","Manrope",sans-
 .stop-generation:hover{background:#1b2933;border-color:#c2d6df;transform:translateY(-1px)}
 .stop-generation:focus-visible{outline:2px solid #c2d6df;outline-offset:3px}
 @media(prefers-reduced-motion:reduce){.stop-generation{transition:none}}
+
+.business-link{border:1px solid #302a3b;border-radius:9px;background:#15141c}
+@media(max-width:760px){.sidebar{flex-wrap:wrap;row-gap:9px}.business-link{display:flex;flex:1 1 calc(50% - 8px);justify-content:center;margin:0;padding:9px 8px;font-size:10px;background:#15141c;border:1px solid #302a3b;border-radius:9px}}
