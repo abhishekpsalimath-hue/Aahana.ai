@@ -101,3 +101,8 @@ Prices, plan limits, taxes, payment provider, and trial conversion rules must be
 - No changes to existing user data, existing auth, Supabase settings, secrets, billing, provider credentials, migrations, deployment workflows, or Student Mode without separate explicit approval.
 - Keep all new work isolated behind a feature branch and draft pull request.
 - Do not represent prototypes, mock data, or untested checks as working production security or automation.
+
+
+## Implementation progress — isolated development branch
+
+The first workspace prototype batch now includes authenticated `/flow` and `/shield` routes, business navigation links, three sample Flow templates, a local-only dry-run preview, and a Shield checklist with control-specific evidence examples. Flow has a pure workflow-definition validator with a fixed operation allowlist, unique step IDs, a 30-step cap, trigger/approval ordering rules, mandatory human approval for outbound/notification operations, and a dry-run plan that explicitly produces no external side effects. Nine Node tests cover valid and invalid definitions, unsafe operations, duplicate IDs, approval requirements, size limits, and dry-run behavior. Shield starts with zero controls marked reviewed and does not claim to scan or verify live infrastructure. These prototypes do not yet persist data to an account, connect providers, execute workflows, or perform live security checks. Test execution and fresh preview QA remain pending because Vercel returned a build-rate-limit response for the latest branch commit.
