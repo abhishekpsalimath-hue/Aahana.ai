@@ -993,16 +993,30 @@ export default function UniverseScene() {
     // Preserve 20,000 forward-travelling stars on desktop, 10,000 on capable phones, and a bounded 6,000 on constrained devices.
     const nearStarCount = lowPower ? 6000 : compact ? 10000 : 20000;
     const nearStarPositions = new Float32Array(nearStarCount * 3);
+    const nearStarColors = new Float32Array(nearStarCount * 3);
     const nearStarSpeeds = new Float32Array(nearStarCount);
+    const nearStarPalette = [
+      new THREE.Color(0xffffff),
+      new THREE.Color(0xd9c8ff),
+      new THREE.Color(0xa9c5ef),
+      new THREE.Color(0xffe0bd),
+      new THREE.Color(0xe9d8e8),
+    ];
     for (let i = 0; i < nearStarCount; i++) {
       nearStarPositions[i * 3] = (Math.random() - 0.5) * 26;
       nearStarPositions[i * 3 + 1] = (Math.random() - 0.5) * 17;
       nearStarPositions[i * 3 + 2] = -Math.random() * 65;
       nearStarSpeeds[i] = 0.025 + Math.random() * 0.075;
+      const color = nearStarPalette[Math.floor(Math.random() * nearStarPalette.length)];
+      const brightness = 0.58 + Math.random() * 0.42;
+      nearStarColors[i * 3] = color.r * brightness;
+      nearStarColors[i * 3 + 1] = color.g * brightness;
+      nearStarColors[i * 3 + 2] = color.b * brightness;
     }
     const nearStarGeometry = new THREE.BufferGeometry();
     nearStarGeometry.setAttribute("position", new THREE.BufferAttribute(nearStarPositions, 3));
-    const nearStars = new THREE.Points(nearStarGeometry, new THREE.PointsMaterial({ color: 0xe4dfcf, size: lowPower ? 0.045 : 0.06, transparent: true, opacity: 0.68, blending: THREE.AdditiveBlending, depthWrite: false }));
+    nearStarGeometry.setAttribute("color", new THREE.BufferAttribute(nearStarColors, 3));
+    const nearStars = new THREE.Points(nearStarGeometry, new THREE.PointsMaterial({ color: 0xffffff, size: lowPower ? 0.045 : 0.06, vertexColors: true, transparent: true, opacity: 0.72, blending: THREE.AdditiveBlending, depthWrite: false }));
     scene.add(nearStars);
 
     // Reuse scratch objects and initialize shader lighting before the first
@@ -1185,16 +1199,16 @@ export default function UniverseScene() {
         updatePlanetLightDirections();
         const easing = 1 - Math.pow(1 - 0.012, delta);
         const flight = time * 0.000085;
-        const cameraTargetX = pointer.x * 0.34 + Math.sin(flight) * 0.12;
-        const cameraTargetY = -pointer.y * 0.22 + Math.cos(flight * 0.73) * 0.08;
+        const cameraTargetX = pointer.x * 0.46 + Math.sin(flight) * 0.24 + Math.sin(flight * 0.37) * 0.08;
+        const cameraTargetY = -pointer.y * 0.3 + Math.cos(flight * 0.73) * 0.15 + Math.sin(flight * 0.41) * 0.05;
         camera.position.x += (cameraTargetX - camera.position.x) * easing;
         camera.position.y += (cameraTargetY - camera.position.y) * easing;
         // A restrained forward/backward camera drift makes the scene feel like
         // a continuous journey through depth instead of a static 3D wallpaper.
-        const cameraDepth = 15.5 + Math.sin(flight * 0.62) * 0.34;
+        const cameraDepth = 15.5 + Math.sin(flight * 0.62) * 0.52 + Math.sin(flight * 0.29) * 0.16;
         camera.position.z += (cameraDepth - camera.position.z) * easing;
-        world.position.x = Math.sin(flight * 0.82) * 0.12;
-        world.position.y = Math.cos(flight * 0.68) * 0.08;
+        world.position.x = Math.sin(flight * 0.82) * 0.2;
+        world.position.y = Math.cos(flight * 0.68) * 0.13;
         stars.material.opacity = 0.72 + Math.sin(time * 0.00042) * 0.055;
         galaxyStars.material.opacity = 0.76 + Math.sin(time * 0.00031 + 1.4) * 0.07;
         camera.lookAt(0, 0, -2.6);
