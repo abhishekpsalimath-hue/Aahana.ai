@@ -1084,6 +1084,8 @@ export default function UniverseScene() {
         maxZ,
         baseX: object.position.x,
         baseY: object.position.y,
+        originX: object.position.x,
+        originY: object.position.y,
         preserveXY,
         phase: Math.random() * Math.PI * 2,
         swayX: 0.16 + Math.random() * 0.42,
@@ -1270,8 +1272,8 @@ export default function UniverseScene() {
             // Recycle only after the object has passed behind the camera.
             // Stagger its next appearance and trajectory deep in the distance.
             object.position.z = minZ - Math.random() * 12;
-            drifter.baseX += (Math.random() - 0.5) * 7.5;
-            drifter.baseY += (Math.random() - 0.5) * 4.8;
+            drifter.baseX = drifter.originX + (Math.random() - 0.5) * 7.5;
+            drifter.baseY = drifter.originY + (Math.random() - 0.5) * 4.8;
             drifter.phase = Math.random() * Math.PI * 2;
           }
         });
