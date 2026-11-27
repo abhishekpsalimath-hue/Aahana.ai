@@ -324,6 +324,7 @@ export default function UniverseScene() {
       blending: THREE.AdditiveBlending,
       uniforms: { uTime: { value: 0 } },
       vertexShader: `
+        attribute vec3 color;
         attribute float aSize;
         attribute float aPhase;
         varying vec3 vColor;
@@ -1032,6 +1033,9 @@ export default function UniverseScene() {
           }
         }
         nebulaMaterial.uniforms.uTime.value = time;
+        dustMaterial.uniforms.uTime.value = time;
+        interstellarDust.rotation.y += 0.000012 * delta;
+        interstellarDust.rotation.z += 0.000006 * delta;
         stars.rotation.y += 0.000035 * delta;
         stars.rotation.x += 0.000012 * delta;
         galaxy.rotation.y += 0.000055 * delta;
