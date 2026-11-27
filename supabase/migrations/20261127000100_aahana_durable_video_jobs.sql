@@ -138,7 +138,7 @@ returns public.aahana_video_jobs
 language plpgsql
 security definer
 set search_path = ''
-as $
+as $$
 declare
   v_owner_id uuid := auth.uid();
   v_job public.aahana_video_jobs;
@@ -169,7 +169,7 @@ begin
 
   return v_job;
 end;
-$;
+$$;
 
 revoke all on function public.cancel_aahana_video_job(text) from public, anon;
 grant execute on function public.cancel_aahana_video_job(text) to authenticated;
