@@ -755,6 +755,54 @@ export default function UniverseScene() {
     blackHole.position.set(6.8, -3.8, -20);
     const singularity = new THREE.Mesh(new THREE.SphereGeometry(1.08, 40, 32), new THREE.MeshBasicMaterial({ color: 0x020106 }));
     blackHole.add(singularity);
+    // A restrained star-field distortion behind the event horizon hints at
+    // gravitational lensing: background points bend around the shadow instead
+    // of the black hole reading as a flat glowing ring.
+    const lensingFieldMaterial = new THREE.ShaderMaterial({
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      uniforms: { uTime: { value: 0 } },
+      vertexShader: `
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        varying vec2 vUv;
+        uniform float uTime;
+        float hash(vec2 p) {
+          return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+        }
+        void main() {
+          vec2 p = (vUv - 0.5) * vec2(1.45, 1.0);
+          float radius = length(p);
+          vec2 direction = p / max(radius, 0.0001);
+          float bend = min(0.42, 0.105 / (radius * radius + 0.025));
+          vec2 warped = p + direction * bend;
+          vec2 grid = warped * vec2(92.0, 68.0);
+          vec2 cell = floor(grid);
+          vec2 local = fract(grid) - 0.5;
+          float seed = hash(cell);
+          vec2 offset = vec2(hash(cell + 13.7), hash(cell + 47.2)) - 0.5;
+          float point = 1.0 - smoothstep(0.012, 0.065, length(local - offset * 0.72));
+          float star = point * smoothstep(0.982, 0.998, seed);
+          float visible = smoothstep(0.12, 0.25, radius);
+          float arc = exp(-pow((radius - 0.34) * 42.0, 2.0)) * 0.08;
+          float shimmer = 0.82 + 0.18 * sin(uTime * 0.0005 + seed * 22.0);
+          vec3 color = mix(vec3(0.58, 0.48, 0.82), vec3(1.0, 0.88, 0.72), seed);
+          float alpha = (star * 0.72 + arc) * visible * shimmer;
+          if (alpha < 0.006) discard;
+          gl_FragColor = vec4(color * (0.7 + star * 0.8), alpha);
+        }
+      `,
+    });
+    const lensingField = new THREE.Mesh(new THREE.PlaneGeometry(7.2, 5.1), lensingFieldMaterial);
+    lensingField.position.z = -1.62;
+    blackHole.add(lensingField);
+
     // A turbulent, temperature-graded accretion flow replaces the flat orange
     // torus. Its uneven brightness and Doppler-biased hot side are animated in
     // the shader; this remains a real-time visual approximation, not a GR solver.
@@ -1076,6 +1124,7 @@ export default function UniverseScene() {
         });
         blackHole.rotation.z += 0.00018 * delta;
         accretionMaterials.forEach((material) => { material.uniforms.uTime.value = time; });
+        lensingFieldMaterial.uniforms.uTime.value = time;
         plasmaKnots.forEach(({ knot, angle, radius }) => {
           const a = angle + time * 0.00022;
           knot.position.set(Math.cos(a) * radius, Math.sin(a) * radius * 0.32, Math.sin(a) * radius * 0.88);
