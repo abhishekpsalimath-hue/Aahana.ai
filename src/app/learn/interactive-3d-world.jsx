@@ -218,7 +218,7 @@ function rod(group,a,b,color=0xb9c8e2,radius=.035) {
   const mesh=new THREE.Mesh(new THREE.CylinderGeometry(radius,radius,delta.length(),20),new THREE.MeshStandardMaterial({color,metalness:.45,roughness:.28}));
   mesh.position.copy(start).add(end).multiplyScalar(.5);mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),delta.normalize());group.add(mesh);return mesh;
 }
-function makeSceneModel(group,id,selectedPlanet=null,cellFocus="all") {
+function makeSceneModel(group,id,selectedPlanet=null,cellFocus="all",chemistryMolecule="water",chemistryFocus="all",chemistryShowBonds=true) {
   if(id==="planet"){
     const earth=sphere(group,[0,0,0],1,"#ffffff",{material:new THREE.MeshStandardMaterial({map:makeEarthTexture(),roughness:.86})});
     const clouds=sphere(group,[0,0,0],1.008,"#ffffff",{material:new THREE.MeshStandardMaterial({color:0xffffff,transparent:true,opacity:.13,roughness:1,wireframe:true})});
@@ -278,18 +278,63 @@ function makeSceneModel(group,id,selectedPlanet=null,cellFocus="all") {
     return;
   }
   if(id==="molecule"){
-    // Water geometry: O-H bond length 0.9572 Å and H-O-H angle 104.5°.
-    // Radii are deliberately enlarged for visibility; bond geometry is preserved.
-    const halfAngle=THREE.MathUtils.degToRad(104.5/2);
-    const bondLength=.9572;
-    const oxygen=[0,0,0];
-    const hydrogenA=[-Math.sin(halfAngle)*bondLength,-Math.cos(halfAngle)*bondLength,0];
-    const hydrogenB=[Math.sin(halfAngle)*bondLength,-Math.cos(halfAngle)*bondLength,0];
-    rod(group,oxygen,hydrogenA,0xd6e2f0,.035);
-    rod(group,oxygen,hydrogenB,0xd6e2f0,.035);
-    sphere(group,oxygen,.42,0xe45e68,{roughness:.2,metalness:.04});
-    sphere(group,hydrogenA,.33,0xf3f6fb,{roughness:.2,metalness:.02});
-    sphere(group,hydrogenB,.33,0xf3f6fb,{roughness:.2,metalness:.02});
+    // Simplified ball-and-stick teaching models. Atom radii are enlarged for visibility;
+    // positions communicate molecular geometry and are not a scale-accurate electron model.
+    const definitions = {
+      water: {
+        atoms: [
+          { role:"oxygen", position:[0,.08,0], radius:.36, color:0xe66b78 },
+          { role:"hydrogen", position:[-.68,-.43,.12], radius:.23, color:0xe9edf7 },
+          { role:"hydrogen", position:[.68,-.43,.12], radius:.23, color:0xe9edf7 },
+        ],
+        bonds:[[0,1],[0,2]],
+      },
+      carbonDioxide: {
+        atoms: [
+          { role:"oxygen", position:[-.9,0,0], radius:.27, color:0xe66b78 },
+          { role:"carbon", position:[0,0,0], radius:.31, color:0x737b8d },
+          { role:"oxygen", position:[.9,0,0], radius:.27, color:0xe66b78 },
+        ],
+        bonds:[[0,1],[1,2]],
+      },
+      methane: {
+        atoms: [
+          { role:"carbon", position:[0,0,0], radius:.32, color:0x737b8d },
+          { role:"hydrogen", position:[.72,.55,.55], radius:.2, color:0xe9edf7 },
+          { role:"hydrogen", position:[-.72,.55,-.55], radius:.2, color:0xe9edf7 },
+          { role:"hydrogen", position:[.55,-.65,-.55], radius:.2, color:0xe9edf7 },
+          { role:"hydrogen", position:[-.55,-.65,.55], radius:.2, color:0xe9edf7 },
+        ],
+        bonds:[[0,1],[0,2],[0,3],[0,4]],
+      },
+      ammonia: {
+        atoms: [
+          { role:"nitrogen", position:[0,.12,0], radius:.34, color:0x7298dc },
+          { role:"hydrogen", position:[.72,-.38,.18], radius:.2, color:0xe9edf7 },
+          { role:"hydrogen", position:[-.66,-.42,.22], radius:.2, color:0xe9edf7 },
+          { role:"hydrogen", position:[0,-.48,-.72], radius:.2, color:0xe9edf7 },
+        ],
+        bonds:[[0,1],[0,2],[0,3]],
+      },
+    };
+    const molecule = definitions[chemistryMolecule] || definitions.water;
+    if(chemistryShowBonds){
+      molecule.bonds.forEach(([from,to])=>rod(group,molecule.atoms[from].position,molecule.atoms[to].position,0xb9c8e2,.035));
+    }
+    molecule.atoms.forEach((atom)=>{
+      const selected=chemistryFocus==="all"||chemistryFocus===atom.role;
+      const material=new THREE.MeshStandardMaterial({
+        color:selected?atom.color:0x55566a,
+        roughness:.24,
+        metalness:.025,
+        emissive:selected?atom.color:0x000000,
+        emissiveIntensity:selected&&chemistryFocus!=="all"?.28:0,
+        transparent:!selected,
+        opacity:selected?1:.3,
+      });
+      const mesh=sphere(group,atom.position,atom.radius,atom.color,{material,segments:48});
+      mesh.userData.learningPart=atom.role;
+    });
     return;
   }
   if(id==="atom"){
@@ -407,7 +452,7 @@ function makeSceneModel(group,id,selectedPlanet=null,cellFocus="all") {
     return;
   }
 }
-function createThreeScene(canvas,id,selectedPlanet=null,cellFocus="all") {
+function createThreeScene(canvas,id,selectedPlanet=null,cellFocus="all",chemistryMolecule="water",chemistryFocus="all",chemistryShowBonds=true) {
   const constrainedDevice = window.matchMedia?.("(max-width: 760px)")?.matches
     || (navigator.hardwareConcurrency || 8) <= 4
     || window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
@@ -443,7 +488,7 @@ function createThreeScene(canvas,id,selectedPlanet=null,cellFocus="all") {
   const stars = addStars(scene);
   const group = new THREE.Group();
   scene.add(group);
-  makeSceneModel(group, id, selectedPlanet, cellFocus);
+  makeSceneModel(group, id, selectedPlanet, cellFocus, chemistryMolecule, chemistryFocus, chemistryShowBonds);
   // Real light/shadow response adds depth to solid models without affecting the fallback renderer.
   group.traverse((object) => {
     if (object.isMesh) {
@@ -451,7 +496,7 @@ function createThreeScene(canvas,id,selectedPlanet=null,cellFocus="all") {
       object.receiveShadow = renderer.shadowMap.enabled;
     }
   });
-  const state = { renderer, scene, camera, group, id, selectedPlanet, cellFocus, stars, width: 0, height: 0 };
+  const state = { renderer, scene, camera, group, id, selectedPlanet, cellFocus, chemistryMolecule, chemistryFocus, chemistryShowBonds, stars, width: 0, height: 0 };
   threeScenes.set(canvas,state);return state;
 }
 function clearSceneGroup(group) {
@@ -460,10 +505,10 @@ function clearSceneGroup(group) {
     if(object.material){const materials=Array.isArray(object.material)?object.material:[object.material];materials.forEach(material=>{material.map?.dispose();material.dispose();});}
   });
 }
-function renderThreeScene(canvas, id, yaw, pitch, zoom, time = 0, selectedPlanet = null, cellFocus = "all") {
+function renderThreeScene(canvas, id, yaw, pitch, zoom, time = 0, selectedPlanet = null, cellFocus = "all", chemistryMolecule = "water", chemistryFocus = "all", chemistryShowBonds = true) {
   let state = threeScenes.get(canvas);
   if (!state) {
-    state = createThreeScene(canvas, id, selectedPlanet, cellFocus);
+    state = createThreeScene(canvas, id, selectedPlanet, cellFocus, chemistryMolecule, chemistryFocus, chemistryShowBonds);
     if (!state) {
       const ctx = canvas.getContext("2d");
       if (ctx) {
@@ -476,7 +521,7 @@ function renderThreeScene(canvas, id, yaw, pitch, zoom, time = 0, selectedPlanet
       return;
     }
   }
-  if (state.id !== id || state.selectedPlanet !== selectedPlanet || state.cellFocus !== cellFocus) {
+  if (state.id !== id || state.selectedPlanet !== selectedPlanet || state.cellFocus !== cellFocus || state.chemistryMolecule !== chemistryMolecule || state.chemistryFocus !== chemistryFocus || state.chemistryShowBonds !== chemistryShowBonds) {
     state.scene.remove(state.group);
     clearSceneGroup(state.group);
     state.group = new THREE.Group();
@@ -484,7 +529,10 @@ function renderThreeScene(canvas, id, yaw, pitch, zoom, time = 0, selectedPlanet
     state.id = id;
     state.selectedPlanet = selectedPlanet;
     state.cellFocus = cellFocus;
-    makeSceneModel(state.group, id, selectedPlanet, cellFocus);
+    state.chemistryMolecule = chemistryMolecule;
+    state.chemistryFocus = chemistryFocus;
+    state.chemistryShowBonds = chemistryShowBonds;
+    makeSceneModel(state.group, id, selectedPlanet, cellFocus, chemistryMolecule, chemistryFocus, chemistryShowBonds);
     state.group.traverse((object) => {
       if (object.isMesh) {
         object.castShadow = state.renderer.shadowMap.enabled;
@@ -879,7 +927,7 @@ function illuminateFace(color, brightness) {
 }
 
 function drawScene(canvas, modelId, yaw, pitch, zoom, ecosystem = {}, time = 0, selectedPlanet = null) {
-  renderThreeScene(canvas, modelId, yaw, pitch, zoom, time, selectedPlanet, ecosystem.cellFocus || "all");
+  renderThreeScene(canvas, modelId, yaw, pitch, zoom, time, selectedPlanet, ecosystem.cellFocus || "all", ecosystem.chemistryMolecule || "water", ecosystem.chemistryFocus || "all", ecosystem.chemistryShowBonds !== false);
 }
 
 function animateScene(canvas, render) {
