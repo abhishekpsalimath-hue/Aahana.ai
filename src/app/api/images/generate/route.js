@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { parseImageGenerationInput } from "@/lib/creative/image-generation.mjs";
+import { classifyCloudflareImageFailure } from "@/lib/creative/image-provider-errors.mjs";
 import { readBoundedImageGenerationJson, readBoundedImageProviderJson } from "@/lib/creative/bounded-image-generation-json.mjs";
 import { resolveImageModel, DEFAULT_IMAGE_MODEL, ACCURACY_IMAGE_MODEL, ENHANCED_IMAGE_MODEL, buildImageProviderRequest, detectImageMimeTypeFromBase64, supportsImageAspectRatio } from "@/lib/creative/image-provider.mjs";
 
@@ -65,22 +66,9 @@ export async function POST(request) {
     const imageMimeType = detectImageMimeTypeFromBase64(image);
     if (!response.ok || !imageMimeType) {
       const providerStatus = response.status;
-      const status = providerStatus === 429 ? 429 : providerStatus >= 500 ? 503 : 502;
-      console.error("Aahana image provider request failed:", { status: providerStatus, providerError: result?.errors?.[0]?.message || "No valid image returned" });
-      let message = "Aahana could not generate that image. Please try again.";
-      if (providerStatus === 401) message = "Cloudflare rejected the image-generation API token. Check the CLOUDFLARE_API_TOKEN setting in Vercel.";
-      else if (providerStatus === 403) message = "The Cloudflare token does not have permission to use Workers AI. Update its Workers AI permissions.";
-      else if (providerStatus === 429) message = "The image-generation service has reached its current usage limit. Please try again after it resets.";
-      else if (providerStatus === 400) {
-        const providerCode = String(result?.errors?.[0]?.code ?? "");
-        const providerMessage = String(result?.errors?.[0]?.message ?? "");
-        if (providerCode === "3030" || /input prompt contains nsfw content/i.test(providerMessage)) {
-          message = "The image provider's automated safety filter blocked this prompt. It can sometimes misclassify harmless anime requests. Try a slightly different description, or contact Aahana support if it keeps happening.";
-        } else {
-          message = "The image provider rejected the request. Aahana has recorded the provider error for diagnosis; this does not necessarily mean your prompt is too long.";
-        }
-      }
-      return NextResponse.json({ error: message }, { status });
+      const failure = classifyCloudflareImageFailure(providerStatus, result?.errors);
+      console.error("Aahana image provider request failed:", { status: providerStatus, code: failure.code || "unknown", providerError: result?.errors?.[0]?.message || "No valid image returned" });
+      return NextResponse.json({ error: failure.message }, { status: failure.status });
     }
 
     return NextResponse.json(
