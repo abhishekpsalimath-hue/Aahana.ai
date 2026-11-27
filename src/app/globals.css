@@ -594,7 +594,7 @@ h1,.brand,.composer-mode,.breadcrumb{font-family:"Space Grotesk","Manrope",sans-
 
 /* Respect reduced-motion preferences: earlier rules stop the CSS starfield and astronaut. */
 /* Restore Aahana's approaching spiral galaxy on desktop and compact devices.
-   Keep the mobile CSS fallback: the heavy WebGL scene is intentionally disabled on phones. */
+   Keep this as a CSS fallback for browsers/devices where WebGL cannot initialize; capable phones use adaptive Three.js. */
 .space-background .universe-galaxy{
   display:block!important;
   position:absolute;
