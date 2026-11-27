@@ -734,3 +734,8 @@ h1,.brand,.composer-mode,.breadcrumb{font-family:"Space Grotesk","Manrope",sans-
 @keyframes astronaut-message-breathe{0%,100%{transform:translateY(0);opacity:.92}50%{transform:translateY(-3px);opacity:1}}
 @media(max-width:760px){.astronaut-companion--login{left:auto;right:8px;bottom:10px;width:78px;gap:2px}.astronaut-companion--assistant{right:5px;bottom:86px;width:78px;gap:2px}.astronaut-companion__message{max-width:150px;padding:6px 8px;font-size:9px}}
 @media(prefers-reduced-motion:reduce){.astronaut-companion__image,.astronaut-companion__message{animation:none!important;transform:none!important}}
+
+
+/* Astronaut companion: solid premium surface, not glassmorphism. */
+.astronaut-companion__message{background:#171321;border-color:#514267;box-shadow:0 8px 24px rgba(0,0,0,.28);backdrop-filter:none;-webkit-backdrop-filter:none}
+@media(max-width:760px){.astronaut-companion--login{left:8px;right:auto;bottom:12px;width:72px}.astronaut-companion--assistant{right:8px;bottom:88px;width:72px}.astronaut-companion__message{max-width:132px}}
