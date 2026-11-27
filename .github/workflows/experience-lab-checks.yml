@@ -32,6 +32,7 @@ on:
   push:
     branches:
       - feat/interactive-experience-lab
+      - feat/immersive-universe-experience
       - feat/aahana-contextual-interaction-cards
       - feat/experience-lab-live-assistant
       - feat/experience-lab-build-workspace
