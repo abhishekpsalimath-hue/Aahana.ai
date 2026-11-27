@@ -444,7 +444,7 @@ test("cancels a GitHub API response stream that exceeds the response cap", async
     if (url.endsWith("/access_tokens")) return mockResponse({ token: "installation-token" });
     if (url.includes("/git/ref/heads/main")) {
       return new Response(new ReadableStream({
-        start(controller) { controller.enqueue(new TextEncoder().encode("x".repeat(1024 * 1024 + 1))); },
+        start(controller) { controller.enqueue(new TextEncoder().encode("x".repeat(2 * 1024 * 1024 + 1))); },
         cancel() { cancelled = true; },
       }));
     }
