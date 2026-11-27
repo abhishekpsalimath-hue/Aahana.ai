@@ -48,10 +48,18 @@ export async function POST(request) {
           ...providerRequest.headers,
           Authorization: `Bearer ${apiToken}`,
         },
+        cache: "no-store",
+        signal: AbortSignal.any([request.signal, AbortSignal.timeout(55000)]),
       }
     );
 
+    if (request.signal.aborted) {
+      return NextResponse.json({ error: "Image generation cancelled." }, { status: 499 });
+    }
     const parsedProviderResponse = await readBoundedImageProviderJson(response);
+    if (request.signal.aborted) {
+      return NextResponse.json({ error: "Image generation cancelled." }, { status: 499 });
+    }
     const result = parsedProviderResponse.ok ? parsedProviderResponse.value : null;
     const image = result?.result?.image;
     const imageMimeType = detectImageMimeTypeFromBase64(image);
@@ -72,6 +80,9 @@ export async function POST(request) {
       { headers: { "Cache-Control": "no-store" } }
     );
   } catch (error) {
+    if (request.signal.aborted || error?.name === "AbortError") {
+      return NextResponse.json({ error: "Image generation cancelled or timed out." }, { status: 499 });
+    }
     console.error("Aahana image generation request failed:", error?.name || "unknown error");
     return NextResponse.json({ error: "Image generation timed out or the provider is unavailable. Please try again." }, { status: 503 });
   }
