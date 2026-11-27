@@ -130,8 +130,12 @@ function fromRow(row) {
 
 /**
  * Supabase adapter for createVideoJobRepository.
- * Pass an authenticated server-side Supabase client. RLS binds every operation
- * to auth.uid(); never pass a service-role client to a user-facing route.
+ * TRUSTED WORKER ONLY: pass a server-side Supabase service-role client from
+ * an isolated worker/runtime. Never import this adapter into a browser bundle,
+ * user-facing route, or request handler that can be invoked with user-controlled
+ * lifecycle fields. The service-role key must remain server-only and must never
+ * be returned to a client. Authenticated users are read-only; user cancellation
+ * is exposed separately through public.cancel_aahana_video_job(job_id).
  */
 export function createSupabaseVideoJobAdapter(supabase) {
   if (!supabase || typeof supabase.from !== "function") {
