@@ -141,7 +141,8 @@ export default function UniverseScene() {
     rimLight.position.set(7, -2, -3);
     scene.add(rimLight);
 
-    const starCount = lowPower ? 5000 : 8000;
+    // Mobile/low-power devices retain the layered sky but use bounded particle buffers.
+    const starCount = lowPower ? 1800 : 8000;
     const starPositions = new Float32Array(starCount * 3);
     const starColors = new Float32Array(starCount * 3);
     const palette = [new THREE.Color(0xffffff), new THREE.Color(0xffd9a3), new THREE.Color(0x9ed9e8)];
@@ -163,7 +164,7 @@ export default function UniverseScene() {
     const galaxy = new THREE.Group();
     galaxy.position.set(-3.4, 2.1, -24);
     galaxy.rotation.set(0.48, -0.24, 0.12);
-    const galaxyCount = lowPower ? 6200 : 12800;
+    const galaxyCount = lowPower ? 2400 : 12800;
     const galaxyPositions = new Float32Array(galaxyCount * 3);
     const galaxyColors = new Float32Array(galaxyCount * 3);
     const galaxyPalette = [
@@ -786,7 +787,7 @@ export default function UniverseScene() {
     // A stream of near-field stars travels towards the viewer, creating
     // genuine forward movement rather than rotating a static star dome.
     // Keep 20,000 forward-travelling stars on desktop; mobile gets a deliberately lighter 8,000-star stream.
-    const nearStarCount = lowPower ? 8000 : 20000;
+    const nearStarCount = lowPower ? 3200 : 20000;
     const nearStarPositions = new Float32Array(nearStarCount * 3);
     const nearStarSpeeds = new Float32Array(nearStarCount);
     for (let i = 0; i < nearStarCount; i++) {
@@ -818,7 +819,7 @@ export default function UniverseScene() {
     updatePlanetLightDirections();
 
     const pointer = { x: 0, y: 0 };
-    const frameInterval = 1000 / (lowPower ? 45 : 60);
+    const frameInterval = 1000 / (lowPower ? 30 : 60);
     let lastFrameTime = 0;
     const onPointer = (event) => {
       pointer.x = (event.clientX / Math.max(1, window.innerWidth) - 0.5) * 2;
