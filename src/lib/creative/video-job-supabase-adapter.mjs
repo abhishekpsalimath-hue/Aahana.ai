@@ -6,6 +6,9 @@ function toIso(milliseconds) {
 }
 
 function fromIso(value) {
+  if (typeof value !== "string" || !/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,3})?(?:Z|[+-]\\d{2}:\\d{2})$/.test(value)) {
+    throw new TypeError("The database returned an invalid video job timestamp.");
+  }
   const result = Date.parse(value);
   if (!Number.isFinite(result)) throw new TypeError("The database returned an invalid video job timestamp.");
   return result;
