@@ -1256,7 +1256,8 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
             ))}
           </div>
         </div>
-      </div>      <AstronautCompanion variant="assistant" />
+      </div>
+      <AstronautCompanion variant="assistant" />
 
       <aside className="sidebar">
         <a className="brand" href="/" aria-label="Aahana AI home">
@@ -1436,8 +1437,6 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         )}
 
         <div className="welcome">
-          {!messages.length && (
-
           <div className="eyebrow"><span /> YOUR THINKING SPACE</div>
           {!messages.length && <>
             <h1>Good ideas<br /><em>start somewhere.</em></h1>
