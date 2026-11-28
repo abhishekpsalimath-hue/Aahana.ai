@@ -167,3 +167,22 @@ test("transliterated deity matching uses whole words and avoids accidental subst
     assert.doesNotMatch(prompt, /elephant-headed Hindu deity/i, ordinary);
   }
 });
+
+
+test("recognizes additional unambiguous devotional epithets across the five core deities", () => {
+  for (const name of ["Shambhu", "Neelkanth", "Gangadhar", "Tryambaka", "Trilochana"]) {
+    assert.match(buildImagePrompt("A devotional portrait of " + name, "masterpiece"), /Depict Lord Shiva \\(Mahadev\\) unmistakably/i, name);
+  }
+  for (const name of ["Sankat Mochan", "Ramdoot"]) {
+    assert.match(buildImagePrompt("A devotional portrait of " + name, "masterpiece"), /monkey-faced deity/i, name);
+  }
+  for (const name of ["Ekadanta", "Vakratunda", "Siddhivinayak"]) {
+    assert.match(buildImagePrompt("A devotional portrait of " + name, "masterpiece"), /elephant-headed Hindu deity/i, name);
+  }
+  for (const name of ["Murlidhar", "Damodar", "Vasudev", "Vasudeva"]) {
+    assert.match(buildImagePrompt("A devotional portrait of " + name, "masterpiece"), /peacock feather/i, name);
+  }
+  for (const name of ["Maryada Purushottam", "Dasharath Nandan"]) {
+    assert.match(buildImagePrompt("A devotional portrait of " + name, "masterpiece"), /traditional divine iconography/i, name);
+  }
+});
