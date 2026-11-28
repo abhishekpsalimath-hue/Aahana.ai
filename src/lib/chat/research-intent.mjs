@@ -13,7 +13,7 @@ const LATIN_TRANSLITERATION_FRESHNESS_PATTERNS = Object.freeze([
 ]);
 
 const NEWS_PATTERNS = [
-  /\b(?:samachar|samachara|khabar(?:ein)?|akhbar|suddi|suddigalu|vaarthe|vaartha)\b/i,
+  /\b(?:samachar|samachara|khabar(?:ein|en)?|khabrein|akhbar|suddi|suddigalu|vaarthe|vaartha)\b/i,
   /\b(?:news|breaking|headlines|announcements|launched|launch|release|election|results|score|match|market|stocks|weather|forecast|policy update|government update)\b/i,
   /ಸುದ್ದಿ|ವಾರ್ತೆ|ಘೋಷಣೆ|ಬಿಡುಗಡೆ|ಚುನಾವಣೆ|ಫಲಿತಾಂಶ|ಮಾರುಕಟ್ಟೆ|ಹವಾಮಾನ/u,
   /समाचार|ख़बर|खबर|घोषणा|जारी|चुनाव|नतीजे|बाज़ार|मौसम/u,
