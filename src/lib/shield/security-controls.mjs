@@ -56,12 +56,20 @@ const REVIEW_KEYS = new Set(["status", "note", "remediationOwner", "dueDate"]);
 const CONTROL_CHARACTERS = /[\u0000-\u001f\u007f]/;
 
 function isPlainRecord(value) {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   try {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return false;
     const prototype = Object.getPrototypeOf(value);
     return prototype === Object.prototype || prototype === null;
   } catch {
     return false;
+  }
+}
+
+function safeOwnKeys(value) {
+  try {
+    return Reflect.ownKeys(value);
+  } catch {
+    return null;
   }
 }
 
@@ -84,13 +92,17 @@ function validDateOnly(value) {
 
 function sanitizeExistingReviews(reviews) {
   const safe = Object.create(null);
-  if (!reviews || typeof reviews !== "object" || Array.isArray(reviews)) return safe;
+  try {
+    if (!reviews || typeof reviews !== "object" || Array.isArray(reviews)) return safe;
+  } catch {
+    return safe;
+  }
   for (const control of SECURITY_CONTROLS) {
     const entry = readOwnData(reviews, control.id);
     if (!entry.present || !isPlainRecord(entry.value)) continue;
     const record = entry.value;
-    const keys = Object.keys(record);
-    if (keys.some((key) => !REVIEW_KEYS.has(key))) continue;
+    const keys = safeOwnKeys(record);
+    if (!keys || keys.some((key) => typeof key !== "string" || !REVIEW_KEYS.has(key))) continue;
     const status = readOwnData(record, "status");
     const note = readOwnData(record, "note");
     const owner = readOwnData(record, "remediationOwner");
@@ -117,7 +129,8 @@ export function updateEvidenceReview(reviews, controlId, input) {
   if (!CONTROL_IDS.has(controlId)) {
     return { ok: false, errors: ["Choose a known security control."], reviews: null };
   }
-  if (!isPlainRecord(input) || Object.keys(input).some((key) => !REVIEW_KEYS.has(key))) {
+  const inputKeys = isPlainRecord(input) ? safeOwnKeys(input) : null;
+  if (!inputKeys || inputKeys.some((key) => typeof key !== "string" || !REVIEW_KEYS.has(key))) {
     return { ok: false, errors: ["Evidence review contains unsupported fields."], reviews: null };
   }
   const status = readOwnData(input, "status");
