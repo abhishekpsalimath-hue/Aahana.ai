@@ -19,6 +19,10 @@ const STEP_KEYS = Object.freeze({
   approval: new Set(["id", "type", "label"]),
 });
 
+function hasControlCharacters(value) {
+  return typeof value === "string" && /[\\u0000-\\u001f\\u007f]/.test(value);
+}
+
 function hasOnlyKeys(value, allowed) {
   return Object.keys(value).every((key) => allowed.has(key));
 }
@@ -32,7 +36,7 @@ export function validateWorkflow(workflow) {
   if (typeof workflow.id !== "string" || !ID_PATTERN.test(workflow.id)) {
     errors.push("Workflow id must be 1–64 safe characters.");
   }
-  if (typeof workflow.name !== "string" || !workflow.name.trim() || workflow.name.length > 120) {
+  if (typeof workflow.name !== "string" || !workflow.name.trim() || workflow.name.length > 120 || hasControlCharacters(workflow.name)) {
     errors.push("Workflow name must contain 1–120 characters.");
   }
   if (!Array.isArray(workflow.steps) || workflow.steps.length < 2 || workflow.steps.length > MAX_STEPS) {
@@ -58,7 +62,7 @@ export function validateWorkflow(workflow) {
     } else {
       ids.add(step.id);
     }
-    if (typeof step.label !== "string" || !step.label.trim() || step.label.length > 160) {
+    if (typeof step.label !== "string" || !step.label.trim() || step.label.length > 160 || hasControlCharacters(step.label)) {
       errors.push(label + " needs a label of 1–160 characters.");
     }
     if (step.type === "trigger" && index !== 0) errors.push("The trigger must be the first step.");
