@@ -275,6 +275,36 @@ export default function UniverseScene() {
     ));
     scene.add(distantGalaxy);
 
+    // Large-scale cosmic web: faint filaments connect distant galaxy-cluster nodes.
+    // This adds cosmic structure behind individual galaxies without heavy geometry.
+    const cosmicWeb = new THREE.Group();
+    cosmicWeb.position.set(0, 0, -58);
+    const webNodes = [[-17,10,-7],[-9,3,2],[-2,13,-5],[8,8,3],[17,12,-8],[-14,-5,4],[-4,-11,-6],[7,-7,2],[16,-3,-5],[1,1,8],[-21,0,-12],[21,4,-13],[-7,17,-15],[12,-14,-11]];
+    const webEdges = [[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[2,9],[9,6],[1,9],[9,3],[3,7],[4,8],[0,10],[10,5],[2,12],[12,0],[4,11],[11,8],[6,13],[13,7],[9,12],[9,13],[1,5],[3,8]];
+    const webPositions = [], webColors = [];
+    const webPalette = [new THREE.Color(0x8ea9d6),new THREE.Color(0xb8a0df),new THREE.Color(0xd6b8a0)];
+    for (let edgeIndex=0; edgeIndex<webEdges.length; edgeIndex++) {
+      const [ai,bi]=webEdges[edgeIndex], a=new THREE.Vector3(...webNodes[ai]), b=new THREE.Vector3(...webNodes[bi]);
+      const mid=a.clone().add(b).multiplyScalar(0.5); mid.z+=((edgeIndex%3)-1)*2.2;
+      const color=webPalette[edgeIndex%webPalette.length]; let previous=a;
+      for(let step=1;step<=9;step++) {
+        const u=step/9, v=1-u;
+        const next=new THREE.Vector3(v*v*a.x+2*v*u*mid.x+u*u*b.x,v*v*a.y+2*v*u*mid.y+u*u*b.y,v*v*a.z+2*v*u*mid.z+u*u*b.z);
+        webPositions.push(previous.x,previous.y,previous.z,next.x,next.y,next.z);
+        const fade=0.48+0.22*Math.sin(Math.PI*u);
+        for(let j=0;j<2;j++) webColors.push(color.r*fade,color.g*fade,color.b*fade);
+        previous=next;
+      }
+    }
+    const webGeometry=new THREE.BufferGeometry();
+    webGeometry.setAttribute("position",new THREE.Float32BufferAttribute(webPositions,3));
+    webGeometry.setAttribute("color",new THREE.Float32BufferAttribute(webColors,3));
+    cosmicWeb.add(new THREE.LineSegments(webGeometry,new THREE.LineBasicMaterial({vertexColors:true,transparent:true,opacity:0.18,depthWrite:false,blending:THREE.AdditiveBlending})));
+    const webNodeGeometry=new THREE.BufferGeometry();
+    webNodeGeometry.setAttribute("position",new THREE.Float32BufferAttribute(webNodes.flat(),3));
+    cosmicWeb.add(new THREE.Points(webNodeGeometry,new THREE.PointsMaterial({color:0xc4b5e8,size:0.19,transparent:true,opacity:0.34,sizeAttenuation:true,depthWrite:false,blending:THREE.AdditiveBlending})));
+    scene.add(cosmicWeb);
+
     // Interstellar dust: three overlapping volumetric particle banks give the
     // star systems a sense of scale and suspended matter. Soft point sprites
     // retain their shape at distance and avoid flat, opaque fog cards.
@@ -1094,6 +1124,7 @@ export default function UniverseScene() {
     };
     registerDepthDrifter(galaxy, 0.018, -66, 18);
     registerDepthDrifter(distantGalaxy, 0.014, -82, 18);
+    registerDepthDrifter(cosmicWeb, 0.008, -102, 18, true);
     planets.forEach((planet, index) => registerDepthDrifter(planet, 0.024 + index * 0.0027, -64, 18));
     registerDepthDrifter(blackHole, 0.017, -78, 18);
     registerDepthDrifter(asteroidBelt, 0.035, -62, 18);
