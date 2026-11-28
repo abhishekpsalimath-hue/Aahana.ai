@@ -99,3 +99,12 @@ test("transliterated words alone do not force live research for stable requests"
     "Explain what taaza means in Hindi",
   ]) assert.equal(shouldSearchWeb(prompt), false, prompt);
 });
+
+test("transliterated regional news terms are classified as news", async () => {
+  const { getResearchTopic } = await import("../src/lib/chat/research-intent.mjs");
+  for (const prompt of [
+    "aaj ki taaza khabrein",
+    "ivattina suddi",
+    "latest samachara",
+  ]) assert.equal(getResearchTopic(prompt), "news", prompt);
+});
