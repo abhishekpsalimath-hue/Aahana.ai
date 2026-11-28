@@ -239,7 +239,21 @@ function UniverseScene() {
           bump.data[index + 3] = 255;
         }
       }
-      context.putImageData(image, 0, 0);
+      try {
+        context.putImageData(image, 0, 0);
+      } catch {
+        // Some embedded browsers expose createImageData but reject pixel writes.
+        const fallback = context.createLinearGradient(0, 0, width, height);
+        fallback.addColorStop(0, colors[0]);
+        fallback.addColorStop(0.52, colors[1]);
+        fallback.addColorStop(1, colors[2]);
+        context.fillStyle = fallback;
+        context.fillRect(0, 0, width, height);
+        const fallbackMap = new THREE.CanvasTexture(surface);
+        fallbackMap.colorSpace = THREE.SRGBColorSpace;
+        fallbackMap.wrapS = THREE.RepeatWrapping;
+        return { map: fallbackMap, bumpMap: null };
+      }
       const bumpCanvas = document.createElement("canvas");
       bumpCanvas.width = width;
       bumpCanvas.height = height;
@@ -1937,6 +1951,11 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
               <span className="black-hole-lensing" />
               <span className="black-hole-disk" />
               <span className="black-hole-core" />
+            </div>
+            <div className="universe-aurora" aria-hidden="true">
+              <i className="aurora-ribbon aurora-ribbon-one" />
+              <i className="aurora-ribbon aurora-ribbon-two" />
+              <i className="aurora-ribbon aurora-ribbon-three" />
             </div>
             <div className="universe-particles">
               {Array.from({ length: 64 }, (_, index) => (
