@@ -136,3 +136,11 @@ The Shield workspace now exposes the scope model as a local declaration form. A 
 ## Additional safety hardening
 
 The Flow workflow validator now rejects undeclared top-level and per-step properties, in addition to its operation allowlist. This prevents arbitrary script/runtime payload fields from being accepted into the workflow model. Shield assessment records validate their creation timestamps and are deeply frozen, including nested scope hostnames and findings, to prevent accidental post-validation mutation. Additional boundary tests cover these cases. These controls are local model validation only and do not enable workflow execution or live security assessment.
+
+
+
+## Shield remediation workflow and verification — latest branch snapshot
+
+Shield evidence reviews now sanitize prior state against the immutable eight-control catalogue before carrying it forward. Unknown controls, malformed records, inherited properties, unsupported fields, accessor-backed values, invalid statuses, control characters, and malformed dates are excluded or rejected. A gap can now carry an optional bounded remediation owner and ISO date-only target; the summary reports how many gaps have an owner or target without presenting the count as verified risk reduction. These details remain in browser-session state only and are not persisted or independently verified.
+
+The latest branch snapshot at commit `6e0cacc780f58b5d51279e75ed227cab6eb66e84` includes the Shield evidence hardening and remediation UI. GitHub Actions for the prior snapshot `e5dca3f2bf38e0c47f6f420d9877e8426e42d047` completed successfully for both application tests/production build and private image-upscale checks. The newer remediation commits require a fresh CI run. Vercel preview deployment remains unavailable while the account's daily deployment quota is exhausted. No production deployment, merge, auth change, Supabase change, provider activation, or Student Mode change has occurred.
