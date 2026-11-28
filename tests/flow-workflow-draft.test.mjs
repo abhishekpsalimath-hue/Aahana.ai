@@ -37,8 +37,8 @@ test("rejects empty, non-string and oversized requests", () => {
   }
 });
 
-test("does not preserve control characters in the request summary", () => {
-  const result = createWorkflowDraft("Prepare a daily\\n business summary");
+test("normalizes control characters in the request summary", () => {
+  const result = createWorkflowDraft("Prepare a daily\n business summary");
   assert.equal(result.ok, true);
-  assert.equal(result.requestSummary.includes("\\n"), false);
+  assert.equal(result.requestSummary.includes("\n"), false);
 });
