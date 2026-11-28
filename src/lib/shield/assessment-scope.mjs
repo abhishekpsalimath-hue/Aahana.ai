@@ -1,6 +1,13 @@
 const HOSTNAME = /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/i;
 const MAX_SCOPE_DAYS = 30;
 
+function deepFreeze(value) {
+  if (!value || typeof value !== "object" || Object.isFrozen(value)) return value;
+  Object.freeze(value);
+  for (const child of Object.values(value)) deepFreeze(child);
+  return value;
+}
+
 export function validateAssessmentScope(scope, now = Date.now()) {
   const errors = [];
   if (!scope || typeof scope !== "object" || Array.isArray(scope)) {
@@ -46,21 +53,23 @@ export function validateAssessmentScope(scope, now = Date.now()) {
   };
 }
 
-export function createAssessmentRecord(scope, { assessmentId, createdAt = new Date().toISOString() } = {}) {
-  const validation = validateAssessmentScope(scope);
+export function createAssessmentRecord(scope, { assessmentId, createdAt = new Date().toISOString(), now = Date.now() } = {}) {
+  const validation = validateAssessmentScope(scope, now);
   if (!validation.valid) return { ok: false, errors: validation.errors, record: null };
   if (typeof assessmentId !== "string" || !/^[a-zA-Z0-9_-]{1,64}$/.test(assessmentId)) {
     return { ok: false, errors: ["A safe assessment identifier is required."], record: null };
   }
-  return {
-    ok: true,
-    record: Object.freeze({
-      assessmentId,
-      createdAt,
-      scope: validation.normalized,
-      status: "scope-approved-awaiting-independent-review",
-      networkActivity: false,
-      findings: [],
-    }),
-  };
+  const createdTimestamp = typeof createdAt === "string" ? Date.parse(createdAt) : NaN;
+  if (!Number.isFinite(createdTimestamp) || createdTimestamp > now || createdTimestamp < now - MAX_SCOPE_DAYS * 86400000) {
+    return { ok: false, errors: ["Assessment creation time must be valid, non-future and within the last 30 days."], record: null };
+  }
+  const record = deepFreeze({
+    assessmentId,
+    createdAt: new Date(createdTimestamp).toISOString(),
+    scope: validation.normalized,
+    status: "scope-approved-awaiting-independent-review",
+    networkActivity: false,
+    findings: [],
+  });
+  return { ok: true, record };
 }
