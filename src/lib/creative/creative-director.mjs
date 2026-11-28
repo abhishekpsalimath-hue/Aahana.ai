@@ -101,15 +101,15 @@ const SACRED_SUBJECT_DIRECTIONS = [
     direction: "Depict Lord Hanuman (Anjaneya) unmistakably as the Hindu monkey-faced deity, not a human saint, monk, or generic warrior. Preserve the clearly recognizable vanara face and muzzle, expressive compassionate divine eyes, traditional crown or ornaments where appropriate, gada (mace), and devotional strength. If the scene calls for it, include a saffron dhoti and a reverent devotional pose. Do not replace the monkey-faced divine form with an ordinary human face."
   },
   {
-    pattern: /\b(lord\s+)?ganesha\b|\bganapati\b|\bvinayaka\b/i,
+    pattern: /\b(lord\s+)?ganesha\b|\bganapati\b|\bganpati\b|\bvinayaka\b|\bgajanan(?:a)?\b|\blambodara\b|\bvighnaharta\b/i,
     direction: "Depict Lord Ganesha unmistakably as the elephant-headed Hindu deity, with a clear elephant face and trunk, traditional crown and ornaments, and his characteristic divine form. Never substitute an ordinary human face."
   },
   {
-    pattern: /\b(lord\s+)?krishna\b/i,
+    pattern: /\b(lord\s+)?krishna\b|\bkanhaiya\b|\bkanha\b|\bgovinda\b|\bgopal(?:a)?\b|\bmadhav(?:a)?\b/i,
     direction: "Depict Lord Krishna unmistakably as the Hindu deity, with a serene youthful divine appearance, blue-toned skin, peacock feather, yellow garments and flute when suitable to the requested scene. Do not substitute a generic human saint."
   },
   {
-    pattern: /\b(lord\s+)?rama\b|\bshri\s+ram\b/i,
+    pattern: /\b(lord\s+)?rama\b|\bshri\s+ram\b|\bsiyaram\b|\braghav(?:a)?\b|\braghunath(?:a)?\b/i,
     direction: "Depict Lord Rama unmistakably as the Hindu deity, with traditional divine iconography such as a bow, dignified royal-yet-humble presence, and appropriate traditional attire. Do not depict a generic monk or saint."
   }
 ];
