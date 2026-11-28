@@ -1687,7 +1687,8 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         form.set("mode", mode);
         if (conversationId) form.set("conversationId", conversationId);
         if (selectedProjectId) form.set("projectId", selectedProjectId);
-        const uploadImage = await prepareChatImage(imageFile);\n        form.set("image", uploadImage, uploadImage.name);
+        const uploadImage = await prepareChatImage(imageFile);
+        form.set("image", uploadImage, uploadImage.name);
         requestBody = form;
       } else {
         requestHeaders = { "Content-Type": "application/json" };
