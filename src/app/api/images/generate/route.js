@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { parseImageGenerationInput } from "@/lib/creative/image-generation.mjs";
+import { classifyCloudflareImageFailure } from "@/lib/creative/image-provider-errors.mjs";
 import { readBoundedImageGenerationJson, readBoundedImageProviderJson } from "@/lib/creative/bounded-image-generation-json.mjs";
 import { resolveImageModel, DEFAULT_IMAGE_MODEL, ACCURACY_IMAGE_MODEL, ENHANCED_IMAGE_MODEL, buildImageProviderRequest, detectImageMimeTypeFromBase64, supportsImageAspectRatio } from "@/lib/creative/image-provider.mjs";
 
@@ -22,9 +23,12 @@ export async function POST(request) {
     }, { status: 503 });
   }
 
-  const parsedBody = await readBoundedImageGenerationJson(request);
+  const parsedBody = await readBoundedImageGenerationJson(request, undefined, request.signal);
   if (!parsedBody.ok) {
     return NextResponse.json({ error: parsedBody.error }, { status: parsedBody.status });
+  }
+  if (parsedBody.aborted || request.signal.aborted) {
+    return NextResponse.json({ error: "Image generation cancelled." }, { status: 499 });
   }
   const body = parsedBody.value;
   const input = parseImageGenerationInput(body);
@@ -40,6 +44,8 @@ export async function POST(request) {
     }
     const seed = Number.isInteger(body?.seed) && body.seed >= 0 && body.seed <= 0xffffffff ? body.seed : undefined;
     const providerRequest = buildImageProviderRequest({ model, prompt, steps, seed, width, height });
+    const providerTimeoutSignal = AbortSignal.timeout(55000);
+    const providerSignal = AbortSignal.any([request.signal, providerTimeoutSignal]);
     const response = await fetch(
       `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/ai/run/${model}`,
       {
@@ -48,23 +54,32 @@ export async function POST(request) {
           ...providerRequest.headers,
           Authorization: `Bearer ${apiToken}`,
         },
+        cache: "no-store",
+        signal: providerSignal,
       }
     );
 
-    const parsedProviderResponse = await readBoundedImageProviderJson(response);
+    if (request.signal.aborted) {
+      return NextResponse.json({ error: "Image generation cancelled." }, { status: 499 });
+    }
+    const parsedProviderResponse = await readBoundedImageProviderJson(response, undefined, providerSignal);
+    if (request.signal.aborted) {
+      return NextResponse.json({ error: "Image generation cancelled." }, { status: 499 });
+    }
+    if (parsedProviderResponse.aborted || providerTimeoutSignal.aborted) {
+      return NextResponse.json(
+        { error: "Image generation timed out or the provider is unavailable. Please try again." },
+        { status: 503 }
+      );
+    }
     const result = parsedProviderResponse.ok ? parsedProviderResponse.value : null;
     const image = result?.result?.image;
     const imageMimeType = detectImageMimeTypeFromBase64(image);
     if (!response.ok || !imageMimeType) {
       const providerStatus = response.status;
-      const status = providerStatus === 429 ? 429 : providerStatus >= 500 ? 503 : 502;
-      console.error("Aahana image provider request failed:", { status: providerStatus, providerError: result?.errors?.[0]?.message || "No valid image returned" });
-      let message = "Aahana could not generate that image. Please try again.";
-      if (providerStatus === 401) message = "Cloudflare rejected the image-generation API token. Check the CLOUDFLARE_API_TOKEN setting in Vercel.";
-      else if (providerStatus === 403) message = "The Cloudflare token does not have permission to use Workers AI. Update its Workers AI permissions.";
-      else if (providerStatus === 429) message = "The image-generation service has reached its current usage limit. Please try again after it resets.";
-      else if (providerStatus === 400) message = "The image service could not accept this prompt. Try a shorter or clearer description.";
-      return NextResponse.json({ error: message }, { status });
+      const failure = classifyCloudflareImageFailure(providerStatus, result?.errors);
+      console.error("Aahana image provider request failed:", { status: providerStatus, code: failure.code || "unknown", providerError: result?.errors?.[0]?.message || "No valid image returned" });
+      return NextResponse.json({ error: failure.message }, { status: failure.status });
     }
 
     return NextResponse.json(
@@ -72,6 +87,9 @@ export async function POST(request) {
       { headers: { "Cache-Control": "no-store" } }
     );
   } catch (error) {
+    if (request.signal.aborted) {
+      return NextResponse.json({ error: "Image generation cancelled." }, { status: 499 });
+    }
     console.error("Aahana image generation request failed:", error?.name || "unknown error");
     return NextResponse.json({ error: "Image generation timed out or the provider is unavailable. Please try again." }, { status: 503 });
   }

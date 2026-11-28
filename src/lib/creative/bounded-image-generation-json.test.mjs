@@ -1,105 +1,141 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readBoundedImageGenerationJson } from "./bounded-image-generation-json.mjs";
+import {
+  MAX_IMAGE_GENERATION_REQUEST_BYTES,
+  MAX_IMAGE_PROVIDER_RESPONSE_BYTES,
+  readBoundedImageGenerationJson,
+  readBoundedImageProviderJson,
+} from "./bounded-image-generation-json.mjs";
 
-test("reads valid JSON across fragmented request chunks", async () => {
-  const request = new Request("https://example.test", {
+function requestFrom(body, headers = {}) {
+  return new Request("https://aahana.test/api/images/generate", {
     method: "POST",
-    headers: { "content-type": "application/json" },
-    body: new ReadableStream({
-      start(controller) {
-        controller.enqueue(new TextEncoder().encode('{"prompt":'));
-        controller.enqueue(new TextEncoder().encode('"portrait","steps":8}'));
-        controller.close();
-      },
-    }),
-    duplex: "half",
+    headers: { "content-type": "application/json", ...headers },
+    body,
   });
-  assert.deepEqual(await readBoundedImageGenerationJson(request), {
-    ok: true, value: { prompt: "portrait", steps: 8 },
+}
+
+function responseFrom(body, headers = {}) {
+  return new Response(body, { headers: { "content-type": "application/json", ...headers } });
+}
+
+test("accepts a bounded image-generation JSON object", async () => {
+  assert.deepEqual(await readBoundedImageGenerationJson(requestFrom('{"prompt":"A portrait"}')), {
+    ok: true, value: { prompt: "A portrait" },
   });
 });
 
-test("rejects declared request sizes above the cap before reading", async () => {
-  const request = new Request("https://example.test", {
-    method: "POST",
-    headers: { "content-length": "16385" },
-    body: "{}",
-  });
-  const result = await readBoundedImageGenerationJson(request, 16384);
-  assert.equal(result.status, 413);
-});
-
-test("cancels a streamed request when its actual size exceeds the cap", async () => {
-  let cancelled = false;
-  const request = new Request("https://example.test", {
-    method: "POST",
-    body: new ReadableStream({
-      start(controller) { controller.enqueue(new Uint8Array(10)); },
-      cancel() { cancelled = true; },
-    }),
-    duplex: "half",
-  });
-  const result = await readBoundedImageGenerationJson(request, 8);
-  assert.equal(result.status, 413);
-  assert.equal(cancelled, true);
-});
-
-test("rejects malformed JSON, non-object JSON, and invalid content lengths", async () => {
-  for (const body of ["{", "null", "[]", '"text"']) {
-    const result = await readBoundedImageGenerationJson(new Request("https://example.test", {
-      method: "POST", body,
-    }));
+test("rejects malformed, non-object, and invalid UTF-8 request bodies", async () => {
+  for (const body of ["{", "null", "[]", '"text"', new Uint8Array([0xc3, 0x28])]) {
+    const result = await readBoundedImageGenerationJson(requestFrom(body));
     assert.equal(result.ok, false);
     assert.equal(result.status, 400);
   }
-  const invalidLength = await readBoundedImageGenerationJson(new Request("https://example.test", {
-    method: "POST", headers: { "content-length": "12x" }, body: "{}",
-  }));
-  assert.equal(invalidLength.status, 400);
 });
 
-test("rejects invalid byte limits", async () => {
-  const request = new Request("https://example.test", { method: "POST", body: "{}" });
-  assert.equal((await readBoundedImageGenerationJson(request, 0)).status, 500);
+test("rejects invalid and oversized declared request lengths", async () => {
+  assert.equal((await readBoundedImageGenerationJson(requestFrom("{}", { "content-length": "2x" }))).status, 400);
+  assert.equal((await readBoundedImageGenerationJson(requestFrom("{}", {
+    "content-length": String(MAX_IMAGE_GENERATION_REQUEST_BYTES + 1),
+  }))).status, 413);
 });
 
-import { readBoundedImageProviderJson } from "./bounded-image-generation-json.mjs";
-
-test("reads a valid provider JSON response", async () => {
-  const response = new Response(JSON.stringify({ result: { image: "encoded" } }), {
-    headers: { "content-type": "application/json" },
-  });
-  assert.deepEqual(await readBoundedImageProviderJson(response), {
-    ok: true, value: { result: { image: "encoded" } },
-  });
-});
-
-test("rejects oversized declared and streamed provider responses", async () => {
-  const declared = new Response("{}", { headers: { "content-length": "100" } });
-  assert.equal((await readBoundedImageProviderJson(declared, 10)).ok, false);
-
+test("enforces the request byte limit while streaming without a declared length", async () => {
   let cancelled = false;
-  const streamed = new Response(new ReadableStream({
-    start(controller) { controller.enqueue(new Uint8Array(12)); },
+  const body = new ReadableStream({
+    start(controller) {
+      controller.enqueue(new Uint8Array(MAX_IMAGE_GENERATION_REQUEST_BYTES));
+      controller.enqueue(new Uint8Array([0x7b]));
+    },
     cancel() { cancelled = true; },
-  }));
-  assert.equal((await readBoundedImageProviderJson(streamed, 8)).ok, false);
+  });
+  const request = new Request("https://aahana.test/api/images/generate", { method: "POST", body, duplex: "half" });
+  const result = await readBoundedImageGenerationJson(request);
+  assert.equal(result.status, 413);
   assert.equal(cancelled, true);
 });
 
-test("rejects malformed and non-object provider responses", async () => {
-  for (const body of ["{", "null", "[]"]) {
-    assert.equal((await readBoundedImageProviderJson(new Response(body))).ok, false);
+test("rejects missing request bodies and invalid request limits", async () => {
+  assert.equal((await readBoundedImageGenerationJson(new Request("https://aahana.test"))).status, 400);
+  assert.equal((await readBoundedImageGenerationJson(requestFrom("{}"), 0)).status, 500);
+});
+
+test("accepts a bounded provider JSON object", async () => {
+  assert.deepEqual(await readBoundedImageProviderJson(responseFrom('{"result":{"image":"AAAA"}}')), {
+    ok: true, value: { result: { image: "AAAA" } },
+  });
+});
+
+test("rejects empty, malformed, non-object, and invalid UTF-8 provider responses", async () => {
+  for (const body of ["", "{", "null", "[]", new Uint8Array([0xc3, 0x28])]) {
+    assert.equal((await readBoundedImageProviderJson(responseFrom(body))).ok, false);
   }
 });
 
-test("accepts numeric Content-Length values and rejects malformed provider lengths", async () => {
-  const request = new Request("https://example.test", {
-    method: "POST", headers: { "content-length": "2" }, body: "{}",
+test("rejects oversized provider responses by declared and streamed byte lengths", async () => {
+  const declared = await readBoundedImageProviderJson(responseFrom("{}", {
+    "content-length": String(MAX_IMAGE_PROVIDER_RESPONSE_BYTES + 1),
+  }));
+  assert.equal(declared.ok, false);
+  const body = new ReadableStream({
+    start(controller) {
+      controller.enqueue(new Uint8Array(MAX_IMAGE_PROVIDER_RESPONSE_BYTES));
+      controller.enqueue(new Uint8Array([0x7b]));
+    },
   });
-  assert.deepEqual(await readBoundedImageGenerationJson(request), { ok: true, value: {} });
+  const streamed = await readBoundedImageProviderJson(new Response(body));
+  assert.equal(streamed.ok, false);
+  assert.match(streamed.error, /too large/i);
+});
 
-  const provider = new Response("{}", { headers: { "content-length": "not-a-number" } });
-  assert.equal((await readBoundedImageProviderJson(provider)).ok, false);
+test("rejects invalid provider response limits", async () => {
+  assert.equal((await readBoundedImageProviderJson(responseFrom("{}"), 0)).ok, false);
+});
+
+
+test("cancels a stalled request-body read when the client disconnects", async () => {
+  const controller = new AbortController();
+  let cancelled = false;
+  const body = new ReadableStream({
+    pull() { return new Promise(() => {}); },
+    cancel() { cancelled = true; },
+  });
+  const request = new Request("https://aahana.test/api/images/generate", {
+    method: "POST", body, duplex: "half", signal: controller.signal,
+  });
+  const pending = readBoundedImageGenerationJson(request);
+  controller.abort();
+  const result = await pending;
+  assert.equal(result.aborted, true);
+  assert.equal(result.status, 499);
+  assert.equal(cancelled, true);
+});
+
+test("cancels a stalled provider-response read when the client disconnects", async () => {
+  const controller = new AbortController();
+  let cancelled = false;
+  const body = new ReadableStream({
+    pull() { return new Promise(() => {}); },
+    cancel() { cancelled = true; },
+  });
+  const response = new Response(body);
+  const pending = readBoundedImageProviderJson(response, MAX_IMAGE_PROVIDER_RESPONSE_BYTES, controller.signal);
+  controller.abort();
+  const result = await pending;
+  assert.equal(result.aborted, true);
+  assert.equal(cancelled, true);
+});
+
+test("does not read request or provider streams when the signal is already aborted", async () => {
+  const requestController = new AbortController();
+  requestController.abort();
+  const request = new Request("https://aahana.test/api/images/generate", {
+    method: "POST", body: "{}", duplex: "half", signal: requestController.signal,
+  });
+  assert.equal((await readBoundedImageGenerationJson(request)).status, 499);
+
+  const providerController = new AbortController();
+  providerController.abort();
+  const provider = await readBoundedImageProviderJson(responseFrom("{}"), MAX_IMAGE_PROVIDER_RESPONSE_BYTES, providerController.signal);
+  assert.equal(provider.aborted, true);
 });
