@@ -93,23 +93,23 @@ const SACRED_SUBJECT_DIRECTIONS = [
     direction: ARDHANARISHVARA_DIRECTION
   },
   {
-    pattern: /\b(lord\s+)?shiva\b|\bmahadev\b|\bmahadeva\b|\bshankar\b|\bshiv(?:\s*ji)?\b|\bbholenath\b|\bmahakaal?\b/i,
+    pattern: /\b(lord\s+)?shiva\b|\bmahadev\b|\bmahadeva\b|\bshankar\b|\bshiv(?:\s*ji)?\b|\bbholenath\b|\bmahakaal?\b|\bshambhu\b|\bneelkanth\b|\bgangadhar\b|\btryambaka\b|\btrilochana\b/i,
     direction: "Depict Lord Shiva (Mahadev) unmistakably as the Hindu deity, not a generic saint, monk, guru, or ordinary human. Include recognizable traditional iconography: blue-toned throat (Neelkanth), matted jatā hair with the crescent moon and a stream of the Ganga, tripundra ash stripes and third eye, rudraksha beads, and a trident (trishula); a serene divine presence. If seated, use a yogic Himalayan setting or Mount Kailash. Keep the face divine and dignified, with coherent anatomy and all requested attributes clearly visible."
   },
   {
-    pattern: /\b(hanuman|anjaneya|anjaneya swamy|maruti|bajrang(?:\s*bali)?|pavanputra|pawanputra|kesari\s+nandan)\b/i,
+    pattern: /\b(hanuman|anjaneya|anjaneya swamy|maruti|bajrang(?:\s*bali)?|pavanputra|pawanputra|kesari\s+nandan|sankat mochan|ramdoot)\b/i,
     direction: "Depict Lord Hanuman (Anjaneya) unmistakably as the Hindu monkey-faced deity, not a human saint, monk, or generic warrior. Preserve the clearly recognizable vanara face and muzzle, expressive compassionate divine eyes, traditional crown or ornaments where appropriate, gada (mace), and devotional strength. If the scene calls for it, include a saffron dhoti and a reverent devotional pose. Do not replace the monkey-faced divine form with an ordinary human face."
   },
   {
-    pattern: /\b(lord\s+)?ganesha\b|\bganapati\b|\bganpati\b|\bvinayaka\b|\bgajanan(?:a)?\b|\blambodara\b|\bvighnaharta\b/i,
+    pattern: /\b(lord\s+)?ganesha\b|\bganapati\b|\bganpati\b|\bvinayaka\b|\bgajanan(?:a)?\b|\blambodara\b|\bvighnaharta\b|\bekadanta\b|\bvakratunda\b|\bsiddhivinayak\b/i,
     direction: "Depict Lord Ganesha unmistakably as the elephant-headed Hindu deity, with a clear elephant face and trunk, traditional crown and ornaments, and his characteristic divine form. Never substitute an ordinary human face."
   },
   {
-    pattern: /\b(lord\s+)?krishna\b|\bkanhaiya\b|\bkanha\b|\bgovinda\b|\bgopal(?:a)?\b|\bmadhav(?:a)?\b/i,
+    pattern: /\b(lord\s+)?krishna\b|\bkanhaiya\b|\bkanha\b|\bgovinda\b|\bgopal(?:a)?\b|\bmadhav(?:a)?\b|\bmurlidhar\b|\bdamodar\b|\bvasudev(?:a)?\b/i,
     direction: "Depict Lord Krishna unmistakably as the Hindu deity, with a serene youthful divine appearance, blue-toned skin, peacock feather, yellow garments and flute when suitable to the requested scene. Do not substitute a generic human saint."
   },
   {
-    pattern: /\b(lord\s+)?rama\b|\bshri\s+ram\b|\bsiyaram\b|\braghav(?:a)?\b|\braghunath(?:a)?\b/i,
+    pattern: /\b(lord\s+)?rama\b|\bshri\s+ram\b|\bsiyaram\b|\braghav(?:a)?\b|\braghunath(?:a)?\b|\bmaryada purushottam\b|\bdasharath nandan\b/i,
     direction: "Depict Lord Rama unmistakably as the Hindu deity, with traditional divine iconography such as a bow, dignified royal-yet-humble presence, and appropriate traditional attire. Do not depict a generic monk or saint."
   }
 ];
