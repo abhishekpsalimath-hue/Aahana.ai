@@ -7,7 +7,7 @@ const INTENTS = Object.freeze([
 const MIN_MATCHES = 1;
 
 function containsPhrase(text, phrase) {
-  return (\` \${text} \`).includes(\` \${phrase} \`);
+  return (" " + text + " ").includes(" " + phrase + " ");
 }
 
 export function suggestWorkflowTemplate(request) {
