@@ -717,3 +717,11 @@ h1,.brand,.composer-mode,.breadcrumb{font-family:"Space Grotesk","Manrope",sans-
 
 .business-link{border:1px solid #302a3b;border-radius:9px;background:#15141c}
 @media(max-width:760px){.sidebar{flex-wrap:wrap;row-gap:9px}.business-link{display:flex;flex:1 1 calc(50% - 8px);justify-content:center;margin:0;padding:9px 8px;font-size:10px;background:#15141c;border:1px solid #302a3b;border-radius:9px}}
+
+
+/* Independent astronaut drift — no orbit, tether or fixed planetary path. */
+.astronaut-float{top:5%;right:clamp(18px,5vw,76px);width:clamp(92px,12vw,156px);height:auto;aspect-ratio:1;animation:astronaut-free-drift 31s ease-in-out infinite alternate;transform-origin:52% 48%;}
+.astronaut-float svg{overflow:visible;filter:drop-shadow(0 8px 22px #b99af566)}
+@keyframes astronaut-free-drift{0%{transform:translate3d(0,0,0) rotate(-11deg)}18%{transform:translate3d(-24px,19px,0) rotate(3deg)}43%{transform:translate3d(-8px,52px,0) rotate(13deg)}68%{transform:translate3d(22px,28px,0) rotate(-5deg)}100%{transform:translate3d(-18px,-12px,0) rotate(9deg)}}
+@media(max-width:760px){.astronaut-float{top:7%;right:8px;width:clamp(76px,21vw,112px);opacity:.84}}
+@media(prefers-reduced-motion:reduce){.astronaut-float{animation:none!important;transform:rotate(-7deg)}}
