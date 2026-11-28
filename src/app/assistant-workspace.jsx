@@ -1893,6 +1893,11 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
               <i className="galaxy-arm galaxy-arm-two" />
               <i className="galaxy-arm galaxy-arm-three" />
             </div>
+            <div className="universe-black-hole" aria-hidden="true">
+              <span className="black-hole-lensing" />
+              <span className="black-hole-disk" />
+              <span className="black-hole-core" />
+            </div>
             <div className="universe-particles">
               {Array.from({ length: 64 }, (_, index) => (
                 <i
