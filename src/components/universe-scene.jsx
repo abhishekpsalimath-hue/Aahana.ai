@@ -81,7 +81,7 @@ export default function UniverseScene() {
     window.addEventListener("pointerdown", onUniversePointerDown, { passive: true });
     camera.position.set(0, 0, 15.5);
     camera.lookAt(0, 0, -2.6);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, lowPower ? 0.7 : compact ? 0.9 : 1.15));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, lowPower ? 0.55 : compact ? 0.65 : 1.15));
     renderer.setClearColor(0x05040a, 0);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -147,7 +147,7 @@ export default function UniverseScene() {
     scene.add(rimLight);
 
     // Mobile/low-power devices retain the layered sky but use bounded particle buffers.
-    const starCount = lowPower ? 1800 : compact ? 3000 : 4800;
+    const starCount = lowPower ? 1100 : compact ? 1500 : 4800;
     const starPositions = new Float32Array(starCount * 3);
     const starColors = new Float32Array(starCount * 3);
     const palette = [new THREE.Color(0xffffff), new THREE.Color(0xffdfbd), new THREE.Color(0xcbb5ff), new THREE.Color(0x9caef0)];
@@ -169,7 +169,7 @@ export default function UniverseScene() {
     const galaxy = new THREE.Group();
     galaxy.position.set(-3.4, 2.1, -24);
     galaxy.rotation.set(0.48, -0.24, 0.12);
-    const galaxyCount = lowPower ? 1800 : compact ? 3400 : 6800;
+    const galaxyCount = lowPower ? 900 : compact ? 1400 : 6800;
     const galaxyPositions = new Float32Array(galaxyCount * 3);
     const galaxyColors = new Float32Array(galaxyCount * 3);
     const galaxyPalette = [
@@ -231,7 +231,7 @@ export default function UniverseScene() {
     const distantGalaxy = new THREE.Group();
     distantGalaxy.position.set(7.4, 4.25, -46);
     distantGalaxy.rotation.set(0.82, 0.34, -0.28);
-    const distantGalaxyCount = lowPower ? 360 : compact ? 680 : 1200;
+    const distantGalaxyCount = lowPower ? 220 : compact ? 320 : 1200;
     const distantPositions = new Float32Array(distantGalaxyCount * 3);
     const distantColors = new Float32Array(distantGalaxyCount * 3);
     const distantPalette = [
@@ -308,7 +308,7 @@ export default function UniverseScene() {
     // Interstellar dust: three overlapping volumetric particle banks give the
     // star systems a sense of scale and suspended matter. Soft point sprites
     // retain their shape at distance and avoid flat, opaque fog cards.
-    const dustCount = lowPower ? 400 : compact ? 750 : 1500;
+    const dustCount = lowPower ? 180 : compact ? 300 : 1500;
     const dustPositions = new Float32Array(dustCount * 3);
     const dustColors = new Float32Array(dustCount * 3);
     const dustSizes = new Float32Array(dustCount);
@@ -1072,7 +1072,7 @@ export default function UniverseScene() {
     // A stream of near-field stars travels towards the viewer, creating
     // genuine forward movement rather than rotating a static star dome.
     // Preserve 20,000 forward-travelling stars on desktop, 10,000 on capable phones, and a bounded 6,000 on constrained devices.
-    const nearStarCount = lowPower ? 2500 : compact ? 5000 : 10000;
+    const nearStarCount = lowPower ? 1200 : compact ? 2200 : 10000;
     const nearStarPositions = new Float32Array(nearStarCount * 3);
     const nearStarColors = new Float32Array(nearStarCount * 3);
     const nearStarSpeeds = new Float32Array(nearStarCount);
@@ -1151,7 +1151,7 @@ export default function UniverseScene() {
     updatePlanetLightDirections();
 
     const pointer = { x: 0, y: 0 };
-    const frameInterval = 1000 / (lowPower ? 24 : compact ? 30 : 45);
+    const frameInterval = 1000 / (lowPower ? 20 : compact ? 24 : 45);
     let lastFrameTime = 0;
     const onPointer = (event) => {
       pointer.x = (event.clientX / Math.max(1, window.innerWidth) - 0.5) * 2;
