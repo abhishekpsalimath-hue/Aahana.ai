@@ -120,7 +120,7 @@ test("escapes Markdown supplied in task titles, summaries and blockers", () => {
   });
   const markdown = formatAutonomousProgressReportMarkdown(report);
   assert.match(markdown, /Task \\| \\[injected\\] \\*title\\*/);
-  assert.match(markdown, /\\\\# injected heading/);
+  assert.ok(markdown.includes("Line one " + "\\" + "# injected heading"));
   assert.match(markdown, /\\| \\[spoofed link\\]/);
 });
 
