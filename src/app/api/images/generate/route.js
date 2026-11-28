@@ -23,9 +23,12 @@ export async function POST(request) {
     }, { status: 503 });
   }
 
-  const parsedBody = await readBoundedImageGenerationJson(request);
+  const parsedBody = await readBoundedImageGenerationJson(request, undefined, request.signal);
   if (!parsedBody.ok) {
     return NextResponse.json({ error: parsedBody.error }, { status: parsedBody.status });
+  }
+  if (parsedBody.aborted || request.signal.aborted) {
+    return NextResponse.json({ error: "Image generation cancelled." }, { status: 499 });
   }
   const body = parsedBody.value;
   const input = parseImageGenerationInput(body);
@@ -57,8 +60,11 @@ export async function POST(request) {
     if (request.signal.aborted) {
       return NextResponse.json({ error: "Image generation cancelled." }, { status: 499 });
     }
-    const parsedProviderResponse = await readBoundedImageProviderJson(response);
+    const parsedProviderResponse = await readBoundedImageProviderJson(response, undefined, request.signal);
     if (request.signal.aborted) {
+      return NextResponse.json({ error: "Image generation cancelled." }, { status: 499 });
+    }
+    if (parsedProviderResponse.aborted || request.signal.aborted) {
       return NextResponse.json({ error: "Image generation cancelled." }, { status: 499 });
     }
     const result = parsedProviderResponse.ok ? parsedProviderResponse.value : null;

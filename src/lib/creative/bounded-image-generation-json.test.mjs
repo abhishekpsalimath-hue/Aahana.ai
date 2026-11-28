@@ -91,3 +91,51 @@ test("rejects oversized provider responses by declared and streamed byte lengths
 test("rejects invalid provider response limits", async () => {
   assert.equal((await readBoundedImageProviderJson(responseFrom("{}"), 0)).ok, false);
 });
+
+
+test("cancels a stalled request-body read when the client disconnects", async () => {
+  const controller = new AbortController();
+  let cancelled = false;
+  const body = new ReadableStream({
+    pull() { return new Promise(() => {}); },
+    cancel() { cancelled = true; },
+  });
+  const request = new Request("https://aahana.test/api/images/generate", {
+    method: "POST", body, duplex: "half", signal: controller.signal,
+  });
+  const pending = readBoundedImageGenerationJson(request);
+  controller.abort();
+  const result = await pending;
+  assert.equal(result.aborted, true);
+  assert.equal(result.status, 499);
+  assert.equal(cancelled, true);
+});
+
+test("cancels a stalled provider-response read when the client disconnects", async () => {
+  const controller = new AbortController();
+  let cancelled = false;
+  const body = new ReadableStream({
+    pull() { return new Promise(() => {}); },
+    cancel() { cancelled = true; },
+  });
+  const response = new Response(body);
+  const pending = readBoundedImageProviderJson(response, MAX_IMAGE_PROVIDER_RESPONSE_BYTES, controller.signal);
+  controller.abort();
+  const result = await pending;
+  assert.equal(result.aborted, true);
+  assert.equal(cancelled, true);
+});
+
+test("does not read request or provider streams when the signal is already aborted", async () => {
+  const requestController = new AbortController();
+  requestController.abort();
+  const request = new Request("https://aahana.test/api/images/generate", {
+    method: "POST", body: "{}", duplex: "half", signal: requestController.signal,
+  });
+  assert.equal((await readBoundedImageGenerationJson(request)).status, 499);
+
+  const providerController = new AbortController();
+  providerController.abort();
+  const provider = await readBoundedImageProviderJson(responseFrom("{}"), MAX_IMAGE_PROVIDER_RESPONSE_BYTES, providerController.signal);
+  assert.equal(provider.aborted, true);
+});
