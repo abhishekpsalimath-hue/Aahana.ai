@@ -919,3 +919,31 @@ h1,.brand,.composer-mode,.breadcrumb{font-family:"Space Grotesk","Manrope",sans-
   .shell .new-chat { padding: 8px 9px; font-size: 10px; }
   .shell .mobile-history-toggle { padding-inline: 6px; font-size: 9px; }
 }
+
+
+/* Idle stability: avoid a fixed-height mobile workspace being clipped when
+   Android Chrome changes its visual viewport while browser chrome settles. */
+@media (max-width: 760px) {
+  html, body { min-height: 100%; height: auto; overflow-x: clip; }
+  .shell { min-height: 100svh; height: auto; overflow: visible; }
+  .shell > .sidebar { position: relative; top: auto; height: auto; min-height: 58px; }
+  .shell > .main-panel { min-height: calc(100svh - 58px); height: auto; overflow: visible; }
+  .shell .welcome { min-height: 0; }
+  .shell .footer { margin-top: 36px; }
+}
+
+/* Keep the companion visibly free-floating above the scene and page chrome. */
+.astronaut-companion {
+  z-index: 40;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  outline: 0 !important;
+}
+.astronaut-companion__image {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
