@@ -34,12 +34,9 @@ function UniverseScene() {
     const canvas = canvasRef.current;
     if (!canvas) return undefined;
     const compact = window.matchMedia?.("(max-width: 760px)").matches === true;
-    // Keep the workspace usable on phones with constrained WebGL/GPU memory.
-    // The CSS space scene remains visible as a lightweight fallback.
-    if (compact) {
-      canvas.dataset.webglFallback = "true";
-      return undefined;
-    }
+    // WebGL is enabled on phones too, but at a deliberately lower render
+    // resolution and particle budget. CSS remains the fallback if the device
+    // cannot create a context or loses it while the workspace is open.
     let renderer, raf = 0, active = true, inView = true, observer, contextAvailable = true;
     const motionQuery = window.matchMedia?.("(prefers-reduced-motion: reduce)");
     let reduced = motionQuery?.matches === true;
@@ -54,7 +51,7 @@ function UniverseScene() {
     const camera = new THREE.PerspectiveCamera(48, 1, 0.1, 120);
     camera.position.set(0, 0, 15.5);
     camera.lookAt(0, 0, -2.6);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, compact ? 1 : 1.2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, compact ? 0.82 : 1.15));
     renderer.setClearColor(0x05040a, 0);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -117,7 +114,9 @@ function UniverseScene() {
     rimLight.position.set(7, -2, -3);
     scene.add(rimLight);
 
-    const starCount = compact ? 1150 : 1500;
+    // Twenty thousand desktop stars create a dense depth field; compact
+    // devices receive a smaller GPU budget while retaining real WebGL depth.
+    const starCount = compact ? 3600 : 20000;
     const starPositions = new Float32Array(starCount * 3);
     const starColors = new Float32Array(starCount * 3);
     const palette = [new THREE.Color(0xffffff), new THREE.Color(0xcbb8ff), new THREE.Color(0x9eafea)];
@@ -147,10 +146,34 @@ function UniverseScene() {
       const surface = document.createElement("canvas");
       surface.width = width;
       surface.height = height;
-      const context = surface.getContext("2d", { willReadFrequently: true });
+      let context;
+      try {
+        context = surface.getContext("2d", { willReadFrequently: true });
+      } catch {
+        return { map: null, bumpMap: null };
+      }
       if (!context) return { map: null, bumpMap: null };
-      const image = context.createImageData(width, height);
-      const bump = context.createImageData(width, height);
+      let image, bump;
+      try {
+        if (typeof context.createImageData !== "function" || typeof context.putImageData !== "function") {
+          throw new Error("Canvas pixel APIs are unavailable");
+        }
+        image = context.createImageData(width, height);
+        bump = context.createImageData(width, height);
+      } catch {
+        // Keep the planet renderable on browsers with restricted canvas pixel
+        // APIs. This intentionally avoids failing the whole WebGL scene.
+        const fallback = context.createLinearGradient(0, 0, width, height);
+        fallback.addColorStop(0, colors[0]);
+        fallback.addColorStop(0.52, colors[1]);
+        fallback.addColorStop(1, colors[2]);
+        context.fillStyle = fallback;
+        context.fillRect(0, 0, width, height);
+        const fallbackMap = new THREE.CanvasTexture(surface);
+        fallbackMap.colorSpace = THREE.SRGBColorSpace;
+        fallbackMap.wrapS = THREE.RepeatWrapping;
+        return { map: fallbackMap, bumpMap: null };
+      }
       const c0 = new THREE.Color(colors[0]);
       const c1 = new THREE.Color(colors[1]);
       const c2 = new THREE.Color(colors[2]);
@@ -216,7 +239,21 @@ function UniverseScene() {
           bump.data[index + 3] = 255;
         }
       }
-      context.putImageData(image, 0, 0);
+      try {
+        context.putImageData(image, 0, 0);
+      } catch {
+        // Some embedded browsers expose createImageData but reject pixel writes.
+        const fallback = context.createLinearGradient(0, 0, width, height);
+        fallback.addColorStop(0, colors[0]);
+        fallback.addColorStop(0.52, colors[1]);
+        fallback.addColorStop(1, colors[2]);
+        context.fillStyle = fallback;
+        context.fillRect(0, 0, width, height);
+        const fallbackMap = new THREE.CanvasTexture(surface);
+        fallbackMap.colorSpace = THREE.SRGBColorSpace;
+        fallbackMap.wrapS = THREE.RepeatWrapping;
+        return { map: fallbackMap, bumpMap: null };
+      }
       const bumpCanvas = document.createElement("canvas");
       bumpCanvas.width = width;
       bumpCanvas.height = height;
@@ -393,6 +430,60 @@ function UniverseScene() {
     addPlanet(-5.6, 1.7, -2.4, 0.92, 0x8d73bc, [0x2e294e, 0x8170a6, 0xd0b8e8], false, 2.7);
     addPlanet(5.2, 1.1, -5.1, 0.64, 0x7782bd, [0x4c527b, 0x858bb7, 0xc6b8df], true, 5.3);
     addPlanet(2.6, -3.1, 0.1, 0.34, 0xb57d9f, [0x583c65, 0xa76f91, 0xe4b7ca], false, 8.1);
+    // A small companion moon circles the distant ringed planet on its own
+    // tilted plane, giving the system a readable second orbital scale.
+    const moonOrbit = new THREE.Group();
+    moonOrbit.position.set(5.2, 1.1, -5.1);
+    moonOrbit.rotation.set(0.34, 0.12, 0.2);
+    const moon = new THREE.Mesh(
+      new THREE.SphereGeometry(0.17, 32, 24),
+      new THREE.MeshStandardMaterial({
+        color: 0xe1d9e8, roughness: 0.96, metalness: 0.02,
+        emissive: 0x242033, emissiveIntensity: 0.12,
+      })
+    );
+    moon.position.set(1.12, 0.12, 0.18);
+    moonOrbit.add(moon);
+    world.add(moonOrbit);
+
+    // A distant, instanced asteroid belt adds a real 3D scale cue without
+    // creating hundreds of individual draw calls or per-frame allocations.
+    const asteroidCount = compact ? 150 : 420;
+    const asteroidGeometry = new THREE.DodecahedronGeometry(0.052, 0);
+    const asteroidMaterial = new THREE.MeshStandardMaterial({
+      color: 0xb9a9c9, roughness: 0.94, metalness: 0.08,
+      emissive: 0x241b38, emissiveIntensity: 0.18,
+    });
+    const asteroidBelt = new THREE.Group();
+    asteroidBelt.position.set(0.8, -1.15, -7.8);
+    asteroidBelt.rotation.set(0.22, -0.12, -0.31);
+    const asteroidInstances = new THREE.InstancedMesh(asteroidGeometry, asteroidMaterial, asteroidCount);
+    asteroidInstances.frustumCulled = false;
+    const asteroidTransform = new THREE.Object3D();
+    const asteroidColor = new THREE.Color();
+    let asteroidSeed = 9173;
+    const nextAsteroidRandom = () => {
+      asteroidSeed = (asteroidSeed * 16807) % 2147483647;
+      return (asteroidSeed - 1) / 2147483646;
+    };
+    for (let i = 0; i < asteroidCount; i++) {
+      const angle = (i / asteroidCount) * Math.PI * 2 + (nextAsteroidRandom() - 0.5) * 0.045;
+      const radius = 5.9 + (nextAsteroidRandom() - 0.5) * 1.25;
+      const verticalScatter = (nextAsteroidRandom() - 0.5) * 0.72;
+      asteroidTransform.position.set(Math.cos(angle) * radius, verticalScatter, Math.sin(angle) * radius * 0.62);
+      asteroidTransform.rotation.set(nextAsteroidRandom() * Math.PI, nextAsteroidRandom() * Math.PI, nextAsteroidRandom() * Math.PI);
+      const scale = 0.42 + nextAsteroidRandom() * 1.65;
+      asteroidTransform.scale.set(scale, scale * (0.55 + nextAsteroidRandom() * 0.65), scale * (0.6 + nextAsteroidRandom() * 0.7));
+      asteroidTransform.updateMatrix();
+      asteroidInstances.setMatrixAt(i, asteroidTransform.matrix);
+      const tint = 0.72 + nextAsteroidRandom() * 0.5;
+      asteroidColor.setRGB(0.58 * tint, 0.52 * tint, 0.68 * tint);
+      asteroidInstances.setColorAt(i, asteroidColor);
+    }
+    asteroidInstances.instanceMatrix.needsUpdate = true;
+    if (asteroidInstances.instanceColor) asteroidInstances.instanceColor.needsUpdate = true;
+    asteroidBelt.add(asteroidInstances);
+    world.add(asteroidBelt);
 
     // Reuse scratch objects and initialize shader lighting before the first
     // render, including the reduced-motion path where the animation loop is idle.
@@ -459,6 +550,8 @@ function UniverseScene() {
         nebulaMaterial.uniforms.uTime.value = time;
         stars.rotation.y += 0.000035 * delta;
         stars.rotation.x += 0.000012 * delta;
+        asteroidBelt.rotation.y += 0.00011 * delta;
+        moonOrbit.rotation.y += 0.00105 * delta;
         planets.forEach((planet, i) => { planet.rotation.y += (i === 0 ? 0.00055 : 0.0008) * delta; planet.rotation.x += 0.00008 * delta; });
         cloudLayers.forEach((cloud) => { cloud.rotation.y += 0.00068 * delta; cloud.rotation.x += 0.000035 * delta; });
         updatePlanetLightDirections();
@@ -1867,8 +1960,18 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
               <i className="galaxy-arm galaxy-arm-two" />
               <i className="galaxy-arm galaxy-arm-three" />
             </div>
+            <div className="universe-black-hole" aria-hidden="true">
+              <span className="black-hole-lensing" />
+              <span className="black-hole-disk" />
+              <span className="black-hole-core" />
+            </div>
+            <div className="universe-aurora" aria-hidden="true">
+              <i className="aurora-ribbon aurora-ribbon-one" />
+              <i className="aurora-ribbon aurora-ribbon-two" />
+              <i className="aurora-ribbon aurora-ribbon-three" />
+            </div>
             <div className="universe-particles">
-              {Array.from({ length: 64 }, (_, index) => (
+              {Array.from({ length: 96 }, (_, index) => (
                 <i
                   key={index}
                   style={{
@@ -1882,7 +1985,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
               ))}
             </div>
             <div className="universe-comets">
-              {Array.from({ length: 6 }, (_, index) => (
+              {Array.from({ length: 9 }, (_, index) => (
                 <i
                   key={index}
                   style={{
@@ -1894,6 +1997,29 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                   }}
                 />
               ))}
+            </div>
+            <div className="astronaut-float" aria-hidden="true">
+              <svg viewBox="0 0 160 160" role="presentation">
+                <defs>
+                  <linearGradient id="astronaut-suit" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#fff" /><stop offset=".58" stopColor="#d9d1e8" /><stop offset="1" stopColor="#8e829f" /></linearGradient>
+                  <linearGradient id="astronaut-visor" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#b8a4e9" /><stop offset=".48" stopColor="#36324f" /><stop offset="1" stopColor="#11121e" /></linearGradient>
+                </defs>
+                <ellipse cx="82" cy="139" rx="34" ry="7" fill="#a98af0" opacity=".12" />
+                <g stroke="#8e829f" strokeWidth="2.5" strokeLinejoin="round">
+                  <path d="M47 76 28 91l-7 25 13 5 17-23M107 76l20 12 9 23-12 8-18-22" fill="url(#astronaut-suit)" />
+                  <path d="m56 91-9 31 8 20 22 7 22-8 10-22-9-29Z" fill="url(#astronaut-suit)" />
+                  <path d="m61 119-4 22-12 9 2 6 22-3 9-21M98 119l5 22 13 9-3 6-22-3-9-21" fill="#c9c0d8" />
+                  <path d="M50 58c0-22 14-37 33-37s33 15 33 37v12c0 19-14 32-33 32S50 89 50 70Z" fill="url(#astronaut-suit)" />
+                  <path d="M56 57c0-17 11-28 27-28s27 11 27 28v7c0 15-11 24-27 24S56 79 56 64Z" fill="url(#astronaut-visor)" stroke="#f4edff" strokeWidth="3" />
+                  <path d="M65 49c6-8 15-12 25-10" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" opacity=".55" />
+                  <rect x="39" y="67" width="13" height="29" rx="5" fill="#aaa0bb" />
+                  <rect x="112" y="67" width="13" height="29" rx="5" fill="#aaa0bb" />
+                  <rect x="69" y="101" width="29" height="23" rx="6" fill="#b6a9ca" />
+                  <path d="M76 109h15M76 115h10" stroke="#5c536c" strokeWidth="2" strokeLinecap="round" />
+                </g>
+                <circle cx="120" cy="42" r="3" fill="#fff" opacity=".8" />
+                <circle cx="35" cy="43" r="2" fill="#d8c5ff" opacity=".8" />
+              </svg>
             </div>
           </div>
         </div>
