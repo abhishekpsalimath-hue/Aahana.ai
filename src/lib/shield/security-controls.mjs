@@ -45,3 +45,53 @@ export function toggleReviewedControl(reviewedIds, controlId) {
   else current.add(controlId);
   return [...current];
 }
+
+export const EVIDENCE_REVIEW_STATUSES = Object.freeze([
+  "not-reviewed",
+  "evidence-present",
+  "gap-found",
+]);
+
+const REVIEW_KEYS = new Set(["status", "note"]);
+
+export function updateEvidenceReview(reviews, controlId, input) {
+  if (!CONTROL_IDS.has(controlId)) {
+    return { ok: false, errors: ["Choose a known security control."], reviews: null };
+  }
+  if (!input || typeof input !== "object" || Array.isArray(input) ||
+      Object.keys(input).some((key) => !REVIEW_KEYS.has(key))) {
+    return { ok: false, errors: ["Evidence review contains unsupported fields."], reviews: null };
+  }
+  if (!EVIDENCE_REVIEW_STATUSES.includes(input.status)) {
+    return { ok: false, errors: ["Choose a valid evidence review status."], reviews: null };
+  }
+  if (typeof input.note !== "string" || input.note.length > 500 ||
+      /[\\u0000-\\u001f\\u007f]/.test(input.note)) {
+    return { ok: false, errors: ["Evidence notes must be 500 characters or fewer and contain no control characters."], reviews: null };
+  }
+  const current = reviews && typeof reviews === "object" && !Array.isArray(reviews) ? reviews : {};
+  const next = { ...current };
+  next[controlId] = Object.freeze({ status: input.status, note: input.note.trim() });
+  return { ok: true, errors: [], reviews: Object.freeze(next) };
+}
+
+export function getEvidenceReviewSummary(reviews) {
+  const safe = reviews && typeof reviews === "object" && !Array.isArray(reviews) ? reviews : {};
+  let evidencePresent = 0;
+  let gapsFound = 0;
+  let notesAdded = 0;
+  for (const control of SECURITY_CONTROLS) {
+    const review = safe[control.id];
+    if (!review || typeof review !== "object") continue;
+    if (review.status === "evidence-present") evidencePresent += 1;
+    if (review.status === "gap-found") gapsFound += 1;
+    if (typeof review.note === "string" && review.note.trim()) notesAdded += 1;
+  }
+  return Object.freeze({
+    evidencePresent,
+    gapsFound,
+    notesAdded,
+    notReviewed: SECURITY_CONTROLS.length - evidencePresent - gapsFound,
+    totalCount: SECURITY_CONTROLS.length,
+  });
+}
