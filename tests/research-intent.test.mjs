@@ -19,12 +19,12 @@ test("live research recognises regional-language freshness requests", () => {
     "आज की ताज़ा खबरें स्रोतों के साथ बताइए",
     "சமீபத்திய விண்வெளி ஆராய்ச்சியைத் தேடுங்கள்",
     "తాజా సాంకేతిక వార్తలను మూలాలతో వివరించండి",
-    "ಇವತ್ತಿನ AI updates mattu recent developments heli",
-    "ಇವತ್ತು share market rates enu?",
+    "ivattina AI updates mattu recent developments heli",
+    "ivattu share market rates enu?",
     "aaj ki taaza khabrein sources ke saath bataiye",
     "taaza samachar aur latest announcements",
     "aaj ke current prices compare karo",
-    "ಇಂದಿನ ಹೊಸ technology suddi heli",
+    "ivattina technology suddi heli",
   ]) assert.equal(shouldSearchWeb(prompt), true, prompt);
 });
 
