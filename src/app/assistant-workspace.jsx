@@ -430,6 +430,21 @@ function UniverseScene() {
     addPlanet(-5.6, 1.7, -2.4, 0.92, 0x8d73bc, [0x2e294e, 0x8170a6, 0xd0b8e8], false, 2.7);
     addPlanet(5.2, 1.1, -5.1, 0.64, 0x7782bd, [0x4c527b, 0x858bb7, 0xc6b8df], true, 5.3);
     addPlanet(2.6, -3.1, 0.1, 0.34, 0xb57d9f, [0x583c65, 0xa76f91, 0xe4b7ca], false, 8.1);
+    // A small companion moon circles the distant ringed planet on its own
+    // tilted plane, giving the system a readable second orbital scale.
+    const moonOrbit = new THREE.Group();
+    moonOrbit.position.set(5.2, 1.1, -5.1);
+    moonOrbit.rotation.set(0.34, 0.12, 0.2);
+    const moon = new THREE.Mesh(
+      new THREE.SphereGeometry(0.17, 32, 24),
+      new THREE.MeshStandardMaterial({
+        color: 0xe1d9e8, roughness: 0.96, metalness: 0.02,
+        emissive: 0x242033, emissiveIntensity: 0.12,
+      })
+    );
+    moon.position.set(1.12, 0.12, 0.18);
+    moonOrbit.add(moon);
+    world.add(moonOrbit);
 
     // A distant, instanced asteroid belt adds a real 3D scale cue without
     // creating hundreds of individual draw calls or per-frame allocations.
@@ -536,6 +551,7 @@ function UniverseScene() {
         stars.rotation.y += 0.000035 * delta;
         stars.rotation.x += 0.000012 * delta;
         asteroidBelt.rotation.y += 0.00011 * delta;
+        moonOrbit.rotation.y += 0.00105 * delta;
         planets.forEach((planet, i) => { planet.rotation.y += (i === 0 ? 0.00055 : 0.0008) * delta; planet.rotation.x += 0.00008 * delta; });
         cloudLayers.forEach((cloud) => { cloud.rotation.y += 0.00068 * delta; cloud.rotation.x += 0.000035 * delta; });
         updatePlanetLightDirections();
