@@ -39,6 +39,25 @@ function hasOnlyDataKeys(value, allowed) {
   }
 }
 
+function isPlainDataArray(value) {
+  try {
+    if (!Array.isArray(value) || Object.getPrototypeOf(value) !== Array.prototype) return false;
+    const keys = Reflect.ownKeys(value);
+    for (const key of keys) {
+      if (key === "length") continue;
+      if (typeof key !== "string" || !/^(0|[1-9]\\d*)$/.test(key) || Number(key) >= value.length) return false;
+      const descriptor = Object.getOwnPropertyDescriptor(value, key);
+      if (!descriptor || !Object.hasOwn(descriptor, "value")) return false;
+    }
+    for (let index = 0; index < value.length; index += 1) {
+      if (!Object.hasOwn(value, index)) return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function validateWorkflow(workflow) {
   const errors = [];
   if (!workflow || typeof workflow !== "object" || Array.isArray(workflow)) {
@@ -53,7 +72,7 @@ export function validateWorkflow(workflow) {
   if (typeof workflow.name !== "string" || !workflow.name.trim() || workflow.name.length > 120 || hasControlCharacters(workflow.name)) {
     errors.push("Workflow name must contain 1–120 characters.");
   }
-  if (!Array.isArray(workflow.steps) || workflow.steps.length < 2 || workflow.steps.length > MAX_STEPS) {
+  if (!isPlainDataArray(workflow.steps) || workflow.steps.length < 2 || workflow.steps.length > MAX_STEPS) {
     errors.push("Workflow must contain between 2 and " + MAX_STEPS + " steps.");
     return { valid: false, errors };
   }
