@@ -85,3 +85,35 @@ test("rejects control characters in workflow names and step labels", () => {
   badLabel.steps[1].label = "Prepare summary\u0000hidden";
   assert.equal(validateWorkflow(badLabel).valid, false);
 });
+
+
+test("rejects accessor properties without invoking getters", () => {
+  const workflow = validWorkflow();
+  let getterCalled = false;
+  Object.defineProperty(workflow.steps[1], "label", {
+    enumerable: true,
+    get() {
+      getterCalled = true;
+      throw new Error("getter must not run");
+    },
+  });
+  const result = validateWorkflow(workflow);
+  assert.equal(result.valid, false);
+  assert.equal(getterCalled, false);
+});
+
+test("rejects custom prototypes and symbol-keyed workflow data", () => {
+  const inherited = Object.assign(Object.create({ inherited: true }), validWorkflow());
+  assert.equal(validateWorkflow(inherited).valid, false);
+  const symbolKeyed = validWorkflow();
+  symbolKeyed[Symbol("hidden")] = "unsupported";
+  assert.equal(validateWorkflow(symbolKeyed).valid, false);
+});
+
+test("accepts a null-prototype workflow made only of safe own data fields", () => {
+  const source = validWorkflow();
+  const workflow = Object.assign(Object.create(null), source, {
+    steps: source.steps.map((step) => Object.assign(Object.create(null), step)),
+  });
+  assert.deepEqual(validateWorkflow(workflow), { valid: true, errors: [] });
+});
