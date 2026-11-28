@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createAutonomousProgressReport } from "./autonomous-progress-report.mjs";
+import { createAutonomousProgressReport, formatAutonomousProgressReportMarkdown } from "./autonomous-progress-report.mjs";
 
 const NOW = "2026-11-28T09:00:00.000Z";
 const SHA = "a".repeat(40);
@@ -95,4 +95,35 @@ test("an empty report does not invent completed work", () => {
   assert.equal(report.totals.completedVerified, 0);
   assert.equal(report.totals.completionPercent, 0);
   assert.match(report.headline, /No task evidence/);
+});
+
+test("formats Markdown with verified commits, blockers and next actions", () => {
+  const report = createAutonomousProgressReport({
+    date: "2026-11-28", generatedAt: NOW,
+    tasks: [verifiedTask, { taskId: "task-2", title: "Daily report UI", state: "in-progress", updatedAt: NOW, summary: "Wire reviewed view.", verification: null }],
+    blockers: ["Preview quota unavailable"],
+  });
+  const markdown = formatAutonomousProgressReportMarkdown(report);
+  assert.match(markdown, /# Aahana AI — Daily Progress/);
+  assert.match(markdown, /1 of 2 tasks completed and verified/);
+  assert.match(markdown, /Improve creative prompt fidelity — completed/);
+  assert.ok(markdown.includes("Commit: " + String.fromCharCode(96) + "a".repeat(40) + String.fromCharCode(96)));
+  assert.match(markdown, /Preview quota unavailable/);
+  assert.match(markdown, /Continue the active task: Daily report UI/);
+});
+
+test("escapes Markdown supplied in task titles, summaries and blockers", () => {
+  const report = createAutonomousProgressReport({
+    date: "2026-11-28", generatedAt: NOW,
+    tasks: [{ taskId: "safe", title: "Task | [injected] *title*", state: "queued", updatedAt: NOW, summary: "Line one\n# injected heading", verification: null }],
+    blockers: ["| [spoofed link](https://example.invalid)"],
+  });
+  const markdown = formatAutonomousProgressReportMarkdown(report);
+  assert.match(markdown, /Task \\| \\[injected\\] \\*title\\*/);
+  assert.doesNotMatch(markdown, /# injected heading/);
+  assert.match(markdown, /\\| \\[spoofed link\\]/);
+});
+
+test("rejects malformed report input in the Markdown formatter", () => {
+  assert.throws(() => formatAutonomousProgressReportMarkdown(null), /normalized autonomous progress report/);
 });
