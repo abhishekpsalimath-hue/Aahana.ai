@@ -100,3 +100,23 @@ test("evidence summary ignores malformed and inherited review records", () => {
     evidencePresent: 0, gapsFound: 1, notesAdded: 1, remediationAssigned: 0, notReviewed: 7, totalCount: 8,
   });
 });
+
+test("evidence review safely rejects proxy traps and revoked proxies", () => {
+  const hostileRecord = new Proxy({ status: "gap-found", note: "unsafe" }, {
+    ownKeys() { throw new Error("blocked ownKeys"); },
+  });
+  const hostileInput = new Proxy({ status: "gap-found", note: "" }, {
+    ownKeys() { throw new Error("blocked ownKeys"); },
+  });
+  const revoked = Proxy.revocable({}, {});
+  revoked.revoke();
+  assert.equal(updateEvidenceReview({}, "mfa", hostileInput).ok, false);
+  assert.deepEqual(getEvidenceReviewSummary({ mfa: hostileRecord }), {
+    evidencePresent: 0, gapsFound: 0, notesAdded: 0, remediationAssigned: 0, notReviewed: 8, totalCount: 8,
+  });
+  assert.equal(updateEvidenceReview(revoked.proxy, "mfa", { status: "gap-found", note: "" }).ok, true);
+  assert.equal(updateEvidenceReview({}, "mfa", revoked.proxy).ok, false);
+  assert.deepEqual(getEvidenceReviewSummary(revoked.proxy), {
+    evidencePresent: 0, gapsFound: 0, notesAdded: 0, remediationAssigned: 0, notReviewed: 8, totalCount: 8,
+  });
+});
