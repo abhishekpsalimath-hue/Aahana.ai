@@ -818,3 +818,9 @@ h1,.brand,.composer-mode,.breadcrumb{font-family:"Space Grotesk","Manrope",sans-
     letter-spacing: -0.075em;
   }
 }
+
+
+/* Founder signature belongs at the very end of the workspace, never under the welcome heading. */
+.footer .founder-signature{margin:0!important;align-self:center;font-size:clamp(23px,2.2vw,29px)!important;line-height:1!important;white-space:nowrap;text-align:right;transform:rotate(-3deg)}
+.footer .founder-signature::after{width:70%;height:5px;margin:3px auto 0}
+@media(max-width:760px){.footer{flex-wrap:wrap;gap:10px}.footer .founder-signature{flex-basis:100%;text-align:right;font-size:25px!important}}
