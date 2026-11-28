@@ -2258,36 +2258,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                 }} />
               </label>}
               {imageUpscaleFile && <span className="image-attach-name">{imageUpscaleFile.name} <button type="button" onClick={() => enhanceImageTo4K("upscale-upload")} disabled={imageUpscaling || imageGenerating || busy}>{imageUpscaling ? "Enhancing…" : "Enhance to 4K"}</button> <button type="button" onClick={() => setImageUpscaleFile(null)} disabled={imageUpscaling}>Remove</button></span>}
-              <details className="video-advanced-settings">
-                <summary>Image framing</summary>
-                <select aria-label="Image aspect ratio" value={imageAspectRatio} onChange={(event) => setImageAspectRatio(event.target.value)} className="copy-message">
-                  <option value="auto">Automatic from prompt</option>
-                  <option value="1:1">Square 1:1</option>
-                  <option value="3:4">Portrait 3:4</option>
-                  <option value="4:3">Landscape 4:3</option>
-                  <option value="16:9">Widescreen 16:9</option>
-                </select>
-              </details>
-              <details className="video-advanced-settings">
-                <summary>Image series consistency (optional)</summary>
-                <input aria-label="Series subject identity" className="copy-message" maxLength={180} placeholder="Same subject identity and defining traits"
-                  value={imageSeries.subject} onChange={(event) => setImageSeries((current) => ({ ...current, subject: event.target.value }))} />
-                <input aria-label="Series wardrobe" className="copy-message" maxLength={180} placeholder="Consistent wardrobe and accessories"
-                  value={imageSeries.wardrobe} onChange={(event) => setImageSeries((current) => ({ ...current, wardrobe: event.target.value }))} />
-                <input aria-label="Series color palette" className="copy-message" maxLength={180} placeholder="Locked color palette"
-                  value={imageSeries.palette} onChange={(event) => setImageSeries((current) => ({ ...current, palette: event.target.value }))} />
-                <input aria-label="Series visual style" className="copy-message" maxLength={180} placeholder="Locked visual style and medium"
-                  value={imageSeries.style} onChange={(event) => setImageSeries((current) => ({ ...current, style: event.target.value }))} />
-                <input aria-label="Current image scene" className="copy-message" maxLength={180} placeholder="What happens in this scene?"
-                  value={imageSeries.scene} onChange={(event) => setImageSeries((current) => ({ ...current, scene: event.target.value }))} />
-                <input aria-label="Image series scene number" className="copy-message" type="number" min="1" max="12" placeholder="Scene number (1–12)"
-                  value={imageSeries.sceneNumber} onChange={(event) => setImageSeries((current) => ({ ...current, sceneNumber: event.target.value }))} />
-              </details>
-              <button className="copy-message" type="button" onClick={generateImage}
-                disabled={!prompt.trim() || imageGenerating || imageUpscaling || videoGenerating || busy || Boolean(imageFile) || Boolean(imageUpscaleFile)}>
-                {imageGenerating ? "Creating image…" : "Generate image"}
-              </button>
-            </div>
+</div>
             <label className="sr-only" htmlFor="prompt">What would you like to work on?</label>
             <textarea id="prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); e.currentTarget.form?.requestSubmit(); } }}
