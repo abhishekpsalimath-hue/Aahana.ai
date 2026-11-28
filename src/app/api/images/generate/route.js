@@ -44,6 +44,8 @@ export async function POST(request) {
     }
     const seed = Number.isInteger(body?.seed) && body.seed >= 0 && body.seed <= 0xffffffff ? body.seed : undefined;
     const providerRequest = buildImageProviderRequest({ model, prompt, steps, seed, width, height });
+    const providerTimeoutSignal = AbortSignal.timeout(55000);
+    const providerSignal = AbortSignal.any([request.signal, providerTimeoutSignal]);
     const response = await fetch(
       `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/ai/run/${model}`,
       {
@@ -53,19 +55,22 @@ export async function POST(request) {
           Authorization: `Bearer ${apiToken}`,
         },
         cache: "no-store",
-        signal: AbortSignal.any([request.signal, AbortSignal.timeout(55000)]),
+        signal: providerSignal,
       }
     );
 
     if (request.signal.aborted) {
       return NextResponse.json({ error: "Image generation cancelled." }, { status: 499 });
     }
-    const parsedProviderResponse = await readBoundedImageProviderJson(response, undefined, request.signal);
+    const parsedProviderResponse = await readBoundedImageProviderJson(response, undefined, providerSignal);
     if (request.signal.aborted) {
       return NextResponse.json({ error: "Image generation cancelled." }, { status: 499 });
     }
-    if (parsedProviderResponse.aborted || request.signal.aborted) {
-      return NextResponse.json({ error: "Image generation cancelled." }, { status: 499 });
+    if (parsedProviderResponse.aborted || providerTimeoutSignal.aborted) {
+      return NextResponse.json(
+        { error: "Image generation timed out or the provider is unavailable. Please try again." },
+        { status: 503 }
+      );
     }
     const result = parsedProviderResponse.ok ? parsedProviderResponse.value : null;
     const image = result?.result?.image;
@@ -82,7 +87,7 @@ export async function POST(request) {
       { headers: { "Cache-Control": "no-store" } }
     );
   } catch (error) {
-    if (request.signal.aborted || error?.name === "AbortError") {
+    if (request.signal.aborted) {
       return NextResponse.json({ error: "Image generation cancelled." }, { status: 499 });
     }
     console.error("Aahana image generation request failed:", error?.name || "unknown error");
