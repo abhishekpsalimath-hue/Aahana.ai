@@ -23,16 +23,30 @@ function hasControlCharacters(value) {
   return typeof value === "string" && /[\u0000-\u001f\u007f]/.test(value);
 }
 
-function hasOnlyKeys(value, allowed) {
-  return Object.keys(value).every((key) => allowed.has(key));
+const STEP_ANY_KEYS = new Set(["id", "type", "label", "operation"]);
+
+function hasOnlyDataKeys(value, allowed) {
+  try {
+    const prototype = Object.getPrototypeOf(value);
+    if (prototype !== Object.prototype && prototype !== null) return false;
+    return Reflect.ownKeys(value).every((key) => {
+      if (typeof key !== "string" || !allowed.has(key)) return false;
+      const descriptor = Object.getOwnPropertyDescriptor(value, key);
+      return Boolean(descriptor && Object.hasOwn(descriptor, "value"));
+    });
+  } catch {
+    return false;
+  }
 }
 
 export function validateWorkflow(workflow) {
   const errors = [];
   if (!workflow || typeof workflow !== "object" || Array.isArray(workflow)) {
-    return { valid: false, errors: ["Workflow must be an object."] };
+    return { valid: false, errors: ["Workflow must be a plain data object."] };
   }
-  if (!hasOnlyKeys(workflow, WORKFLOW_KEYS)) errors.push("Workflow contains unsupported properties.");
+  if (!hasOnlyDataKeys(workflow, WORKFLOW_KEYS)) {
+    return { valid: false, errors: ["Workflow must contain only supported own data properties."] };
+  }
   if (typeof workflow.id !== "string" || !ID_PATTERN.test(workflow.id)) {
     errors.push("Workflow id must be 1–64 safe characters.");
   }
@@ -46,14 +60,15 @@ export function validateWorkflow(workflow) {
   const ids = new Set();
   workflow.steps.forEach((step, index) => {
     const label = "Step " + (index + 1);
-    if (!step || typeof step !== "object" || Array.isArray(step)) {
-      errors.push(label + " must be an object.");
+    if (!step || typeof step !== "object" || Array.isArray(step) || !hasOnlyDataKeys(step, STEP_ANY_KEYS)) {
+      errors.push(label + " must be a plain data object with supported own properties.");
       return;
     }
     if (!STEP_TYPES.has(step.type)) {
       errors.push(label + " has an unsupported type.");
-    } else if (!hasOnlyKeys(step, STEP_KEYS[step.type])) {
-      errors.push(label + " contains unsupported properties.");
+    } else if (!hasOnlyDataKeys(step, STEP_KEYS[step.type])) {
+      errors.push(label + " contains unsupported properties or accessor properties.");
+      return;
     }
     if (typeof step.id !== "string" || !ID_PATTERN.test(step.id)) {
       errors.push(label + " has an invalid id.");
