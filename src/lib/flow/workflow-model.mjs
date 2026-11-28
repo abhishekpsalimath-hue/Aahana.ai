@@ -45,7 +45,7 @@ function isPlainDataArray(value) {
     const keys = Reflect.ownKeys(value);
     for (const key of keys) {
       if (key === "length") continue;
-      if (typeof key !== "string" || !/^(0|[1-9]\\d*)$/.test(key) || Number(key) >= value.length) return false;
+      if (typeof key !== "string" || !/^(0|[1-9]\d*)$/.test(key) || Number(key) >= value.length) return false;
       const descriptor = Object.getOwnPropertyDescriptor(value, key);
       if (!descriptor || !Object.hasOwn(descriptor, "value")) return false;
     }
