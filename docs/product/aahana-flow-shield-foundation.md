@@ -166,3 +166,8 @@ A follow-up UI consistency fix clears stale structured-draft explanations when a
 
 
 Flow's validator also now rejects accessor-backed, sparse, subclassed or custom-property step arrays. It verifies own data descriptors before iterating steps, so malformed array entries cannot execute getters during validation. Regression tests cover getter non-invocation, sparse arrays, array subclasses and unexpected array properties.
+
+
+## Flow workflow portability and editing — 28 November 2026
+
+The Flow canvas now supports moving action steps up/down while preserving the trigger at the start and approval gate at the end. A workflow can be exported as a versioned JSON file and imported through a bounded local file picker (64 KB maximum). Imports are parsed by a pure validator that checks the export envelope, canonical timestamp, version, workflow IDs, step allowlist, operation allowlist, and approval-gate rules; imported records are rebuilt as frozen safe data. Custom/drafted workflow identity is preserved when exporting and running a dry run. Import/export remains local-only and does not connect integrations, persist to an account, or execute work.
