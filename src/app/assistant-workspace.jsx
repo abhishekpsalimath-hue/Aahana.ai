@@ -1528,6 +1528,41 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
     printWindow.document.close();
   }
 
+  async function prepareChatImage(file) {
+    const maxSourceBytes = 5 * 1024 * 1024;
+    const maxRequestBytes = 3_300_000;
+    if (!file || file.size <= maxRequestBytes) return file;
+    if (file.size > maxSourceBytes) {
+      throw new Error("Images must be 5 MB or smaller.");
+    }
+    if (typeof createImageBitmap !== "function") {
+      throw new Error("This browser cannot optimize this image for upload. Please choose an image under 3.3 MB.");
+    }
+    const bitmap = await createImageBitmap(file);
+    try {
+      const canvas = document.createElement("canvas");
+      let scale = Math.min(1, 4096 / Math.max(bitmap.width, bitmap.height));
+      for (let dimensionAttempt = 0; dimensionAttempt < 5; dimensionAttempt += 1) {
+        canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+        canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+        const context = canvas.getContext("2d");
+        if (!context) throw new Error("Could not prepare this image for upload.");
+        context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+        for (const quality of [0.94, 0.9, 0.86, 0.82, 0.78]) {
+          const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/webp", quality));
+          if (blob?.type === "image/webp" && blob.size <= maxRequestBytes) {
+            const safeName = file.name.replace(/\.[^.]+$/, "") || "image";
+            return new File([blob], safeName + ".webp", { type: "image/webp", lastModified: file.lastModified });
+          }
+        }
+        scale *= 0.82;
+      }
+    } finally {
+      bitmap.close?.();
+    }
+    throw new Error("This image could not be optimized below the upload limit. Please choose a smaller image.");
+  }
+
   async function submitPrompt(event) {
     event.preventDefault();
     const text = prompt.trim();
@@ -1652,7 +1687,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         form.set("mode", mode);
         if (conversationId) form.set("conversationId", conversationId);
         if (selectedProjectId) form.set("projectId", selectedProjectId);
-        form.set("image", imageFile, imageFile.name);
+        const uploadImage = await prepareChatImage(imageFile);\n        form.set("image", uploadImage, uploadImage.name);
         requestBody = form;
       } else {
         requestHeaders = { "Content-Type": "application/json" };
@@ -2206,7 +2241,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
                     event.target.value = "";
                     if (!file) return;
                     if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) { setError("Choose a PNG, JPEG or WebP image."); return; }
-                    if (file.size > 2 * 1024 * 1024) { setError("Images must be 2 MB or smaller."); return; }
+                    if (file.size > 5 * 1024 * 1024) { setError("Images must be 5 MB or smaller."); return; }
                     setError("");
                     setImageFile(file);
                   }} />
