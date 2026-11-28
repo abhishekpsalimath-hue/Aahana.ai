@@ -1,0 +1,36 @@
+name: Aahana self-build safety checks
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "src/app/api/agent/self-improve/**"
+      - "src/app/api/build/self/**"
+      - "src/lib/build/**"
+      - "src/app/experience-lab/**"
+      - "src/app/assistant-workspace.jsx"
+      - ".github/workflows/self-build-safety-checks.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aahana-self-build-safety-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund --package-lock=false
+      - name: Run complete test suite
+        run: npm test
+      - name: Build application
+        run: npm run build

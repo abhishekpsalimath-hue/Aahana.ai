@@ -1490,6 +1490,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
             <button type="button" onClick={startVoiceInput} disabled={listening || busy}>{listening ? "Listening…" : "Voice"} <span aria-hidden="true">◖</span></button>
           </div>
 
+
           {messages.length > 0 && (
             <div className="conversation" aria-live="polite">
               {messages.map((item, index) => (
