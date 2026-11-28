@@ -53,13 +53,14 @@ export function validateAssessmentScope(scope, now = Date.now()) {
   };
 }
 
-export function createAssessmentRecord(scope, { assessmentId, createdAt = new Date().toISOString(), now = Date.now() } = {}) {
+export function createAssessmentRecord(scope, { assessmentId, createdAt, now = Date.now() } = {}) {
   const validation = validateAssessmentScope(scope, now);
   if (!validation.valid) return { ok: false, errors: validation.errors, record: null };
   if (typeof assessmentId !== "string" || !/^[a-zA-Z0-9_-]{1,64}$/.test(assessmentId)) {
     return { ok: false, errors: ["A safe assessment identifier is required."], record: null };
   }
-  const createdTimestamp = typeof createdAt === "string" ? Date.parse(createdAt) : NaN;
+  const effectiveCreatedAt = createdAt ?? new Date(now).toISOString();
+  const createdTimestamp = typeof effectiveCreatedAt === "string" ? Date.parse(effectiveCreatedAt) : NaN;
   if (!Number.isFinite(createdTimestamp) || createdTimestamp > now || createdTimestamp < now - MAX_SCOPE_DAYS * 86400000) {
     return { ok: false, errors: ["Assessment creation time must be valid, non-future and within the last 30 days."], record: null };
   }
