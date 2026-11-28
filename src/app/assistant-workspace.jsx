@@ -3,9 +3,10 @@
 import { createReferenceImageFile } from "@/lib/creative/reference-image-file.mjs";
 import { inferSpeechLanguage } from "@/lib/chat/speech-language.mjs";
 import { selectSpeechVoice } from "@/lib/chat/speech-voice-selection.mjs";
+import UniverseScene from "@/components/universe-scene";
+import AstronautCompanion from "./astronaut-companion";
 
 import { useEffect, useRef, useState } from "react";
-import * as THREE from "three";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getSourceFileMimeType, isSupportedSourceFile } from "@/lib/build/source-file-policy.mjs";
@@ -27,504 +28,6 @@ const starters = [
   "Write something thoughtful and concise",
   "Help me design an app or website",
 ];
-
-function UniverseScene() {
-  const canvasRef = useRef(null);
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return undefined;
-    const compact = window.matchMedia?.("(max-width: 760px)").matches === true;
-    // Keep the workspace usable on phones with constrained WebGL/GPU memory.
-    // The CSS space scene remains visible as a lightweight fallback.
-    if (compact) {
-      canvas.dataset.webglFallback = "true";
-      return undefined;
-    }
-    let renderer, raf = 0, active = true, inView = true, observer, contextAvailable = true;
-    const motionQuery = window.matchMedia?.("(prefers-reduced-motion: reduce)");
-    let reduced = motionQuery?.matches === true;
-    const pointerEnabled = window.matchMedia?.("(pointer: fine)").matches === true;
-    try {
-      renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: false, powerPreference: "low-power", stencil: false });
-    } catch {
-      canvas.dataset.webglFallback = "true";
-      return undefined;
-    }
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(48, 1, 0.1, 120);
-    camera.position.set(0, 0, 15.5);
-    camera.lookAt(0, 0, -2.6);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, compact ? 1 : 1.2));
-    renderer.setClearColor(0x05040a, 0);
-    renderer.outputColorSpace = THREE.SRGBColorSpace;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.18;
-
-    // A distant, animated volumetric-style nebula gives the scene real depth
-    // instead of relying entirely on flat CSS gradients and glowing particle dots.
-    const nebulaMaterial = new THREE.ShaderMaterial({
-      transparent: true,
-      depthWrite: false,
-      uniforms: { uTime: { value: 0 } },
-      vertexShader: `varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
-      fragmentShader: `
-        varying vec2 vUv;
-        uniform float uTime;
-        float hash(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }
-        float noise(vec2 p){
-          vec2 i=floor(p), f=fract(p);
-          f=f*f*(3.0-2.0*f);
-          return mix(mix(hash(i),hash(i+vec2(1.0,0.0)),f.x),mix(hash(i+vec2(0.0,1.0)),hash(i+vec2(1.0,1.0)),f.x),f.y);
-        }
-        float fbm(vec2 p){
-          float value=0.0, amplitude=0.5;
-          for(int i=0;i<4;i++){ value+=noise(p)*amplitude; p=p*2.03+vec2(17.2,9.4); amplitude*=0.5; }
-          return value;
-        }
-        void main(){
-          vec2 p=(vUv-0.5)*vec2(1.75,1.0);
-          float t=uTime*0.00012;
-          float warp=fbm(p*2.2+vec2(t,-t*0.7));
-          vec2 q=p+vec2(warp-0.5,fbm(p*1.7+4.0)-0.5)*0.48;
-          float clouds=fbm(q*4.4+vec2(-t*0.45,t*0.22));
-          float filaments=fbm(q*9.0+clouds*1.8);
-          float mask=smoothstep(0.47,0.79,clouds*0.72+filaments*0.38);
-          float wisps=smoothstep(0.54,0.82,filaments)*mask;
-          vec3 violet=vec3(0.23,0.14,0.42);
-          vec3 lilac=vec3(0.48,0.34,0.72);
-          vec3 blue=vec3(0.20,0.29,0.53);
-          vec3 color=mix(violet,lilac,smoothstep(0.38,0.72,clouds));
-          color=mix(color,blue,smoothstep(0.48,0.82,fbm(q*2.1+8.0))*0.62);
-          color+=vec3(0.25,0.18,0.38)*wisps*0.5;
-          float edge=1.0-smoothstep(0.38,0.88,length(p*vec2(0.82,1.12)));
-          float alpha=mask*edge*0.34+wisps*edge*0.12;
-          gl_FragColor=vec4(color,alpha);
-        }`,
-    });
-    const nebula = new THREE.Mesh(new THREE.PlaneGeometry(100, 66), nebulaMaterial);
-    nebula.position.set(0, 0, -34);
-    nebula.renderOrder = -2;
-    scene.add(nebula);
-
-    const world = new THREE.Group();
-    world.position.z = -2.5;
-    scene.add(world);
-    scene.add(new THREE.AmbientLight(0x9c8bbf, 0.72));
-    const keyLight = new THREE.PointLight(0xd8c4ff, 42, 38, 1.8);
-    keyLight.position.set(-4, 5, 7);
-    scene.add(keyLight);
-    const rimLight = new THREE.PointLight(0x7e8fe9, 24, 34, 1.7);
-    rimLight.position.set(7, -2, -3);
-    scene.add(rimLight);
-
-    const starCount = compact ? 1150 : 1500;
-    const starPositions = new Float32Array(starCount * 3);
-    const starColors = new Float32Array(starCount * 3);
-    const palette = [new THREE.Color(0xffffff), new THREE.Color(0xcbb8ff), new THREE.Color(0x9eafea)];
-    for (let i = 0; i < starCount; i++) {
-      const r = 18 + Math.random() * 48, theta = Math.random() * Math.PI * 2, phi = Math.acos(2 * Math.random() - 1);
-      starPositions.set([r * Math.sin(phi) * Math.cos(theta), r * Math.sin(phi) * Math.sin(theta), r * Math.cos(phi) - 8], i * 3);
-      const c = palette[Math.floor(Math.random() * palette.length)];
-      starColors.set([c.r, c.g, c.b], i * 3);
-    }
-    const starGeometry = new THREE.BufferGeometry();
-    starGeometry.setAttribute("position", new THREE.Float32BufferAttribute(starPositions, 3));
-    starGeometry.setAttribute("color", new THREE.Float32BufferAttribute(starColors, 3));
-    const stars = new THREE.Points(starGeometry, new THREE.PointsMaterial({ size: compact ? 0.045 : 0.052, vertexColors: true, transparent: true, opacity: 0.78, sizeAttenuation: true, depthWrite: false, blending: THREE.AdditiveBlending }));
-    scene.add(stars);
-
-    // The former central galaxy was intentionally removed. The scene now
-    // uses distributed planetary forms, atmospheric depth and moving stars.
-
-
-    const planets = [];
-    const cloudLayers = [];
-    const planetLightBindings = [];
-    const makePlanetMaps = (seed, colors) => {
-      // Keep procedural texture work bounded on phones while retaining enough
-      // texel detail for the planets at their on-screen size.
-      const width = compact ? 256 : 320, height = compact ? 128 : 160;
-      const surface = document.createElement("canvas");
-      surface.width = width;
-      surface.height = height;
-      const context = surface.getContext("2d", { willReadFrequently: true });
-      if (!context) return { map: null, bumpMap: null };
-      const image = context.createImageData(width, height);
-      const bump = context.createImageData(width, height);
-      const c0 = new THREE.Color(colors[0]);
-      const c1 = new THREE.Color(colors[1]);
-      const c2 = new THREE.Color(colors[2]);
-      const p0 = c0, p1 = c1, p2 = c2;
-      const toSRGBByte = (linear) => {
-        const value = Math.max(0, Math.min(1, linear));
-        return Math.round((value <= 0.0031308 ? value * 12.92 : 1.055 * Math.pow(value, 1 / 2.4) - 0.055) * 255);
-      };
-      // Periodic value-noise keeps the equirectangular texture seamless at its
-      // longitude seam while producing broad continents and finer terrain.
-      const hash = (x, y) => {
-        const n = Math.sin((x + seed * 19.17) * 127.1 + (y + seed * 7.31) * 311.7) * 43758.5453;
-        return (n - Math.floor(n)) * 2 - 1;
-      };
-      const smooth = (t) => t * t * (3 - 2 * t);
-      const valueNoise = (u, v, scaleX, scaleY) => {
-        const px = u * scaleX, py = v * scaleY;
-        const ix = Math.floor(px), iy = Math.floor(py);
-        const fx = smooth(px - ix), fy = smooth(py - iy);
-        const x0 = ((ix % scaleX) + scaleX) % scaleX, x1 = (x0 + 1) % scaleX;
-        const a = hash(x0, iy), b = hash(x1, iy), c = hash(x0, iy + 1), d = hash(x1, iy + 1);
-        const top = a + (b - a) * fx, bottom = c + (d - c) * fx;
-        return top + (bottom - top) * fy;
-      };
-      const smoothRange = (a, b, value) => {
-        const t = Math.max(0, Math.min(1, (value - a) / (b - a)));
-        return t * t * (3 - 2 * t);
-      };
-      for (let y = 0; y < height; y++) {
-        const v = y / height;
-        const latitude = Math.abs(v - 0.5) * 2;
-        for (let x = 0; x < width; x++) {
-          const u = x / width;
-          const broad = valueNoise(u, v, 6, 4);
-          const medium = valueNoise(u, v, 18, 10);
-          const fine = valueNoise(u, v, 54, 28);
-          const warp = valueNoise(u, v, 12, 7) * 0.075;
-          const continental = broad * 0.68 + medium * 0.25 + fine * 0.07 + warp;
-          const land = smoothRange(-0.12, 0.16, continental);
-          const ridges = 1 - Math.abs(valueNoise(u, v, 42, 22) * 0.72 + valueNoise(u, v, 96, 48) * 0.28);
-          const terrain = Math.pow(Math.max(0, ridges), 2.1);
-          const oceanDepth = Math.max(0, -continental);
-          const polar = smoothRange(0.78, 0.98, latitude);
-          const terrainTone = Math.min(1, Math.max(0, land * (0.42 + terrain * 0.58) + polar * 0.16));
-          const oceanTone = Math.min(1, Math.max(0, 0.16 + oceanDepth * 0.28 + medium * 0.08));
-          const baseR = p0.r + (p1.r - p0.r) * land;
-          const baseG = p0.g + (p1.g - p0.g) * land;
-          const baseB = p0.b + (p1.b - p0.b) * land;
-          const colorMix = terrainTone * 0.42 + (1 - land) * oceanTone * 0.12;
-          const colorR = baseR + (p2.r - baseR) * colorMix;
-          const colorG = baseG + (p2.g - baseG) * colorMix;
-          const colorB = baseB + (p2.b - baseB) * colorMix;
-          const shade = Math.max(0.48, Math.min(1.12, 0.82 + fine * 0.12 + terrain * 0.12 - latitude * 0.07));
-          const index = (y * width + x) * 4;
-          image.data[index] = toSRGBByte(colorR * shade);
-          image.data[index + 1] = toSRGBByte(colorG * shade);
-          image.data[index + 2] = toSRGBByte(colorB * shade);
-          image.data[index + 3] = 255;
-          const relief = Math.max(0, Math.min(255, 112 + (land * terrain - oceanDepth * 0.18 + fine * 0.12) * 92));
-          bump.data[index] = relief;
-          bump.data[index + 1] = relief;
-          bump.data[index + 2] = relief;
-          bump.data[index + 3] = 255;
-        }
-      }
-      context.putImageData(image, 0, 0);
-      const bumpCanvas = document.createElement("canvas");
-      bumpCanvas.width = width;
-      bumpCanvas.height = height;
-      const bumpContext = bumpCanvas.getContext("2d");
-      bumpContext?.putImageData(bump, 0, 0);
-      const map = new THREE.CanvasTexture(surface);
-      map.colorSpace = THREE.SRGBColorSpace;
-      map.wrapS = THREE.RepeatWrapping;
-      map.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
-      const bumpMap = bumpContext ? new THREE.CanvasTexture(bumpCanvas) : null;
-      if (bumpMap) {
-        bumpMap.wrapS = THREE.RepeatWrapping;
-        bumpMap.anisotropy = map.anisotropy;
-      }
-      return { map, bumpMap };
-    };
-    const addPlanet = (x, y, z, radius, color, palette, ring = false, seed = 1) => {
-      const group = new THREE.Group();
-      group.position.set(x, y, z);
-      const maps = makePlanetMaps(seed, palette);
-      const body = new THREE.Mesh(
-        new THREE.SphereGeometry(radius, 64, 48),
-        new THREE.MeshStandardMaterial({
-          color: 0xffffff,
-          map: maps.map || null,
-          bumpMap: maps.bumpMap || null,
-          bumpScale: radius * 0.035,
-          roughness: 0.84,
-          metalness: 0.015,
-          emissive: new THREE.Color(color).multiplyScalar(0.045),
-        })
-      );
-      group.add(body);
-      const atmosphereMaterial = new THREE.ShaderMaterial({
-        transparent: true,
-        side: THREE.BackSide,
-        depthWrite: false,
-        blending: THREE.AdditiveBlending,
-        uniforms: { uLightDirection: { value: new THREE.Vector3(1, 0, 0) } },
-        vertexShader: `
-          varying vec3 vAtmosphereNormal;
-          varying vec3 vAtmosphereView;
-          varying vec3 vAtmospherePosition;
-          void main() {
-            vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-            vAtmosphereNormal = normalize(normalMatrix * normal);
-            vAtmosphereView = -mvPosition.xyz;
-            vAtmospherePosition = normalize(position);
-            gl_Position = projectionMatrix * mvPosition;
-          }
-        `,
-        fragmentShader: `
-          varying vec3 vAtmosphereNormal;
-          varying vec3 vAtmosphereView;
-          varying vec3 vAtmospherePosition;
-          uniform vec3 uLightDirection;
-          void main() {
-            float viewFacing = max(dot(normalize(vAtmosphereNormal), normalize(vAtmosphereView)), 0.0);
-            float rim = pow(1.0 - viewFacing, 2.1);
-            float sunFacing = dot(normalize(vAtmospherePosition), normalize(uLightDirection));
-            float daylight = smoothstep(-0.38, 0.48, sunFacing);
-            float twilight = exp(-abs(sunFacing + 0.04) * 5.0);
-            vec3 dayColor = vec3(0.34, 0.48, 0.92);
-            vec3 nightColor = vec3(0.20, 0.13, 0.42);
-            vec3 atmosphereColor = mix(nightColor, dayColor, daylight);
-            atmosphereColor += vec3(0.34, 0.20, 0.52) * twilight * 0.42;
-            float alpha = rim * (0.075 + daylight * 0.12);
-            gl_FragColor = vec4(atmosphereColor, alpha);
-          }
-        `,
-      });
-      const atmosphere = new THREE.Mesh(new THREE.SphereGeometry(radius * 1.11, 48, 32), atmosphereMaterial);
-      group.add(atmosphere);
-      planetLightBindings.push({ object: atmosphere, material: atmosphereMaterial });
-
-      // A slow, translucent cloud deck adds a second physical layer to the
-      // hero planet. The field is evaluated in 3D sphere space, so it has no
-      // longitude seam and does not depend on downloaded texture assets.
-      if (radius > 0.8) {
-        const cloudMaterial = new THREE.ShaderMaterial({
-          transparent: true,
-          depthWrite: false,
-          blending: THREE.NormalBlending,
-          uniforms: {
-            // The local-space light direction is refreshed as each layer rotates.
-            uLightDirection: { value: new THREE.Vector3(1, 0, 0) },
-          },
-          vertexShader: `
-            varying vec3 vCloudPosition;
-            varying vec3 vCloudNormal;
-            varying vec3 vCloudViewPosition;
-            void main() {
-              vCloudPosition = normalize(position);
-              vec4 viewPosition = modelViewMatrix * vec4(position, 1.0);
-              vCloudNormal = normalize(normalMatrix * normal);
-              vCloudViewPosition = -viewPosition.xyz;
-              gl_Position = projectionMatrix * viewPosition;
-            }
-          `,
-          fragmentShader: `
-            varying vec3 vCloudPosition;
-            varying vec3 vCloudNormal;
-            varying vec3 vCloudViewPosition;
-            uniform vec3 uLightDirection;
-            float hash(vec3 p) {
-              return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453);
-            }
-            float noise(vec3 p) {
-              vec3 i = floor(p), f = fract(p);
-              f = f * f * (3.0 - 2.0 * f);
-              float n000 = hash(i);
-              float n100 = hash(i + vec3(1.0, 0.0, 0.0));
-              float n010 = hash(i + vec3(0.0, 1.0, 0.0));
-              float n110 = hash(i + vec3(1.0, 1.0, 0.0));
-              float n001 = hash(i + vec3(0.0, 0.0, 1.0));
-              float n101 = hash(i + vec3(1.0, 0.0, 1.0));
-              float n011 = hash(i + vec3(0.0, 1.0, 1.0));
-              float n111 = hash(i + vec3(1.0, 1.0, 1.0));
-              float z0 = mix(mix(n000, n100, f.x), mix(n010, n110, f.x), f.y);
-              float z1 = mix(mix(n001, n101, f.x), mix(n011, n111, f.x), f.y);
-              return mix(z0, z1, f.z);
-            }
-            float fbm(vec3 p) {
-              float value = 0.0, amplitude = 0.5;
-              for (int i = 0; i < 3; i++) {
-                value += noise(p) * amplitude;
-                p = p * 2.03 + vec3(13.1, 7.7, 19.3);
-                amplitude *= 0.5;
-              }
-              return value;
-            }
-            void main() {
-              vec3 base = vCloudPosition * 5.4;
-              // Single-octave warp samples retain broken-up cloud silhouettes
-              // without running two additional full fractal-noise stacks per pixel.
-              float warpA = noise(base * 0.42 + vec3(4.2, 1.7, 8.1));
-              float warpB = noise(base * 0.42 + vec3(9.4, 6.3, 2.8));
-              vec3 warped = base + vec3(warpA - 0.5, warpB - 0.5, warpA - warpB) * 1.65;
-              float broad = fbm(warped);
-              float detail = fbm(warped * 2.15 + vec3(3.7, 8.2, 1.4));
-              float field = broad * 0.76 + detail * 0.24;
-              float cloud = smoothstep(0.49, 0.67, field) * (1.0 - smoothstep(0.81, 0.94, field));
-              float facing = max(dot(normalize(vCloudNormal), normalize(vCloudViewPosition)), 0.0);
-              float limb = pow(1.0 - facing, 0.72);
-              float sunFacing = dot(normalize(vCloudPosition), normalize(uLightDirection));
-              float daylight = smoothstep(-0.24, 0.52, sunFacing);
-              float terminator = exp(-abs(sunFacing - 0.02) * 8.0);
-              vec3 shadowCloud = vec3(0.20, 0.19, 0.31);
-              vec3 sunlitCloud = vec3(0.88, 0.85, 1.0);
-              vec3 cloudColor = mix(shadowCloud, sunlitCloud, daylight);
-              cloudColor += vec3(0.19, 0.16, 0.31) * terminator * 0.24;
-              float alpha = cloud * (0.045 + daylight * 0.105 + limb * 0.075);
-              gl_FragColor = vec4(cloudColor, alpha);
-            }
-          `,
-        });
-        const cloudDeck = new THREE.Mesh(new THREE.SphereGeometry(radius * 1.018, 64, 48), cloudMaterial);
-        group.add(cloudDeck);
-        cloudLayers.push(cloudDeck);
-        planetLightBindings.push({ object: cloudDeck, material: cloudMaterial });
-      }
-      if (ring) {
-        const rings = new THREE.Mesh(
-          new THREE.RingGeometry(radius * 1.35, radius * 2.05, 128),
-          new THREE.MeshStandardMaterial({ color: 0xc8b4ee, roughness: 0.88, metalness: 0.12, transparent: true, opacity: 0.52, side: THREE.DoubleSide, depthWrite: false })
-        );
-        rings.rotation.x = Math.PI / 2.35;
-        rings.rotation.y = 0.18;
-        group.add(rings);
-      }
-      world.add(group);
-      planets.push(group);
-    };
-    addPlanet(-5.6, 1.7, -2.4, 0.92, 0x8d73bc, [0x2e294e, 0x8170a6, 0xd0b8e8], false, 2.7);
-    addPlanet(5.2, 1.1, -5.1, 0.64, 0x7782bd, [0x4c527b, 0x858bb7, 0xc6b8df], true, 5.3);
-    addPlanet(2.6, -3.1, 0.1, 0.34, 0xb57d9f, [0x583c65, 0xa76f91, 0xe4b7ca], false, 8.1);
-
-    // Reuse scratch objects and initialize shader lighting before the first
-    // render, including the reduced-motion path where the animation loop is idle.
-    const keyLightWorldPosition = new THREE.Vector3();
-    const objectWorldPosition = new THREE.Vector3();
-    const inverseObjectWorldRotation = new THREE.Quaternion();
-    const localLightDirection = new THREE.Vector3();
-    const updatePlanetLightDirections = () => {
-      keyLight.getWorldPosition(keyLightWorldPosition);
-      planetLightBindings.forEach(({ object, material }) => {
-        object.getWorldPosition(objectWorldPosition);
-        object.getWorldQuaternion(inverseObjectWorldRotation).invert();
-        localLightDirection.copy(keyLightWorldPosition).sub(objectWorldPosition).applyQuaternion(inverseObjectWorldRotation).normalize();
-        material.uniforms.uLightDirection.value.copy(localLightDirection);
-      });
-    };
-    updatePlanetLightDirections();
-
-    const pointer = { x: 0, y: 0 };
-    const frameInterval = 1000 / 30;
-    let lastFrameTime = 0;
-    const onPointer = (event) => {
-      pointer.x = (event.clientX / Math.max(1, window.innerWidth) - 0.5) * 2;
-      pointer.y = (event.clientY / Math.max(1, window.innerHeight) - 0.5) * 2;
-    };
-    let pointerListening = pointerEnabled && !reduced;
-    if (pointerListening) window.addEventListener("pointermove", onPointer, { passive: true });
-    const resize = () => {
-      // A lost WebGL context must not receive renderer sizing calls. The
-      // restored-context handler flips this guard before applying the new size.
-      if (!contextAvailable || !active) return;
-      const w = Math.max(1, canvas.clientWidth), h = Math.max(1, canvas.clientHeight);
-      camera.aspect = w / h;
-      camera.updateProjectionMatrix();
-      renderer.setSize(w, h, false);
-    };
-    const onContextLost = (event) => {
-      event.preventDefault();
-      contextAvailable = false;
-      canvas.dataset.webglFallback = "true";
-      stop();
-    };
-    const onContextRestored = () => {
-      contextAvailable = true;
-      delete canvas.dataset.webglFallback;
-      resize();
-      start();
-    };
-    canvas.addEventListener("webglcontextlost", onContextLost, false);
-    canvas.addEventListener("webglcontextrestored", onContextRestored, false);
-    resize();
-    const resizeObserver = typeof ResizeObserver !== "undefined" ? new ResizeObserver(resize) : null;
-    resizeObserver?.observe(canvas);
-    // Keep the canvas correctly sized in browsers without ResizeObserver too.
-    window.addEventListener("resize", resize, { passive: true });
-
-    const draw = (time) => {
-      if (!active || !inView || document.hidden || !contextAvailable) return;
-      raf = window.requestAnimationFrame(draw);
-      if (time - lastFrameTime < frameInterval) return;
-      const delta = lastFrameTime ? Math.min(50, time - lastFrameTime) / 16.667 : 1;
-      lastFrameTime = time;
-      if (!reduced) {
-        nebulaMaterial.uniforms.uTime.value = time;
-        stars.rotation.y += 0.000035 * delta;
-        stars.rotation.x += 0.000012 * delta;
-        planets.forEach((planet, i) => { planet.rotation.y += (i === 0 ? 0.00055 : 0.0008) * delta; planet.rotation.x += 0.00008 * delta; });
-        cloudLayers.forEach((cloud) => { cloud.rotation.y += 0.00068 * delta; cloud.rotation.x += 0.000035 * delta; });
-        updatePlanetLightDirections();
-        const easing = 1 - Math.pow(1 - 0.012, delta);
-        camera.position.x += (pointer.x * 0.28 - camera.position.x) * easing;
-        camera.position.y += (-pointer.y * 0.18 - camera.position.y) * easing;
-        camera.lookAt(0, 0, -2.6);
-      }
-      renderer.render(scene, camera);
-    };
-    const start = () => {
-      if (!active || !inView || document.hidden || !contextAvailable) return;
-      if (reduced) renderer.render(scene, camera);
-      else if (!raf) {
-        lastFrameTime = 0;
-        raf = window.requestAnimationFrame(draw);
-      }
-    };
-    const stop = () => { if (raf) window.cancelAnimationFrame(raf); raf = 0; };
-    const onMotionPreferenceChange = (event) => {
-      reduced = event.matches;
-      if (pointerEnabled && reduced && pointerListening) {
-        window.removeEventListener("pointermove", onPointer);
-        pointerListening = false;
-      } else if (pointerEnabled && !reduced && !pointerListening) {
-        window.addEventListener("pointermove", onPointer, { passive: true });
-        pointerListening = true;
-      }
-      stop();
-      start();
-    };
-    motionQuery?.addEventListener?.("change", onMotionPreferenceChange);
-    const onVisibility = () => { if (document.hidden) stop(); else start(); };
-    document.addEventListener("visibilitychange", onVisibility);
-    if (typeof IntersectionObserver !== "undefined") {
-      observer = new IntersectionObserver(([entry]) => { inView = entry.isIntersecting; if (inView) start(); else stop(); }, { threshold: 0.01 });
-      observer.observe(canvas);
-    }
-    start();
-    return () => {
-      active = false; stop();
-      document.removeEventListener("visibilitychange", onVisibility);
-      motionQuery?.removeEventListener?.("change", onMotionPreferenceChange);
-      canvas.removeEventListener("webglcontextlost", onContextLost, false);
-      canvas.removeEventListener("webglcontextrestored", onContextRestored, false);
-      if (pointerListening) window.removeEventListener("pointermove", onPointer);
-      resizeObserver?.disconnect(); observer?.disconnect();
-      window.removeEventListener("resize", resize);
-      scene.traverse((obj) => {
-        obj.geometry?.dispose?.();
-        const materials = Array.isArray(obj.material) ? obj.material : obj.material ? [obj.material] : [];
-        materials.forEach((material) => {
-          material.map?.dispose?.();
-          material.bumpMap?.dispose?.();
-          material.roughnessMap?.dispose?.();
-          material.dispose?.();
-        });
-      });
-      renderer.dispose();
-    };
-  }, []);
-  return <canvas ref={canvasRef} className="universe-webgl" aria-hidden="true" />;
-}
-
-
-
 
 function renderInlineMarkdown(value, prefix) {
   const nodes = [];
@@ -717,30 +220,6 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [prompt, setPrompt] = useState("");
   const [imageFile, setImageFile] = useState(null);
   const [messages, setMessages] = useState([]);
-  const [astronautMotion, setAstronautMotion] = useState({ x: 0, y: 0, rotation: -3, duration: 3600 });
-  useEffect(() => {
-    const prefersReducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true;
-    let active = true;
-    let timer;
-    const moveAstronaut = () => {
-      if (!active) return;
-      // Keep the astronaut gently drifting even on devices that request reduced motion.
-      const duration = prefersReducedMotion
-        ? 8500 + Math.round(Math.random() * 4500)
-        : 2600 + Math.round(Math.random() * 2600);
-      const travelX = prefersReducedMotion ? 18 : 36;
-      const travelY = prefersReducedMotion ? 14 : 30;
-      setAstronautMotion({
-        x: Math.round((Math.random() - 0.5) * travelX),
-        y: Math.round((Math.random() - 0.5) * travelY),
-        rotation: Math.round((Math.random() - 0.5) * (prefersReducedMotion ? 8 : 18)),
-        duration,
-      });
-      timer = window.setTimeout(moveAstronaut, duration);
-    };
-    timer = window.setTimeout(moveAstronaut, 500);
-    return () => { active = false; window.clearTimeout(timer); };
-  }, []);
   useEffect(() => {
     if (messages.length) conversationEndRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
   }, [messages]);
@@ -1770,6 +1249,52 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
 
   return (
     <main className="shell">
+      <div className="space-background" aria-hidden="true">
+        <UniverseScene />
+        <div className="universe-flight" data-speed="65 km/h">
+          <div className="universe-depth-stars" aria-hidden="true">
+            <i className="depth-stars-far" />
+            <i className="depth-stars-mid" />
+            <i className="depth-stars-near" />
+          </div>
+          <div className="universe-galaxy" aria-hidden="true">
+            <span className="galaxy-core" />
+            <i className="galaxy-arm galaxy-arm-one" />
+            <i className="galaxy-arm galaxy-arm-two" />
+            <i className="galaxy-arm galaxy-arm-three" />
+          </div>
+          <div className="universe-particles">
+            {Array.from({ length: 64 }, (_, index) => (
+              <i
+                key={index}
+                style={{
+                  "--particle-x": `${(index * 37 + 11) % 100}%`,
+                  "--particle-y": `${(index * 61 + 7) % 100}%`,
+                  "--particle-delay": `${-((index * 7) % 19)}s`,
+                  "--particle-duration": `${11 + (index % 8) * 1.5}s`,
+                  "--particle-size": `${1 + (index % 3)}px`,
+                }}
+              />
+            ))}
+          </div>
+          <div className="universe-comets">
+            {Array.from({ length: 6 }, (_, index) => (
+              <i
+                key={index}
+                style={{
+                  "--comet-x": `${(index * 23 + 9) % 92}%`,
+                  "--comet-y": `${(index * 31 + 13) % 84}%`,
+                  "--comet-delay": `${-((index * 5) % 17)}s`,
+                  "--comet-duration": `${12 + (index % 3) * 3}s`,
+                  "--comet-angle": `${-24 + (index % 4) * 16}deg`,
+                }}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+      <AstronautCompanion variant="assistant" />
+
       <aside className="sidebar">
         <a className="brand" href="/" aria-label="Aahana AI home">
           <span className="brand-word">Aahana</span><span className="brand-ai">AI</span>
@@ -1889,50 +1414,6 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
       </aside>
 
       <section className="main-panel">
-        <div className="space-background" aria-hidden="true">
-          <UniverseScene />
-          <div className="universe-flight" data-speed="65 km/h">
-            <div className="universe-depth-stars" aria-hidden="true">
-              <i className="depth-stars-far" />
-              <i className="depth-stars-mid" />
-              <i className="depth-stars-near" />
-            </div>
-            <div className="universe-galaxy" aria-hidden="true">
-              <span className="galaxy-core" />
-              <i className="galaxy-arm galaxy-arm-one" />
-              <i className="galaxy-arm galaxy-arm-two" />
-              <i className="galaxy-arm galaxy-arm-three" />
-            </div>
-            <div className="universe-particles">
-              {Array.from({ length: 64 }, (_, index) => (
-                <i
-                  key={index}
-                  style={{
-                    "--particle-x": `${(index * 37 + 11) % 100}%`,
-                    "--particle-y": `${(index * 61 + 7) % 100}%`,
-                    "--particle-delay": `${-((index * 7) % 19)}s`,
-                    "--particle-duration": `${11 + (index % 8) * 1.5}s`,
-                    "--particle-size": `${1 + (index % 3)}px`,
-                  }}
-                />
-              ))}
-            </div>
-            <div className="universe-comets">
-              {Array.from({ length: 6 }, (_, index) => (
-                <i
-                  key={index}
-                  style={{
-                    "--comet-x": `${(index * 23 + 9) % 92}%`,
-                    "--comet-y": `${(index * 31 + 13) % 84}%`,
-                    "--comet-delay": `${-((index * 5) % 17)}s`,
-                    "--comet-duration": `${12 + (index % 3) * 3}s`,
-                    "--comet-angle": `${-24 + (index % 4) * 16}deg`,
-                  }}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
         <header className="topbar">
           <div className="breadcrumb">Workspace <span>/</span> {selectedProjectId ? (projects.find((item) => item.id === selectedProjectId)?.name || "Project") : "Assistant"}</div>
           <div className="top-actions"><button className="mobile-history-toggle" type="button" onClick={toggleProjects}>Projects</button><button className="mobile-history-toggle" type="button" onClick={toggleHistory}>History</button><button className="mobile-history-toggle" type="button" onClick={toggleFiles}>Files</button><button className="mobile-history-toggle" type="button" onClick={toggleMemoryPanel}>Memory</button><span>Private workspace</span></div>
@@ -1992,39 +1473,10 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
         )}
 
         <div className="welcome">
-          {!messages.length && (
-            <div className="astronaut-float" aria-hidden="true" style={{ transform: `translate3d(${astronautMotion.x}px, ${astronautMotion.y}px, 0) rotate(${astronautMotion.rotation}deg)`, transition: `transform ${astronautMotion.duration}ms cubic-bezier(.2,.7,.3,1)` }}>
-              <svg viewBox="0 0 180 180" role="presentation">
-                <defs>
-                  <linearGradient id="astronautSuit" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#fffaff" /><stop offset="1" stopColor="#b9a6d8" /></linearGradient>
-                  <linearGradient id="astronautGlass" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#51466f" /><stop offset="1" stopColor="#171426" /></linearGradient>
-                </defs>
-                <g transform="rotate(-22 90 88)">
-                  <path d="M56 83 38 96 29 116 39 121 57 105" fill="url(#astronautSuit)" stroke="#a994c7" strokeWidth="3" strokeLinejoin="round" />
-                  <path d="M119 84 139 93 151 111 142 118 121 104" fill="url(#astronautSuit)" stroke="#a994c7" strokeWidth="3" strokeLinejoin="round" />
-                  <rect x="117" y="75" width="23" height="48" rx="9" fill="#a58cc9" stroke="#e9ddff" strokeWidth="2" />
-                  <path d="M67 111 61 137 76 141 91 119" fill="url(#astronautSuit)" stroke="#a994c7" strokeWidth="3" strokeLinejoin="round" />
-                  <path d="M98 116 107 140 124 137 119 108" fill="url(#astronautSuit)" stroke="#a994c7" strokeWidth="3" strokeLinejoin="round" />
-                  <path d="M60 77 Q58 62 70 54 L111 54 Q124 64 121 83 L117 116 Q90 130 63 113Z" fill="url(#astronautSuit)" stroke="#a994c7" strokeWidth="3" />
-                  <rect x="70" y="86" width="39" height="17" rx="8" fill="#8e72bb" opacity=".9" />
-                  <circle cx="90" cy="58" r="35" fill="url(#astronautSuit)" stroke="#f4ecff" strokeWidth="4" />
-                  <circle cx="90" cy="58" r="27" fill="url(#astronautGlass)" stroke="#8f7bb4" strokeWidth="3" />
-                  <path d="M73 47 Q83 31 104 39" fill="none" stroke="#d8caff" strokeWidth="4" strokeLinecap="round" opacity=".75" />
-                  <circle cx="108" cy="68" r="3" fill="#c7b2ff" opacity=".85" />
-                  <path d="M31 117 42 120 38 129 27 126Z M141 116 151 111 157 121 147 128Z" fill="#d7c9ec" stroke="#9c86bd" strokeWidth="2" />
-                  <path d="M72 141 81 143 80 149 67 149Z M108 140 120 137 127 145 112 149Z" fill="#d9c9ef" stroke="#9c86bd" strokeWidth="2" />
-                  <circle cx="72" cy="90" r="3" fill="#c7aaff" /><circle cx="105" cy="90" r="3" fill="#c7aaff" />
-                </g>
-                <path d="M25 55l3 7 7 3-7 3-3 7-3-7-7-3 7-3Z M148 42l2 5 5 2-5 2-2 5-2-5-5-2 5-2Z" fill="#d8c5ff" />
-                <circle cx="143" cy="142" r="3" fill="#c7aaff" /><circle cx="38" cy="39" r="2" fill="#fff" />
-              </svg>
-            </div>
-          )}
           <div className="eyebrow"><span /> YOUR THINKING SPACE</div>
           {!messages.length && <>
             <h1>Good ideas<br /><em>start somewhere.</em></h1>
             <p>Think freely. Explore ideas. Build something real.</p>
-            <p className="founder-signature">— Abhishekayya Salimath</p>
           </>}
 
           <div className="mode-row assistance-context" aria-label="Current workspace">
@@ -2285,7 +1737,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
             </>
           )}
         </div>
-        <footer className="footer"><span>Aahana</span><span>Thoughtfully made for what’s next.</span></footer>
+        <footer className="footer"><span>Aahana</span><span>Thoughtfully made for what’s next.</span><span className="founder-signature">— Abhishekayya Salimath</span></footer>
       </section>
     </main>
   );

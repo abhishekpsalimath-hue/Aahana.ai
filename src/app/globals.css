@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Syne:wght@500;600;700;800&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
@@ -308,7 +309,7 @@ button:focus-visible,a:focus-visible{outline-color:#c4a7ff}
 .galaxy-arm-one{transform:rotate(12deg) scaleY(.72)}
 .galaxy-arm-two{transform:rotate(142deg) scaleY(.82);opacity:.65}
 .galaxy-arm-three{transform:rotate(258deg) scaleY(.6);opacity:.48}
-.universe-orbit{position:absolute;left:50%;top:46%;border:1px solid #d8c5ff35;border-radius:50%;transform-style:preserve-3d;box-shadow:0 0 24px #a98af022}
+.universe-orbit{position:absolute;left:50%;top:46%;border:1px solid #e0cdbb30;border-radius:50%;transform-style:preserve-3d;box-shadow:0 0 24px #a98af022}
 .universe-orbit-one{width:min(72vw,760px);height:min(25vw,250px);min-height:130px;transform:translate3d(-50%,-50%,-140px) rotateX(66deg);animation:orbit-spin 32s linear infinite}
 .universe-orbit-two{width:min(88vw,940px);height:min(34vw,340px);min-height:170px;transform:translate3d(-50%,-50%,-430px) rotateX(72deg) rotateZ(42deg);animation:orbit-spin-reverse 48s linear infinite}
 .orbit-world{position:absolute;display:block;border-radius:50%;box-shadow:inset -10px -7px 18px #100d1d99,0 0 24px #c3a3ff66}
@@ -495,7 +496,7 @@ button:focus-visible,a:focus-visible{outline-color:#c4a7ff}
 .space-background .universe-comets i{animation-timing-function:cubic-bezier(.32,.02,.62,.98)}
 @media(max-width:760px){.space-background .universe-particles i{box-shadow:0 0 5px #c8aaff,0 0 10px #9d7bd955}.space-background .universe-comets i{width:clamp(26px,7vw,48px)}}
 
-/* Aahana cinematic visual refresh — layered depth, restrained motion, no central galaxy. */
+/* Aahana cinematic visual refresh — layered depth, restrained motion and a single live galaxy. */
 :root{--lilac:#cbb5ff;--lilac-2:#a98be8;--line:#292536}
 html,body{font-family:"DM Sans",sans-serif}
 h1,.brand,.composer-mode,.breadcrumb{font-family:"Space Grotesk","Manrope",sans-serif}
@@ -592,53 +593,9 @@ h1,.brand,.composer-mode,.breadcrumb{font-family:"Space Grotesk","Manrope",sans-
 @media(max-width:760px){.astronaut-float{filter:drop-shadow(0 0 16px #9d7bd955)!important}}
 
 
-/* Space-motion correction: keep the welcome astronaut and approach stars moving
-   even when the device requests reduced motion, using slower/softer movement. */
-@media(prefers-reduced-motion:reduce){
-  .space-background .universe-particles i{
-    /* Preserve the same deep-space-to-viewer trajectory, only slow it down. */
-    animation-name:stars-toward-viewer!important;
-    animation-duration:28s!important;
-    animation-timing-function:linear!important;
-    animation-delay:var(--particle-delay)!important;
-    animation-iteration-count:infinite!important;
-    opacity:.38;
-  }
-  /* Re-enable each depth layer explicitly; an earlier reduced-motion
-     fallback disables these animations with a higher-specificity selector. */
-  .space-background .universe-depth-stars .depth-stars-far{
-    animation-name:starfield-drift-far!important;
-    animation-duration:180s!important;
-    animation-timing-function:linear!important;
-    animation-iteration-count:infinite!important;
-    animation-play-state:running!important;
-  }
-  .space-background .universe-depth-stars .depth-stars-mid{
-    animation-name:starfield-drift-mid!important;
-    animation-duration:130s!important;
-    animation-timing-function:linear!important;
-    animation-iteration-count:infinite!important;
-    animation-play-state:running!important;
-  }
-  .space-background .universe-depth-stars .depth-stars-near{
-    animation-name:starfield-drift-near!important;
-    animation-duration:100s!important;
-    animation-timing-function:linear!important;
-    animation-iteration-count:infinite!important;
-    animation-play-state:running!important;
-  }
-  .space-background .universe-comets i{
-    animation-name:comet-cross!important;
-    animation-duration:28s!important;
-    animation-timing-function:linear!important;
-    animation-delay:var(--comet-delay)!important;
-    animation-iteration-count:infinite!important;
-  }
-}
-
-
+/* Respect reduced-motion preferences: earlier rules stop the CSS starfield and astronaut. */
 /* Restore Aahana's approaching spiral galaxy on desktop and compact devices.
-   Keep the mobile CSS fallback: the heavy WebGL scene is intentionally disabled on phones. */
+   Keep this as a CSS fallback for browsers/devices where WebGL cannot initialize; capable phones use adaptive Three.js. */
 .space-background .universe-galaxy{
   display:block!important;
   position:absolute;
@@ -678,7 +635,7 @@ h1,.brand,.composer-mode,.breadcrumb{font-family:"Space Grotesk","Manrope",sans-
 }
 @media(prefers-reduced-motion:reduce){
   .space-background .universe-galaxy{
-    animation:galaxy-turn 120s linear infinite!important;
+    animation:none!important;
     opacity:.58!important;
   }
 }
@@ -687,26 +644,26 @@ h1,.brand,.composer-mode,.breadcrumb{font-family:"Space Grotesk","Manrope",sans-
 /* The universe is Aahana's environment, including the sign-in entry point. */
 .auth-shell{position:relative;isolation:isolate;overflow:hidden;background:#07060d}
 .auth-card{position:relative;z-index:2;background:#111017f2;border-color:#66518466;box-shadow:0 28px 90px #000a,0 0 65px #8f6acb16}
-.auth-universe{position:absolute;z-index:0;inset:0;overflow:hidden;pointer-events:none;perspective:1100px;background:radial-gradient(ellipse at 50% 48%,#171126 0%,#0b0912 48%,#06050a 100%)}
-.auth-universe::before{content:"";position:absolute;inset:-20%;background-image:radial-gradient(1px 1px at 8% 16%,#fff 98%,transparent),radial-gradient(1px 1px at 23% 72%,#d8c5ff 98%,transparent),radial-gradient(2px 2px at 42% 28%,#fff 98%,transparent),radial-gradient(1px 1px at 67% 18%,#cbb5ff 98%,transparent),radial-gradient(1px 1px at 83% 63%,#fff 98%,transparent),radial-gradient(1px 1px at 91% 34%,#d8c5ff 98%,transparent);background-size:310px 270px,370px 330px,440px 390px,290px 340px,410px 300px,350px 420px;opacity:.62;animation:auth-star-drift 95s linear infinite}
-.auth-universe::after{content:"";position:absolute;left:50%;top:50%;width:min(95vw,900px);height:min(95vw,900px);border-radius:50%;transform:translate3d(calc(-50% + var(--auth-pointer-x,0px)*.7),calc(-50% + var(--auth-pointer-y,0px)*.7),-260px) rotateX(67deg) rotateZ(-24deg);background:repeating-conic-gradient(from 12deg,#fff0 0deg,#cbb5ff20 5deg,#fff0 12deg,#9f8cdd16 20deg,#fff0 31deg);mask-image:radial-gradient(ellipse,transparent 0%,#000 24%,#000 49%,transparent 74%);filter:blur(7px) drop-shadow(0 0 32px #a98be844);opacity:.64;animation:auth-galaxy-turn 110s linear infinite}
+.auth-universe{position:absolute;z-index:0;inset:0;overflow:hidden;pointer-events:none;perspective:1100px;background:radial-gradient(ellipse at 50% 48%,#11101d 0%,#0a0d18 44%,#05060b 100%)}
+.auth-universe::before{content:"";position:absolute;inset:-20%;background-image:radial-gradient(1px 1px at 8% 16%,#fff 98%,transparent),radial-gradient(1px 1px at 23% 72%,#f0d4b5 98%,transparent),radial-gradient(2px 2px at 42% 28%,#fff 98%,transparent),radial-gradient(1px 1px at 67% 18%,#b8c9f0 98%,transparent),radial-gradient(1px 1px at 83% 63%,#fff 98%,transparent),radial-gradient(1px 1px at 91% 34%,#d8c5ff 98%,transparent);background-size:310px 270px,370px 330px,440px 390px,290px 340px,410px 300px,350px 420px;opacity:.62;animation:auth-star-drift 95s linear infinite}
+.auth-universe::after{content:"";position:absolute;left:50%;top:50%;width:min(95vw,900px);height:min(95vw,900px);border-radius:50%;transform:translate3d(calc(-50% + var(--auth-pointer-x,0px)*.7),calc(-50% + var(--auth-pointer-y,0px)*.7),-260px) rotateX(67deg) rotateZ(-24deg);background:repeating-conic-gradient(from 12deg,#fff0 0deg,#e5c9ad20 5deg,#fff0 12deg,#a9b8e016 20deg,#fff0 31deg);mask-image:radial-gradient(ellipse,transparent 0%,#000 24%,#000 49%,transparent 74%);filter:blur(7px) drop-shadow(0 0 32px #b7a4d344);opacity:.64;animation:auth-galaxy-turn 110s linear infinite}
 .auth-nebula{position:absolute;display:block;width:65vw;height:45vw;min-width:320px;min-height:240px;border-radius:50%;filter:blur(55px);mix-blend-mode:screen;opacity:.28;will-change:transform}
-.auth-nebula-one{left:-12%;top:12%;background:radial-gradient(ellipse,#7752b7 0%,#3d2b69a6 32%,transparent 70%);animation:auth-nebula-drift 31s ease-in-out infinite alternate}
-.auth-nebula-two{right:-16%;bottom:4%;background:radial-gradient(ellipse,#5369b2 0%,#4b397a88 34%,transparent 72%);animation:auth-nebula-drift 39s ease-in-out -11s infinite alternate-reverse}
-.auth-galaxy{position:absolute;left:50%;top:49%;width:min(52vw,520px);height:min(52vw,520px);border-radius:50%;transform:translate3d(calc(-50% + var(--auth-pointer-x,0px)),calc(-50% + var(--auth-pointer-y,0px)),-180px) rotateX(66deg) rotateZ(-18deg);border:1px solid #d8c5ff22;box-shadow:0 0 50px #a98be822,inset 0 0 40px #8e70c522;animation:auth-galaxy-turn 84s linear infinite}
+.auth-nebula-one{left:-12%;top:12%;background:radial-gradient(ellipse,#a96c68 0%,#5c426eaa 30%,#3e354f55 48%,transparent 72%);animation:auth-nebula-drift 31s ease-in-out infinite alternate}
+.auth-nebula-two{right:-16%;bottom:4%;background:radial-gradient(ellipse,#526f91 0%,#414d7588 34%,#5d465e55 52%,transparent 72%);animation:auth-nebula-drift 39s ease-in-out -11s infinite alternate-reverse}
+.auth-galaxy{position:absolute;left:50%;top:49%;width:min(52vw,520px);height:min(52vw,520px);border-radius:50%;transform:translate3d(calc(-50% + var(--auth-pointer-x,0px)),calc(-50% + var(--auth-pointer-y,0px)),-180px) rotateX(66deg) rotateZ(-18deg);border:1px solid #d8c5ff22;box-shadow:0 0 50px #c5a58c22,inset 0 0 40px #8e70c522;animation:auth-galaxy-turn 84s linear infinite}
 .auth-orbit{position:absolute;left:50%;top:49%;display:block;border:1px solid #d8c5ff35;border-radius:50%;transform-style:preserve-3d;pointer-events:none}
 .auth-orbit-one{width:min(74vw,760px);height:min(27vw,250px);transform:translate3d(-50%,-50%,-100px) rotateX(68deg) rotateZ(-16deg);animation:auth-orbit-spin 46s linear infinite}
-.auth-orbit-two{width:min(88vw,920px);height:min(38vw,360px);transform:translate3d(-50%,-50%,-300px) rotateX(73deg) rotateZ(36deg);border-color:#a9baff22;animation:auth-orbit-spin 68s linear infinite reverse}
-.auth-planet{position:absolute;display:block;border-radius:50%;transform-style:preserve-3d;box-shadow:inset -20px -16px 28px #05040cbb,0 0 42px #a98be855}
-.auth-planet-one{width:clamp(58px,8vw,104px);height:clamp(58px,8vw,104px);left:13%;top:22%;background:radial-gradient(circle at 30% 24%,#f5eaff 0%,#b9a0e7 19%,#65528e 54%,#211b38 82%);animation:auth-planet-float 13s ease-in-out infinite}
-.auth-planet-two{width:clamp(28px,4vw,52px);height:clamp(28px,4vw,52px);right:13%;bottom:18%;background:radial-gradient(circle at 28% 22%,#fff 0%,#b3b8ed 22%,#59608e 58%,#171a30 85%);animation:auth-planet-float 17s ease-in-out -5s infinite reverse}
+.auth-orbit-two{width:min(88vw,920px);height:min(38vw,360px);transform:translate3d(-50%,-50%,-300px) rotateX(73deg) rotateZ(36deg);border-color:#a9baff28;animation:auth-orbit-spin 68s linear infinite reverse}
+.auth-planet{position:absolute;display:block;border-radius:50%;transform-style:preserve-3d;box-shadow:inset -20px -16px 28px #05040cbb,0 0 42px #8ea8c844}
+.auth-planet-one{width:clamp(58px,8vw,104px);height:clamp(58px,8vw,104px);left:13%;top:22%;background:radial-gradient(circle at 30% 24%,#fff0d8 0%,#c98e78 18%,#76546b 48%,#292338 82%);animation:auth-planet-float 13s ease-in-out infinite}
+.auth-planet-two{width:clamp(28px,4vw,52px);height:clamp(28px,4vw,52px);right:13%;bottom:18%;background:radial-gradient(circle at 28% 22%,#f2e7d8 0%,#9eacc8 22%,#4d6387 58%,#171a30 85%);animation:auth-planet-float 17s ease-in-out -5s infinite reverse}
 @keyframes auth-star-drift{from{transform:translate3d(0,0,0)}to{transform:translate3d(-3%,2%,0)}}
 @keyframes auth-galaxy-turn{from{rotate:0deg}to{rotate:360deg}}
 @keyframes auth-orbit-spin{from{rotate:0deg}to{rotate:360deg}}
 @keyframes auth-nebula-drift{0%{translate:-3% 2%;scale:.94}100%{translate:5% -4%;scale:1.08}}
 @keyframes auth-planet-float{0%,100%{translate:0 0}50%{translate:14px -20px}}
 @media(max-width:600px){.auth-universe::after{width:125vw;height:125vw;opacity:.48}.auth-galaxy{width:86vw;height:86vw;opacity:.5}.auth-nebula{filter:blur(34px);opacity:.22}.auth-planet-one{left:5%;top:12%}.auth-planet-two{right:5%;bottom:10%}.auth-card{background:#111017f7}}
-@media(prefers-reduced-motion:reduce){.auth-universe::before,.auth-universe::after,.auth-nebula,.auth-orbit,.auth-planet{animation-duration:120s}.auth-card{transition:none}}
+@media(prefers-reduced-motion:reduce){.auth-universe::before,.auth-universe::after,.auth-nebula,.auth-orbit,.auth-planet{animation:none!important;transition:none!important}.auth-card{transition:none!important}}
 
 
 /* Accessible stop control for active Core Assistance generation. */
@@ -714,3 +671,156 @@ h1,.brand,.composer-mode,.breadcrumb{font-family:"Space Grotesk","Manrope",sans-
 .stop-generation:hover{background:#1b2933;border-color:#c2d6df;transform:translateY(-1px)}
 .stop-generation:focus-visible{outline:2px solid #c2d6df;outline-offset:3px}
 @media(prefers-reduced-motion:reduce){.stop-generation{transition:none}}
+
+
+/* WebGL owns the live scene. The CSS scene remains a fallback for WebGL creation or context failure. */
+.space-background:not(.universe-webgl-fallback) .universe-galaxy{display:none!important}
+.space-background.universe-webgl-fallback .universe-galaxy{display:block!important}
+
+/* Adaptive quality tiers: retain cinematic depth on capable phones without
+   forcing desktop pixel density or frame rate onto a mobile GPU. */
+@media(max-width:760px){
+  .space-background .universe-webgl{opacity:.68}
+  .space-background .universe-flight{opacity:.58}
+}
+
+
+/* Full-width Universe: the scene now lives behind both the Assistance sidebar
+   and workspace canvas. The sidebar stays readable with a solid dark wash;
+   no blur or glass treatment is applied. */
+.shell{position:relative;isolation:isolate}
+.shell>.space-background{position:absolute;inset:0;z-index:0}
+.shell>.sidebar{position:sticky;z-index:2;background:linear-gradient(90deg,rgba(12,12,17,.96),rgba(12,12,17,.86))}
+.shell>.main-panel{position:relative;z-index:1}
+
+/* The WebGL scene is the single source of live cosmic objects when available.
+   Showing the CSS fallback stars, comets and planets over it duplicates motion
+   at different depths and creates the layered shimmer/glitch seen on phones.
+   Keep the complete CSS scene only for WebGL creation/context-loss fallback. */
+.space-background:not(.universe-webgl-fallback) .universe-flight{display:none!important}
+.space-background.universe-webgl-fallback .universe-flight{display:block!important}
+
+/* Aahana astronaut companion: keep the supplied WebP as one untouched image layer. */
+.astronaut-companion{position:fixed;z-index:30;display:flex;flex-direction:column;align-items:center;gap:5px;pointer-events:none;user-select:none;isolation:isolate;background:radial-gradient(ellipse 64% 48% at 50% 58%,rgba(190,170,245,.78) 0%,rgba(102,81,148,.4) 50%,transparent 100%);padding:2px}
+.astronaut-companion--login{left:clamp(12px,calc(50% - 470px),8vw);bottom:5vh;width:clamp(104px,13vw,176px)}
+.astronaut-companion--assistant{right:clamp(12px,2.2vw,34px);bottom:clamp(104px,14vh,148px);width:clamp(96px,11vw,148px)}
+.astronaut-companion__image{display:block;width:100%;height:auto;object-fit:contain;mix-blend-mode:multiply;mask-image:radial-gradient(ellipse 48% 38% at 52% 59%,#000 70%,transparent 100%);-webkit-mask-image:radial-gradient(ellipse 48% 38% at 52% 59%,#000 70%,transparent 100%);filter:contrast(1.22) brightness(1.08) drop-shadow(0 12px 22px rgba(0,0,0,.32));transform-origin:50% 62%;animation:astronaut-companion-float 6.8s ease-in-out infinite;will-change:transform}
+.astronaut-companion__message{max-width:220px;padding:8px 12px;border:1px solid #514267;border-radius:14px;background:#171321;box-shadow:0 8px 24px rgba(0,0,0,.28);color:#e9ddff;font:600 11px/1.45 'DM Sans',sans-serif;text-align:center}
+.astronaut-action--drift .astronaut-companion__image{animation-name:astronaut-companion-drift}
+.astronaut-action--bank .astronaut-companion__image{animation-name:astronaut-companion-bank}
+.astronaut-action--rise .astronaut-companion__image{animation-name:astronaut-companion-rise}
+.astronaut-action--glide .astronaut-companion__image{animation-name:astronaut-companion-glide}
+@keyframes astronaut-companion-float{0%,100%{transform:translate3d(0,0,0) rotate(-1deg)}50%{transform:translate3d(7px,-16px,0) rotate(2deg)}}
+@keyframes astronaut-companion-drift{0%,100%{transform:translate3d(0,0,0) rotate(-3deg)}28%{transform:translate3d(13px,-10px,0) rotate(2deg)}68%{transform:translate3d(-8px,-18px,0) rotate(-1deg)}}
+@keyframes astronaut-companion-bank{0%,100%{transform:translate3d(0,0,0) rotate(1deg)}35%{transform:translate3d(-10px,-14px,0) rotate(-5deg)}72%{transform:translate3d(8px,-5px,0) rotate(4deg)}}
+@keyframes astronaut-companion-rise{0%,100%{transform:translate3d(0,0,0) rotate(-1deg)}45%{transform:translate3d(4px,-24px,0) rotate(2deg)}75%{transform:translate3d(-5px,-12px,0) rotate(-2deg)}}
+@keyframes astronaut-companion-glide{0%,100%{transform:translate3d(0,0,0) rotate(2deg)}30%{transform:translate3d(-12px,-9px,0) rotate(-3deg)}65%{transform:translate3d(11px,-19px,0) rotate(3deg)}}
+@media(max-width:760px){.astronaut-companion--login{left:8px;right:auto;bottom:4px;width:64px;gap:2px}.astronaut-companion--assistant{right:8px;bottom:90px;width:56px;gap:2px}.astronaut-companion--login .astronaut-companion__message,.astronaut-companion--assistant .astronaut-companion__message{display:none}}
+@media(prefers-reduced-motion:reduce){.astronaut-companion__image,.astronaut-companion__message{animation:none!important;transform:none!important}}
+
+
+/* Aahana typographic identity — editorial futurism, scoped outside Student Mode. */
+.shell,
+.auth-shell,
+.discover-shell {
+  --aahana-font-ui: "Sora", "DM Sans", sans-serif;
+  --aahana-font-display: "Syne", "Space Grotesk", sans-serif;
+  font-family: var(--aahana-font-ui);
+  font-optical-sizing: auto;
+  font-kerning: normal;
+}
+.shell :is(button, input, textarea, select),
+.auth-shell :is(button, input, textarea, select),
+.discover-shell :is(button, input, textarea, select) {
+  font-family: var(--aahana-font-ui);
+}
+.shell .brand,
+.auth-shell .brand,
+.discover-shell .brand {
+  font-family: var(--aahana-font-display);
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: -0.075em;
+}
+.shell .brand-word,
+.auth-shell .brand-word,
+.discover-shell .brand-word {
+  letter-spacing: -0.075em;
+}
+.shell .welcome h1,
+.auth-shell .auth-card h1,
+.discover-shell .discover-hero h1,
+.discover-shell .discover-modes > h2,
+.discover-shell .discover-detail h2,
+.discover-shell .discover-final h2,
+.discover-shell .discover-mode-card h3 {
+  font-family: var(--aahana-font-display);
+  font-weight: 700;
+  font-optical-sizing: auto;
+  font-kerning: normal;
+  text-wrap: balance;
+}
+.shell .welcome h1 {
+  font-size: clamp(46px, 6.4vw, 76px);
+  line-height: 0.99;
+  letter-spacing: -0.075em;
+}
+.auth-shell .auth-card h1 {
+  letter-spacing: -0.065em;
+  line-height: 1.04;
+}
+.discover-shell .discover-hero h1 {
+  letter-spacing: -0.085em;
+  line-height: 0.96;
+}
+.discover-shell .discover-modes > h2,
+.discover-shell .discover-detail h2,
+.discover-shell .discover-final h2 {
+  letter-spacing: -0.065em;
+  line-height: 1.08;
+}
+.shell .eyebrow,
+.shell .side-label,
+.shell .message-role,
+.shell .composer-mode,
+.discover-shell .discover-eyebrow,
+.discover-shell .discover-mode-index {
+  font-family: var(--aahana-font-ui);
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  font-variant-numeric: tabular-nums;
+}
+.shell .chat-message p,
+.shell .welcome > p,
+.auth-shell .auth-copy,
+.discover-shell .discover-lead {
+  font-family: var(--aahana-font-ui);
+  letter-spacing: -0.018em;
+}
+.shell .composer textarea {
+  font-family: var(--aahana-font-ui);
+  letter-spacing: -0.02em;
+}
+.shell .starter,
+.shell .mode,
+.shell .side-item,
+.auth-shell .auth-form label,
+.discover-shell .discover-mode-card {
+  font-family: var(--aahana-font-ui);
+  letter-spacing: -0.025em;
+}
+@media (max-width: 760px) {
+  .shell .welcome h1 {
+    font-size: clamp(43px, 11vw, 58px);
+    letter-spacing: -0.07em;
+  }
+  .discover-shell .discover-hero h1 {
+    letter-spacing: -0.075em;
+  }
+}
+
+
+/* Founder signature belongs at the very end of the workspace, never under the welcome heading. */
+.footer .founder-signature{margin:0!important;align-self:center;font-size:clamp(23px,2.2vw,29px)!important;line-height:1!important;white-space:nowrap;text-align:right;transform:rotate(-3deg)}
+.footer .founder-signature::after{width:70%;height:5px;margin:3px auto 0}
+@media(max-width:760px){.footer{flex-wrap:wrap;gap:10px}.footer .founder-signature{flex-basis:100%;text-align:right;font-size:25px!important}}

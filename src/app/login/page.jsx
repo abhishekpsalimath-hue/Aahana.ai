@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import AstronautCompanion from "../astronaut-companion";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -98,6 +99,7 @@ export default function LoginPage() {
         <span className="auth-planet auth-planet-one" />
         <span className="auth-planet auth-planet-two" />
       </div>
+      <AstronautCompanion variant="login" />
       <section className="auth-card">
         <Link className="brand auth-brand" href="/"><span className="brand-word">Aahana</span><span className="brand-ai">AI</span></Link>
         <div className="eyebrow"><span /> YOUR THINKING SPACE</div>
