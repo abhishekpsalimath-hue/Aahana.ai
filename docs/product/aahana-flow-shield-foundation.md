@@ -126,3 +126,8 @@ Shield now has a pure assessment-scope guard requiring affirmative authorization
 ## Structured Flow draft — latest isolated batch
 
 The Flow request field now creates a structured draft from one of the three bounded starter definitions when the request has a clear keyword match. Every generated step includes a plain-language explanation, the complete workflow is checked by the shared validator, and the final approval step is preserved. Ambiguous requests return no workflow rather than inventing one. The UI loads the resulting draft into the editable canvas and shows its step-by-step rationale. This is still deterministic keyword matching, not an AI model, and it does not activate triggers, connect data sources, schedule jobs, send messages, or execute work. Six additional Node tests cover the draft paths and input normalization. The complete suite now contains 33 tests; execution remains unverified until a permitted test runner completes.
+
+
+## Shield authorization declaration — latest isolated batch
+
+The Shield workspace now exposes the scope model as a local declaration form. A user must affirm ownership or written permission, provide a meaningful authorization note, list 1–10 exact hostnames, and set an expiry. The form invokes the inert assessment-record constructor and reports only whether the submitted scope passed local format and expiry checks. It explicitly states that the attestation is not independently verified ownership and that no network activity, scan, or finding is produced. Scope state is not persisted to the account. The form is a prototype and must not be represented as an active security assessment.
