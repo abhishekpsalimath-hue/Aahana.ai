@@ -851,3 +851,71 @@ h1,.brand,.composer-mode,.breadcrumb{font-family:"Space Grotesk","Manrope",sans-
 /* Keep the real 3D universe, but bound GPU work to prevent mobile frame drops. */
 .space-background .universe-webgl{opacity:.58!important;}
 @media(max-width:760px){.space-background .universe-webgl{opacity:.44!important}}
+
+
+/* Assistance stability: keep streamed replies readable and controls inside the viewport. */
+.shell,
+.shell > .main-panel,
+.shell .welcome,
+.shell .conversation,
+.shell .chat-message,
+.shell .message-content {
+  min-width: 0;
+}
+.shell .conversation { width: 100%; }
+.shell .chat-message { max-width: min(92%, 900px); }
+.shell .message-content,
+.shell .message-content p,
+.shell .message-content li { overflow-wrap: anywhere; }
+.shell .code-block { max-width: 100%; }
+.shell .code-block pre {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+}
+.shell .image-attach-row { min-width: 0; flex-wrap: wrap; }
+.shell .image-attach-row > * { max-width: 100%; }
+.shell .image-attach-name {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.shell .composer-footer { min-width: 0; gap: 10px; flex-wrap: wrap; }
+.shell .composer-mode { min-width: 0; flex: 1 1 180px; }
+.shell .topbar { min-width: 0; gap: 10px; }
+.shell .breadcrumb { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.shell .top-actions { min-width: 0; gap: 8px; }
+@supports (height: 100dvh) {
+  .shell { min-height: 100dvh; }
+  .shell > .sidebar { height: 100dvh; }
+}
+@media (max-width: 760px) {
+  .shell { min-height: 100dvh; grid-template-columns: minmax(0, 1fr); }
+  .shell .topbar { height: auto; min-height: 56px; padding: 8px 12px; }
+  .shell .breadcrumb { flex: 0 1 38%; font-size: 11px; }
+  .shell .top-actions {
+    flex: 0 1 62%;
+    max-width: 62%;
+    gap: 4px;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: none;
+  }
+  .shell .top-actions::-webkit-scrollbar { display: none; }
+  .shell .top-actions > span { display: none; }
+  .shell .mobile-history-toggle { flex: 0 0 auto; padding: 7px 8px; font-size: 10px; white-space: nowrap; }
+  .shell .welcome { width: calc(100% - 28px); margin: 40px auto 32px; }
+  .shell .conversation { gap: 12px; margin: 18px 0; }
+  .shell .chat-message { max-width: 100%; padding: 12px; }
+  .shell .image-attach-row { gap: 7px; }
+  .shell .composer { padding: 12px; }
+  .shell .composer textarea { min-height: 64px; }
+  .shell .footer { min-width: 0; flex-wrap: wrap; }
+}
+@media (max-width: 380px) {
+  .shell .brand { font-size: 19px; }
+  .shell .new-chat { padding: 8px 9px; font-size: 10px; }
+  .shell .mobile-history-toggle { padding-inline: 6px; font-size: 9px; }
+}

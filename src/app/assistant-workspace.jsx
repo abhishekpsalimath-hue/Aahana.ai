@@ -220,8 +220,25 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
   const [prompt, setPrompt] = useState("");
   const [imageFile, setImageFile] = useState(null);
   const [messages, setMessages] = useState([]);
+  const shouldAutoScrollRef = useRef(true);
   useEffect(() => {
-    if (messages.length) conversationEndRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
+    const updateScrollIntent = () => {
+      const root = document.documentElement;
+      const remaining = root.scrollHeight - (window.scrollY + window.innerHeight);
+      shouldAutoScrollRef.current = remaining < 180;
+    };
+    updateScrollIntent();
+    window.addEventListener("scroll", updateScrollIntent, { passive: true });
+    window.addEventListener("resize", updateScrollIntent);
+    return () => {
+      window.removeEventListener("scroll", updateScrollIntent);
+      window.removeEventListener("resize", updateScrollIntent);
+    };
+  }, []);
+  useEffect(() => {
+    if (messages.length && shouldAutoScrollRef.current) {
+      conversationEndRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
+    }
   }, [messages]);
   useEffect(() => {
     let active = true;
