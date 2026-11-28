@@ -147,3 +147,20 @@ test("rejects array subclasses and arrays with extra named properties", () => {
   extraPropertyWorkflow.steps.metadata = "not allowed";
   assert.equal(validateWorkflow(extraPropertyWorkflow).valid, false);
 });
+
+
+test("rejects proxy-backed workflow records without throwing", () => {
+  const source = validWorkflow();
+  const workflow = new Proxy(source, {
+    getPrototypeOf() { throw new Error("proxy trap"); },
+  });
+  assert.equal(validateWorkflow(workflow).valid, false);
+});
+
+test("rejects proxy-backed step arrays without throwing", () => {
+  const workflow = validWorkflow();
+  workflow.steps = new Proxy(workflow.steps, {
+    ownKeys() { throw new Error("proxy trap"); },
+  });
+  assert.equal(validateWorkflow(workflow).valid, false);
+});
