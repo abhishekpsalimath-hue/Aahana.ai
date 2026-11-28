@@ -35,7 +35,7 @@ export function createWorkflowDraft(request) {
   if (typeof request !== "string" || !request.trim() || request.length > 500) {
     return { ok: false, reason: "Enter a request of 1–500 characters.", workflow: null, explanations: [] };
   }
-  const safeRequest = request.replace(/[\\u0000-\\u001f\\u007f]/g, " ").replace(/\\s+/g, " ").trim();
+  const safeRequest = request.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim();
   const suggestion = suggestWorkflowTemplate(safeRequest);
   if (!suggestion.matched) {
     return { ok: false, reason: suggestion.reason, workflow: null, explanations: [] };
