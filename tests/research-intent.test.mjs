@@ -81,3 +81,21 @@ test("research topic classification recognises news across supported languages",
     "Teach me Kannada grammar",
   ]) assert.equal(getResearchTopic(prompt), "general", prompt);
 });
+
+test("live research recognises transliterated regional-language freshness requests", () => {
+  for (const prompt of [
+    "ivattina AI updates mattu recent developments heli",
+    "ivattu share market rates enu?",
+    "aaj ki taaza khabrein sources ke saath bataiye",
+    "taaza samachar aur latest announcements",
+    "aaj ke current prices compare karo",
+  ]) assert.equal(shouldSearchWeb(prompt), true, prompt);
+});
+
+test("transliterated words alone do not force live research for stable requests", () => {
+  for (const prompt of [
+    "Write a fictional story about ivattu",
+    "Teach me Kannada grammar using the word samachar",
+    "Explain what taaza means in Hindi",
+  ]) assert.equal(shouldSearchWeb(prompt), false, prompt);
+});
