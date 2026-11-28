@@ -1958,7 +1958,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
               <i className="aurora-ribbon aurora-ribbon-three" />
             </div>
             <div className="universe-particles">
-              {Array.from({ length: 64 }, (_, index) => (
+              {Array.from({ length: 96 }, (_, index) => (
                 <i
                   key={index}
                   style={{
@@ -1972,7 +1972,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
               ))}
             </div>
             <div className="universe-comets">
-              {Array.from({ length: 6 }, (_, index) => (
+              {Array.from({ length: 9 }, (_, index) => (
                 <i
                   key={index}
                   style={{
