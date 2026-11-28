@@ -25,3 +25,8 @@
 .evidenceReview textarea{resize:vertical;line-height:1.5}
 .evidenceReview select:focus,.evidenceReview textarea:focus{outline:2px solid #9ba6ee;outline-offset:1px}
 .evidenceReview>small{font-size:8px;color:#77758a;text-align:right}
+
+.remediationFields{display:flex;flex-direction:column;gap:7px;margin-top:12px;padding:12px;border:1px solid #46425f;border-radius:9px;background:#12131d}
+.remediationFields label{font-size:9px;color:#b8b5ca}
+.remediationFields input{width:100%;min-width:0;border:1px solid #39384d;border-radius:8px;background:#0d0e15;color:#f4f0fa;padding:9px;font:inherit;font-size:10px}
+.remediationFields input:focus{outline:2px solid #9ba6ee;outline-offset:1px}
