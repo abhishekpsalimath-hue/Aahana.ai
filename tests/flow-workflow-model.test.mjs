@@ -117,3 +117,33 @@ test("accepts a null-prototype workflow made only of safe own data fields", () =
   });
   assert.deepEqual(validateWorkflow(workflow), { valid: true, errors: [] });
 });
+
+
+test("rejects accessor-backed and sparse workflow step arrays without invoking getters", () => {
+  const accessorWorkflow = validWorkflow();
+  let getterCalled = false;
+  Object.defineProperty(accessorWorkflow.steps, "1", {
+    enumerable: true,
+    configurable: true,
+    get() {
+      getterCalled = true;
+      throw new Error("array getter must not run");
+    },
+  });
+  assert.equal(validateWorkflow(accessorWorkflow).valid, false);
+  assert.equal(getterCalled, false);
+
+  const sparseWorkflow = validWorkflow();
+  delete sparseWorkflow.steps[1];
+  assert.equal(validateWorkflow(sparseWorkflow).valid, false);
+});
+
+test("rejects array subclasses and arrays with extra named properties", () => {
+  const subclassWorkflow = validWorkflow();
+  subclassWorkflow.steps = new (class extends Array {})(...subclassWorkflow.steps);
+  assert.equal(validateWorkflow(subclassWorkflow).valid, false);
+
+  const extraPropertyWorkflow = validWorkflow();
+  extraPropertyWorkflow.steps.metadata = "not allowed";
+  assert.equal(validateWorkflow(extraPropertyWorkflow).valid, false);
+});
