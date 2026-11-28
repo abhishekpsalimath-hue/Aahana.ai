@@ -12,12 +12,23 @@ const OPERATIONS = new Set([
 ]);
 const APPROVAL_REQUIRED = new Set(["prepare_draft", "notify_owner"]);
 const ID_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$/;
+const WORKFLOW_KEYS = new Set(["id", "name", "steps"]);
+const STEP_KEYS = Object.freeze({
+  trigger: new Set(["id", "type", "label"]),
+  action: new Set(["id", "type", "label", "operation"]),
+  approval: new Set(["id", "type", "label"]),
+});
+
+function hasOnlyKeys(value, allowed) {
+  return Object.keys(value).every((key) => allowed.has(key));
+}
 
 export function validateWorkflow(workflow) {
   const errors = [];
   if (!workflow || typeof workflow !== "object" || Array.isArray(workflow)) {
     return { valid: false, errors: ["Workflow must be an object."] };
   }
+  if (!hasOnlyKeys(workflow, WORKFLOW_KEYS)) errors.push("Workflow contains unsupported properties.");
   if (typeof workflow.id !== "string" || !ID_PATTERN.test(workflow.id)) {
     errors.push("Workflow id must be 1–64 safe characters.");
   }
@@ -25,33 +36,36 @@ export function validateWorkflow(workflow) {
     errors.push("Workflow name must contain 1–120 characters.");
   }
   if (!Array.isArray(workflow.steps) || workflow.steps.length < 2 || workflow.steps.length > MAX_STEPS) {
-    errors.push(`Workflow must contain between 2 and ${MAX_STEPS} steps.`);
+    errors.push(\`Workflow must contain between 2 and \${MAX_STEPS} steps.\`);
     return { valid: false, errors };
   }
   const ids = new Set();
   workflow.steps.forEach((step, index) => {
-    const label = `Step ${index + 1}`;
+    const label = \`Step \${index + 1}\`;
     if (!step || typeof step !== "object" || Array.isArray(step)) {
-      errors.push(`${label} must be an object.`);
+      errors.push(\`\${label} must be an object.\`);
       return;
     }
+    if (!STEP_TYPES.has(step.type)) {
+      errors.push(\`\${label} has an unsupported type.\`);
+    } else if (!hasOnlyKeys(step, STEP_KEYS[step.type])) {
+      errors.push(\`\${label} contains unsupported properties.\`);
+    }
     if (typeof step.id !== "string" || !ID_PATTERN.test(step.id)) {
-      errors.push(`${label} has an invalid id.`);
+      errors.push(\`\${label} has an invalid id.\`);
     } else if (ids.has(step.id)) {
-      errors.push(`${label} has a duplicate id.`);
+      errors.push(\`\${label} has a duplicate id.\`);
     } else {
       ids.add(step.id);
     }
-    if (!STEP_TYPES.has(step.type)) errors.push(`${label} has an unsupported type.`);
     if (typeof step.label !== "string" || !step.label.trim() || step.label.length > 160) {
-      errors.push(`${label} needs a label of 1–160 characters.`);
+      errors.push(\`\${label} needs a label of 1–160 characters.\`);
     }
     if (step.type === "trigger" && index !== 0) errors.push("The trigger must be the first step.");
     if (step.type === "approval" && index !== workflow.steps.length - 1) errors.push("Approval gates must be the final step in this prototype.");
-    if (step.type === "action" && !OPERATIONS.has(step.operation)) errors.push(`${label} uses an unsupported operation.`);
-    if (step.type !== "action" && step.operation !== undefined) errors.push(`${label} cannot declare an action operation.`);
+    if (step.type === "action" && !OPERATIONS.has(step.operation)) errors.push(\`\${label} uses an unsupported operation.\`);
     if (step.type === "action" && APPROVAL_REQUIRED.has(step.operation) && workflow.steps.at(-1)?.type !== "approval") {
-      errors.push(`${label} requires a final human approval gate.`);
+      errors.push(\`\${label} requires a final human approval gate.\`);
     }
   });
   if (workflow.steps[0]?.type !== "trigger") errors.push("A workflow must start with a trigger.");
