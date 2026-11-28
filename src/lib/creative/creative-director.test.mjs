@@ -129,3 +129,60 @@ test("recognizes sacred subjects written in Hindi, Bengali and Gujarati scripts"
   const gujaratiRama = buildImagePrompt("શ્રીરામ", "masterpiece");
   assert.match(gujaratiRama, /traditional divine iconography/i);
 });
+
+
+test("recognizes common transliterated Shiva and Hanuman devotional names", () => {
+  for (const name of ["Shiv ji", "Shivji", "Bholenath", "Mahakaal"]) {
+    const prompt = buildImagePrompt("A devotional portrait of " + name, "masterpiece");
+    assert.match(prompt, /Depict Lord Shiva \(Mahadev\) unmistakably/i, name);
+    assert.match(prompt, /tripundra ash stripes/i, name);
+  }
+  for (const name of ["Bajrangbali", "Bajrang Bali", "Pavanputra", "Pawanputra", "Kesari Nandan"]) {
+    const prompt = buildImagePrompt("A devotional portrait of " + name, "masterpiece");
+    assert.match(prompt, /monkey-faced deity/i, name);
+    assert.match(prompt, /gada \(mace\)/i, name);
+  }
+});
+
+
+test("recognizes common transliterated names for Ganesha, Krishna and Rama", () => {
+  for (const name of ["Ganpati", "Ganapati", "Gajanan", "Lambodara", "Vighnaharta"]) {
+    const prompt = buildImagePrompt("A devotional portrait of " + name, "masterpiece");
+    assert.match(prompt, /elephant-headed Hindu deity/i, name);
+  }
+  for (const name of ["Kanha", "Kanhaiya", "Govinda", "Gopal", "Madhav"]) {
+    const prompt = buildImagePrompt("A devotional portrait of " + name, "masterpiece");
+    assert.match(prompt, /peacock feather/i, name);
+  }
+  for (const name of ["Siyaram", "Raghav", "Raghava", "Raghunath", "Raghunatha"]) {
+    const prompt = buildImagePrompt("A devotional portrait of " + name, "masterpiece");
+    assert.match(prompt, /traditional divine iconography/i, name);
+  }
+});
+
+test("transliterated deity matching uses whole words and avoids accidental substrings", () => {
+  for (const ordinary of ["programming", "rambling", "shivering", "kanhaya-style typography"]) {
+    const prompt = buildImagePrompt("A modern abstract poster about " + ordinary, "masterpiece");
+    assert.doesNotMatch(prompt, /Depict Lord (?:Rama|Shiva|Krishna) unmistakably/i, ordinary);
+    assert.doesNotMatch(prompt, /elephant-headed Hindu deity/i, ordinary);
+  }
+});
+
+
+test("recognizes additional unambiguous devotional epithets across the five core deities", () => {
+  for (const name of ["Shambhu", "Neelkanth", "Gangadhar", "Tryambaka", "Trilochana"]) {
+    assert.match(buildImagePrompt("A devotional portrait of " + name, "masterpiece"), /Depict Lord Shiva \(Mahadev\) unmistakably/i, name);
+  }
+  for (const name of ["Sankat Mochan", "Ramdoot"]) {
+    assert.match(buildImagePrompt("A devotional portrait of " + name, "masterpiece"), /monkey-faced deity/i, name);
+  }
+  for (const name of ["Ekadanta", "Vakratunda", "Siddhivinayak"]) {
+    assert.match(buildImagePrompt("A devotional portrait of " + name, "masterpiece"), /elephant-headed Hindu deity/i, name);
+  }
+  for (const name of ["Murlidhar", "Damodar", "Vasudev", "Vasudeva"]) {
+    assert.match(buildImagePrompt("A devotional portrait of " + name, "masterpiece"), /peacock feather/i, name);
+  }
+  for (const name of ["Maryada Purushottam", "Dasharath Nandan"]) {
+    assert.match(buildImagePrompt("A devotional portrait of " + name, "masterpiece"), /traditional divine iconography/i, name);
+  }
+});
