@@ -144,3 +144,12 @@ The Flow workflow validator now rejects undeclared top-level and per-step proper
 Shield evidence reviews now sanitize prior state against the immutable eight-control catalogue before carrying it forward. Unknown controls, malformed records, inherited properties, unsupported fields, accessor-backed values, invalid statuses, control characters, and malformed dates are excluded or rejected. A gap can now carry an optional bounded remediation owner and ISO date-only target; the summary reports how many gaps have an owner or target without presenting the count as verified risk reduction. These details remain in browser-session state only and are not persisted or independently verified.
 
 The latest branch snapshot at commit `6e0cacc780f58b5d51279e75ed227cab6eb66e84` includes the Shield evidence hardening and remediation UI. GitHub Actions for the prior snapshot `e5dca3f2bf38e0c47f6f420d9877e8426e42d047` completed successfully for both application tests/production build and private image-upscale checks. The newer remediation commits require a fresh CI run. Vercel preview deployment remains unavailable while the account's daily deployment quota is exhausted. No production deployment, merge, auth change, Supabase change, provider activation, or Student Mode change has occurred.
+
+
+## Verification — corrected remediation snapshot
+
+At commit `da484caf57ff023b8f802122d1875ee736783fcb`, GitHub Actions completed successfully:
+- Interactive experience lab: 448/448 tests passed; Next.js production build compiled and generated all 22 static pages.
+- Private image-upscale workflow: isolated image-upscale checks passed, plus the application test suite and production build.
+
+The regression found in the earlier sanitizer run is fixed: the sanitizer now accepts own data entries on a custom-prototype review container while ignoring inherited control entries. The latest Shield checklist also displays distinct “Evidence located”, “Gap identified”, and “Not reviewed” states, and the overview counts gaps with a remediation owner or target date. This verification applies to the commit above; any later source change requires fresh checks.
