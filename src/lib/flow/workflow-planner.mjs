@@ -1,7 +1,7 @@
 const INTENTS = Object.freeze([
   { id: "enquiries", terms: ["enquiry", "lead", "prospect", "customer follow-up", "follow up"], reason: "Enquiry capture and owner assignment" },
   { id: "invoice", terms: ["invoice", "bill", "supplier", "expense", "payment review"], reason: "Invoice field validation and human review" },
-  { id: "daily", terms: ["daily", "every morning", "weekday", "sales summary", "business summary", "daily report"], reason: "Scheduled data collection and summary preparation" },
+  { id: "daily", terms: ["daily", "every morning", "weekday", "daily report"], reason: "Scheduled data collection and summary preparation" },
 ]);
 
 const MIN_MATCHES = 1;
