@@ -136,3 +136,29 @@ export const FLOW_LIMITS = Object.freeze({
   operations: Object.freeze([...OPERATIONS]),
   approvalRequiredOperations: Object.freeze([...APPROVAL_REQUIRED]),
 });
+
+export function parseWorkflowExport(payload) {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload) ||
+      !hasOnlyDataKeys(payload, new Set(["format", "version", "exportedAt", "workflow"]))) {
+    return { valid: false, errors: ["Export file must contain only supported own data properties."], workflow: null };
+  }
+  if (payload.format !== "aahana-flow-workflow" || payload.version !== 1 ||
+      typeof payload.exportedAt !== "string" || payload.exportedAt.length > 40 ||
+      !Number.isFinite(Date.parse(payload.exportedAt)) ||
+      new Date(payload.exportedAt).toISOString() !== payload.exportedAt) {
+    return { valid: false, errors: ["Unsupported Aahana Flow export format, version or timestamp."], workflow: null };
+  }
+  const validation = validateWorkflow(payload.workflow);
+  if (!validation.valid) return { valid: false, errors: validation.errors, workflow: null };
+  const workflow = Object.freeze({
+    id: payload.workflow.id,
+    name: payload.workflow.name,
+    steps: Object.freeze(payload.workflow.steps.map((step) => Object.freeze({
+      id: step.id,
+      type: step.type,
+      label: step.label,
+      ...(step.type === "action" ? { operation: step.operation } : {}),
+    }))),
+  });
+  return { valid: true, errors: [], workflow };
+}
