@@ -1,0 +1,182 @@
+# Aahana Flow + Aahana Shield — Product Foundation
+
+Status: approved product direction; implementation proposal only. This document does not authorize production deployment, changes to existing authentication, Supabase data, billing, or Student Mode.
+
+## Product vision
+
+Aahana AI expands from a personal AI workspace into a platform that helps people think, create, automate business operations, and protect digital assets.
+
+The existing product remains the foundation:
+- Core AI Assistant
+- Creative Intelligence
+- Autonomous Aahana Agent
+- Existing Assistance and Student experiences remain intact. Student Mode is out of scope for these changes.
+
+Two new business products are introduced inside the Aahana ecosystem:
+
+## Aahana Flow — Business Automation
+
+Purpose: no-code/low-code business workflow automation with a natural-language-first experience. Users should describe an outcome; Aahana helps design, explain, validate, and operate a workflow without requiring users to understand nodes or APIs.
+
+Initial capability areas:
+- Visual workflow canvas with explicit trigger, action, condition, and approval steps.
+- Natural-language workflow drafting and editable workflow previews.
+- Scheduled and event-driven workflows.
+- Business document processing for user-provided PDFs, spreadsheets, and invoices.
+- Integrations through explicit, scoped OAuth/API connections; never collect provider passwords.
+- Run history, per-step logs, retries, pause/resume, failure alerts, and usage visibility.
+- Human approval gates for external messages, financial actions, destructive changes, and sensitive data operations.
+
+Initial examples:
+- Daily sales and expense summaries.
+- New enquiry capture and assignment.
+- Invoice extraction and review.
+- Customer follow-up reminders.
+- Weekly attendance and operations reports.
+- Email-to-order intake with a human approval checkpoint.
+
+## Aahana Shield — Cybersecurity & Data Protection
+
+Purpose: practical defensive security and data governance for individuals and businesses. This is not a promise of complete protection and is not an offensive security tool.
+
+Initial capability areas:
+- Security posture checklist and guided hardening.
+- Authorized website/application vulnerability checks with explicit asset ownership/authorization.
+- Account and access review, MFA recommendations, and least-privilege guidance.
+- Encryption and key-management design for stored and transmitted business data.
+- Backup status, recovery readiness, and retention controls.
+- Security event summaries, anomaly alerts, and audit trails.
+- Data inventory, classification, access history, and incident-response guidance.
+
+Safety boundaries:
+- No stealth, persistence, credential theft, exploitation of third-party targets, or unauthorized scanning.
+- Active tests require clear authorization, scope, rate limits, and safe checks.
+- Do not claim that a scan proves a system is secure.
+- Do not store secrets in client-side code, logs, prompts, or workflow definitions.
+- Security-critical controls must be enforced server-side and independently tested.
+
+## Account and workspace architecture
+
+Product experiences may have separate entry points and dedicated workspaces, but should not create duplicate, disconnected identity systems by default.
+
+Proposed model:
+- Preserve existing Aahana personal sign-in unchanged.
+- Introduce a business organization/workspace identity layer only after reviewing the existing auth model.
+- Business members have organization-scoped roles and permissions.
+- Aahana Shield has step-up authentication for sensitive administrative operations.
+- MFA, session management, audit events, and recovery controls are mandatory before production.
+- Tenant isolation must be enforced server-side; UI separation alone is not security.
+- Separate product workspaces do not imply separate databases or separate logins until architecture and migration risks are evaluated.
+- No changes to existing users, auth settings, Supabase schema, or production data as part of this foundation.
+
+## Commercial proposal — not yet launch-approved
+
+Reference prices supplied by the founder:
+- n8n Pro: ₹1,555 + GST/month.
+- Data protection comparison: ₹1,666 + GST/month (specific competitor/product still to be verified).
+
+Proposed Aahana pricing for evaluation:
+- Flow Starter: ₹799/month + applicable taxes.
+- Flow Pro: ₹1,299/month + applicable taxes.
+- Shield Starter: ₹999/month + applicable taxes.
+- Shield Pro: ₹1,499/month + applicable taxes.
+- Flow + Shield bundle: ₹1,999/month + applicable taxes.
+- Three-day trial concept, with explicit consent before any paid conversion.
+
+Prices, plan limits, taxes, payment provider, and trial conversion rules must be validated before billing implementation or public claims. Never activate paid billing without explicit customer consent.
+
+## Delivery sequence
+
+1. Architecture and threat-model review; inspect existing routes, auth, Supabase policies, and server boundaries without changing them.
+2. Build isolated Flow and Shield experience prototypes using mock/demo data only.
+3. Implement Flow workflow model and safe execution sandbox; add integrations only with scoped consent.
+4. Implement Shield defensive checks and data-governance controls; independently test security claims.
+5. Add organization membership, MFA/step-up authentication, tenant isolation, audit logs, and recovery only after a reviewed migration plan.
+6. Add billing and the 3-day trial only after pricing, taxes, limits, cancellation, and consent flows are approved.
+7. Run automated tests, security review, accessibility and mobile QA, then obtain founder approval before merge/deployment.
+
+## Non-negotiable release boundaries
+
+- No merge or production deployment without explicit founder approval.
+- No changes to existing user data, existing auth, Supabase settings, secrets, billing, provider credentials, migrations, deployment workflows, or Student Mode without separate explicit approval.
+- Keep all new work isolated behind a feature branch and draft pull request.
+- Do not represent prototypes, mock data, or untested checks as working production security or automation.
+
+
+## Implementation progress — isolated development branch
+
+The first workspace prototype batch now includes authenticated `/flow` and `/shield` routes, business navigation links, three sample Flow templates, a local-only dry-run preview, and a Shield checklist with control-specific evidence examples. Flow has a pure workflow-definition validator with a fixed operation allowlist, unique step IDs, a 30-step cap, trigger/approval ordering rules, mandatory human approval for outbound/notification operations, and a dry-run plan that explicitly produces no external side effects. Nine Node tests cover valid and invalid definitions, unsafe operations, duplicate IDs, approval requirements, size limits, and dry-run behavior. Shield starts with zero controls marked reviewed and does not claim to scan or verify live infrastructure. These prototypes do not yet persist data to an account, connect providers, execute workflows, or perform live security checks. Test execution and fresh preview QA remain pending because Vercel returned a build-rate-limit response for the latest branch commit.
+
+
+## Current prototype scope (branch snapshot)
+
+The Flow canvas now supports adding and removing bounded custom action steps from a fixed safe operation menu, switching among three starter templates, and generating a validated local dry-run plan. Outbound/notification-style actions are held at the final human approval gate. The natural-language field currently captures a request description only; it is not yet an AI workflow planner. The Shield checklist provides evidence examples tailored to each control, starts with no controls marked reviewed, and keeps review state only in the current browser session. These limitations are intentionally visible rather than simulated as connected production capabilities.
+
+
+The Shield control catalog is now separated into an immutable, testable domain module. Review-summary logic filters unknown/duplicate IDs and reports remaining high-priority controls without presenting it as a security score. Six additional Node tests cover catalog uniqueness/evidence, group derivation, honest zero baseline, duplicate/unknown review IDs, toggle behavior, and immutability. The combined Flow + Shield unit suite now contains 15 tests; execution is still pending the Vercel deployment quota reset or another approved test runner.
+
+
+## Next implementation batch — planning and authorization boundaries
+
+Flow now has a deterministic, keyword-assisted starter recommender for enquiry, invoice, and daily-summary requests. It reports ambiguity rather than guessing and is explicitly labelled as a heuristic, not an AI planner. The user must load and edit the suggested starter; no workflow is generated or executed automatically. Six tests cover matches, ambiguity, and invalid input.
+
+Shield now has a pure assessment-scope guard requiring affirmative authorization, a meaningful authorization note, 1–10 exact public DNS hostnames, and an expiry within 30 days. It rejects wildcard, URL, path, and IP targets. A scope-approved record is inert: network activity is false and findings start empty. This is only an authorization data model; no scanner, DNS resolution, network request, or live assessment exists. Six tests cover the boundary conditions. Test execution remains pending; these are added tests, not reported as passing.
+
+
+## Structured Flow draft — latest isolated batch
+
+The Flow request field now creates a structured draft from one of the three bounded starter definitions when the request has a clear keyword match. Every generated step includes a plain-language explanation, the complete workflow is checked by the shared validator, and the final approval step is preserved. Ambiguous requests return no workflow rather than inventing one. The UI loads the resulting draft into the editable canvas and shows its step-by-step rationale. This is still deterministic keyword matching, not an AI model, and it does not activate triggers, connect data sources, schedule jobs, send messages, or execute work. Six additional Node tests cover the draft paths and input normalization. The complete suite now contains 33 tests; execution remains unverified until a permitted test runner completes.
+
+
+## Shield authorization declaration — latest isolated batch
+
+The Shield workspace now exposes the scope model as a local declaration form. A user must affirm ownership or written permission, provide a meaningful authorization note, list 1–10 exact hostnames, and set an expiry. The form invokes the inert assessment-record constructor and reports only whether the submitted scope passed local format and expiry checks. It explicitly states that the attestation is not independently verified ownership and that no network activity, scan, or finding is produced. Scope state is not persisted to the account. The form is a prototype and must not be represented as an active security assessment.
+
+
+## Additional safety hardening
+
+The Flow workflow validator now rejects undeclared top-level and per-step properties, in addition to its operation allowlist. This prevents arbitrary script/runtime payload fields from being accepted into the workflow model. Shield assessment records validate their creation timestamps and are deeply frozen, including nested scope hostnames and findings, to prevent accidental post-validation mutation. Additional boundary tests cover these cases. These controls are local model validation only and do not enable workflow execution or live security assessment.
+
+
+
+## Shield remediation workflow and verification — latest branch snapshot
+
+Shield evidence reviews now sanitize prior state against the immutable eight-control catalogue before carrying it forward. Unknown controls, malformed records, inherited properties, unsupported fields, accessor-backed values, invalid statuses, control characters, and malformed dates are excluded or rejected. A gap can now carry an optional bounded remediation owner and ISO date-only target; the summary reports how many gaps have an owner or target without presenting the count as verified risk reduction. These details remain in browser-session state only and are not persisted or independently verified.
+
+The latest branch snapshot at commit `6e0cacc780f58b5d51279e75ed227cab6eb66e84` includes the Shield evidence hardening and remediation UI. GitHub Actions for the prior snapshot `e5dca3f2bf38e0c47f6f420d9877e8426e42d047` completed successfully for both application tests/production build and private image-upscale checks. The newer remediation commits require a fresh CI run. Vercel preview deployment remains unavailable while the account's daily deployment quota is exhausted. No production deployment, merge, auth change, Supabase change, provider activation, or Student Mode change has occurred.
+
+
+## Verification — corrected remediation snapshot
+
+At commit `da484caf57ff023b8f802122d1875ee736783fcb`, GitHub Actions completed successfully:
+- Interactive experience lab: 448/448 tests passed; Next.js production build compiled and generated all 22 static pages.
+- Private image-upscale workflow: isolated image-upscale checks passed, plus the application test suite and production build.
+
+The regression found in the earlier sanitizer run is fixed: the sanitizer now accepts own data entries on a custom-prototype review container while ignoring inherited control entries. The latest Shield checklist also displays distinct “Evidence located”, “Gap identified”, and “Not reviewed” states, and the overview counts gaps with a remediation owner or target date. This verification applies to the commit above; any later source change requires fresh checks.
+
+
+## Flow workflow editing and portability — latest batch
+
+The Flow canvas now supports moving action steps up and down while keeping the trigger fixed at the start and the approval gate fixed at the end. Each move invalidates any prior dry-run output and generated draft explanation so stale results are not presented as current. Validated workflows can be exported as a versioned JSON file for local reuse; export performs the shared workflow validator first and does not execute or transmit the workflow.
+
+The shared Flow validator now requires plain data records with supported own data properties. It rejects accessor properties without invoking getters, custom prototypes, symbol-keyed properties and unsupported step fields. Regression tests cover getter non-invocation, custom prototypes, symbol keys and safe null-prototype records. The export remains a local download; there is no import, persistence, scheduler, integration or live execution in this prototype.
+
+
+A follow-up UI consistency fix clears stale structured-draft explanations when a starter is switched or an action is added/removed. This keeps the displayed explanation tied to the current workflow rather than an earlier draft.
+
+
+Flow's validator also now rejects accessor-backed, sparse, subclassed or custom-property step arrays. It verifies own data descriptors before iterating steps, so malformed array entries cannot execute getters during validation. Regression tests cover getter non-invocation, sparse arrays, array subclasses and unexpected array properties.
+
+
+## Flow workflow portability and editing — 28 November 2026
+
+The Flow canvas now supports moving action steps up/down while preserving the trigger at the start and approval gate at the end. A workflow can be exported as a versioned JSON file and imported through a bounded local file picker (64 KB maximum). Imports are parsed by a pure validator that checks the export envelope, canonical timestamp, version, workflow IDs, step allowlist, operation allowlist, and approval-gate rules; imported records are rebuilt as frozen safe data. Custom/drafted workflow identity is preserved when exporting and running a dry run. Import/export remains local-only and does not connect integrations, persist to an account, or execute work.
+
+
+## Latest Flow portability verification — 28 November 2026
+
+Source snapshot `d93dc11506b0d6b3418d7835e7d16e9feabb55ab` passed both GitHub Actions workflows:
+- Interactive experience lab: 458/458 tests passed; Next.js production build compiled and generated all 22 static pages.
+- Private image-upscale workflow: isolated image-upscale checks passed, and its application test/build stage also passed.
+
+This verification covers the Flow action reorder controls, bounded versioned JSON import/export, strict pure export parser, custom workflow identity preservation, parser regression tests, and the existing Shield work. The verification is CI-only: no production deployment or preview deployment is implied.

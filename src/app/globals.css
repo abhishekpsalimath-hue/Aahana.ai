@@ -638,7 +638,7 @@ h1,.brand,.composer-mode,.breadcrumb{font-family:"Space Grotesk","Manrope",sans-
 
 
 /* Restore Aahana's approaching spiral galaxy on desktop and compact devices.
-   Keep the mobile CSS fallback: the heavy WebGL scene is intentionally disabled on phones. */
+   The WebGL scene now runs on phones with a reduced particle and pixel budget. */
 .space-background .universe-galaxy{
   display:block!important;
   position:absolute;
@@ -714,3 +714,35 @@ h1,.brand,.composer-mode,.breadcrumb{font-family:"Space Grotesk","Manrope",sans-
 .stop-generation:hover{background:#1b2933;border-color:#c2d6df;transform:translateY(-1px)}
 .stop-generation:focus-visible{outline:2px solid #c2d6df;outline-offset:3px}
 @media(prefers-reduced-motion:reduce){.stop-generation{transition:none}}
+
+.business-link{border:1px solid #302a3b;border-radius:9px;background:#15141c}
+@media(max-width:760px){.sidebar{flex-wrap:wrap;row-gap:9px}.business-link{display:flex;flex:1 1 calc(50% - 8px);justify-content:center;margin:0;padding:9px 8px;font-size:10px;background:#15141c;border:1px solid #302a3b;border-radius:9px}}
+
+
+/* Independent astronaut drift — no orbit, tether or fixed planetary path. */
+.astronaut-float{top:5%;right:clamp(18px,5vw,76px);width:clamp(92px,12vw,156px);height:auto;aspect-ratio:1;animation:astronaut-free-drift 31s ease-in-out infinite alternate;transform-origin:52% 48%;}
+.astronaut-float svg{overflow:visible;filter:drop-shadow(0 8px 22px #b99af566)}
+@keyframes astronaut-free-drift{0%{transform:translate3d(0,0,0) rotate(-11deg)}18%{transform:translate3d(-24px,19px,0) rotate(3deg)}43%{transform:translate3d(-8px,52px,0) rotate(13deg)}68%{transform:translate3d(22px,28px,0) rotate(-5deg)}100%{transform:translate3d(-18px,-12px,0) rotate(9deg)}}
+@media(max-width:760px){.astronaut-float{top:7%;right:8px;width:clamp(76px,21vw,112px);opacity:.84}}
+@media(prefers-reduced-motion:reduce){.astronaut-float{animation:none!important;transform:rotate(-7deg)}}
+
+
+/* A distant black hole with a tilted, luminous accretion disk. */
+.universe-black-hole{position:absolute;left:clamp(20px,9vw,140px);bottom:13%;width:clamp(112px,17vw,218px);aspect-ratio:1;z-index:1;transform-style:preserve-3d;pointer-events:none;opacity:.82;animation:black-hole-drift 38s ease-in-out infinite alternate;}
+.black-hole-lensing{position:absolute;inset:-30%;border-radius:50%;background:radial-gradient(circle,transparent 28%,#8d6ac522 42%,#6b85d01b 51%,transparent 70%);filter:blur(10px);}
+.black-hole-disk{position:absolute;left:-18%;right:-18%;top:27%;height:46%;border-radius:50%;transform:rotateX(67deg) rotateZ(-18deg);background:conic-gradient(from 12deg,transparent 0deg,#b69aff44 36deg,#f2d4ff 62deg,#8c79d9aa 102deg,transparent 148deg,#7996e6aa 204deg,#d6b7ff 248deg,#8a67c766 294deg,transparent 360deg);filter:blur(2px);box-shadow:0 0 14px #ad8cf766,0 0 32px #7e8fe944;}
+.black-hole-core{position:absolute;left:29%;top:29%;width:42%;height:42%;border-radius:50%;background:radial-gradient(circle at 50% 50%,#000 0 55%,#03020a 66%,#11101d 72%,#8f75c833 76%,transparent 82%);box-shadow:0 0 22px #bda4ff33,0 0 48px #7865bb22;}
+@keyframes black-hole-drift{0%{transform:translate3d(0,0,0) rotate(-5deg)}50%{transform:translate3d(18px,-16px,0) rotate(2deg)}100%{transform:translate3d(-8px,12px,0) rotate(7deg)}}
+@media(max-width:760px){.universe-black-hole{left:2%;bottom:10%;width:clamp(92px,24vw,132px);opacity:.58}.black-hole-lensing{filter:blur(7px)}}
+@media(prefers-reduced-motion:reduce){.universe-black-hole{animation:none!important}}
+
+
+/* Layered interstellar aurora and dust — atmospheric depth, not a flat glow. */
+.universe-aurora{position:absolute;inset:-8% -12%;z-index:0;overflow:hidden;pointer-events:none;transform-style:preserve-3d;mix-blend-mode:screen;opacity:.48}
+.aurora-ribbon{position:absolute;display:block;width:78%;height:34%;left:8%;top:24%;border-radius:50%;border-top:2px solid #bda7ff66;border-bottom:1px solid #8c9fe833;filter:blur(13px);transform:rotate(-19deg) skewX(-18deg) translateZ(-280px);box-shadow:0 -12px 42px #9876d933,0 16px 56px #6076c322;animation:aurora-flow 34s ease-in-out infinite alternate}
+.aurora-ribbon-one{left:-8%;top:28%;height:28%;border-top-color:#b9a0ff77;animation-duration:37s}
+.aurora-ribbon-two{left:26%;top:48%;width:88%;height:24%;border-top-color:#83a0e966;transform:rotate(14deg) skewX(24deg) translateZ(-430px);animation-duration:43s;animation-direction:alternate-reverse}
+.aurora-ribbon-three{left:12%;top:12%;width:64%;height:18%;border-top-color:#d3a9e955;transform:rotate(-8deg) skewX(-26deg) translateZ(-560px);filter:blur(19px);animation-duration:51s}
+@keyframes aurora-flow{0%{translate:-3% 2%;scale:.94;opacity:.48}50%{translate:4% -3%;scale:1.08;opacity:.82}100%{translate:-1% 4%;scale:1;opacity:.58}}
+@media(max-width:760px){.universe-aurora{opacity:.3}.aurora-ribbon{filter:blur(16px)}.aurora-ribbon-three{display:none}}
+@media(prefers-reduced-motion:reduce){.universe-aurora,.aurora-ribbon{animation:none!important}.aurora-ribbon{opacity:.5}}
