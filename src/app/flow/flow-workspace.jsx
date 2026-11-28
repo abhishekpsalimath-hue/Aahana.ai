@@ -18,7 +18,7 @@ const toWorkflowSteps = (template) => template.steps.map((label,index) =>
 
 export default function FlowWorkspace(){
  const [activeId,setActiveId]=useState("enquiries");
- const [workflowMeta,setWorkflowMeta]=useState({id:"enquiries",name:"New enquiry follow-up"});
+ const [workflowMeta,setWorkflowMeta]=useState({id:"enquiries",name:"New enquiry follow-up",source:"template"});
  const [importMessage,setImportMessage]=useState("");
  const [workflowSteps,setWorkflowSteps]=useState(()=>toWorkflowSteps(templates[0]));
  const [newStepLabel,setNewStepLabel]=useState("");
@@ -28,7 +28,6 @@ export default function FlowWorkspace(){
  const [draft,setDraft]=useState(null);
  const [dryRun,setDryRun]=useState(null);
  const [logs,setLogs]=useState(false);
- const active=templates.find(x=>x.id===activeId)||templates[0];
  const workflowName=workflowMeta.name;
  const workflowId=workflowMeta.id;
  const completed=dryRun?.steps?.filter(step=>step.status==="simulated").length||0;
@@ -41,7 +40,7 @@ export default function FlowWorkspace(){
   setLogs(false);
   if(result.ok){
    setActiveId(result.workflow.id);
-   setWorkflowMeta({id:result.workflow.id,name:result.workflow.name});
+   setWorkflowMeta({id:result.workflow.id,name:result.workflow.name,source:"draft"});
    setWorkflowSteps(result.workflow.steps);
   }
  }
@@ -49,7 +48,7 @@ export default function FlowWorkspace(){
   const chosen=templates.find(t=>t.id===id);
   if(!chosen)return;
   setActiveId(chosen.id);
-  setWorkflowMeta({id:chosen.id,name:chosen.name});
+  setWorkflowMeta({id:chosen.id,name:chosen.name,source:"template"});
   setWorkflowSteps(toWorkflowSteps(chosen));
   setDraft(null);
   setDryRun(null);
@@ -104,7 +103,7 @@ export default function FlowWorkspace(){
    const parsed=parseWorkflowExport(payload);
    if(!parsed.valid){setImportMessage("Import blocked: "+parsed.errors.join(" "));return;}
    setActiveId(parsed.workflow.id);
-   setWorkflowMeta({id:parsed.workflow.id,name:parsed.workflow.name});
+   setWorkflowMeta({id:parsed.workflow.id,name:parsed.workflow.name,source:"import"});
    setWorkflowSteps(parsed.workflow.steps.map(step=>({...step})));
    setDraft(null);setDryRun(null);setLogs(false);
    setImportMessage("Imported and validated locally. No integrations were run.");
@@ -140,8 +139,8 @@ export default function FlowWorkspace(){
    {draft&&<div className={styles.draft} role="status" aria-live="polite" aria-atomic="true"><b>{draft.ok?"STRUCTURED WORKFLOW DRAFT":"NO WORKFLOW GENERATED"}</b><p>{draft.ok?draft.workflow.name+": "+draft.requestSummary:draft.reason}</p>{draft.ok?<><small>Validated · {draft.workflow.steps.length} steps · {draft.confidence} confidence · no external side effects</small><ol>{draft.explanations.map(step=><li key={step.stepId}><b>{step.sequence}. {step.label}</b><br />{step.explanation}</li>)}</ol></>:<small>Choose a starter manually or describe a clearer outcome. Nothing was guessed or executed.</small>}</div>}
   </section>
   <div className={styles.section}><div><small>WORKFLOW STARTERS</small><h2>Start with a proven pattern</h2></div><span>03 TEMPLATES</span></div>
-  <section className={styles.cards}>{templates.map(t=><button key={t.id} className={activeId===t.id?styles.cardOn:styles.card} aria-pressed={activeId===t.id} onClick={()=>loadTemplate(t.id)}><small>{t.category}</small><b>{t.name}</b><p>{t.detail}</p><span>Open workflow →</span></button>)}</section>
-  <section className={styles.builder}><header><div><small>VISUAL WORKFLOW</small><h2>{workflowName}</h2><p>{activeId===workflowId&&templates.some(t=>t.id===workflowId)?active.detail:"Imported or custom workflow · review every step before use."}</p></div><div className={styles.builderActions}><label className={styles.importButton}>Import JSON<input type="file" accept=".json,application/json" onChange={importWorkflow}/></label><button type="button" onClick={exportWorkflow}>Export workflow ↓</button><button type="button" onClick={()=>{setDryRun(createDryRunPlan({id:workflowId,name:workflowName,steps:workflowSteps}));setLogs(true);}}>Run dry run ▶</button></div></header>
+  <section className={styles.cards}>{templates.map(t=><button key={t.id} className={workflowMeta.source==="template"&&activeId===t.id?styles.cardOn:styles.card} aria-pressed={workflowMeta.source==="template"&&activeId===t.id} onClick={()=>loadTemplate(t.id)}><small>{t.category}</small><b>{t.name}</b><p>{t.detail}</p><span>Open workflow →</span></button>)}</section>
+  <section className={styles.builder}><header><div><small>VISUAL WORKFLOW</small><h2>{workflowName}</h2><p>{workflowMeta.source==="template"&&templates.find(t=>t.id===workflowId)?.detail||"Imported or custom workflow · review every step before use."}</p></div><div className={styles.builderActions}><label className={styles.importButton}>Import JSON<input type="file" accept=".json,application/json" onChange={importWorkflow}/></label><button type="button" onClick={exportWorkflow}>Export workflow ↓</button><button type="button" onClick={()=>{setDryRun(createDryRunPlan({id:workflowId,name:workflowName,steps:workflowSteps}));setLogs(true);}}>Run dry run ▶</button></div></header>
    <div className={styles.canvas}>{importMessage&&<p className={styles.importMessage} role="status" aria-live="polite">{importMessage}</p>}<small>FLOW CANVAS · {workflowSteps.length} STEPS</small>
     <form className={styles.addStep} onSubmit={addAction}><input aria-label="New workflow action" value={newStepLabel} onChange={e=>setNewStepLabel(e.target.value)} maxLength={160} placeholder="Add an action to this workflow..." /><select aria-label="Action type" value={newOperation} onChange={e=>setNewOperation(e.target.value)}><option value="prepare_summary">Prepare summary</option><option value="validate_fields">Validate fields</option><option value="collect_sample_data">Collect sample data</option><option value="assign_owner">Assign owner</option><option value="prepare_draft">Prepare draft (approval required)</option><option value="notify_owner">Notify owner (approval required)</option></select><button disabled={!newStepLabel.trim()||workflowSteps.length>=30}>+ Add step</button></form>
     <div className={styles.nodes}>{workflowSteps.map((step,i)=><div className={styles.nodeWrap} key={step.id}><article className={dryRun?.steps?.[i]?.status==="simulated"?styles.nodeDone:styles.node}><span>{step.type==="trigger"?"◉":step.type==="approval"?"✓":"↗"}</span><div><small>STEP {String(i+1).padStart(2,"0")} · {step.type.toUpperCase()}</small><b>{step.label}</b></div><i>{dryRun?.steps?.[i]?.status==="simulated"?"✓":dryRun?.steps?.[i]?.status==="awaiting-human-approval"?"!":"•••"}</i>{step.type==="action"&&<button className={styles.removeStep} type="button" aria-label={"Remove "+step.label} onClick={()=>removeAction(step.id)}>×</button>}</article>{step.type==="action"&&<div className={styles.actionEditor}><label><span>Action label</span><input aria-label={"Edit label for "+step.label} value={step.label} maxLength={160} onChange={e=>updateAction(step.id,{label:e.target.value})}/></label><label><span>Operation</span><select aria-label={"Change operation for "+step.label} value={step.operation} onChange={e=>updateAction(step.id,{operation:e.target.value})}><option value="assign_owner">Assign owner</option><option value="prepare_draft">Prepare draft · approval required</option><option value="validate_fields">Validate fields</option><option value="collect_sample_data">Collect sample data</option><option value="prepare_summary">Prepare summary</option><option value="notify_owner">Notify owner · approval required</option></select></label><div className={styles.reorderControls}><button type="button" disabled={i<=1} aria-label={"Move "+step.label+" up"} onClick={()=>moveAction(step.id,-1)}>↑ Move up</button><button type="button" disabled={i>=workflowSteps.length-2} aria-label={"Move "+step.label+" down"} onClick={()=>moveAction(step.id,1)}>↓ Move down</button></div></div>}{i<workflowSteps.length-1&&<div className={styles.connector}>↓</div>}</div>)}</div>
