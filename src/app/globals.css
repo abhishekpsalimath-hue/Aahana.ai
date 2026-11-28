@@ -638,7 +638,7 @@ h1,.brand,.composer-mode,.breadcrumb{font-family:"Space Grotesk","Manrope",sans-
 
 
 /* Restore Aahana's approaching spiral galaxy on desktop and compact devices.
-   Keep the mobile CSS fallback: the heavy WebGL scene is intentionally disabled on phones. */
+   The WebGL scene now runs on phones with a reduced particle and pixel budget. */
 .space-background .universe-galaxy{
   display:block!important;
   position:absolute;
@@ -735,3 +735,14 @@ h1,.brand,.composer-mode,.breadcrumb{font-family:"Space Grotesk","Manrope",sans-
 @keyframes black-hole-drift{0%{transform:translate3d(0,0,0) rotate(-5deg)}50%{transform:translate3d(18px,-16px,0) rotate(2deg)}100%{transform:translate3d(-8px,12px,0) rotate(7deg)}}
 @media(max-width:760px){.universe-black-hole{left:2%;bottom:10%;width:clamp(92px,24vw,132px);opacity:.58}.black-hole-lensing{filter:blur(7px)}}
 @media(prefers-reduced-motion:reduce){.universe-black-hole{animation:none!important}}
+
+
+/* Layered interstellar aurora and dust — atmospheric depth, not a flat glow. */
+.universe-aurora{position:absolute;inset:-8% -12%;z-index:0;overflow:hidden;pointer-events:none;transform-style:preserve-3d;mix-blend-mode:screen;opacity:.48}
+.aurora-ribbon{position:absolute;display:block;width:78%;height:34%;left:8%;top:24%;border-radius:50%;border-top:2px solid #bda7ff66;border-bottom:1px solid #8c9fe833;filter:blur(13px);transform:rotate(-19deg) skewX(-18deg) translateZ(-280px);box-shadow:0 -12px 42px #9876d933,0 16px 56px #6076c322;animation:aurora-flow 34s ease-in-out infinite alternate}
+.aurora-ribbon-one{left:-8%;top:28%;height:28%;border-top-color:#b9a0ff77;animation-duration:37s}
+.aurora-ribbon-two{left:26%;top:48%;width:88%;height:24%;border-top-color:#83a0e966;transform:rotate(14deg) skewX(24deg) translateZ(-430px);animation-duration:43s;animation-direction:alternate-reverse}
+.aurora-ribbon-three{left:12%;top:12%;width:64%;height:18%;border-top-color:#d3a9e955;transform:rotate(-8deg) skewX(-26deg) translateZ(-560px);filter:blur(19px);animation-duration:51s}
+@keyframes aurora-flow{0%{translate:-3% 2%;scale:.94;opacity:.48}50%{translate:4% -3%;scale:1.08;opacity:.82}100%{translate:-1% 4%;scale:1;opacity:.58}}
+@media(max-width:760px){.universe-aurora{opacity:.3}.aurora-ribbon{filter:blur(16px)}.aurora-ribbon-three{display:none}}
+@media(prefers-reduced-motion:reduce){.universe-aurora,.aurora-ribbon{animation:none!important}.aurora-ribbon{opacity:.5}}
