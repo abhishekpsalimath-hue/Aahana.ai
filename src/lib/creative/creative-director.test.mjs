@@ -171,7 +171,7 @@ test("transliterated deity matching uses whole words and avoids accidental subst
 
 test("recognizes additional unambiguous devotional epithets across the five core deities", () => {
   for (const name of ["Shambhu", "Neelkanth", "Gangadhar", "Tryambaka", "Trilochana"]) {
-    assert.match(buildImagePrompt("A devotional portrait of " + name, "masterpiece"), /Depict Lord Shiva \\(Mahadev\\) unmistakably/i, name);
+    assert.match(buildImagePrompt("A devotional portrait of " + name, "masterpiece"), /Depict Lord Shiva \(Mahadev\) unmistakably/i, name);
   }
   for (const name of ["Sankat Mochan", "Ramdoot"]) {
     assert.match(buildImagePrompt("A devotional portrait of " + name, "masterpiece"), /monkey-faced deity/i, name);
