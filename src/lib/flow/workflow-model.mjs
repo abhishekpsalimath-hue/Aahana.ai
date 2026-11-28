@@ -36,36 +36,36 @@ export function validateWorkflow(workflow) {
     errors.push("Workflow name must contain 1–120 characters.");
   }
   if (!Array.isArray(workflow.steps) || workflow.steps.length < 2 || workflow.steps.length > MAX_STEPS) {
-    errors.push(\`Workflow must contain between 2 and \${MAX_STEPS} steps.\`);
+    errors.push("Workflow must contain between 2 and " + MAX_STEPS + " steps.");
     return { valid: false, errors };
   }
   const ids = new Set();
   workflow.steps.forEach((step, index) => {
-    const label = \`Step \${index + 1}\`;
+    const label = "Step " + (index + 1);
     if (!step || typeof step !== "object" || Array.isArray(step)) {
-      errors.push(\`\${label} must be an object.\`);
+      errors.push(label + " must be an object.");
       return;
     }
     if (!STEP_TYPES.has(step.type)) {
-      errors.push(\`\${label} has an unsupported type.\`);
+      errors.push(label + " has an unsupported type.");
     } else if (!hasOnlyKeys(step, STEP_KEYS[step.type])) {
-      errors.push(\`\${label} contains unsupported properties.\`);
+      errors.push(label + " contains unsupported properties.");
     }
     if (typeof step.id !== "string" || !ID_PATTERN.test(step.id)) {
-      errors.push(\`\${label} has an invalid id.\`);
+      errors.push(label + " has an invalid id.");
     } else if (ids.has(step.id)) {
-      errors.push(\`\${label} has a duplicate id.\`);
+      errors.push(label + " has a duplicate id.");
     } else {
       ids.add(step.id);
     }
     if (typeof step.label !== "string" || !step.label.trim() || step.label.length > 160) {
-      errors.push(\`\${label} needs a label of 1–160 characters.\`);
+      errors.push(label + " needs a label of 1–160 characters.");
     }
     if (step.type === "trigger" && index !== 0) errors.push("The trigger must be the first step.");
     if (step.type === "approval" && index !== workflow.steps.length - 1) errors.push("Approval gates must be the final step in this prototype.");
-    if (step.type === "action" && !OPERATIONS.has(step.operation)) errors.push(\`\${label} uses an unsupported operation.\`);
+    if (step.type === "action" && !OPERATIONS.has(step.operation)) errors.push(label + " uses an unsupported operation.");
     if (step.type === "action" && APPROVAL_REQUIRED.has(step.operation) && workflow.steps.at(-1)?.type !== "approval") {
-      errors.push(\`\${label} requires a final human approval gate.\`);
+      errors.push(label + " requires a final human approval gate.");
     }
   });
   if (workflow.steps[0]?.type !== "trigger") errors.push("A workflow must start with a trigger.");
