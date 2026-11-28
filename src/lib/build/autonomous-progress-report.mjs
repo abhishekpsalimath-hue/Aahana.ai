@@ -135,3 +135,58 @@ export function createAutonomousProgressReport({ date, generatedAt, tasks = [], 
     completionPolicy: "Only tasks with passing checks tied to a pinned commit count as completed. Proposals, drafts and unverified work are not counted as complete.",
   });
 }
+
+function markdownText(value) {
+  return String(value ?? "")
+    .replace(/\\/g, "\\\\")
+    .replace(/\x60/g, "\\x60")
+    .replace(/([*_{}[\]()#+.!|>~-])/g, "\\$1")
+    .replace(/[\r\n]+/g, " ");
+}
+
+/** Deterministic, side-effect-free Markdown export for a normalized report. */
+export function formatAutonomousProgressReportMarkdown(report) {
+  if (!report || typeof report !== "object" || !report.totals ||
+      !Array.isArray(report.tasks) || !Array.isArray(report.blockers) ||
+      !Array.isArray(report.nextActions) || typeof report.date !== "string" ||
+      typeof report.generatedAt !== "string" || typeof report.headline !== "string") {
+    throw new TypeError("A normalized autonomous progress report is required.");
+  }
+  const lines = [
+    "# Aahana AI — Daily Progress", "",
+    "**Date:** " + markdownText(report.date) + "  ",
+    "**Generated:** " + markdownText(report.generatedAt), "",
+    "## " + markdownText(report.headline), "", "### Overview", "",
+    "- Completed and verified: **" + report.totals.completedVerified + "**",
+    "- In progress: **" + report.totals.inProgress + "**",
+    "- Blocked: **" + report.totals.blocked + "**",
+    "- Awaiting owner review: **" + report.totals.awaitingOwnerReview + "**",
+    "- Queued: **" + report.totals.queued + "**",
+    "- Failed: **" + report.totals.failed + "**",
+    "- Completion: **" + report.totals.completionPercent + "%**", "",
+    "### Task details", ""
+  ];
+  if (report.tasks.length === 0) lines.push("_No task evidence supplied._", "");
+  for (const task of report.tasks) {
+    lines.push("#### " + markdownText(task.title) + " — " + markdownText(task.state));
+    if (task.summary) lines.push(markdownText(task.summary));
+    if (task.verification) {
+      const tick = String.fromCharCode(96);
+      lines.push(
+        "- Commit: " + tick + task.verification.commitSha + tick,
+        "- Verified: " + markdownText(task.verification.verifiedAt),
+        "- Checks: " + task.verification.checks.map((check) => markdownText(check.name) + " (" + check.status + ")").join(", ")
+      );
+    } else lines.push("- Verification: not supplied");
+    lines.push("");
+  }
+  lines.push("### Blockers", "");
+  if (report.blockers.length) report.blockers.forEach((item) => lines.push("- " + markdownText(item)));
+  else lines.push("- None reported");
+  lines.push("", "### Next actions", "");
+  if (report.nextActions.length) report.nextActions.forEach((item) => lines.push("- " + markdownText(item)));
+  else lines.push("- No outstanding actions from supplied task evidence");
+  lines.push("", "> Completion is counted only when passing checks are tied to a pinned commit.", "",
+    "_Scope: " + markdownText(report.scope) + "_", "");
+  return lines.join("\n");
+}
