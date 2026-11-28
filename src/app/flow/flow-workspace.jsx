@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import styles from "./flow.module.css";
-import { createDryRunPlan } from "@/lib/flow/workflow-model.mjs";
+import { createDryRunPlan, validateWorkflow } from "@/lib/flow/workflow-model.mjs";
 import { suggestWorkflowTemplate } from "@/lib/flow/workflow-planner.mjs";
 import { createWorkflowDraft } from "@/lib/flow/workflow-draft.mjs";
 
@@ -70,6 +70,38 @@ export default function FlowWorkspace(){
   setLogs(false);
   setDraft(null);
  }
+ function moveAction(id, offset){
+  setWorkflowSteps(current=>{
+   const index=current.findIndex(step=>step.id===id&&step.type==="action");
+   const target=index+offset;
+   if(index<=0||target<=0||target>=current.length-1||current[target]?.type!=="action")return current;
+   const next=[...current];
+   [next[index],next[target]]=[next[target],next[index]];
+   return next;
+  });
+  setDryRun(null);
+  setLogs(false);
+  setDraft(null);
+ }
+ function exportWorkflow(){
+  const workflow={id:active.id,name:active.name,steps:workflowSteps};
+  const validation=validateWorkflow(workflow);
+  if(!validation.valid){
+   setDryRun({ok:false,errors:validation.errors,steps:[],externalSideEffects:false});
+   setLogs(true);
+   return;
+  }
+  const payload={format:"aahana-flow-workflow",version:1,exportedAt:new Date().toISOString(),workflow};
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob);
+  const link=document.createElement("a");
+  link.href=url;
+  link.download="aahana-flow-"+active.id+".json";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(()=>URL.revokeObjectURL(url),1000);
+ }
  return <main className={styles.page}>
   <header className={styles.top}><a className={styles.brand} href="/"><b>a</b>Aahana <i>Flow</i></a><div><span>PROTOTYPE · DEMO DATA</span><a href="/">Back to Aahana</a></div></header>
   <section className={styles.hero}><div><small>● BUSINESS AUTOMATION</small><h1>Make work <em>flow.</em></h1><p>Describe the outcome. Shape the workflow. Keep people in control of every important action.</p></div><aside><b>Human-led automation</b><span>Approvals built into the flow</span></aside></section>
@@ -82,10 +114,10 @@ export default function FlowWorkspace(){
   </section>
   <div className={styles.section}><div><small>WORKFLOW STARTERS</small><h2>Start with a proven pattern</h2></div><span>03 TEMPLATES</span></div>
   <section className={styles.cards}>{templates.map(t=><button key={t.id} className={activeId===t.id?styles.cardOn:styles.card} aria-pressed={activeId===t.id} onClick={()=>loadTemplate(t.id)}><small>{t.category}</small><b>{t.name}</b><p>{t.detail}</p><span>Open workflow →</span></button>)}</section>
-  <section className={styles.builder}><header><div><small>VISUAL WORKFLOW</small><h2>{active.name}</h2><p>{active.detail}</p></div><button onClick={()=>{setDryRun(createDryRunPlan({id:active.id,name:active.name,steps:workflowSteps}));setLogs(true);}}>Run dry run ▶</button></header>
+  <section className={styles.builder}><header><div><small>VISUAL WORKFLOW</small><h2>{active.name}</h2><p>{active.detail}</p></div><div className={styles.builderActions}><button type="button" onClick={exportWorkflow}>Export workflow ↓</button><button type="button" onClick={()=>{setDryRun(createDryRunPlan({id:active.id,name:active.name,steps:workflowSteps}));setLogs(true);}}>Run dry run ▶</button></div></header>
    <div className={styles.canvas}><small>FLOW CANVAS · {workflowSteps.length} STEPS</small>
     <form className={styles.addStep} onSubmit={addAction}><input aria-label="New workflow action" value={newStepLabel} onChange={e=>setNewStepLabel(e.target.value)} maxLength={160} placeholder="Add an action to this workflow..." /><select aria-label="Action type" value={newOperation} onChange={e=>setNewOperation(e.target.value)}><option value="prepare_summary">Prepare summary</option><option value="validate_fields">Validate fields</option><option value="collect_sample_data">Collect sample data</option><option value="assign_owner">Assign owner</option><option value="prepare_draft">Prepare draft (approval required)</option><option value="notify_owner">Notify owner (approval required)</option></select><button disabled={!newStepLabel.trim()||workflowSteps.length>=30}>+ Add step</button></form>
-    <div className={styles.nodes}>{workflowSteps.map((step,i)=><div className={styles.nodeWrap} key={step.id}><article className={dryRun?.steps?.[i]?.status==="simulated"?styles.nodeDone:styles.node}><span>{step.type==="trigger"?"◉":step.type==="approval"?"✓":"↗"}</span><div><small>STEP {String(i+1).padStart(2,"0")} · {step.type.toUpperCase()}</small><b>{step.label}</b></div><i>{dryRun?.steps?.[i]?.status==="simulated"?"✓":dryRun?.steps?.[i]?.status==="awaiting-human-approval"?"!":"•••"}</i>{step.type==="action"&&<button className={styles.removeStep} type="button" aria-label={"Remove "+step.label} onClick={()=>removeAction(step.id)}>×</button>}</article>{step.type==="action"&&<div className={styles.actionEditor}><label><span>Action label</span><input aria-label={"Edit label for "+step.label} value={step.label} maxLength={160} onChange={e=>updateAction(step.id,{label:e.target.value})}/></label><label><span>Operation</span><select aria-label={"Change operation for "+step.label} value={step.operation} onChange={e=>updateAction(step.id,{operation:e.target.value})}><option value="assign_owner">Assign owner</option><option value="prepare_draft">Prepare draft · approval required</option><option value="validate_fields">Validate fields</option><option value="collect_sample_data">Collect sample data</option><option value="prepare_summary">Prepare summary</option><option value="notify_owner">Notify owner · approval required</option></select></label></div>}{i<workflowSteps.length-1&&<div className={styles.connector}>↓</div>}</div>)}</div>
+    <div className={styles.nodes}>{workflowSteps.map((step,i)=><div className={styles.nodeWrap} key={step.id}><article className={dryRun?.steps?.[i]?.status==="simulated"?styles.nodeDone:styles.node}><span>{step.type==="trigger"?"◉":step.type==="approval"?"✓":"↗"}</span><div><small>STEP {String(i+1).padStart(2,"0")} · {step.type.toUpperCase()}</small><b>{step.label}</b></div><i>{dryRun?.steps?.[i]?.status==="simulated"?"✓":dryRun?.steps?.[i]?.status==="awaiting-human-approval"?"!":"•••"}</i>{step.type==="action"&&<button className={styles.removeStep} type="button" aria-label={"Remove "+step.label} onClick={()=>removeAction(step.id)}>×</button>}</article>{step.type==="action"&&<div className={styles.actionEditor}><label><span>Action label</span><input aria-label={"Edit label for "+step.label} value={step.label} maxLength={160} onChange={e=>updateAction(step.id,{label:e.target.value})}/></label><label><span>Operation</span><select aria-label={"Change operation for "+step.label} value={step.operation} onChange={e=>updateAction(step.id,{operation:e.target.value})}><option value="assign_owner">Assign owner</option><option value="prepare_draft">Prepare draft · approval required</option><option value="validate_fields">Validate fields</option><option value="collect_sample_data">Collect sample data</option><option value="prepare_summary">Prepare summary</option><option value="notify_owner">Notify owner · approval required</option></select></label><div className={styles.reorderControls}><button type="button" disabled={i<=1} aria-label={"Move "+step.label+" up"} onClick={()=>moveAction(step.id,-1)}>↑ Move up</button><button type="button" disabled={i>=workflowSteps.length-2} aria-label={"Move "+step.label+" down"} onClick={()=>moveAction(step.id,1)}>↓ Move down</button></div></div>}{i<workflowSteps.length-1&&<div className={styles.connector}>↓</div>}</div>)}</div>
     <footer><span role="status" aria-live="polite" aria-atomic="true">● {dryRun?.ok?completed+" steps simulated · approval pending":dryRun?"Dry run blocked · fix workflow definition":"Ready for a safe dry run"}</span><button onClick={()=>setLogs(!logs)}>{logs?"Hide run details":"View run details"} ↗</button></footer>
     {logs&&<div className={styles.logs}><b>Dry-run result</b>{dryRun?.ok?<><p>{dryRun.steps.length-1} steps simulated. The final human approval remains pending; nothing was sent or changed.</p><ul>{dryRun.steps.map(step=><li key={step.stepId}>{step.sequence}. {step.label} — {step.status}</li>)}</ul></>:<><p>The workflow did not pass its safety checks.</p><ul>{(dryRun?.errors||["Run the validation again."]).map(error=><li key={error}>{error}</li>)}</ul></>}<small>Validated locally · External side effects: none</small></div>}
    </div>
