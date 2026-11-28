@@ -84,7 +84,7 @@ function validDateOnly(value) {
 
 function sanitizeExistingReviews(reviews) {
   const safe = Object.create(null);
-  if (!isPlainRecord(reviews)) return safe;
+  if (!reviews || typeof reviews !== "object" || Array.isArray(reviews)) return safe;
   for (const control of SECURITY_CONTROLS) {
     const entry = readOwnData(reviews, control.id);
     if (!entry.present || !isPlainRecord(entry.value)) continue;
