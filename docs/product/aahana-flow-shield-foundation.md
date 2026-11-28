@@ -131,3 +131,8 @@ The Flow request field now creates a structured draft from one of the three boun
 ## Shield authorization declaration — latest isolated batch
 
 The Shield workspace now exposes the scope model as a local declaration form. A user must affirm ownership or written permission, provide a meaningful authorization note, list 1–10 exact hostnames, and set an expiry. The form invokes the inert assessment-record constructor and reports only whether the submitted scope passed local format and expiry checks. It explicitly states that the attestation is not independently verified ownership and that no network activity, scan, or finding is produced. Scope state is not persisted to the account. The form is a prototype and must not be represented as an active security assessment.
+
+
+## Additional safety hardening
+
+The Flow workflow validator now rejects undeclared top-level and per-step properties, in addition to its operation allowlist. This prevents arbitrary script/runtime payload fields from being accepted into the workflow model. Shield assessment records validate their creation timestamps and are deeply frozen, including nested scope hostnames and findings, to prevent accidental post-validation mutation. Additional boundary tests cover these cases. These controls are local model validation only and do not enable workflow execution or live security assessment.
