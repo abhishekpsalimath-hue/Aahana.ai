@@ -14,3 +14,14 @@
 .scopeError{background:#2a1a20;border-color:#71404c;color:#ffdce2}
 .scopeSuccess p,.scopeError p{margin:5px 0 0}
 @media(max-width:760px){.scope{padding:16px}.scope form{grid-template-columns:1fr}.scope form>label.consent{grid-column:auto}}
+
+.evidenceCounts{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.evidenceCounts span{border:1px solid #34344a;border-radius:8px;padding:8px 10px;color:#9c9aae;font-size:9px}
+.evidenceCounts b{color:#dce0ff;font-size:13px;margin-right:4px}
+.evidenceReview{display:flex;flex-direction:column;gap:7px;margin-top:16px;padding-top:14px;border-top:1px solid #343247}
+.evidenceReview>b{font-size:10px;color:#e5e2ef}
+.evidenceReview label{font-size:9px;color:#a5a2b5;margin-top:4px}
+.evidenceReview select,.evidenceReview textarea{width:100%;min-width:0;border:1px solid #39384d;border-radius:8px;background:#0d0e15;color:#f4f0fa;padding:9px;font:inherit;font-size:10px}
+.evidenceReview textarea{resize:vertical;line-height:1.5}
+.evidenceReview select:focus,.evidenceReview textarea:focus{outline:2px solid #9ba6ee;outline-offset:1px}
+.evidenceReview>small{font-size:8px;color:#77758a;text-align:right}
