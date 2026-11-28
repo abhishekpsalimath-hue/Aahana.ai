@@ -163,3 +163,6 @@ The shared Flow validator now requires plain data records with supported own dat
 
 
 A follow-up UI consistency fix clears stale structured-draft explanations when a starter is switched or an action is added/removed. This keeps the displayed explanation tied to the current workflow rather than an earlier draft.
+
+
+Flow's validator also now rejects accessor-backed, sparse, subclassed or custom-property step arrays. It verifies own data descriptors before iterating steps, so malformed array entries cannot execute getters during validation. Regression tests cover getter non-invocation, sparse arrays, array subclasses and unexpected array properties.
