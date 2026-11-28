@@ -54,10 +54,10 @@ test("rejects duplicate step identifiers", () => {
 test("rejects oversized workflows", () => {
   const workflow = validWorkflow();
   workflow.steps = Array.from({ length: 31 }, (_, index) => ({
-    id: \`step-\${index}\`,
+    id: "step-" + index,
     type: index === 0 ? "trigger" : index === 30 ? "approval" : "action",
     ...(index > 0 && index < 30 ? { operation: "prepare_summary" } : {}),
-    label: \`Step \${index}\`,
+    label: "Step " + index,
   }));
   assert.equal(validateWorkflow(workflow).valid, false);
 });
