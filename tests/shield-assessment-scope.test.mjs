@@ -28,7 +28,7 @@ test("rejects wildcard, URL, path and IP targets", () => {
 test("rejects duplicate and excessive target scope", () => {
   const duplicate = scope(); duplicate.assets = ["example.com", "example.com"];
   assert.equal(validateAssessmentScope(duplicate, now).valid, false);
-  const excessive = scope(); excessive.assets = Array.from({length:11}, (_, i) => \`a\${i}.example.com\`);
+  const excessive = scope(); excessive.assets = Array.from({length:11}, (_, i) => "a" + i + ".example.com");
   assert.equal(validateAssessmentScope(excessive, now).valid, false);
 });
 test("requires a future expiry within thirty days", () => {
