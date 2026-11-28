@@ -9,7 +9,7 @@ const REGIONAL_FRESHNESS = /ಇತ್ತೀಚಿನ|ಇಂದು|ಪ್ರಸ�
 const LATIN_TRANSLITERATION_FRESHNESS_PATTERNS = Object.freeze([
   /\b(?:aaj|ivattu|ivattina|indina|hoy|hoje|heute)\b.{0,48}\b(?:latest|taaza|taza|news|samachar|samachara|khabar|khabrein|suddi|suddigalu|vaarthe|vaartha|price|prices|rate|rates|market|weather|forecast|results|updates?|research|studies|announcements)\b/i,
   /\b(?:taaza|taza|haal\s+hi|vartaman|vartamaana)\b.{0,36}\b(?:news|samachar|samachara|khabar|khabrein|suddi|vaarthe|price|rates|market|updates?|research|studies)\b/i,
-  /\b(?:samachar|samachara|khabar(?:ein)?|suddi|suddigalu|vaarthe|vaartha)\b.{0,36}\b(?:aaj|ivattu|ivattina|indina|latest|taaza|taza)\b/i,
+  /\b(?:samachar|samachara|khabar(?:ein|en)?|khabrein|suddi|suddigalu|vaarthe|vaartha)\b.{0,36}\b(?:aaj|ivattu|ivattina|indina|latest|taaza|taza)\b/i,
 ]);
 
 const NEWS_PATTERNS = [
