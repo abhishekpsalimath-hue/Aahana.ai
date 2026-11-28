@@ -824,3 +824,15 @@ h1,.brand,.composer-mode,.breadcrumb{font-family:"Space Grotesk","Manrope",sans-
 .footer .founder-signature{margin:0!important;align-self:center;font-size:clamp(23px,2.2vw,29px)!important;line-height:1!important;white-space:nowrap;text-align:right;transform:rotate(-3deg)}
 .footer .founder-signature::after{width:70%;height:5px;margin:3px auto 0}
 @media(max-width:760px){.footer{flex-wrap:wrap;gap:10px}.footer .founder-signature{flex-basis:100%;text-align:right;font-size:25px!important}}
+
+
+/* Astronaut is a free-roaming companion, not a spotlight or fixed corner badge. */
+.astronaut-companion{right:auto!important;bottom:auto!important;left:0;top:0;width:clamp(88px,8vw,112px);padding:0!important;background:transparent!important;box-shadow:none!important;transition:left 9.2s cubic-bezier(.22,.68,.25,1),top 9.2s cubic-bezier(.22,.68,.25,1);}
+.astronaut-companion--login,.astronaut-companion--assistant{right:auto!important;bottom:auto!important;width:clamp(88px,8vw,112px);}
+.astronaut-companion__image{filter:none!important;animation:none!important;transform:rotate(-2deg);mix-blend-mode:multiply;}
+@media(max-width:760px){.astronaut-companion--login,.astronaut-companion--assistant{left:0;top:0;right:auto!important;bottom:auto!important;width:68px}.astronaut-companion__message{display:none!important}}
+@media(prefers-reduced-motion:reduce){.astronaut-companion{transition:none!important}}
+
+/* Keep the real 3D universe, but bound GPU work to prevent mobile frame drops. */
+.space-background .universe-webgl{opacity:.58!important;}
+@media(max-width:760px){.space-background .universe-webgl{opacity:.44!important}}
