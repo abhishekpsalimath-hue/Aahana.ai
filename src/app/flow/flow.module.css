@@ -24,3 +24,9 @@
 .reorderControls button:disabled{opacity:.35;cursor:not-allowed}
 .reorderControls button:not(:disabled):focus-visible,.builderActions button:focus-visible{outline:2px solid #bca0ec;outline-offset:2px}
 @media(max-width:760px){.builderActions{width:100%;display:grid;grid-template-columns:1fr 1fr}.builderActions button{height:40px;padding:0 8px}.reorderControls{justify-content:stretch}.reorderControls button{flex:1;height:36px}}
+
+.importButton{height:37px;display:inline-flex;align-items:center;border:1px solid #65517f;border-radius:9px;background:#211a2c;color:#d9c5ff;padding:0 13px;font-size:10px;font-weight:700;cursor:pointer}
+.importButton input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.importButton:focus-within{outline:2px solid #bca0ec;outline-offset:2px}
+.importMessage{margin:0 0 12px;padding:9px 11px;border:1px solid #514365;border-radius:8px;color:#d8c8ef;background:#1b1624;font-size:10px;line-height:1.5}
+@media(max-width:760px){.builderActions{grid-template-columns:1fr 1fr}.importButton{height:40px;justify-content:center}.builderActions button:last-child{grid-column:1/-1}}
