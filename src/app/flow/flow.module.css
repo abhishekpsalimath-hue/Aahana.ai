@@ -7,3 +7,10 @@
 .addStep button:disabled{opacity:.4}
 .removeStep{width:23px;height:23px;flex:none;border:1px solid #514052;border-radius:6px;background:#21171e;color:#e4a8b5;font-size:16px;line-height:1}
 @media(max-width:760px){.addStep{grid-template-columns:1fr}.addStep input,.addStep select,.addStep button{height:40px}}
+
+.actionEditor{display:grid;grid-template-columns:minmax(0,1fr) minmax(190px,.8fr);gap:8px;max-width:620px;margin:7px auto 0;padding:10px 12px;border:1px solid #292431;border-radius:8px;background:#100e16}
+.actionEditor label{display:flex;flex-direction:column;gap:5px;min-width:0}
+.actionEditor label span{font-size:8px;letter-spacing:.8px;text-transform:uppercase;color:#8f849d}
+.actionEditor input,.actionEditor select{width:100%;min-width:0;height:33px;border:1px solid #393344;border-radius:7px;background:#0c0b11;color:#e9e2f2;padding:0 9px;font-size:10px}
+.actionEditor input:focus,.actionEditor select:focus{outline:2px solid #9b80c7;outline-offset:1px}
+@media(max-width:760px){.actionEditor{grid-template-columns:1fr}}
