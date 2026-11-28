@@ -1,5 +1,6 @@
 const HOSTNAME = /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/i;
 const MAX_SCOPE_DAYS = 30;
+const SCOPE_KEYS = new Set(["authorized", "authorizationNote", "assets", "expiresAt"]);
 
 function deepFreeze(value) {
   if (!value || typeof value !== "object" || Object.isFrozen(value)) return value;
@@ -13,8 +14,9 @@ export function validateAssessmentScope(scope, now = Date.now()) {
   if (!scope || typeof scope !== "object" || Array.isArray(scope)) {
     return { valid: false, errors: ["An explicit authorization scope is required."], normalized: null };
   }
+  if (Object.keys(scope).some((key) => !SCOPE_KEYS.has(key))) errors.push("Authorization scope contains unsupported properties.");
   if (scope.authorized !== true) errors.push("Confirm that you own the asset or have written permission to assess it.");
-  if (typeof scope.authorizationNote !== "string" || scope.authorizationNote.trim().length < 20 || scope.authorizationNote.length > 1000) {
+  if (typeof scope.authorizationNote !== "string" || scope.authorizationNote.trim().length < 20 || scope.authorizationNote.length > 1000 || /[\\u0000-\\u001f\\u007f]/.test(scope.authorizationNote)) {
     errors.push("Provide an authorization note of 20–1000 characters.");
   }
   if (!Array.isArray(scope.assets) || scope.assets.length < 1 || scope.assets.length > 10) {
