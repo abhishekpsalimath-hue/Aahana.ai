@@ -14,3 +14,13 @@
 .actionEditor input,.actionEditor select{width:100%;min-width:0;height:33px;border:1px solid #393344;border-radius:7px;background:#0c0b11;color:#e9e2f2;padding:0 9px;font-size:10px}
 .actionEditor input:focus,.actionEditor select:focus{outline:2px solid #9b80c7;outline-offset:1px}
 @media(max-width:760px){.actionEditor{grid-template-columns:1fr}}
+
+
+.builderActions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.builderActions button{height:37px;border:1px solid #65517f;border-radius:9px;background:#211a2c;color:#d9c5ff;padding:0 13px;font-size:10px;font-weight:700}
+.builderActions button:last-child{border:0;background:#c6a8ff;color:#191321;padding:0 16px}
+.reorderControls{grid-column:1/-1;display:flex;gap:7px;justify-content:flex-end}
+.reorderControls button{height:29px;border:1px solid #40364e;border-radius:7px;background:#17131e;color:#cbb7e9;padding:0 10px;font-size:9px}
+.reorderControls button:disabled{opacity:.35;cursor:not-allowed}
+.reorderControls button:not(:disabled):focus-visible,.builderActions button:focus-visible{outline:2px solid #bca0ec;outline-offset:2px}
+@media(max-width:760px){.builderActions{width:100%;display:grid;grid-template-columns:1fr 1fr}.builderActions button{height:40px;padding:0 8px}.reorderControls{justify-content:stretch}.reorderControls button{flex:1;height:36px}}
