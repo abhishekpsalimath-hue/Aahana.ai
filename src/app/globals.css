@@ -725,3 +725,13 @@ h1,.brand,.composer-mode,.breadcrumb{font-family:"Space Grotesk","Manrope",sans-
 @keyframes astronaut-free-drift{0%{transform:translate3d(0,0,0) rotate(-11deg)}18%{transform:translate3d(-24px,19px,0) rotate(3deg)}43%{transform:translate3d(-8px,52px,0) rotate(13deg)}68%{transform:translate3d(22px,28px,0) rotate(-5deg)}100%{transform:translate3d(-18px,-12px,0) rotate(9deg)}}
 @media(max-width:760px){.astronaut-float{top:7%;right:8px;width:clamp(76px,21vw,112px);opacity:.84}}
 @media(prefers-reduced-motion:reduce){.astronaut-float{animation:none!important;transform:rotate(-7deg)}}
+
+
+/* A distant black hole with a tilted, luminous accretion disk. */
+.universe-black-hole{position:absolute;left:clamp(20px,9vw,140px);bottom:13%;width:clamp(112px,17vw,218px);aspect-ratio:1;z-index:1;transform-style:preserve-3d;pointer-events:none;opacity:.82;animation:black-hole-drift 38s ease-in-out infinite alternate;}
+.black-hole-lensing{position:absolute;inset:-30%;border-radius:50%;background:radial-gradient(circle,transparent 28%,#8d6ac522 42%,#6b85d01b 51%,transparent 70%);filter:blur(10px);}
+.black-hole-disk{position:absolute;left:-18%;right:-18%;top:27%;height:46%;border-radius:50%;transform:rotateX(67deg) rotateZ(-18deg);background:conic-gradient(from 12deg,transparent 0deg,#b69aff44 36deg,#f2d4ff 62deg,#8c79d9aa 102deg,transparent 148deg,#7996e6aa 204deg,#d6b7ff 248deg,#8a67c766 294deg,transparent 360deg);filter:blur(2px);box-shadow:0 0 14px #ad8cf766,0 0 32px #7e8fe944;}
+.black-hole-core{position:absolute;left:29%;top:29%;width:42%;height:42%;border-radius:50%;background:radial-gradient(circle at 50% 50%,#000 0 55%,#03020a 66%,#11101d 72%,#8f75c833 76%,transparent 82%);box-shadow:0 0 22px #bda4ff33,0 0 48px #7865bb22;}
+@keyframes black-hole-drift{0%{transform:translate3d(0,0,0) rotate(-5deg)}50%{transform:translate3d(18px,-16px,0) rotate(2deg)}100%{transform:translate3d(-8px,12px,0) rotate(7deg)}}
+@media(max-width:760px){.universe-black-hole{left:2%;bottom:10%;width:clamp(92px,24vw,132px);opacity:.58}.black-hole-lensing{filter:blur(7px)}}
+@media(prefers-reduced-motion:reduce){.universe-black-hole{animation:none!important}}
