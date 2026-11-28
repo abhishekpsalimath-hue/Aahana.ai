@@ -3,10 +3,12 @@
 import { useEffect, useState } from "react";
 
 const moments = [
-  { login: "Ready for takeoff?", assistant: "Need a hand? I'm right here.", action: "drift" },
-  { login: "Welcome aboard!", assistant: "Let's turn that idea into something real.", action: "bank" },
-  { login: "Your space is waiting.", assistant: "Thinking… plotting our next move.", action: "rise" },
-  { login: "Let's make something brilliant.", assistant: "Nice work. Keep the momentum going!", action: "glide" },
+  { action: "drift" },
+  { action: "wave" },
+  { action: "salute" },
+  { action: "bank" },
+  { action: "rise" },
+  { action: "glide" },
 ];
 
 export default function AstronautCompanion({ variant = "assistant" }) {
@@ -42,7 +44,7 @@ export default function AstronautCompanion({ variant = "assistant" }) {
     };
     const start = () => {
       if (timer !== null || document.hidden || motion?.matches) return;
-      timer = window.setInterval(move, 9800);
+      timer = window.setInterval(move, 7600);
     };
     const handleVisibility = () => {
       if (document.hidden) stop();
@@ -71,7 +73,6 @@ export default function AstronautCompanion({ variant = "assistant" }) {
   const current = moments[moment];
   return (
     <aside className={`astronaut-companion astronaut-companion--${variant} astronaut-action--${current.action}`} aria-label="Aahana astronaut companion" style={position ? { left: `${position.left}px`, top: `${position.top}px`, visibility: "visible" } : { visibility: "hidden" }}>
-      <div className="astronaut-companion__message" aria-live="off">{current[variant] || current.assistant}</div>
       <img
         className="astronaut-companion__image"
         src="/astronaut.webp"
