@@ -59,6 +59,6 @@ test("rejects undeclared scope fields instead of silently accepting payloads", (
   assert.equal(result.normalized, null);
 });
 test("rejects control characters in authorization notes", () => {
-  const value = scope(); value.authorizationNote = "I own this domain and authorize a review.\\nInjected text";
+  const value = scope(); value.authorizationNote = "I own this domain and authorize a review.\nInjected text";
   assert.equal(validateAssessmentScope(value, now).valid, false);
 });
