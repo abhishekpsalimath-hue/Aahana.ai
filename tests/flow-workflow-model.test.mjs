@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createDryRunPlan, validateWorkflow } from "../src/lib/flow/workflow-model.mjs";
+import { createDryRunPlan, validateWorkflow, parseWorkflowExport } from "../src/lib/flow/workflow-model.mjs";
 
 const validWorkflow = () => ({
   id: "daily-summary",
@@ -163,4 +163,42 @@ test("rejects proxy-backed step arrays without throwing", () => {
     ownKeys() { throw new Error("proxy trap"); },
   });
   assert.equal(validateWorkflow(workflow).valid, false);
+});
+
+
+test("parses and freezes a valid versioned workflow export", () => {
+  const payload = {
+    format: "aahana-flow-workflow",
+    version: 1,
+    exportedAt: "2026-11-28T05:30:00.000Z",
+    workflow: validWorkflow(),
+  };
+  const result = parseWorkflowExport(payload);
+  assert.equal(result.valid, true);
+  assert.equal(result.workflow.id, "daily-summary");
+  assert.equal(Object.isFrozen(result.workflow), true);
+  assert.equal(Object.isFrozen(result.workflow.steps[0]), true);
+});
+
+test("rejects unknown export fields, versions and non-canonical timestamps", () => {
+  const base = {
+    format: "aahana-flow-workflow",
+    version: 1,
+    exportedAt: "2026-11-28T05:30:00.000Z",
+    workflow: validWorkflow(),
+  };
+  assert.equal(parseWorkflowExport({...base, script: "bad"}).valid, false);
+  assert.equal(parseWorkflowExport({...base, version: 2}).valid, false);
+  assert.equal(parseWorkflowExport({...base, exportedAt: "yesterday"}).valid, false);
+  assert.equal(parseWorkflowExport({...base, exportedAt: "2026-11-28"}).valid, false);
+});
+
+test("rejects unsafe workflow data inside otherwise valid exports", () => {
+  const payload = {
+    format: "aahana-flow-workflow",
+    version: 1,
+    exportedAt: "2026-11-28T05:30:00.000Z",
+    workflow: {...validWorkflow(), runtime: {script: "no"}},
+  };
+  assert.equal(parseWorkflowExport(payload).valid, false);
 });
