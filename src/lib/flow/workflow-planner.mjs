@@ -7,15 +7,14 @@ const INTENTS = Object.freeze([
 const MIN_MATCHES = 1;
 
 function containsPhrase(text, phrase) {
-  const escaped = phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  return new RegExp(`(?:^|\\s)${escaped}(?:$|\\s)`).test(text);
+  return (\` \${text} \`).includes(\` \${phrase} \`);
 }
 
 export function suggestWorkflowTemplate(request) {
   if (typeof request !== "string" || !request.trim()) {
     return { matched: false, templateId: null, confidence: "none", reason: "Describe the outcome you want first.", planner: "keyword-assisted-v1" };
   }
-  const normalized = request.toLowerCase().replace(/[^a-z0-9\\s-]/g, " ").replace(/\\s+/g, " ").trim();
+  const normalized = request.toLowerCase().replace(/[^a-z0-9\s-]/g, " ").replace(/\s+/g, " ").trim();
   const ranked = INTENTS.map((intent) => {
     const matches = intent.terms.filter((term) => containsPhrase(normalized, term)).length;
     return { ...intent, matches };
