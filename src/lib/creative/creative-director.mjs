@@ -114,8 +114,15 @@ const SACRED_SUBJECT_DIRECTIONS = [
   }
 ];
 
+const NARUTO_ANIME_DIRECTION = [
+  "Anime character direction: depict Naruto Uzumaki as the clearly recognizable character, with spiky blond hair, bright blue eyes, three whisker-like marks on each cheek, a Leaf Village forehead protector, and his familiar orange-and-black ninja outfit.",
+  "Use polished Japanese anime illustration, confident expressive eyes, clean cel-shaded forms, crisp linework, a vivid orange-and-blue palette, and dynamic but readable composition. Preserve the user's requested pose, setting, framing, and any additional scene details. Keep the character design consistent; do not substitute a generic ninja or add unrequested characters, captions, or watermarks."
+].join(" ");
+
 export function buildImagePrompt(prompt, quality = "masterpiece") {
   if (quality !== "standard" && quality !== "masterpiece") return null;
+  const naruto = /\\b(naruto|uzumaki)\\b/i.test(prompt);
+  if (naruto) return [prompt, NARUTO_ANIME_DIRECTION].join("\\n\\n");
   const subject = SACRED_SUBJECT_DIRECTIONS.find(({ pattern }) => pattern.test(prompt));
   const direction = quality === "masterpiece" ? IMAGE_MASTERPIECE_DIRECTION : "";
   return [prompt, subject?.direction, direction].filter(Boolean).join("\n\n");
