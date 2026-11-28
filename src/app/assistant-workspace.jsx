@@ -1441,7 +1441,6 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
           {!messages.length && <>
             <h1>Good ideas<br /><em>start somewhere.</em></h1>
             <p>Think freely. Explore ideas. Build something real.</p>
-            <p className="founder-signature">— Abhishekayya Salimath</p>
           </>}
 
           <div className="mode-row assistance-context" aria-label="Current workspace">
@@ -1731,7 +1730,7 @@ export default function Home({ userEmail = "", aiEnabled = false }) {
             </>
           )}
         </div>
-        <footer className="footer"><span>Aahana</span><span>Thoughtfully made for what’s next.</span></footer>
+        <footer className="footer"><span>Aahana</span><span>Thoughtfully made for what’s next.</span><span className="founder-signature">— Abhishekayya Salimath</span></footer>
       </section>
     </main>
   );
