@@ -30,3 +30,8 @@
 .remediationFields label{font-size:9px;color:#b8b5ca}
 .remediationFields input{width:100%;min-width:0;border:1px solid #39384d;border-radius:8px;background:#0d0e15;color:#f4f0fa;padding:9px;font:inherit;font-size:10px}
 .remediationFields input:focus{outline:2px solid #9ba6ee;outline-offset:1px}
+
+.gapFlag,.evidenceFlag,.pendingFlag{display:inline-block;width:max-content;max-width:100%;margin-top:7px;padding:4px 7px;border-radius:5px;font-size:8px;font-style:normal;letter-spacing:.2px}
+.gapFlag{border:1px solid #71404c;background:#2a1a20;color:#ffdce2}
+.evidenceFlag{border:1px solid #3d6b55;background:#17251f;color:#d7f3df}
+.pendingFlag{border:1px solid #343448;background:#15151e;color:#9693a6}
