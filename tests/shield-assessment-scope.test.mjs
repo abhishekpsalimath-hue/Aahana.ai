@@ -51,3 +51,14 @@ test("rejects malformed, future-dated and stale assessment timestamps", () => {
     assert.equal(createAssessmentRecord(scope(), { assessmentId: "review_02", createdAt, now }).ok, false);
   }
 });
+
+test("rejects undeclared scope fields instead of silently accepting payloads", () => {
+  const value = { ...scope(), script: "run-this", metadata: { arbitrary: true } };
+  const result = validateAssessmentScope(value, now);
+  assert.equal(result.valid, false);
+  assert.equal(result.normalized, null);
+});
+test("rejects control characters in authorization notes", () => {
+  const value = scope(); value.authorizationNote = "I own this domain and authorize a review.\\nInjected text";
+  assert.equal(validateAssessmentScope(value, now).valid, false);
+});
