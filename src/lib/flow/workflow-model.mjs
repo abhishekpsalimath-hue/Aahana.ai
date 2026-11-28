@@ -20,7 +20,7 @@ const STEP_KEYS = Object.freeze({
 });
 
 function hasControlCharacters(value) {
-  return typeof value === "string" && /[\\u0000-\\u001f\\u007f]/.test(value);
+  return typeof value === "string" && /[\u0000-\u001f\u007f]/.test(value);
 }
 
 function hasOnlyKeys(value, allowed) {
