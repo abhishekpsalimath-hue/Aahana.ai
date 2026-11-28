@@ -16,7 +16,7 @@ export function validateAssessmentScope(scope, now = Date.now()) {
   }
   if (Object.keys(scope).some((key) => !SCOPE_KEYS.has(key))) errors.push("Authorization scope contains unsupported properties.");
   if (scope.authorized !== true) errors.push("Confirm that you own the asset or have written permission to assess it.");
-  if (typeof scope.authorizationNote !== "string" || scope.authorizationNote.trim().length < 20 || scope.authorizationNote.length > 1000 || /[\\u0000-\\u001f\\u007f]/.test(scope.authorizationNote)) {
+  if (typeof scope.authorizationNote !== "string" || scope.authorizationNote.trim().length < 20 || scope.authorizationNote.length > 1000 || /[\u0000-\u001f\u007f]/.test(scope.authorizationNote)) {
     errors.push("Provide an authorization note of 20–1000 characters.");
   }
   if (!Array.isArray(scope.assets) || scope.assets.length < 1 || scope.assets.length > 10) {
