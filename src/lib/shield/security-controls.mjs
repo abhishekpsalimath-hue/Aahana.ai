@@ -52,45 +52,123 @@ export const EVIDENCE_REVIEW_STATUSES = Object.freeze([
   "gap-found",
 ]);
 
-const REVIEW_KEYS = new Set(["status", "note"]);
+const REVIEW_KEYS = new Set(["status", "note", "remediationOwner", "dueDate"]);
+const CONTROL_CHARACTERS = /[\\u0000-\\u001f\\u007f]/;
+
+function isPlainRecord(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  try {
+    const prototype = Object.getPrototypeOf(value);
+    return prototype === Object.prototype || prototype === null;
+  } catch {
+    return false;
+  }
+}
+
+function readOwnData(record, key) {
+  try {
+    const descriptor = Object.getOwnPropertyDescriptor(record, key);
+    return descriptor && Object.hasOwn(descriptor, "value")
+      ? { present: true, value: descriptor.value }
+      : { present: false, value: undefined };
+  } catch {
+    return { present: false, value: undefined };
+  }
+}
+
+function validDateOnly(value) {
+  if (typeof value !== "string" || !/^\\d{4}-\\d{2}-\\d{2}$/.test(value)) return false;
+  const date = new Date(value + "T00:00:00.000Z");
+  return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
+
+function sanitizeExistingReviews(reviews) {
+  const safe = Object.create(null);
+  if (!isPlainRecord(reviews)) return safe;
+  for (const control of SECURITY_CONTROLS) {
+    const entry = readOwnData(reviews, control.id);
+    if (!entry.present || !isPlainRecord(entry.value)) continue;
+    const record = entry.value;
+    const keys = Object.keys(record);
+    if (keys.some((key) => !REVIEW_KEYS.has(key))) continue;
+    const status = readOwnData(record, "status");
+    const note = readOwnData(record, "note");
+    const owner = readOwnData(record, "remediationOwner");
+    const dueDate = readOwnData(record, "dueDate");
+    if (!status.present || !EVIDENCE_REVIEW_STATUSES.includes(status.value) ||
+        !note.present || typeof note.value !== "string" || note.value.length > 500 ||
+        CONTROL_CHARACTERS.test(note.value)) continue;
+    const remediationOwner = owner.present ? owner.value : "";
+    const targetDate = dueDate.present ? dueDate.value : "";
+    if (typeof remediationOwner !== "string" || remediationOwner.length > 80 ||
+        CONTROL_CHARACTERS.test(remediationOwner) ||
+        (targetDate !== "" && !validDateOnly(targetDate))) continue;
+    safe[control.id] = Object.freeze({
+      status: status.value,
+      note: note.value.trim(),
+      remediationOwner: remediationOwner.trim(),
+      dueDate: targetDate,
+    });
+  }
+  return safe;
+}
 
 export function updateEvidenceReview(reviews, controlId, input) {
   if (!CONTROL_IDS.has(controlId)) {
     return { ok: false, errors: ["Choose a known security control."], reviews: null };
   }
-  if (!input || typeof input !== "object" || Array.isArray(input) ||
-      Object.keys(input).some((key) => !REVIEW_KEYS.has(key))) {
+  if (!isPlainRecord(input) || Object.keys(input).some((key) => !REVIEW_KEYS.has(key))) {
     return { ok: false, errors: ["Evidence review contains unsupported fields."], reviews: null };
   }
-  if (!EVIDENCE_REVIEW_STATUSES.includes(input.status)) {
+  const status = readOwnData(input, "status");
+  const note = readOwnData(input, "note");
+  const owner = readOwnData(input, "remediationOwner");
+  const dueDate = readOwnData(input, "dueDate");
+  if (!status.present || !EVIDENCE_REVIEW_STATUSES.includes(status.value)) {
     return { ok: false, errors: ["Choose a valid evidence review status."], reviews: null };
   }
-  if (typeof input.note !== "string" || input.note.length > 500 ||
-      /[\u0000-\u001f\u007f]/.test(input.note)) {
+  if (!note.present || typeof note.value !== "string" || note.value.length > 500 ||
+      CONTROL_CHARACTERS.test(note.value)) {
     return { ok: false, errors: ["Evidence notes must be 500 characters or fewer and contain no control characters."], reviews: null };
   }
-  const current = reviews && typeof reviews === "object" && !Array.isArray(reviews) ? reviews : {};
-  const next = { ...current };
-  next[controlId] = Object.freeze({ status: input.status, note: input.note.trim() });
+  const remediationOwner = owner.present ? owner.value : "";
+  const targetDate = dueDate.present ? dueDate.value : "";
+  if (typeof remediationOwner !== "string" || remediationOwner.length > 80 ||
+      CONTROL_CHARACTERS.test(remediationOwner)) {
+    return { ok: false, errors: ["Remediation owner must be 80 characters or fewer and contain no control characters."], reviews: null };
+  }
+  if (targetDate !== "" && !validDateOnly(targetDate)) {
+    return { ok: false, errors: ["Choose a valid remediation target date."], reviews: null };
+  }
+  const next = sanitizeExistingReviews(reviews);
+  next[controlId] = Object.freeze({
+    status: status.value,
+    note: note.value.trim(),
+    remediationOwner: remediationOwner.trim(),
+    dueDate: targetDate,
+  });
   return { ok: true, errors: [], reviews: Object.freeze(next) };
 }
 
 export function getEvidenceReviewSummary(reviews) {
-  const safe = reviews && typeof reviews === "object" && !Array.isArray(reviews) ? reviews : {};
+  const safe = sanitizeExistingReviews(reviews);
   let evidencePresent = 0;
   let gapsFound = 0;
   let notesAdded = 0;
+  let remediationAssigned = 0;
   for (const control of SECURITY_CONTROLS) {
     const review = safe[control.id];
-    if (!review || typeof review !== "object") continue;
+    if (!review) continue;
     if (review.status === "evidence-present") evidencePresent += 1;
     if (review.status === "gap-found") gapsFound += 1;
-    if (typeof review.note === "string" && review.note.trim()) notesAdded += 1;
+    if (review.note) notesAdded += 1;
+    if (review.status === "gap-found" && (review.remediationOwner || review.dueDate)) remediationAssigned += 1;
   }
   return Object.freeze({
     evidencePresent,
     gapsFound,
     notesAdded,
+    remediationAssigned,
     notReviewed: SECURITY_CONTROLS.length - evidencePresent - gapsFound,
     totalCount: SECURITY_CONTROLS.length,
   });
