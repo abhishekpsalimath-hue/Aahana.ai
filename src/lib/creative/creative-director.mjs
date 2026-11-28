@@ -93,11 +93,11 @@ const SACRED_SUBJECT_DIRECTIONS = [
     direction: ARDHANARISHVARA_DIRECTION
   },
   {
-    pattern: /\b(lord\s+)?shiva\b|\bmahadev\b|\bmahadeva\b|\bshankar\b/i,
+    pattern: /\b(lord\s+)?shiva\b|\bmahadev\b|\bmahadeva\b|\bshankar\b|\bshiv(?:\s*ji)?\b|\bbholenath\b|\bmahakaal?\b/i,
     direction: "Depict Lord Shiva (Mahadev) unmistakably as the Hindu deity, not a generic saint, monk, guru, or ordinary human. Include recognizable traditional iconography: blue-toned throat (Neelkanth), matted jatā hair with the crescent moon and a stream of the Ganga, tripundra ash stripes and third eye, rudraksha beads, and a trident (trishula); a serene divine presence. If seated, use a yogic Himalayan setting or Mount Kailash. Keep the face divine and dignified, with coherent anatomy and all requested attributes clearly visible."
   },
   {
-    pattern: /\b(hanuman|anjaneya|anjaneya swamy|maruti)\b/i,
+    pattern: /\b(hanuman|anjaneya|anjaneya swamy|maruti|bajrang(?:\s*bali)?|pavanputra|pawanputra|kesari\s+nandan)\b/i,
     direction: "Depict Lord Hanuman (Anjaneya) unmistakably as the Hindu monkey-faced deity, not a human saint, monk, or generic warrior. Preserve the clearly recognizable vanara face and muzzle, expressive compassionate divine eyes, traditional crown or ornaments where appropriate, gada (mace), and devotional strength. If the scene calls for it, include a saffron dhoti and a reverent devotional pose. Do not replace the monkey-faced divine form with an ordinary human face."
   },
   {
