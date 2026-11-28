@@ -133,12 +133,12 @@ test("recognizes sacred subjects written in Hindi, Bengali and Gujarati scripts"
 
 test("recognizes common transliterated Shiva and Hanuman devotional names", () => {
   for (const name of ["Shiv ji", "Shivji", "Bholenath", "Mahakaal"]) {
-    const prompt = buildImagePrompt(\`A devotional portrait of \${name}\`, "masterpiece");
+    const prompt = buildImagePrompt("A devotional portrait of " + name, "masterpiece");
     assert.match(prompt, /Depict Lord Shiva \(Mahadev\) unmistakably/i, name);
     assert.match(prompt, /tripundra ash stripes/i, name);
   }
   for (const name of ["Bajrangbali", "Bajrang Bali", "Pavanputra", "Pawanputra", "Kesari Nandan"]) {
-    const prompt = buildImagePrompt(\`A devotional portrait of \${name}\`, "masterpiece");
+    const prompt = buildImagePrompt("A devotional portrait of " + name, "masterpiece");
     assert.match(prompt, /monkey-faced deity/i, name);
     assert.match(prompt, /gada \(mace\)/i, name);
   }
