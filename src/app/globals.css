@@ -927,9 +927,9 @@ h1,.brand,.composer-mode,.breadcrumb{font-family:"Space Grotesk","Manrope",sans-
   html, body { min-height: 100%; height: auto; overflow-x: clip; }
   .shell { min-height: 100svh; height: auto; overflow: visible; }
   .shell > .sidebar { position: relative; top: auto; height: auto; min-height: 58px; }
-  .shell > .main-panel { min-height: calc(100svh - 58px); height: auto; overflow: visible; }
+  .shell > .main-panel { display: flex; flex-direction: column; min-width: 0; min-height: calc(100svh - 58px); height: auto; overflow: visible; }
   .shell .welcome { min-height: 0; }
-  .shell .footer { margin-top: 36px; }
+  .shell .footer { margin-top: auto; }
 }
 
 /* Keep the companion visibly free-floating above the scene and page chrome. */
@@ -946,4 +946,17 @@ h1,.brand,.composer-mode,.breadcrumb{font-family:"Space Grotesk","Manrope",sans-
   border: 0 !important;
   border-radius: 0 !important;
   box-shadow: none !important;
+}
+
+
+/* The astronaut source is a near-white studio matte. Darken compositing makes
+   those pale pixels merge with the live scene instead of showing a white card. */
+.astronaut-companion,
+.astronaut-companion__image {
+  background: transparent !important;
+}
+.astronaut-companion__image {
+  mix-blend-mode: darken !important;
+  -webkit-mask-image: none !important;
+  mask-image: none !important;
 }
