@@ -218,7 +218,7 @@ function rod(group,a,b,color=0xb9c8e2,radius=.035) {
   const mesh=new THREE.Mesh(new THREE.CylinderGeometry(radius,radius,delta.length(),20),new THREE.MeshStandardMaterial({color,metalness:.45,roughness:.28}));
   mesh.position.copy(start).add(end).multiplyScalar(.5);mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),delta.normalize());group.add(mesh);return mesh;
 }
-function makeSceneModel(group,id,selectedPlanet=null) {
+function makeSceneModel(group,id,selectedPlanet=null,cellFocus="all",chemistryMolecule="water",chemistryFocus="all",chemistryShowBonds=true) {
   if(id==="planet"){
     const earth=sphere(group,[0,0,0],1,"#ffffff",{material:new THREE.MeshStandardMaterial({map:makeEarthTexture(),roughness:.86})});
     const clouds=sphere(group,[0,0,0],1.008,"#ffffff",{material:new THREE.MeshStandardMaterial({color:0xffffff,transparent:true,opacity:.13,roughness:1,wireframe:true})});
@@ -278,18 +278,63 @@ function makeSceneModel(group,id,selectedPlanet=null) {
     return;
   }
   if(id==="molecule"){
-    // Water geometry: O-H bond length 0.9572 Å and H-O-H angle 104.5°.
-    // Radii are deliberately enlarged for visibility; bond geometry is preserved.
-    const halfAngle=THREE.MathUtils.degToRad(104.5/2);
-    const bondLength=.9572;
-    const oxygen=[0,0,0];
-    const hydrogenA=[-Math.sin(halfAngle)*bondLength,-Math.cos(halfAngle)*bondLength,0];
-    const hydrogenB=[Math.sin(halfAngle)*bondLength,-Math.cos(halfAngle)*bondLength,0];
-    rod(group,oxygen,hydrogenA,0xd6e2f0,.035);
-    rod(group,oxygen,hydrogenB,0xd6e2f0,.035);
-    sphere(group,oxygen,.42,0xe45e68,{roughness:.2,metalness:.04});
-    sphere(group,hydrogenA,.33,0xf3f6fb,{roughness:.2,metalness:.02});
-    sphere(group,hydrogenB,.33,0xf3f6fb,{roughness:.2,metalness:.02});
+    // Simplified ball-and-stick teaching models. Atom radii are enlarged for visibility;
+    // positions communicate molecular geometry and are not a scale-accurate electron model.
+    const definitions = {
+      water: {
+        atoms: [
+          { role:"oxygen", position:[0,.08,0], radius:.36, color:0xe66b78 },
+          { role:"hydrogen", position:[-.75,-.58,0], radius:.23, color:0xe9edf7 },
+          { role:"hydrogen", position:[.75,-.58,0], radius:.23, color:0xe9edf7 },
+        ],
+        bonds:[[0,1],[0,2]],
+      },
+      carbonDioxide: {
+        atoms: [
+          { role:"oxygen", position:[-.9,0,0], radius:.27, color:0xe66b78 },
+          { role:"carbon", position:[0,0,0], radius:.31, color:0x737b8d },
+          { role:"oxygen", position:[.9,0,0], radius:.27, color:0xe66b78 },
+        ],
+        bonds:[[0,1],[1,2]],
+      },
+      methane: {
+        atoms: [
+          { role:"carbon", position:[0,0,0], radius:.32, color:0x737b8d },
+          { role:"hydrogen", position:[.61,.61,.61], radius:.2, color:0xe9edf7 },
+          { role:"hydrogen", position:[-.61,-.61,.61], radius:.2, color:0xe9edf7 },
+          { role:"hydrogen", position:[-.61,.61,-.61], radius:.2, color:0xe9edf7 },
+          { role:"hydrogen", position:[.61,-.61,-.61], radius:.2, color:0xe9edf7 },
+        ],
+        bonds:[[0,1],[0,2],[0,3],[0,4]],
+      },
+      ammonia: {
+        atoms: [
+          { role:"nitrogen", position:[0,.12,0], radius:.34, color:0x7298dc },
+          { role:"hydrogen", position:[.93,-.36,0], radius:.2, color:0xe9edf7 },
+          { role:"hydrogen", position:[-.465,-.36,.806], radius:.2, color:0xe9edf7 },
+          { role:"hydrogen", position:[-.465,-.36,-.806], radius:.2, color:0xe9edf7 },
+        ],
+        bonds:[[0,1],[0,2],[0,3]],
+      },
+    };
+    const molecule = definitions[chemistryMolecule] || definitions.water;
+    if(chemistryShowBonds){
+      molecule.bonds.forEach(([from,to])=>rod(group,molecule.atoms[from].position,molecule.atoms[to].position,0xb9c8e2,.035));
+    }
+    molecule.atoms.forEach((atom)=>{
+      const selected=chemistryFocus==="all"||chemistryFocus===atom.role;
+      const material=new THREE.MeshStandardMaterial({
+        color:selected?atom.color:0x55566a,
+        roughness:.24,
+        metalness:.025,
+        emissive:selected?atom.color:0x000000,
+        emissiveIntensity: selected && chemistryFocus !== "all" ? 0.28 : 0,
+        transparent:!selected,
+        opacity:selected?1:.3,
+      });
+      const mesh=sphere(group,atom.position,atom.radius,atom.color,{material,segments:48});
+      mesh.userData.learningPart=atom.role;
+    });
     return;
   }
   if(id==="atom"){
@@ -325,10 +370,31 @@ function makeSceneModel(group,id,selectedPlanet=null) {
   if(id==="cell"||id==="plant-cell"){
     const plant=id==="plant-cell";
     const membrane=sphere(group,[0,0,0],1,plant?0x5c9b59:0x62aeb0,{material:new THREE.MeshPhysicalMaterial({color:plant?0x80c66f:0x67c5c0,transparent:true,opacity:.23,roughness:.2,metalness:0,transmission:.22,thickness:.4})});
-    if(plant){const wall=new THREE.Mesh(new THREE.BoxGeometry(2.05,1.45,1.45),new THREE.MeshStandardMaterial({color:0x75a95d,wireframe:true,transparent:true,opacity:.65}));group.add(wall);}
-    sphere(group,[0,.08,.05],.34,0x9c72c6);
-    for(let i=0;i<7;i++){const a=i*Math.PI*2/7;sphere(group,[Math.cos(a)*.58,Math.sin(a)*.48,Math.sin(a*2)*.24],.12,i%2?0xe9b66c:0x69b78e);}
-    if(plant){sphere(group,[0,0,0],.48,0x9ad7ef,{material:new THREE.MeshPhysicalMaterial({color:0x83cfe8,transparent:true,opacity:.38,roughness:.2})});for(let i=0;i<8;i++){const a=i*Math.PI/4;sphere(group,[Math.cos(a)*.72,Math.sin(a)*.48,.18],.09,0x6cba66);}}return;
+    membrane.userData.learningPart="membrane";
+    if(plant){const wall=new THREE.Mesh(new THREE.BoxGeometry(2.05,1.45,1.45),new THREE.MeshStandardMaterial({color:0x75a95d,wireframe:true,transparent:true,opacity:.65}));wall.userData.learningPart="cellWall";group.add(wall);}
+    const nucleus=sphere(group,[0,.08,.05],.34,0x9c72c6);nucleus.userData.learningPart="nucleus";
+    for(let i=0;i<7;i++){
+      const a=i*Math.PI*2/7;
+      const part=sphere(group,[Math.cos(a)*.58,Math.sin(a)*.48,Math.sin(a*2)*.24],.12,i%2?0xe9b66c:0x69b78e);
+      part.userData.learningPart=i===0||i===3?"mitochondria":!plant&&i===5?"endoplasmicReticulum":plant?"chloroplasts":"ribosomes";
+    }
+    if(plant){
+      const vacuole=sphere(group,[0,0,0],.48,0x9ad7ef,{material:new THREE.MeshPhysicalMaterial({color:0x83cfe8,transparent:true,opacity:.38,roughness:.2})});
+      vacuole.userData.learningPart="vacuole";
+      for(let i=0;i<8;i++){const a=i*Math.PI/4;const chloroplast=sphere(group,[Math.cos(a)*.72,Math.sin(a)*.48,.18],.09,0x6cba66);chloroplast.userData.learningPart="chloroplasts";}
+    }
+    if(cellFocus!=="all"){
+      group.traverse((object)=>{
+        if(!object.isMesh||!object.userData.learningPart)return;
+        const selected=object.userData.learningPart===cellFocus;
+        const materials=Array.isArray(object.material)?object.material:[object.material];
+        materials.forEach((material)=>{
+          if(material.emissive){material.emissive.set(selected?0x9b78ff:0x000000);material.emissiveIntensity=selected ? 0.95 : 0;}
+          if(!selected&&object.userData.learningPart!=="membrane"){material.transparent=true;material.opacity=Math.min(material.opacity??1,.22);}
+        });
+      });
+    }
+    return;
   }
   if(id==="heart"){
     sphere(group,[-.28,.1,0],.43,0xb94d65);sphere(group,[.25,.1,0],.43,0xd36b78);sphere(group,[0,-.35,0],.46,0xb83e57);
@@ -386,7 +452,7 @@ function makeSceneModel(group,id,selectedPlanet=null) {
     return;
   }
 }
-function createThreeScene(canvas,id,selectedPlanet=null) {
+function createThreeScene(canvas,id,selectedPlanet=null,cellFocus="all",chemistryMolecule="water",chemistryFocus="all",chemistryShowBonds=true) {
   const constrainedDevice = window.matchMedia?.("(max-width: 760px)")?.matches
     || (navigator.hardwareConcurrency || 8) <= 4
     || window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
@@ -422,7 +488,7 @@ function createThreeScene(canvas,id,selectedPlanet=null) {
   const stars = addStars(scene);
   const group = new THREE.Group();
   scene.add(group);
-  makeSceneModel(group, id, selectedPlanet);
+  makeSceneModel(group, id, selectedPlanet, cellFocus, chemistryMolecule, chemistryFocus, chemistryShowBonds);
   // Real light/shadow response adds depth to solid models without affecting the fallback renderer.
   group.traverse((object) => {
     if (object.isMesh) {
@@ -430,7 +496,7 @@ function createThreeScene(canvas,id,selectedPlanet=null) {
       object.receiveShadow = renderer.shadowMap.enabled;
     }
   });
-  const state = { renderer, scene, camera, group, id, selectedPlanet, stars, width: 0, height: 0 };
+  const state = { renderer, scene, camera, group, id, selectedPlanet, cellFocus, chemistryMolecule, chemistryFocus, chemistryShowBonds, stars, width: 0, height: 0 };
   threeScenes.set(canvas,state);return state;
 }
 function clearSceneGroup(group) {
@@ -439,10 +505,10 @@ function clearSceneGroup(group) {
     if(object.material){const materials=Array.isArray(object.material)?object.material:[object.material];materials.forEach(material=>{material.map?.dispose();material.dispose();});}
   });
 }
-function renderThreeScene(canvas, id, yaw, pitch, zoom, time = 0, selectedPlanet = null) {
+function renderThreeScene(canvas, id, yaw, pitch, zoom, time = 0, selectedPlanet = null, cellFocus = "all", chemistryMolecule = "water", chemistryFocus = "all", chemistryShowBonds = true) {
   let state = threeScenes.get(canvas);
   if (!state) {
-    state = createThreeScene(canvas, id, selectedPlanet);
+    state = createThreeScene(canvas, id, selectedPlanet, cellFocus, chemistryMolecule, chemistryFocus, chemistryShowBonds);
     if (!state) {
       const ctx = canvas.getContext("2d");
       if (ctx) {
@@ -455,14 +521,18 @@ function renderThreeScene(canvas, id, yaw, pitch, zoom, time = 0, selectedPlanet
       return;
     }
   }
-  if (state.id !== id || state.selectedPlanet !== selectedPlanet) {
+  if (state.id !== id || state.selectedPlanet !== selectedPlanet || state.cellFocus !== cellFocus || state.chemistryMolecule !== chemistryMolecule || state.chemistryFocus !== chemistryFocus || state.chemistryShowBonds !== chemistryShowBonds) {
     state.scene.remove(state.group);
     clearSceneGroup(state.group);
     state.group = new THREE.Group();
     state.scene.add(state.group);
     state.id = id;
     state.selectedPlanet = selectedPlanet;
-    makeSceneModel(state.group, id, selectedPlanet);
+    state.cellFocus = cellFocus;
+    state.chemistryMolecule = chemistryMolecule;
+    state.chemistryFocus = chemistryFocus;
+    state.chemistryShowBonds = chemistryShowBonds;
+    makeSceneModel(state.group, id, selectedPlanet, cellFocus, chemistryMolecule, chemistryFocus, chemistryShowBonds);
     state.group.traverse((object) => {
       if (object.isMesh) {
         object.castShadow = state.renderer.shadowMap.enabled;
@@ -857,7 +927,7 @@ function illuminateFace(color, brightness) {
 }
 
 function drawScene(canvas, modelId, yaw, pitch, zoom, ecosystem = {}, time = 0, selectedPlanet = null) {
-  renderThreeScene(canvas, modelId, yaw, pitch, zoom, time, selectedPlanet);
+  renderThreeScene(canvas, modelId, yaw, pitch, zoom, time, selectedPlanet, ecosystem.cellFocus || "all", ecosystem.chemistryMolecule || "water", ecosystem.chemistryFocus || "all", ecosystem.chemistryShowBonds !== false);
 }
 
 function animateScene(canvas, render) {
@@ -919,6 +989,10 @@ export default function Interactive3DWorld({ selectedPlanet, onSelectedPlanetCha
   const selectedPlanetInfo = solarPlanets.find((item) => item.id === selectedPlanet) || null;
   const displayedTitle = selectedPlanetInfo ? selectedPlanetInfo.label : model.label;
   const displayedDescription = selectedPlanetInfo ? selectedPlanetInfo.description : model.description;
+  const concepts = modelExplorations[modelId] || [{ title: "Observe", question: "What details can you notice as you rotate this model?", explanation: model.description }];
+  const activeConceptIndex = Math.min(conceptIndex, concepts.length - 1);
+  const activeConcept = concepts[activeConceptIndex];
+
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -1077,12 +1151,16 @@ export default function Interactive3DWorld({ selectedPlanet, onSelectedPlanetCha
             <button type="button" onClick={() => setEcosystem({ rainfall: "regular", waterSource: true, pollution: false })}>Reset experiment</button>
           </div>}
           <div className="learning-3d-concept-panel" aria-live="polite">
-            <span>DISCOVERY GUIDE</span>
+            <span>DISCOVERY GUIDE · STEP {activeConceptIndex + 1} OF {concepts.length}</span>
             <div className="learning-3d-concept-tabs">
-              {(modelExplorations[modelId] || [{ title: "Observe", question: "What details can you notice as you rotate this model?", explanation: model.description }]).map((concept, index) => <button type="button" key={concept.title} className={conceptIndex === index ? "active" : ""} onClick={() => setConceptIndex(index)} aria-pressed={conceptIndex === index}>{concept.title}</button>)}
+              {concepts.map((concept, index) => <button type="button" key={concept.title} className={activeConceptIndex === index ? "active" : ""} onClick={() => setConceptIndex(index)} aria-pressed={activeConceptIndex === index}>{concept.title}</button>)}
             </div>
-            <strong>{(modelExplorations[modelId] || [{ question: "What details can you notice as you rotate this model?", explanation: model.description }])[conceptIndex]?.question}</strong>
-            <p>{(modelExplorations[modelId] || [{ question: "What details can you notice as you rotate this model?", explanation: model.description }])[conceptIndex]?.explanation}</p>
+            <strong>{activeConcept.question}</strong>
+            <p>{activeConcept.explanation}</p>
+            <div className="learning-3d-concept-tabs" role="group" aria-label="Guided discovery steps">
+              <button type="button" disabled={activeConceptIndex === 0} onClick={() => setConceptIndex((index) => Math.max(0, index - 1))}>Previous step</button>
+              <button type="button" disabled={activeConceptIndex === concepts.length - 1} onClick={() => setConceptIndex((index) => Math.min(concepts.length - 1, index + 1))}>Next step</button>
+            </div>
           </div>
           <div className="learning-3d-model-list" aria-label="Choose a 3D model">
             {models.map((item) => <button type="button" key={item.id} className={item.id === modelId ? "active" : ""} onClick={() => { setModelId(item.id); setSelectedPlanet(null); setConceptIndex(0); setRotation({ yaw: -.55, pitch: -.22 }); setZoom(1); }} aria-pressed={item.id === modelId}>{item.label}</button>)}
