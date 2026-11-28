@@ -40,3 +40,25 @@ test("catalog records cannot be mutated accidentally", () => {
   assert.equal(Object.isFrozen(SECURITY_CONTROLS), true);
   assert.equal(Object.isFrozen(SECURITY_CONTROLS[0].evidence), true);
 });
+
+test("evidence review records evidence, gaps and notes without claiming verification", async () => {
+  const { updateEvidenceReview, getEvidenceReviewSummary } = await import("../src/lib/shield/security-controls.mjs");
+  const first = updateEvidenceReview({}, "mfa", { status: "evidence-present", note: "IdP policy export reviewed by owner." });
+  assert.equal(first.ok, true);
+  const second = updateEvidenceReview(first.reviews, "backup", { status: "gap-found", note: "Restore test is overdue." });
+  assert.equal(second.ok, true);
+  assert.deepEqual(getEvidenceReviewSummary(second.reviews), {
+    evidencePresent: 1, gapsFound: 1, notesAdded: 2, notReviewed: 6, totalCount: 8,
+  });
+  assert.equal(Object.isFrozen(second.reviews), true);
+  assert.equal(Object.isFrozen(second.reviews.backup), true);
+});
+
+test("evidence review rejects unknown controls, statuses, extra fields and control characters", async () => {
+  const { updateEvidenceReview } = await import("../src/lib/shield/security-controls.mjs");
+  assert.equal(updateEvidenceReview({}, "unknown", { status: "gap-found", note: "" }).ok, false);
+  assert.equal(updateEvidenceReview({}, "mfa", { status: "verified", note: "" }).ok, false);
+  assert.equal(updateEvidenceReview({}, "mfa", { status: "gap-found", note: "", script: "x" }).ok, false);
+  assert.equal(updateEvidenceReview({}, "mfa", { status: "gap-found", note: "Owner\nconfirmed" }).ok, false);
+  assert.equal(updateEvidenceReview({}, "mfa", { status: "gap-found", note: "x".repeat(501) }).ok, false);
+});
