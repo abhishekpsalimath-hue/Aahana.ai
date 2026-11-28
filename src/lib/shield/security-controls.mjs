@@ -66,7 +66,7 @@ export function updateEvidenceReview(reviews, controlId, input) {
     return { ok: false, errors: ["Choose a valid evidence review status."], reviews: null };
   }
   if (typeof input.note !== "string" || input.note.length > 500 ||
-      /[\\u0000-\\u001f\\u007f]/.test(input.note)) {
+      /[\u0000-\u001f\u007f]/.test(input.note)) {
     return { ok: false, errors: ["Evidence notes must be 500 characters or fewer and contain no control characters."], reviews: null };
   }
   const current = reviews && typeof reviews === "object" && !Array.isArray(reviews) ? reviews : {};
