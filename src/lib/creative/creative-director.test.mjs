@@ -143,3 +143,27 @@ test("recognizes common transliterated Shiva and Hanuman devotional names", () =
     assert.match(prompt, /gada \(mace\)/i, name);
   }
 });
+
+
+test("recognizes common transliterated names for Ganesha, Krishna and Rama", () => {
+  for (const name of ["Ganpati", "Ganapati", "Gajanan", "Lambodara", "Vighnaharta"]) {
+    const prompt = buildImagePrompt("A devotional portrait of " + name, "masterpiece");
+    assert.match(prompt, /elephant-headed Hindu deity/i, name);
+  }
+  for (const name of ["Kanha", "Kanhaiya", "Govinda", "Gopal", "Madhav"]) {
+    const prompt = buildImagePrompt("A devotional portrait of " + name, "masterpiece");
+    assert.match(prompt, /peacock feather/i, name);
+  }
+  for (const name of ["Siyaram", "Raghav", "Raghava", "Raghunath", "Raghunatha"]) {
+    const prompt = buildImagePrompt("A devotional portrait of " + name, "masterpiece");
+    assert.match(prompt, /traditional divine iconography/i, name);
+  }
+});
+
+test("transliterated deity matching uses whole words and avoids accidental substrings", () => {
+  for (const ordinary of ["programming", "rambling", "shivering", "kanhaya-style typography"]) {
+    const prompt = buildImagePrompt("A modern abstract poster about " + ordinary, "masterpiece");
+    assert.doesNotMatch(prompt, /Depict Lord (?:Rama|Shiva|Krishna) unmistakably/i, ordinary);
+    assert.doesNotMatch(prompt, /elephant-headed Hindu deity/i, ordinary);
+  }
+});
