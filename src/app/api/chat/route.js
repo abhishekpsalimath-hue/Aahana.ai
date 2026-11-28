@@ -60,7 +60,7 @@ export async function POST(request) {
   const contentType = request.headers.get("content-type") || "";
   try {
     if (/^multipart\/form-data\s*;/i.test(contentType)) {
-      const form = await readBoundedMultipartFormData(request, 2_250_000);
+      const form = await readBoundedMultipartFormData(request, 3_700_000);
       const uploadedImages = form.getAll("image");
       if (uploadedImages.length > 1) {
         return NextResponse.json({ error: "Please attach one image at a time." }, { status: 400 });
@@ -74,9 +74,9 @@ export async function POST(request) {
       };
       if (uploadedImage !== null) {
         if (typeof uploadedImage?.arrayBuffer !== "function" ||
-            uploadedImage.size < 1 || uploadedImage.size > 2 * 1024 * 1024 ||
+            uploadedImage.size < 1 || uploadedImage.size > 3_500_000 ||
             !["image/png", "image/jpeg", "image/webp"].includes(uploadedImage.type)) {
-          return NextResponse.json({ error: "Please attach one valid PNG, JPEG or WebP image under 2 MB." }, { status: 400 });
+          return NextResponse.json({ error: "Please attach one valid PNG, JPEG or WebP image under 3.5 MB." }, { status: 400 });
         }
         imageBytes = Buffer.from(await uploadedImage.arrayBuffer());
         imageMimeType = detectImageMimeTypeFromBase64(imageBytes.toString("base64"));
