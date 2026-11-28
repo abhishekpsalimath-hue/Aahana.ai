@@ -160,3 +160,6 @@ The regression found in the earlier sanitizer run is fixed: the sanitizer now ac
 The Flow canvas now supports moving action steps up and down while keeping the trigger fixed at the start and the approval gate fixed at the end. Each move invalidates any prior dry-run output and generated draft explanation so stale results are not presented as current. Validated workflows can be exported as a versioned JSON file for local reuse; export performs the shared workflow validator first and does not execute or transmit the workflow.
 
 The shared Flow validator now requires plain data records with supported own data properties. It rejects accessor properties without invoking getters, custom prototypes, symbol-keyed properties and unsupported step fields. Regression tests cover getter non-invocation, custom prototypes, symbol keys and safe null-prototype records. The export remains a local download; there is no import, persistence, scheduler, integration or live execution in this prototype.
+
+
+A follow-up UI consistency fix clears stale structured-draft explanations when a starter is switched or an action is added/removed. This keeps the displayed explanation tied to the current workflow rather than an earlier draft.
