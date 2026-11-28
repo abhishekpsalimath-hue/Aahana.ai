@@ -28,17 +28,26 @@ test("rejects wildcard, URL, path and IP targets", () => {
 test("rejects duplicate and excessive target scope", () => {
   const duplicate = scope(); duplicate.assets = ["example.com", "example.com"];
   assert.equal(validateAssessmentScope(duplicate, now).valid, false);
-  const excessive = scope(); excessive.assets = Array.from({length:11}, (_, i) => `a${i}.example.com`);
+  const excessive = scope(); excessive.assets = Array.from({length:11}, (_, i) => \`a\${i}.example.com\`);
   assert.equal(validateAssessmentScope(excessive, now).valid, false);
 });
 test("requires a future expiry within thirty days", () => {
   const value = scope(); value.expiresAt = "2027-01-01T00:00:00.000Z";
   assert.equal(validateAssessmentScope(value, now).valid, false);
 });
-test("creates an inert assessment record only after valid scope", () => {
-  const result = createAssessmentRecord(scope(), { assessmentId: "review_01" });
+test("creates a deeply immutable inert assessment record only after valid scope", () => {
+  const result = createAssessmentRecord(scope(), { assessmentId: "review_01", now });
   assert.equal(result.ok, true);
   assert.equal(result.record.networkActivity, false);
   assert.deepEqual(result.record.findings, []);
-  assert.equal(createAssessmentRecord(scope(), { assessmentId: "../bad" }).ok, false);
+  assert.equal(Object.isFrozen(result.record), true);
+  assert.equal(Object.isFrozen(result.record.scope), true);
+  assert.equal(Object.isFrozen(result.record.scope.assets), true);
+  assert.throws(() => result.record.scope.assets.push("other.example.com"), TypeError);
+  assert.equal(createAssessmentRecord(scope(), { assessmentId: "../bad", now }).ok, false);
+});
+test("rejects malformed, future-dated and stale assessment timestamps", () => {
+  for (const createdAt of ["not-a-date", "2026-11-29T00:00:00.000Z", "2026-10-01T00:00:00.000Z"]) {
+    assert.equal(createAssessmentRecord(scope(), { assessmentId: "review_02", createdAt, now }).ok, false);
+  }
 });
