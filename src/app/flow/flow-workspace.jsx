@@ -45,6 +45,7 @@ export default function FlowWorkspace(){
   if(!chosen)return;
   setActiveId(chosen.id);
   setWorkflowSteps(toWorkflowSteps(chosen));
+  setDraft(null);
   setDryRun(null);
   setLogs(false);
  }
@@ -56,11 +57,13 @@ export default function FlowWorkspace(){
   setWorkflowSteps(current=>[...current.slice(0,-1),action,current[current.length-1]]);
   setNextStepId(value=>value+1);
   setNewStepLabel("");
+  setDraft(null);
   setDryRun(null);
   setLogs(false);
  }
  function removeAction(id){
   setWorkflowSteps(current=>current.filter(step=>step.id!==id));
+  setDraft(null);
   setDryRun(null);
   setLogs(false);
  }
