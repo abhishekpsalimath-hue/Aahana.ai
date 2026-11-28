@@ -153,3 +153,10 @@ At commit `da484caf57ff023b8f802122d1875ee736783fcb`, GitHub Actions completed s
 - Private image-upscale workflow: isolated image-upscale checks passed, plus the application test suite and production build.
 
 The regression found in the earlier sanitizer run is fixed: the sanitizer now accepts own data entries on a custom-prototype review container while ignoring inherited control entries. The latest Shield checklist also displays distinct “Evidence located”, “Gap identified”, and “Not reviewed” states, and the overview counts gaps with a remediation owner or target date. This verification applies to the commit above; any later source change requires fresh checks.
+
+
+## Flow workflow editing and portability — latest batch
+
+The Flow canvas now supports moving action steps up and down while keeping the trigger fixed at the start and the approval gate fixed at the end. Each move invalidates any prior dry-run output and generated draft explanation so stale results are not presented as current. Validated workflows can be exported as a versioned JSON file for local reuse; export performs the shared workflow validator first and does not execute or transmit the workflow.
+
+The shared Flow validator now requires plain data records with supported own data properties. It rejects accessor properties without invoking getters, custom prototypes, symbol-keyed properties and unsupported step fields. Regression tests cover getter non-invocation, custom prototypes, symbol keys and safe null-prototype records. The export remains a local download; there is no import, persistence, scheduler, integration or live execution in this prototype.
