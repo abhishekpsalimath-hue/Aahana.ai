@@ -79,9 +79,9 @@ test("dry run refuses invalid workflows", () => {
 
 test("rejects control characters in workflow names and step labels", () => {
   const badName = validWorkflow();
-  badName.name = "Daily summary\\nInjected heading";
+  badName.name = "Daily summary\nInjected heading";
   assert.equal(validateWorkflow(badName).valid, false);
   const badLabel = validWorkflow();
-  badLabel.steps[1].label = "Prepare summary\\u0000hidden";
+  badLabel.steps[1].label = "Prepare summary\u0000hidden";
   assert.equal(validateWorkflow(badLabel).valid, false);
 });
