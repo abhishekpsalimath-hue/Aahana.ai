@@ -18,16 +18,27 @@ export default function AstronautCompanion({ variant = "assistant" }) {
   useEffect(() => {
     const motion = window.matchMedia?.("(prefers-reduced-motion: reduce)");
     const mobile = window.matchMedia?.("(max-width: 760px)").matches === true;
-    const size = mobile ? 72 : 112;
     let timer = null;
 
+    // Match the rendered CSS width, then calculate the full portrait height.
+    // The old code used the width as the height too, allowing the astronaut's
+    // boots to drift into the mobile footer and desktop composer area.
+    const dimensions = () => {
+      const width = mobile
+        ? 68
+        : Math.min(112, Math.max(88, window.innerWidth * 0.08));
+      return { width, height: width * (1536 / 857) };
+    };
+
     const randomPosition = () => {
-      const maxLeft = Math.max(12, window.innerWidth - size - 14);
-      const minTop = mobile ? 72 : 84;
-      const bottomReserve = mobile ? 112 : 142;
-      const maxTop = Math.max(minTop, window.innerHeight - size - bottomReserve);
+      const { width, height } = dimensions();
+      const sideInset = 10;
+      const minTop = mobile ? 76 : 84;
+      const bottomReserve = mobile ? 108 : 144;
+      const maxLeft = Math.max(sideInset, window.innerWidth - width - sideInset);
+      const maxTop = Math.max(minTop, window.innerHeight - height - bottomReserve);
       return {
-        left: Math.round(12 + Math.random() * Math.max(0, maxLeft - 12)),
+        left: Math.round(sideInset + Math.random() * Math.max(0, maxLeft - sideInset)),
         top: Math.round(minTop + Math.random() * Math.max(0, maxTop - minTop)),
       };
     };
