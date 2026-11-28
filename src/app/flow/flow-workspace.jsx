@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import styles from "./flow.module.css";
-import { createDryRunPlan, validateWorkflow } from "@/lib/flow/workflow-model.mjs";
+import { createDryRunPlan, validateWorkflow, parseWorkflowExport } from "@/lib/flow/workflow-model.mjs";
 import { suggestWorkflowTemplate } from "@/lib/flow/workflow-planner.mjs";
 import { createWorkflowDraft } from "@/lib/flow/workflow-draft.mjs";
 
@@ -101,17 +101,11 @@ export default function FlowWorkspace(){
   file.text().then(raw=>{
    let payload;
    try{payload=JSON.parse(raw);}catch{setImportMessage("Import blocked: file is not valid JSON.");return;}
-   if(!payload||typeof payload!=="object"||Array.isArray(payload)||
-      Object.keys(payload).some(key=>!["format","version","exportedAt","workflow"].includes(key))||
-      payload.format!=="aahana-flow-workflow"||payload.version!==1||
-      typeof payload.exportedAt!=="string"||!Number.isFinite(Date.parse(payload.exportedAt))){
-    setImportMessage("Import blocked: unsupported Aahana Flow file format or version.");return;
-   }
-   const validation=validateWorkflow(payload.workflow);
-   if(!validation.valid){setImportMessage("Import blocked: "+validation.errors.join(" "));return;}
-   setActiveId(payload.workflow.id);
-   setWorkflowMeta({id:payload.workflow.id,name:payload.workflow.name});
-   setWorkflowSteps(payload.workflow.steps.map(step=>({...step})));
+   const parsed=parseWorkflowExport(payload);
+   if(!parsed.valid){setImportMessage("Import blocked: "+parsed.errors.join(" "));return;}
+   setActiveId(parsed.workflow.id);
+   setWorkflowMeta({id:parsed.workflow.id,name:parsed.workflow.name});
+   setWorkflowSteps(parsed.workflow.steps.map(step=>({...step})));
    setDraft(null);setDryRun(null);setLogs(false);
    setImportMessage("Imported and validated locally. No integrations were run.");
   }).catch(()=>setImportMessage("Import blocked: the selected file could not be read."));
