@@ -171,3 +171,12 @@ Flow's validator also now rejects accessor-backed, sparse, subclassed or custom-
 ## Flow workflow portability and editing — 28 November 2026
 
 The Flow canvas now supports moving action steps up/down while preserving the trigger at the start and approval gate at the end. A workflow can be exported as a versioned JSON file and imported through a bounded local file picker (64 KB maximum). Imports are parsed by a pure validator that checks the export envelope, canonical timestamp, version, workflow IDs, step allowlist, operation allowlist, and approval-gate rules; imported records are rebuilt as frozen safe data. Custom/drafted workflow identity is preserved when exporting and running a dry run. Import/export remains local-only and does not connect integrations, persist to an account, or execute work.
+
+
+## Latest Flow portability verification — 28 November 2026
+
+Source snapshot `d93dc11506b0d6b3418d7835e7d16e9feabb55ab` passed both GitHub Actions workflows:
+- Interactive experience lab: 458/458 tests passed; Next.js production build compiled and generated all 22 static pages.
+- Private image-upscale workflow: isolated image-upscale checks passed, and its application test/build stage also passed.
+
+This verification covers the Flow action reorder controls, bounded versioned JSON import/export, strict pure export parser, custom workflow identity preservation, parser regression tests, and the existing Shield work. The verification is CI-only: no production deployment or preview deployment is implied.
